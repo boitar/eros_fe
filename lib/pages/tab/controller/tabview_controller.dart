@@ -271,7 +271,14 @@ abstract class TabViewController extends GetxController {
 
       logger.t('insertIndex $insertIndex');
 
-      change([...?state, ...resultList], status: RxStatus.success());
+      // 复用同一列表对象追加，不展开成新 List，
+      // 避免每次加载更多都因列表对象变化导致瀑布流整体重建
+      if (state == null) {
+        change(resultList, status: RxStatus.success());
+      } else {
+        state!.addAll(resultList);
+        change(state, status: RxStatus.success());
+      }
     } catch (e, stack) {
       pageState = PageState.LoadingException;
       rethrow;
@@ -324,7 +331,13 @@ abstract class TabViewController extends GetxController {
       }
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        change([...resultList, ...?state], status: RxStatus.success());
+        // 复用同一列表对象前插，保持列表对象稳定
+        if (state == null) {
+          change(resultList, status: RxStatus.success());
+        } else {
+          state!.insertAll(0, resultList);
+          change(state, status: RxStatus.success());
+        }
       });
     } catch (e, stack) {
       pageState = PageState.LoadingException;

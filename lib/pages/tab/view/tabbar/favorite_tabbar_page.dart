@@ -197,10 +197,13 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
               CupertinoButton(
                 minSize: 40,
                 padding: const EdgeInsets.all(0),
-                child: const Icon(
-                  // FontAwesomeIcons.magnifyingGlass,
-                  CupertinoIcons.search,
-                  size: 28,
+                child: Semantics(
+                  label: '搜索',
+                  child: const Icon(
+                    // FontAwesomeIcons.magnifyingGlass,
+                    CupertinoIcons.search,
+                    size: 28,
+                  ),
                 ),
                 onPressed: () {
                   final bool fromTabItem = Get.find<TabHomeController>()
@@ -214,29 +217,32 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
               CupertinoButton(
                 padding: const EdgeInsets.all(0.0),
                 minSize: 40,
-                child: Stack(
-                  alignment: Alignment.centerRight,
-                  // mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    // const Icon(
-                    //   FontAwesomeIcons.arrowDownWideShort,
-                    //   size: 20,
-                    // ),
-                    const Icon(
-                      CupertinoIcons.sort_down,
-                      size: 28,
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        controller.orderText,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                child: Semantics(
+                  label: '收藏排序',
+                  child: Stack(
+                    alignment: Alignment.centerRight,
+                    // mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      // const Icon(
+                      //   FontAwesomeIcons.arrowDownWideShort,
+                      //   size: 20,
+                      // ),
+                      const Icon(
+                        CupertinoIcons.sort_down,
+                        size: 28,
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          controller.orderText,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 onPressed: () => controller.setOrder(context),
               ),
@@ -245,9 +251,12 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
                   return CupertinoButton(
                     minSize: 40,
                     padding: const EdgeInsets.all(0),
-                    child: const Icon(
-                      CupertinoIcons.arrow_up_circle,
-                      size: 28,
+                    child: Semantics(
+                      label: '回到顶部',
+                      child: const Icon(
+                        CupertinoIcons.arrow_up_circle,
+                        size: 28,
+                      ),
                     ),
                     onPressed: () {
                       controller.jumpToTop();
@@ -260,9 +269,12 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
               CupertinoButton(
                 minSize: 40,
                 padding: const EdgeInsets.all(0),
-                child: const Icon(
-                  CupertinoIcons.arrow_uturn_down_circle,
-                  size: 28,
+                child: Semantics(
+                  label: '跳转/搜寻',
+                  child: const Icon(
+                    CupertinoIcons.arrow_uturn_down_circle,
+                    size: 28,
+                  ),
                 ),
                 onPressed: () {
                   controller.showJumpDialog(context);
@@ -357,8 +369,12 @@ class FavoriteTabBar extends StatelessWidget {
                                 child: isRefresh
                                     ? const CupertinoActivityIndicator(
                                         radius: 10)
-                                    : const FaIcon(FontAwesomeIcons.rotateRight,
-                                        size: 20,
+                                    : Semantics(
+                                        label: '刷新',
+                                        child: const FaIcon(
+                                            FontAwesomeIcons.rotateRight,
+                                            size: 20,
+                                          ),
                                       ),
                                 onPressed: () async {
                                   setState(() {
@@ -379,8 +395,11 @@ class FavoriteTabBar extends StatelessWidget {
                           CupertinoButton(
                             minSize: 40,
                             padding: const EdgeInsets.all(0),
-                            child: const FaIcon(FontAwesomeIcons.bars,
-                              size: 20,
+                            child: Semantics(
+                              label: '选择收藏夹',
+                              child: const FaIcon(FontAwesomeIcons.bars,
+                                size: 20,
+                              ),
                             ),
                             onPressed: () async {
                               // 跳转收藏夹选择页

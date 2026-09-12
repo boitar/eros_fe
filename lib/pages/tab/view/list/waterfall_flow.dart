@@ -1,13 +1,10 @@
 import 'package:eros_fe/common/service/ehsetting_service.dart';
-import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/item/gallery_item_flow.dart';
 import 'package:eros_fe/pages/item/gallery_item_flow_large.dart';
-import 'package:eros_fe/pages/item/item_base.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:keframe/keframe.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 class EhWaterfallFlow extends StatelessWidget {
@@ -72,33 +69,38 @@ class EhWaterfallFlow extends StatelessWidget {
             }
 
             final GalleryProvider _provider = galleryProviders[index];
-            Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
-            Get.lazyReplace(
-                () => GalleryItemController(
-                    galleryProvider: Get.find(tag: _provider.gid)),
-                tag: _provider.gid,
-                fenix: true);
+            // 列表对象复用后每次重建都会走到这里。仅当 provider 未注册、
+            // item controller 未注册，或注册 provider 与当前不是同一对象
+            // （刷新产生同 gid 新数据）时才重新注册，
+            // 避免 lazyReplace 每帧 delete/lazyPut 造成的注册表抖动。
+            final bool needRegister = !Get.isRegistered<GalleryProvider>(
+                  tag: _provider.gid,
+                ) ||
+                !Get.isRegistered<GalleryItemController>(tag: _provider.gid) ||
+                !identical(
+                  Get.find<GalleryProvider>(tag: _provider.gid),
+                  _provider,
+                );
+            if (needRegister) {
+              Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
+              Get.lazyReplace(
+                  () => GalleryItemController(
+                      galleryProvider: Get.find(tag: _provider.gid)),
+                  tag: _provider.gid,
+                  fenix: true);
+            }
 
+            // 不包 FrameSeparateWidget：keframe 占位高度与真实高度不一致，
+            // 会让 SliverWaterfallFlow 的列簿记失真，回滑时条目换列/跳动。
+            // GalleryItemFlowLarge 依赖的封面尺寸随数据同步给出，首帧即可按真实比例布局。
             if (large) {
-              Widget item = GalleryItemFlowLarge(
+              return GalleryItemFlowLarge(
                 key: index == lastTopItemIndex
                     ? centerKey
                     : ValueKey(_provider.gid),
                 galleryProvider: _provider,
                 tabTag: tabTag,
               );
-
-              item = FrameSeparateWidget(
-                index: index,
-                child: item,
-                placeHolder: _WaterfallFlowPlaceHolder(
-                  aspectRatio:
-                      (_provider.imgWidth ?? 300) / (_provider.imgWidth ?? 400),
-                  large: large,
-                ),
-              );
-
-              return item;
             } else {
               return GalleryItemFlow(
                 key: index == lastTopItemIndex
@@ -138,50 +140,5 @@ class EhWaterfallFlow extends StatelessWidget {
         return defaultMaxCrossAxisExtent;
       }
     }
-  }
-}
-
-class _WaterfallFlowPlaceHolder extends StatelessWidget {
-  const _WaterfallFlowPlaceHolder({
-    Key? key,
-    required this.aspectRatio,
-    required this.large,
-  }) : super(key: key);
-  final double aspectRatio;
-  final bool large;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AspectRatio(
-            aspectRatio: aspectRatio,
-            child: Container(
-              color: CupertinoDynamicColor.resolve(
-                  CupertinoColors.systemGrey4, context),
-            ),
-          ),
-          if (large)
-            Container(
-              height: 80,
-              color: CupertinoDynamicColor.resolve(
-                  ehTheme.itemBackgroundColor!, context),
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: const Column(
-                children: [
-                  PlaceHolderLine(),
-                  PlaceHolderLine(),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
   }
 }

@@ -777,9 +777,12 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                 return CupertinoButton(
                   minSize: 40,
                   padding: const EdgeInsets.all(0),
-                  child: const Icon(
-                    CupertinoIcons.arrow_up_circle,
-                    size: 28,
+                  child: Semantics(
+                    label: '回到顶部',
+                    child: const Icon(
+                      CupertinoIcons.arrow_up_circle,
+                      size: 28,
+                    ),
                   ),
                   onPressed: () {
                     controller.jumpToTop();
@@ -794,9 +797,12 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                 return CupertinoButton(
                   minSize: 40,
                   padding: const EdgeInsets.all(0),
-                  child: const Icon(
-                    CupertinoIcons.arrow_uturn_down_circle,
-                    size: 28,
+                  child: Semantics(
+                    label: '跳转/搜寻',
+                    child: const Icon(
+                      CupertinoIcons.arrow_uturn_down_circle,
+                      size: 28,
+                    ),
                   ),
                   onPressed: () {
                     controller.showJumpDialog(context);
@@ -809,9 +815,12 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
             CupertinoButton(
               minSize: 36,
               padding: const EdgeInsets.all(0),
-              child: const FaIcon(
-                FontAwesomeIcons.image,
-                size: 20,
+              child: Semantics(
+                label: '以图搜图',
+                child: const FaIcon(
+                  FontAwesomeIcons.image,
+                  size: 20,
+                ),
               ),
               onPressed: () async {
                 await Get.toNamed(
@@ -823,9 +832,12 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
             CupertinoButton(
               minSize: 36,
               padding: const EdgeInsets.all(0),
-              child: const FaIcon(
-                FontAwesomeIcons.filter,
-                size: 20,
+              child: Semantics(
+                label: '筛选',
+                child: const FaIcon(
+                  FontAwesomeIcons.filter,
+                  size: 20,
+                ),
               ),
               onPressed: () {
                 showFilterSetting();
@@ -907,10 +919,13 @@ class SearchTextFieldIn extends StatelessWidget {
           prefix: CupertinoButton(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             minSize: 0,
-            child: FaIcon(
-              FontAwesomeIcons.magnifyingGlass,
-              size: 20.0,
-              color: CupertinoColors.systemGrey.withOpacity(iconOpacity),
+            child: Semantics(
+              label: '搜索',
+              child: FaIcon(
+                FontAwesomeIcons.magnifyingGlass,
+                size: 20.0,
+                color: CupertinoColors.systemGrey.withOpacity(iconOpacity),
+              ),
             ),
             onPressed: () {},
           ),
@@ -939,12 +954,15 @@ class SearchTextFieldIn extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: isRefresh
                                 ? const CupertinoActivityIndicator(radius: 8)
-                                : FaIcon(
-                                    FontAwesomeIcons.rotateRight,
-                                    size: 18.0,
-                                    color: CupertinoDynamicColor.resolve(
-                                            _kClearButtonColor, Get.context!)
-                                        .withOpacity(iconOpacity),
+                                : Semantics(
+                                    label: '刷新',
+                                    child: FaIcon(
+                                      FontAwesomeIcons.rotateRight,
+                                      size: 18.0,
+                                      color: CupertinoDynamicColor.resolve(
+                                              _kClearButtonColor, Get.context!)
+                                          .withOpacity(iconOpacity),
+                                    ),
                                   ),
                           ),
                         );
@@ -953,44 +971,56 @@ class SearchTextFieldIn extends StatelessWidget {
                   if (controller.textIsGalleryUrl)
                     GestureDetector(
                       onTap: controller.jumpToGallery,
-                      child: FaIcon(
-                        FontAwesomeIcons.circleArrowRight,
-                        size: 20.0,
-                        color: CupertinoDynamicColor.resolve(
-                                _kClearButtonColor, Get.context!)
-                            .withOpacity(iconOpacity),
+                      child: Semantics(
+                        label: '打开画廊链接',
+                        child: FaIcon(
+                          FontAwesomeIcons.circleArrowRight,
+                          size: 20.0,
+                          color: CupertinoDynamicColor.resolve(
+                                  _kClearButtonColor, Get.context!)
+                              .withOpacity(iconOpacity),
+                        ),
                       ).paddingSymmetric(horizontal: 6),
                     ),
                   if (controller.textIsNotEmpty && !controller.textIsGalleryUrl)
                     GestureDetector(
                       onTap: controller.addToQuickSearch,
-                      child: FaIcon(
-                        FontAwesomeIcons.circlePlus,
-                        size: 20.0,
-                        color: CupertinoDynamicColor.resolve(
-                                _kClearButtonColor, Get.context!)
-                            .withOpacity(iconOpacity),
+                      child: Semantics(
+                        label: '加入快速搜索',
+                        child: FaIcon(
+                          FontAwesomeIcons.circlePlus,
+                          size: 20.0,
+                          color: CupertinoDynamicColor.resolve(
+                                  _kClearButtonColor, Get.context!)
+                              .withOpacity(iconOpacity),
+                        ),
                       ).paddingSymmetric(horizontal: 4),
                     ),
                   if (controller.textIsNotEmpty)
                     GestureDetector(
                       onTap: controller.clearText,
-                      child: FaIcon(
-                        FontAwesomeIcons.circleXmark,
-                        size: 20.0,
-                        color: CupertinoDynamicColor.resolve(
-                                _kClearButtonColor, Get.context!)
-                            .withOpacity(iconOpacity),
+                      child: Semantics(
+                        label: '清空搜索词',
+                        child: FaIcon(
+                          FontAwesomeIcons.circleXmark,
+                          size: 20.0,
+                          color: CupertinoDynamicColor.resolve(
+                                  _kClearButtonColor, Get.context!)
+                              .withOpacity(iconOpacity),
+                        ),
                       ).paddingSymmetric(horizontal: 6),
                     ),
                   GestureDetector(
                     onTap: controller.quickSearchList,
-                    child: FaIcon(
-                      FontAwesomeIcons.listUl,
-                      size: 18.0,
-                      color: CupertinoDynamicColor.resolve(
-                              _kClearButtonColor, Get.context!)
-                          .withOpacity(iconOpacity),
+                    child: Semantics(
+                      label: '快速搜索列表',
+                      child: FaIcon(
+                        FontAwesomeIcons.listUl,
+                        size: 18.0,
+                        color: CupertinoDynamicColor.resolve(
+                                _kClearButtonColor, Get.context!)
+                            .withOpacity(iconOpacity),
+                      ),
                     ).paddingOnly(right: 10, left: 6),
                   ),
                 ],
