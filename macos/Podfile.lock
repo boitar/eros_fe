@@ -40,6 +40,8 @@ PODS:
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
+  - system_network_proxy_macos (0.0.1):
+    - FlutterMacOS
   - url_launcher_macos (0.0.1):
     - FlutterMacOS
   - wakelock_plus (0.0.1):
@@ -64,6 +66,7 @@ DEPENDENCIES:
   - share_plus (from `Flutter/ephemeral/.symlinks/plugins/share_plus/macos`)
   - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `Flutter/ephemeral/.symlinks/plugins/sqflite_darwin/darwin`)
+  - system_network_proxy_macos (from `Flutter/ephemeral/.symlinks/plugins/system_network_proxy_macos/macos`)
   - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
   - wakelock_plus (from `Flutter/ephemeral/.symlinks/plugins/wakelock_plus/macos`)
   - window_size (from `Flutter/ephemeral/.symlinks/plugins/window_size/macos`)
@@ -106,6 +109,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
   sqflite_darwin:
     :path: Flutter/ephemeral/.symlinks/plugins/sqflite_darwin/darwin
+  system_network_proxy_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/system_network_proxy_macos/macos
   url_launcher_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
   wakelock_plus:
@@ -114,28 +119,29 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/window_size/macos
 
 SPEC CHECKSUMS:
-  bitsdojo_window_macos: 44e3b8fe3dd463820e0321f6256c5b1c16bb6a00
-  blurhash_ffi: 08654b437e9dc2a8a4ce476a7fa4898b3a333fb6
-  cupertino_http: 947a233f40cfea55167a49f2facc18434ea117ba
-  device_info_plus: 1b14eed9bf95428983aed283a8d51cce3d8c4215
-  file_picker: e716a70a9fe5fd9e09ebc922d7541464289443af
-  flutter_inappwebview_macos: bdf207b8f4ebd58e86ae06cd96b147de99a67c9b
+  bitsdojo_window_macos: 7959fb0ca65a3ccda30095c181ecb856fae48ea9
+  blurhash_ffi: 9eaec3fd96c2935bd92fbcd70d7f33f7f98b0428
+  cupertino_http: 94ac07f5ff090b8effa6c5e2c47871d48ab7c86c
+  device_info_plus: 4fb280989f669696856f8b129e4a5e3cd6c48f76
+  file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
+  flutter_inappwebview_macos: c2d68649f9f8f1831bfcd98d73fd6256366d9d1d
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  isar_community_flutter_libs: d3749f6775866378fc78328b10f1397a05fba673
-  local_auth_darwin: fa4b06454df7df8e97c18d7ee55151c57e7af0de
-  objective_c: e5f8194456e8fc943e034d1af00510a1bc29c067
+  isar_community_flutter_libs: a631ceb5622413b56bcd0a8bf49cb55bf3d8bb2b
+  local_auth_darwin: d2e8c53ef0c4f43c646462e3415432c4dab3ae19
+  objective_c: ec13431e45ba099cb734eb2829a5c1cd37986cba
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
-  package_info_plus: 12f1c5c2cfe8727ca46cbd0b26677728972d9a5b
-  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  package_info_plus: f0052d280d17aa382b932f399edf32507174e870
+  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
   Sentry: da60d980b197a46db0b35ea12cb8f39af48d8854
-  sentry_flutter: 2df8b0aab7e4aba81261c230cbea31c82a62dd1b
-  share_plus: 1fa619de8392a4398bfaf176d441853922614e89
-  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
-  sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
-  url_launcher_macos: c82c93949963e55b228a30115bd219499a6fe404
-  wakelock_plus: 4783562c9a43d209c458cb9b30692134af456269
-  window_size: 339dafa0b27a95a62a843042038fa6c3c48de195
+  sentry_flutter: 27892878729f42701297c628eb90e7c6529f3684
+  share_plus: 510bf0af1a42cd602274b4629920c9649c52f4cc
+  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
+  system_network_proxy_macos: cb4e41d93265ccb30052f3b3f535608f89ab5092
+  url_launcher_macos: 0fba8ddabfc33ce0a9afe7c5fef5aab3d8d2d673
+  wakelock_plus: 21ddc249ac4b8d018838dbdabd65c5976c308497
+  window_size: 4bd15034e6e3d0720fd77928a7c42e5492cfece9
 
 PODFILE CHECKSUM: 3728137040a30b3c52a89ae670dbba4b9d6c6b2f
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.17.0
