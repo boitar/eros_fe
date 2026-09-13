@@ -217,24 +217,37 @@ class _DownloadGalleryViewState extends State<DownloadGalleryView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Obx(() {
-      // controller.galleryTasks更新时，生成新的animatedGalleryListKey，确保列表能刷新
-      // TODO: 会导致任务状态变化时， 列表重新回到顶部
-      // controller.animatedGalleryListKey = GlobalKey<AnimatedListState>();
-      return SafeArea(
-        top: false,
-        bottom: false,
-        child: AnimatedList(
-          key: controller.animatedGalleryListKey,
-          padding: EdgeInsets.only(
-            top: context.mediaQueryPadding.top,
-            bottom: context.mediaQueryPadding.bottom,
-          ),
-          initialItemCount: controller.galleryTasks.length,
-          itemBuilder: downloadItemBuilder,
-        ),
-      );
-    });
+    return FutureBuilder<void>(
+      future: downloadController.downloadInitialization,
+      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CupertinoActivityIndicator());
+        }
+        if (snapshot.hasError) {
+          return const Center(child: Text('Failed to load download tasks'));
+        }
+
+        return Obx(() {
+          // 读取 revision 建立响应式依赖。数据库快照读取完成后，
+          // refreshGalleryList 会替换 key，AnimatedList 才会读取任务数量；
+          // 后台完整性修复通过对应卡片的 GetBuilder 单独刷新。
+          controller.galleryListRevision.value;
+          return SafeArea(
+            top: false,
+            bottom: false,
+            child: AnimatedList(
+              key: controller.animatedGalleryListKey,
+              padding: EdgeInsets.only(
+                top: context.mediaQueryPadding.top,
+                bottom: context.mediaQueryPadding.bottom,
+              ),
+              initialItemCount: controller.galleryTasks.length,
+              itemBuilder: downloadItemBuilder,
+            ),
+          );
+        });
+      },
+    );
   }
 
   @override

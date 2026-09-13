@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:eros_fe/common/controller/download_controller.dart';
+import 'package:eros_fe/common/controller/download/download_file_path.dart';
 import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -19,7 +20,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:path/path.dart' as path;
 
 const kCardRadius = 10.0;
 
@@ -141,13 +141,21 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
           pics = imageTasks
               .where((element) =>
                   element.filePath != null && element.filePath!.isNotEmpty)
-              .map((e) => '$dirPath%2F${e.filePath}')
+              .map((e) => buildDownloadFilePath(
+                    directoryPath: dirPath,
+                    fileName: e.filePath,
+                  ))
+              .whereType<String>()
               .toList();
         } else {
           pics = imageTasks
               .where((element) =>
                   element.filePath != null && element.filePath!.isNotEmpty)
-              .map((e) => path.join(dirPath ?? '', e.filePath ?? ''))
+              .map((e) => buildDownloadFilePath(
+                    directoryPath: dirPath,
+                    fileName: e.filePath,
+                  ))
+              .whereType<String>()
               .toList();
         }
 
@@ -254,13 +262,10 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       child: Padding(
         padding: const EdgeInsets.only(right: 8.0),
         child: DownloadItemCoverImage(
-          filePath: (galleryTask.coverImage != null &&
-                  galleryTask.coverImage!.isNotEmpty)
-              ? (galleryTask.realDirPath?.isContentUri ?? false)
-                  ? '${galleryTask.realDirPath}%2F${galleryTask.coverImage}'
-                  : path.join(
-                      galleryTask.realDirPath ?? '', galleryTask.coverImage)
-              : null,
+          filePath: buildDownloadFilePath(
+            directoryPath: galleryTask.realDirPath,
+            fileName: galleryTask.coverImage,
+          ),
           url: galleryTask.coverUrl,
           cardType: cardType,
         ),
@@ -463,7 +468,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minSize: minSize,
-          child: const FaIcon(FontAwesomeIcons.pause,
+          child: const FaIcon(
+            FontAwesomeIcons.pause,
             size: iconSize,
           ),
           onPressed: () {
@@ -478,7 +484,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minSize: minSize,
-          child: const FaIcon(FontAwesomeIcons.check,
+          child: const FaIcon(
+            FontAwesomeIcons.check,
             size: iconSize,
           ),
           onPressed: () {},
@@ -491,7 +498,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minSize: minSize,
-          child: const FaIcon(FontAwesomeIcons.play,
+          child: const FaIcon(
+            FontAwesomeIcons.play,
             size: iconSize,
           ),
           onPressed: () {
@@ -503,22 +511,24 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       TaskStatus.failed: CupertinoButton(
         padding: buttonPadding,
         minSize: minSize,
-        child: const FaIcon(FontAwesomeIcons.play,
+        child: const FaIcon(
+          FontAwesomeIcons.play,
           size: iconSize,
         ),
         onPressed: () {
-          controller.retryArchiverDownload(galleryTask.gid);
+          controller.resumeGalleryDownload(galleryTask.gid);
         },
       ),
       // 取消状态 显示重试按钮。按下重试任务
       TaskStatus.canceled: CupertinoButton(
         padding: buttonPadding,
         minSize: minSize,
-        child: const FaIcon(FontAwesomeIcons.redo,
+        child: const FaIcon(
+          FontAwesomeIcons.redo,
           size: iconSize,
         ),
         onPressed: () {
-          controller.retryArchiverDownload(galleryTask.gid);
+          controller.resumeGalleryDownload(galleryTask.gid);
         },
       ).paddingSymmetric(),
       TaskStatus.enqueued: Container(
@@ -569,10 +579,20 @@ class DownloadItemCoverImage extends StatelessWidget {
               child: const CupertinoActivityIndicator(),
             );
           }
+          if (state.extendedImageLoadState == LoadState.failed) {
+            logger.w('下载列表封面加载失败: $filePath');
+            if (url != null && url!.isNotEmpty) {
+              return EhNetworkImage(
+                imageUrl: url!,
+                fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
+              );
+            }
+            return _buildCoverPlaceholder(context);
+          }
           return null;
         }
 
-        const filterQuality = FilterQuality.high;
+        const filterQuality = FilterQuality.medium;
         final image = ((filePath?.isContentUri ?? false)
             ? ExtendedSafImageProvider(Uri.parse(filePath!))
             : ExtendedFileImageProvider(File(filePath!))) as ImageProvider;
@@ -581,6 +601,10 @@ class DownloadItemCoverImage extends StatelessWidget {
           fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
           loadStateChanged: loadStateChanged,
           filterQuality: filterQuality,
+          clearMemoryCacheIfFailed: true,
+          // Download-list covers are small thumbnails. Keep them in Flutter's
+          // normal LRU cache so scrolling back does not show a spinner again.
+          clearMemoryCacheWhenDispose: false,
         );
       } else if (url != null) {
         return EhNetworkImage(
@@ -588,7 +612,7 @@ class DownloadItemCoverImage extends StatelessWidget {
           fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
         );
       } else {
-        return const SizedBox.expand();
+        return _buildCoverPlaceholder(context);
       }
     }();
 
@@ -616,6 +640,18 @@ class DownloadItemCoverImage extends StatelessWidget {
               ],
       ),
       child: image,
+    );
+  }
+
+  Widget _buildCoverPlaceholder(BuildContext context) {
+    return Container(
+      alignment: Alignment.center,
+      color:
+          CupertinoDynamicColor.resolve(CupertinoColors.systemGrey5, context),
+      child: const Icon(
+        CupertinoIcons.photo,
+        color: CupertinoColors.systemGrey,
+      ),
     );
   }
 }

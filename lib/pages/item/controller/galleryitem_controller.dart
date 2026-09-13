@@ -1,10 +1,12 @@
 import 'dart:math';
+import 'package:eros_fe/common/controller/favorite_state_store.dart';
 
 import 'package:collection/collection.dart';
 import 'package:eros_fe/common/controller/history_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/setting_base.dart';
+import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/controller/fav_controller.dart';
 import 'package:eros_fe/pages/item/item_base.dart';
@@ -13,22 +15,39 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 class GalleryItemController extends GetxController {
-  GalleryItemController({required this.galleryProvider});
+  GalleryItemController({required GalleryProvider galleryProvider})
+      : _galleryProvider = galleryProvider,
+        _accountEpoch = favoriteStates.epoch;
 
-  final EhSettingService _ehSettingService = Get.find();
-  final FavController _favDialogController = Get.find();
-  final TabHomeController _tabHomeController = Get.find();
-  final HistoryController _historyController = Get.find();
+  EhSettingService get _ehSettingService => Get.find();
+  FavController get _favDialogController => Get.find();
+  TabHomeController get _tabHomeController => Get.find();
+  HistoryController get _historyController => Get.find();
 
   late List<GalleryImage> firstPageImage;
-  final GalleryProvider galleryProvider;
+  GalleryProvider _galleryProvider;
+  final int _accountEpoch;
+  GalleryProvider get galleryProvider => _accountEpoch == favoriteStates.epoch
+      ? favoriteStates.overlay(_galleryProvider)
+      : _galleryProvider.copyWith(favcat: ''.oN, favTitle: ''.oN);
 
   final RxBool _isFav = false.obs;
-  bool get isFav => _isFav.value;
+  bool get isFav => favCat.isNotEmpty;
   set isFav(bool val) => _isFav.value = val;
 
+  /// Only a mapped favorite category has a corresponding colored heart.
+  bool get hasFavoriteColor => ThemeColors.favColor.containsKey(favCat);
+
   final _favCat = ''.obs;
-  String get favCat => _favCat.value;
+  String get favCat {
+    if (_accountEpoch != favoriteStates.epoch) return '';
+    final category =
+        favoriteStates[_galleryProvider.gid]?.category ?? _favCat.value;
+    return category.isEmpty && (_galleryProvider.localFav ?? false)
+        ? 'l'
+        : category;
+  }
+
   set favCat(String val) => _favCat.value = val;
 
   final _rating = 0.0.obs;
@@ -74,18 +93,10 @@ class GalleryItemController extends GetxController {
 
   /// 设置收藏夹
   void setFavTitleAndFavcat({String favTitle = '', String? favcat}) {
-    logger.t('设置收藏夹, 原 isFav :[$isFav]');
-    galleryProvider.copyWith(favTitle: favTitle.oN);
-    isFav = favTitle.isNotEmpty;
-    logger.t('设置收藏夹, 当前 isFav :[$isFav]');
-    if (favcat != null || (favcat?.isNotEmpty ?? false)) {
-      favCat = favcat!;
-      galleryProvider.copyWith(favcat: favcat.oN);
-      logger.t('item set favcat [$favcat]');
-    } else {
-      favCat = '';
-      galleryProvider.copyWith(favcat: ''.oN, favTitle: ''.oN);
-    }
+    _galleryProvider = _galleryProvider.copyWith(
+        favTitle: favTitle.oN, favcat: (favcat ?? '').oN);
+    _isFav.value = (favcat ?? '').isNotEmpty;
+    _favCat.value = favcat ?? '';
   }
 
   String get title {
@@ -98,7 +109,7 @@ class GalleryItemController extends GetxController {
     return galleryProvider.englishTitle ?? '';
   }
 
-  Rx<Color?> colorTap = ehTheme.itemBackgroundColor.obs;
+  late Rx<Color?> colorTap = ehTheme.itemBackgroundColor.obs;
 
   /// 点击item
   void onTap(dynamic tabTag) {
@@ -128,7 +139,7 @@ class GalleryItemController extends GetxController {
   }
 
   set localFav(bool value) {
-    galleryProvider.copyWith(localFav: localFav.oN);
+    _galleryProvider = galleryProvider.copyWith(localFav: value.oN);
     update();
   }
 

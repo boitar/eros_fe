@@ -5,6 +5,159 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' show parse;
 import 'package:intl/intl.dart';
 
+/// 收藏标记解析结果。
+class FavoriteMarker {
+  const FavoriteMarker({
+    required this.title,
+    required this.favcat,
+    required this.rawStyle,
+  });
+
+  final String title;
+  final String favcat;
+  final String rawStyle;
+
+  bool get isFavorited => title.isNotEmpty;
+}
+
+/// 从列表行中解析收藏标题和收藏夹颜色。
+///
+/// ExHentai 的列表 HTML 在不同视图和版本中会改变收藏标记的层级，
+/// 因此这里按 title/style 属性查找，而不是依赖固定的 nth-child。
+FavoriteMarker parseFavoriteMarker(dom.Element element) {
+  // Use the same posted-date node as master, with its stable ID preferred
+  // over the legacy compact layout. Category names are user-defined: neither
+  // the tooltip text nor a colored tag elsewhere in the row identifies it.
+  final candidates = <dom.Element>[
+    if (RegExp(r'^posted_\d+$').hasMatch(element.id)) element,
+    ...element
+        .querySelectorAll('[id]')
+        .where((node) => RegExp(r'^posted_\d+$').hasMatch(node.id)),
+    ..._legacyPostedElements(element),
+  ];
+  FavoriteMarker? unknownMarker;
+  for (final candidate in candidates.toSet()) {
+    final style = _attributeValue(candidate, 'style') ?? '';
+    final borderColor = _borderColorFromStyle(style);
+    final isPosted = RegExp(r'^posted_\d+$').hasMatch(candidate.id);
+    if (borderColor == null && !(isPosted && _hasBackgroundColor(style))) {
+      continue;
+    }
+    var favcat = _favoriteCategoryFromStyle(style);
+    if (favcat.isEmpty && isPosted) {
+      favcat = _favoriteCategoryFromBackgroundStyle(style);
+    }
+    final title = _attributeValue(candidate, 'title')?.trim() ?? '';
+    final marker = FavoriteMarker(
+      title: title.isNotEmpty
+          ? title
+          : (favcat.isEmpty ? '' : 'Favorites $favcat'),
+      favcat: favcat,
+      rawStyle: style,
+    );
+    if (favcat.isNotEmpty) {
+      return marker;
+    }
+    unknownMarker ??= marker;
+  }
+  return unknownMarker ??
+      const FavoriteMarker(title: '', favcat: '', rawStyle: '');
+}
+
+// The html package's nth-child selector counts text nodes. Locate the
+// metadata block by its direct rating child instead of a numeric position.
+Iterable<dom.Element> _legacyPostedElements(dom.Element row) sync* {
+  for (final block in row.querySelectorAll('td.gl2c > div')) {
+    if (block.children.any((child) => child.classes.contains('ir'))) {
+      final posted = block.children.firstOrNull;
+      if (posted != null && !posted.classes.contains('ir')) {
+        yield posted;
+      }
+    }
+  }
+}
+
+String? _attributeValue(dom.Element element, String name) {
+  for (final entry in element.attributes.entries) {
+    if (entry.key.toString().toLowerCase() == name.toLowerCase()) {
+      return entry.value;
+    }
+  }
+  return null;
+}
+
+String? _borderColorFromStyle(String style) {
+  final match = RegExp(
+    r'(?:^|;)\s*border-color\s*:\s*([^;]+)',
+    caseSensitive: false,
+  ).firstMatch(style);
+  return match?.group(1)?.trim();
+}
+
+String _favoriteCategoryFromStyle(String style) =>
+    _favoriteCategoryFromCssColor(_borderColorFromStyle(style) ?? '');
+
+String _favoriteCategoryFromBackgroundStyle(String style) {
+  final match =
+      RegExp(r'(?:^|;)\s*background-color\s*:\s*([^;]+)', caseSensitive: false)
+          .firstMatch(style);
+  return _favoriteCategoryFromCssColor(match?.group(1) ?? '');
+}
+
+String _favoriteCategoryFromCssColor(String value) {
+  final color = value
+      .replaceFirst(RegExp(r'\s*!important\s*$', caseSensitive: false), '')
+      .trim()
+      .toLowerCase();
+  String? rgb;
+  final hex = RegExp(r'^#([0-9a-f]{3}|[0-9a-f]{6})$').firstMatch(color);
+  if (hex != null) {
+    var digits = hex.group(1)!;
+    if (digits.length == 3) digits = digits.split('').map((c) => '$c$c').join();
+    rgb = [0, 2, 4]
+        .map((i) => int.parse(digits.substring(i, i + 2), radix: 16))
+        .join(',');
+  } else {
+    final match = RegExp(
+      r'^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(\d*\.?\d+))?\s*\)$',
+    ).firstMatch(color);
+    if (match == null) return '';
+    final channels = [1, 2, 3].map((i) => int.parse(match.group(i)!)).toList();
+    final alpha = double.tryParse(match.group(4) ?? '1');
+    if (channels.any((c) => c > 255) ||
+        alpha == null ||
+        alpha <= 0 ||
+        alpha > 1) return '';
+    rgb = channels.join(',');
+  }
+  // Exact site palette variants, never nearest-color guesses. The legacy
+  // border palette also occurs as rgb()/rgba() or expanded hex in new markup.
+  for (final entry in EHConst.favCat.entries) {
+    final digits = entry.key.substring(1);
+    final canonical =
+        digits.split('').map((c) => int.parse('$c$c', radix: 16)).join(',');
+    if (rgb == canonical) return entry.value;
+  }
+  const backgroundPalette = <String, String>{
+    '0,0,0': '0',
+    '240,0,0': '1',
+    '240,160,0': '2',
+    '208,208,0': '3',
+    '0,128,0': '4',
+    '144,240,64': '5',
+    '64,176,240': '6',
+    '0,0,240': '7',
+    '80,0,128': '8',
+    '232,0,232': '9',
+  };
+  return backgroundPalette[rgb] ?? '';
+}
+
+bool _hasBackgroundColor(String style) => RegExp(
+      r'(?:^|;)\s*background-color\s*:',
+      caseSensitive: false,
+    ).hasMatch(style);
+
 /// 检查返回结果是否是 compact 视图
 bool isGalleryListDmL(String response) {
   final dom.Document document = parse(response);
@@ -232,9 +385,8 @@ GalleryList parseGalleryList(
     final int imageWidth = int.parse(match?[2] ?? '0');
 
 // 评分星级计算
-    final String ratPx = tr
-        .querySelector('td.gl2c > div:nth-child(2) > div.ir')!
-        .attributes['style']!;
+    final ratingElement = tr.querySelector('td.gl2c .ir')!;
+    final String ratPx = ratingElement.attributes['style']!;
     final RegExp pxA = RegExp(r'-?(\d+)px\s+-?(\d+)px');
     final RegExpMatch px = pxA.firstMatch(ratPx)!;
 
@@ -245,7 +397,8 @@ GalleryList parseGalleryList(
 
     // 发布时间
     bool expunged = false;
-    final elmPostTime = tr.querySelector('td.gl2c > div:nth-child(2) > div');
+    final elmPostTime = tr.querySelector('[id=posted_$gid]') ??
+        _legacyPostedElements(tr).firstOrNull;
     if (elmPostTime?.children.isNotEmpty ?? false) {
       // logger.d('${elmPostTime?.outerHtml}');
       expunged = true;
@@ -256,37 +409,18 @@ GalleryList parseGalleryList(
     final String postTimeLocal = DateFormat('yyyy-MM-dd HH:mm').format(time);
 
 // 收藏标志
-    final String favTitle = tr
-            .querySelector('td.gl2c > div:nth-child(2) > div')
-            ?.attributes['title'] ??
-        '';
+    final favoriteMarker = parseFavoriteMarker(tr);
+    final String favTitle = favoriteMarker.title;
 
 // 评分颜色
-    final String _colorRating = tr
-            .querySelector('td.gl2c')!
-            .children[2]
-            .children[1]
-            .attributes['class'] ??
-        'ir';
+    final String _colorRating = ratingElement.attributes['class'] ?? 'ir';
 
 // 评分标志
-    final String ir = tr
-            .querySelector('td.gl2c > div:nth-child(2) > div:nth-child(1)')
-            ?.attributes['class'] ??
-        '';
+    final String ir = _colorRating;
     final bool isRatinged = ir.contains(RegExp(r'ir ir[a-z]'));
 
 // 收藏夹
-    String favcat = '';
-    if (favTitle.isNotEmpty) {
-      final String favcatStyle = tr
-          .querySelector('td.gl2c > div:nth-child(2) > div')!
-          .attributes['style']!;
-      final String favcatColor =
-          RegExp(r'border-color:(#\w{3});').firstMatch(favcatStyle)?.group(1) ??
-              '';
-      favcat = EHConst.favCat[favcatColor] ?? '';
-    }
+    final String favcat = favoriteMarker.favcat;
 
     String _uplader = '';
     String _filecount = '';

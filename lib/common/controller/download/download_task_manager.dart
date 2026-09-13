@@ -1,14 +1,21 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:eros_fe/common/controller/cache_controller.dart';
+import 'package:eros_fe/common/controller/download/download_cover_resolver.dart';
+import 'package:eros_fe/common/controller/download/download_file_path.dart';
 import 'package:eros_fe/common/controller/download/storage_adapter.dart';
 import 'package:eros_fe/common/controller/download_state.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
+import 'package:eros_fe/store/db/entity/gallery_image_task.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:path/path.dart' as path;
 import 'package:shared_storage/shared_storage.dart' as ss;
+import 'package:synchronized/synchronized.dart';
 
 @immutable
 class TaskStatus {
@@ -45,82 +52,133 @@ class TaskStatus {
 }
 
 class DownloadTaskManager {
+  static const int _reconcileConcurrency = 4;
+
   DownloadTaskManager(this.dState, {StorageAdapter? storageAdapter})
       : storageAdapter = storageAdapter ?? StorageAdapter();
   final DownloadState dState;
   final CacheController cacheController = Get.find();
   final StorageAdapter storageAdapter;
+  final Map<int, Lock> _taskLocks = <int, Lock>{};
+
+  Lock _lockFor(int gid) => _taskLocks.putIfAbsent(gid, () => Lock());
+
+  Future<void> _invoke(Function callback,
+      [List<Object?> args = const []]) async {
+    final result = Function.apply(callback, args);
+    if (result is Future) {
+      await result;
+    }
+  }
+
+  void _cancelTask(int gid) {
+    dState.taskCancelTokens[gid]?.cancel();
+    final cancelToken = dState.cancelTokenMap[gid];
+    if (cancelToken != null && !cancelToken.isCancelled) {
+      cancelToken.cancel();
+    }
+  }
+
+  void _resetDownloadStatistics(int gid) {
+    dState.downloadCounts
+        .removeWhere((key, value) => key.startsWith('${gid}_'));
+    dState.lastCounts.remove(gid);
+    dState.downloadSpeeds.remove(gid);
+    dState.noSpeed.remove(gid);
+  }
+
+  /// 取消当前画廊的活动请求，但保留图片任务和临时文件。
+  Future<void> cancelGalleryWork(
+    int gid, {
+    Function? cancelTimerCallback,
+  }) async {
+    await _lockFor(gid).synchronized(() async {
+      if (cancelTimerCallback != null) {
+        await _invoke(cancelTimerCallback, [gid]);
+      }
+      _cancelTask(gid);
+      _resetDownloadStatistics(gid);
+    });
+  }
 
   /// 更新任务为已完成
   Future<GalleryTask?> galleryTaskComplete(
     int gid, {
     Function? cancelTimerCallback,
   }) async {
-    if (dState.galleryTaskMap[gid]?.status == TaskStatus.complete.value) {
-      return null;
-    }
-    logger.t('更新任务为已完成');
-    // 调用传入的回调取消定时器
-    if (cancelTimerCallback != null) {
-      Function.apply(cancelTimerCallback, [gid]);
-    }
+    return _lockFor(gid).synchronized(() async {
+      final current = dState.galleryTaskMap[gid] ??
+          await isarHelper.findGalleryTaskByGidIsolate(gid);
+      if (current == null) {
+        logger.e('找不到任务: $gid');
+        return null;
+      }
 
-    if (!(dState.taskCancelTokens[gid]?.isCancelled ?? true)) {
-      dState.taskCancelTokens[gid]?.cancel();
-    }
+      if (current.status == TaskStatus.failed.value ||
+          current.status == TaskStatus.paused.value ||
+          current.status == TaskStatus.canceled.value) {
+        return current;
+      }
 
-    final galleryTask = await galleryTaskUpdateStatus(gid, TaskStatus.complete);
+      logger.t('更新任务为已完成');
+      if (cancelTimerCallback != null) {
+        await _invoke(cancelTimerCallback, [gid]);
+      }
+      _cancelTask(gid);
+      _resetDownloadStatistics(gid);
 
-    // 写入任务信息文件
-    await storageAdapter.writeTaskInfoFile(galleryTask);
-
-    return galleryTask;
+      final galleryTask = current.status == TaskStatus.complete.value
+          ? current
+          : current.copyWith(status: TaskStatus.complete.value);
+      dState.galleryTaskMap[gid] = galleryTask;
+      await isarHelper.putGalleryTaskIsolate(galleryTask);
+      await storageAdapter.writeTaskInfoFile(galleryTask);
+      return galleryTask;
+    });
   }
 
   /// 暂停任务
   Future<GalleryTask?> galleryTaskPaused(int gid,
       {bool silent = false, Function? cancelTimerCallback}) async {
-    // 调用传入的回调取消定时器
-    if (cancelTimerCallback != null) {
-      Function.apply(cancelTimerCallback, [gid]);
-    }
-
-    logger.t('${dState.cancelTokenMap[gid]?.isCancelled}');
-    if (!(dState.cancelTokenMap[gid]?.isCancelled ?? true)) {
-      dState.cancelTokenMap[gid]?.cancel();
-    }
-    if (silent) {
-      return null;
-    }
-
-    return galleryTaskUpdateStatus(gid, TaskStatus.paused);
+    return _lockFor(gid).synchronized(() async {
+      if (cancelTimerCallback != null) {
+        await _invoke(cancelTimerCallback, [gid]);
+      }
+      logger.t('${dState.cancelTokenMap[gid]?.isCancelled}');
+      _cancelTask(gid);
+      _resetDownloadStatistics(gid);
+      if (silent) {
+        return null;
+      }
+      return _updateStatusLocked(gid, TaskStatus.paused);
+    });
   }
 
   /// 恢复任务
   Future<void> galleryTaskResume(int gid,
       {Function? addGalleryTaskCallback}) async {
-    final GalleryTask? galleryTask =
-        await isarHelper.findGalleryTaskByGidIsolate(gid);
-    if (galleryTask != null) {
+    await _lockFor(gid).synchronized(() async {
+      final GalleryTask? galleryTask = dState.galleryTaskMap[gid] ??
+          await isarHelper.findGalleryTaskByGidIsolate(gid);
+      if (galleryTask == null ||
+          galleryTask.status == TaskStatus.complete.value) {
+        return;
+      }
+
       logger.d('恢复任务 $gid showKey:${galleryTask.showKey}');
-
-      // 确保任务状态为enqueued，这样在进入槽位管理器时才能正确处理
+      _resetDownloadStatistics(gid);
       final resumeTask = galleryTask.copyWith(
-        status: TaskStatus.enqueued.value, // 重要：设置状态为enqueued而不是running
+        status: TaskStatus.enqueued.value,
       );
-
-      // 更新内存中的任务
       dState.galleryTaskMap[gid] = resumeTask;
-
-      // 保存到数据库
       await isarHelper.putGalleryTaskIsolate(resumeTask);
       logger.d('任务状态已重置为enqueued: gid=$gid');
 
       if (addGalleryTaskCallback != null) {
         logger.d('调用恢复任务回调: gid=$gid');
-        Function.apply(addGalleryTaskCallback, [resumeTask]); // 传递更新后的任务
+        await _invoke(addGalleryTaskCallback, [resumeTask]);
       }
-    }
+    });
   }
 
   /// 重下任务
@@ -128,64 +186,126 @@ class DownloadTaskManager {
     int gid, {
     Function? addGalleryTaskCallback,
   }) async {
-    logger.d('开始重启任务: gid=$gid');
-    isarHelper.removeImageTask(gid);
+    await _lockFor(gid).synchronized(() async {
+      logger.d('开始重启任务: gid=$gid');
+      _cancelTask(gid);
+      _resetDownloadStatistics(gid);
 
-    final GalleryTask? galleryTask =
-        await isarHelper.findGalleryTaskByGidIsolate(gid);
-    if (galleryTask != null) {
+      final GalleryTask? galleryTask = dState.galleryTaskMap[gid] ??
+          await isarHelper.findGalleryTaskByGidIsolate(gid);
+      if (galleryTask == null) {
+        logger.e('重下任务失败: 找不到任务 gid=$gid');
+        return;
+      }
+
       logger.d(
           '重下任务: gid=$gid, 原状态=${galleryTask.status}, url=${galleryTask.url}');
-      cacheController.clearDioCache(
+      await _clearTaskFiles(galleryTask);
+      await isarHelper.removeImageTask(gid);
+      await cacheController.clearDioCache(
           path: '${Api.getBaseUrl()}${galleryTask.url}');
 
-      // 重置任务状态为enqueued，并将完成数置为0
       final reTask = galleryTask.copyWith(
         completCount: 0,
-        status: TaskStatus.enqueued.value, // 关键修改：重置状态为enqueued
+        status: TaskStatus.enqueued.value,
+        coverImage: null,
       );
-
-      logger.d(
-          '任务状态已重置: gid=$gid, 新状态=${reTask.status}(${TaskStatus.enqueued.value})');
       dState.galleryTaskMap[gid] = reTask;
-
-      // 保存到数据库
       await isarHelper.putGalleryTaskIsolate(reTask);
       logger.d('重置后的任务已保存到数据库: gid=$gid');
 
       if (addGalleryTaskCallback != null) {
         logger.d('调用添加任务回调: gid=$gid');
-        Function.apply(addGalleryTaskCallback, [reTask]);
+        await _invoke(addGalleryTaskCallback, [reTask]);
       }
-    } else {
-      logger.e('重下任务失败: 找不到任务 gid=$gid');
+    });
+  }
+
+  /// 手动重下必须从头开始，清理最终文件和临时文件，但保留任务目录。
+  /// 自动重试不会调用此方法，因此不会影响已完成图片。
+  Future<void> _clearTaskFiles(GalleryTask task) async {
+    await _clearSafTempFiles(task.gid);
+
+    final dirPath = task.realDirPath;
+    if (dirPath == null || dirPath.isEmpty) {
+      return;
+    }
+
+    if (dirPath.isContentUri) {
+      final files = await ss.listFiles(
+        Uri.parse(dirPath),
+        columns: const [
+          ss.DocumentFileColumn.displayName,
+          ss.DocumentFileColumn.id,
+        ],
+      ).toList();
+      await Future.wait(files.map((file) => ss.delete(file.uri)));
+      return;
+    }
+
+    final directory = Directory(dirPath);
+    if (!await directory.exists()) {
+      return;
+    }
+    await for (final entity in directory.list()) {
+      await entity.delete(recursive: entity is Directory);
+    }
+  }
+
+  Future<void> _clearSafTempFiles(int gid) async {
+    final tempRoot = Global.extStoreTempPath;
+    if (tempRoot.isEmpty) {
+      return;
+    }
+
+    final tempDirectory = Directory(
+      path.join(tempRoot, 'temp_download', '$gid'),
+    );
+    if (await tempDirectory.exists()) {
+      await tempDirectory.delete(recursive: true);
     }
   }
 
   /// 更新任务进度
-  GalleryTask? galleryTaskUpdate(
+  Future<GalleryTask?> galleryTaskUpdate(
     int gid, {
     int? countComplete,
     String? coverImg,
-  }) {
-    logger.t('galleryTaskCountUpdate gid:$gid count:$countComplete');
-    dState.curComplete[gid] = countComplete ?? 0;
+    bool completeWhenReached = false,
+  }) async {
+    return _lockFor(gid).synchronized(() async {
+      logger.t('galleryTaskCountUpdate gid:$gid count:$countComplete');
+      final current = dState.galleryTaskMap[gid] ??
+          await isarHelper.findGalleryTaskByGidIsolate(gid);
+      if (current == null) {
+        return null;
+      }
 
-    if (!dState.galleryTaskMap.containsKey(gid)) {
-      return null;
-    }
+      final currentCount = current.completCount ?? 0;
+      final nextCount = math.max(currentCount, countComplete ?? currentCount);
+      final canComplete = current.status != TaskStatus.failed.value &&
+          current.status != TaskStatus.paused.value &&
+          current.status != TaskStatus.canceled.value;
+      final shouldComplete = completeWhenReached &&
+          canComplete &&
+          current.fileCount > 0 &&
+          nextCount >= current.fileCount;
+      final nextTask = current.copyWith(
+        completCount: nextCount,
+        coverImage: coverImg ?? current.coverImage,
+        status: shouldComplete ? TaskStatus.complete.value : current.status,
+      );
+      dState.curComplete[gid] = nextCount;
+      dState.galleryTaskMap[gid] = nextTask;
+      await isarHelper.putGalleryTaskIsolate(nextTask);
 
-    dState.galleryTaskMap[gid] = dState.galleryTaskMap[gid]!.copyWith(
-      completCount: countComplete,
-      coverImage: coverImg,
-    );
-
-    final task = dState.galleryTaskMap[gid];
-    if (task != null) {
-      isarHelper.putGalleryTaskIsolate(task);
-    }
-
-    return dState.galleryTaskMap[gid];
+      if (shouldComplete) {
+        _cancelTask(gid);
+        _resetDownloadStatistics(gid);
+        await storageAdapter.writeTaskInfoFile(nextTask);
+      }
+      return nextTask;
+    });
   }
 
   /// 更新任务状态
@@ -193,29 +313,192 @@ class DownloadTaskManager {
     int gid,
     TaskStatus status,
   ) async {
+    return _lockFor(gid).synchronized(() => _updateStatusLocked(gid, status));
+  }
+
+  Future<GalleryTask?> _updateStatusLocked(
+    int gid,
+    TaskStatus status,
+  ) async {
     loggerSimple.d(
         '===== DownloadTaskManager更新状态: gid=$gid, 状态=$status (${status.value})');
-    if (dState.galleryTaskMap.containsKey(gid) &&
-        dState.galleryTaskMap[gid] != null) {
-      final oldTask = dState.galleryTaskMap[gid];
-      final oldStatus = oldTask?.status;
-      loggerSimple.d('原任务状态: gid=$gid, 状态=$oldStatus');
-
-      dState.galleryTaskMap[gid] =
-          dState.galleryTaskMap[gid]!.copyWith(status: status.value);
-      loggerSimple.d('更新内存状态: gid=$gid, 新状态=${status.value}');
-
-      final task = dState.galleryTaskMap[gid];
-      if (task != null) {
-        loggerSimple.d('保存到数据库: gid=$gid');
-        await isarHelper.putGalleryTaskIsolate(task);
-        loggerSimple.d('数据库保存完成: gid=$gid');
-      }
-    } else {
+    final current = dState.galleryTaskMap[gid] ??
+        await isarHelper.findGalleryTaskByGidIsolate(gid);
+    if (current == null) {
       logger.e('找不到任务: gid=$gid');
+      return null;
     }
 
-    return dState.galleryTaskMap[gid];
+    // A stale worker is never allowed to downgrade a completed task.
+    if (current.status == TaskStatus.complete.value &&
+        status != TaskStatus.complete) {
+      return current;
+    }
+
+    final task = current.copyWith(status: status.value);
+    dState.galleryTaskMap[gid] = task;
+    loggerSimple.d('保存到数据库: gid=$gid');
+    await isarHelper.putGalleryTaskIsolate(task);
+    loggerSimple.d('数据库保存完成: gid=$gid');
+    if (status == TaskStatus.paused || status == TaskStatus.complete) {
+      _resetDownloadStatistics(gid);
+    }
+    return task;
+  }
+
+  // Repair records written by older versions before enqueueing work.
+  Future<GalleryTask> _reconcileTask(GalleryTask task) async {
+    return _lockFor(task.gid).synchronized(() async {
+      final imageTasks =
+          await isarHelper.findImageTaskAllByGidIsolate(task.gid);
+      var completeCount = 0;
+      var imageTasksChanged = false;
+
+      for (final imageTask in imageTasks) {
+        var currentImageTask = imageTask;
+        if (imageTask.status == TaskStatus.complete.value) {
+          if (await _imageFileExists(task, imageTask)) {
+            completeCount++;
+          } else {
+            currentImageTask = imageTask.copyWith(
+              status: TaskStatus.enqueued.value,
+              filePath: null,
+            );
+            await isarHelper.putImageTaskIsolate(currentImageTask);
+            imageTasksChanged = true;
+          }
+        }
+      }
+
+      final coverImage = await _resolveCoverImage(task, imageTasks);
+
+      final allFilesExist = task.fileCount > 0 &&
+          imageTasks.length >= task.fileCount &&
+          completeCount >= task.fileCount;
+      final nextStatus = allFilesExist
+          ? TaskStatus.complete.value
+          : (task.status == TaskStatus.complete.value ||
+                  task.status == TaskStatus.running.value
+              ? TaskStatus.enqueued.value
+              : task.status);
+      final changed = imageTasksChanged ||
+          task.completCount != completeCount ||
+          task.status != nextStatus ||
+          task.coverImage != coverImage;
+      if (!changed) {
+        return task;
+      }
+
+      final nextTask = task.copyWith(
+        completCount: completeCount,
+        status: nextStatus,
+        coverImage: coverImage,
+      );
+      dState.galleryTaskMap[task.gid] = nextTask;
+      await isarHelper.putGalleryTaskIsolate(nextTask);
+      if (nextStatus == TaskStatus.complete.value ||
+          task.coverImage != coverImage) {
+        await storageAdapter.writeTaskInfoFile(nextTask);
+      }
+      return nextTask;
+    });
+  }
+
+  Future<GalleryTask> reconcileGalleryTask(GalleryTask task) {
+    return _reconcileTask(task);
+  }
+
+  Future<String?> _resolveCoverImage(
+    GalleryTask task,
+    List<GalleryImageTask> imageTasks,
+  ) async {
+    GalleryImageTask? firstImageTask;
+    for (final imageTask in imageTasks) {
+      if (imageTask.ser == 1) {
+        firstImageTask = imageTask;
+        break;
+      }
+    }
+    return resolveDownloadCoverImageFileName(
+      candidates: [firstImageTask?.filePath, task.coverImage],
+      isAvailable: (fileName) => _downloadFileExists(task, fileName),
+    );
+  }
+
+  Future<bool> _imageFileExists(
+    GalleryTask task,
+    GalleryImageTask imageTask,
+  ) async {
+    final fileName = imageTask.filePath;
+    return _downloadFileExists(task, fileName);
+  }
+
+  Future<bool> _downloadFileExists(GalleryTask task, String? fileName) async {
+    final dirPath = task.realDirPath;
+    final filePath = buildDownloadFilePath(
+      directoryPath: dirPath,
+      fileName: fileName,
+    );
+    if (filePath == null) {
+      return false;
+    }
+    if (dirPath?.startsWith('content://') ?? false) {
+      return await ss.exists(Uri.parse(filePath)) ?? false;
+    }
+    final file = File(filePath);
+    if (!await file.exists()) {
+      return false;
+    }
+    return await file.length() > 0;
+  }
+
+  Future<GalleryTask> _reconcileTaskSafely(GalleryTask task) async {
+    try {
+      return await _reconcileTask(task);
+    } on Object catch (error, stack) {
+      // 一个任务损坏不能阻塞其他任务的恢复，保留数据库中的原始记录。
+      logger.e(
+        '恢复下载任务失败，保留原任务: gid=${task.gid}',
+        error: error,
+        stackTrace: stack,
+      );
+      return dState.galleryTaskMap[task.gid] ?? task;
+    }
+  }
+
+  Future<void> _reconcileAndResumeTasks({
+    required List<GalleryTask> tasks,
+    Function? addGalleryTaskCallback,
+    Function? onTaskReconciledCallback,
+  }) async {
+    for (var start = 0; start < tasks.length; start += _reconcileConcurrency) {
+      final end = math.min(start + _reconcileConcurrency, tasks.length);
+      final batch = tasks.sublist(start, end);
+      final reconciledTasks = await Future.wait<GalleryTask>(
+        batch.map(_reconcileTaskSafely),
+      );
+
+      for (var index = 0; index < reconciledTasks.length; index++) {
+        final originalTask = batch[index];
+        final task = reconciledTasks[index];
+        if (!identical(originalTask, task) &&
+            onTaskReconciledCallback != null) {
+          await _invoke(onTaskReconciledCallback, [task]);
+        }
+      }
+
+      // Start resumable tasks after their own reconciliation instead of
+      // waiting for every gallery in the database to finish.
+      for (final task in reconciledTasks) {
+        if (task.status == TaskStatus.enqueued.value ||
+            task.status == TaskStatus.running.value) {
+          logger.d('继续未完成的任务');
+          if (addGalleryTaskCallback != null) {
+            await _invoke(addGalleryTaskCallback, [task]);
+          }
+        }
+      }
+    }
   }
 
   /// 移除任务
@@ -223,16 +506,15 @@ class DownloadTaskManager {
     required int gid,
     bool shouldDeleteContent = true,
   }) async {
-    // 查找任务
-    final GalleryTask? task = dState.galleryTaskMap[gid];
+    final GalleryTask? task = dState.galleryTaskMap[gid] ??
+        await isarHelper.findGalleryTaskByGidIsolate(gid);
     if (task == null) {
       return;
     }
 
     // 取消任务
-    if (!(dState.cancelTokenMap[task.gid]?.isCancelled ?? true)) {
-      dState.cancelTokenMap[task.gid]?.cancel();
-    }
+    _cancelTask(task.gid);
+    _resetDownloadStatistics(task.gid);
 
     dState.galleryTaskMap.remove(gid);
 
@@ -242,44 +524,55 @@ class DownloadTaskManager {
     if (dirPath != null && shouldDeleteContent) {
       if (dirPath.isContentUri) {
         // SAF
-        ss.delete(Uri.parse(dirPath));
+        await ss.delete(Uri.parse(dirPath));
       } else {
         final dir = Directory(dirPath);
-        // if (await dir.exists()) {
-        //   await dir.delete(recursive: true);
-        // }
-        dir.exists().then((value) => dir.delete(recursive: true));
+        if (await dir.exists()) {
+          await dir.delete(recursive: true);
+        }
       }
     }
 
     // 删除数据库记录
-    isarHelper.removeImageTask(task.gid);
-    isarHelper.removeGalleryTask(task.gid);
+    await isarHelper.removeImageTask(task.gid);
+    await isarHelper.removeGalleryTask(task.gid);
   }
 
   // 初始化任务列表
   Future<void> initGalleryTasks(
       {Function? addGalleryTaskCallback,
-      Function? downloadTaskMigrationCallback}) async {
+      Function? downloadTaskMigrationCallback,
+      bool waitForReconciliation = true,
+      Function? onTaskReconciledCallback}) async {
     if (downloadTaskMigrationCallback != null) {
-      await Function.apply(downloadTaskMigrationCallback, []);
+      await _invoke(downloadTaskMigrationCallback);
     }
 
     final tasks = await isarHelper.findAllGalleryTasksIsolate();
 
-    // 添加到map中
+    // 先把数据库中的任务放入内存。修复文件状态和封面可能需要较长时间，
+    // 不能因为这段后台修复让下载列表在启动期间保持空白。
     for (final task in tasks) {
       dState.galleryTaskMap[task.gid] = task;
     }
 
-    // 继续未完成的任务
-    for (final task in tasks) {
-      if (task.status == TaskStatus.running.value) {
-        logger.d('继续未完成的任务');
-        if (addGalleryTaskCallback != null) {
-          Function.apply(addGalleryTaskCallback, [task]);
-        }
-      }
+    final reconciliation = _reconcileAndResumeTasks(
+      tasks: tasks,
+      addGalleryTaskCallback: addGalleryTaskCallback,
+      onTaskReconciledCallback: onTaskReconciledCallback,
+    );
+    if (waitForReconciliation) {
+      await reconciliation;
+    } else {
+      // The download page can render the database snapshot immediately while
+      // file checks and recovery continue in the background.
+      unawaited(reconciliation.catchError((Object error, StackTrace stack) {
+        logger.e(
+          '后台恢复下载任务失败',
+          error: error,
+          stackTrace: stack,
+        );
+      }));
     }
   }
 
@@ -313,10 +606,10 @@ class DownloadTaskManager {
 
     if (init) {
       if (onInitCallback != null) {
-        Function.apply(onInitCallback, []);
+        await _invoke(onInitCallback);
       }
       if (resetDownloadViewAnimationKeyCallback != null) {
-        Function.apply(resetDownloadViewAnimationKeyCallback, []);
+        await _invoke(resetDownloadViewAnimationKeyCallback);
       }
     }
   }

@@ -55,7 +55,7 @@ class IsarHelper {
 
   Future<void> addHistoryIsolate(GalleryProvider galleryProvider) async {
     // return;
-    compute(iAddHistory, galleryProvider);
+    await compute(iAddHistory, galleryProvider);
   }
 
   Future<void> removeHistory(String gidStr) async {
@@ -85,7 +85,7 @@ class IsarHelper {
   }
 
   Future<void> addHistoriesIsolate(List<GalleryProvider> allHistory) async {
-    compute(iAddHistories, allHistory);
+    await compute(iAddHistories, allHistory);
   }
 
   Future<void> putAllTagTranslate(
@@ -100,7 +100,7 @@ class IsarHelper {
   Future<void> putAllTagTranslateIsolate(
     List<TagTranslat> tagTranslates,
   ) async {
-    compute(iPutAllTagTranslate, tagTranslates);
+    await compute(iPutAllTagTranslate, tagTranslates);
   }
 
   Future<List<String?>> findAllTagNamespace() async {
@@ -213,7 +213,7 @@ class IsarHelper {
     GalleryTask galleryTask, {
     bool replaceOnConflict = true,
   }) async {
-    compute(iPutGalleryTaskIsolate, (galleryTask, replaceOnConflict));
+    await compute(iPutGalleryTaskIsolate, (galleryTask, replaceOnConflict));
   }
 
   Future<void> updateGalleryTask(
@@ -264,7 +264,7 @@ class IsarHelper {
     int gid,
     GalleryTask Function(GalleryTask) func,
   ) async {
-    compute(iUpdateGalleryTaskIsolate, (gid, func));
+    await compute(iUpdateGalleryTaskIsolate, (gid, func));
   }
 
   Future<void> putAllGalleryTasks(List<GalleryTask> galleryTasks) async {
@@ -277,7 +277,7 @@ class IsarHelper {
     List<GalleryTask> galleryTasks, {
     bool replaceOnConflict = true,
   }) async {
-    compute(iPutAllGalleryTasks, galleryTasks);
+    await compute(iPutAllGalleryTasks, galleryTasks);
   }
 
   Future<void> removeGalleryTask(int gid) async {
@@ -326,7 +326,7 @@ class IsarHelper {
   }
 
   Future<void> putImageTaskIsolate(GalleryImageTask imageTask) async {
-    compute(iPutImageTask, imageTask);
+    await compute(iPutImageTask, imageTask);
   }
 
   Future<void> putAllImageTask(List<GalleryImageTask> imageTasks) async {
@@ -336,7 +336,7 @@ class IsarHelper {
   }
 
   Future<void> putAllImageTaskIsolate(List<GalleryImageTask> imageTasks) async {
-    compute(iPutAllImageTask, imageTasks);
+    await compute(iPutAllImageTask, imageTasks);
   }
 
   Future<void> removeImageTask(int gid) async {
@@ -389,7 +389,7 @@ class IsarHelper {
     int ser,
     int status,
   ) async {
-    compute(iUpdateImageTaskStatus, (gid, ser, status));
+    await compute(iUpdateImageTaskStatus, (gid, ser, status));
   }
 
   Future<List<GalleryImageTask>> finaAllImageTaskByGidAndStatus(

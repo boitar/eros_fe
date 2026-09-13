@@ -1,3 +1,4 @@
+import 'package:eros_fe/pages/item/favorite_icon.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -167,6 +168,7 @@ class GalleryItemWidget extends StatelessWidget {
                                   '${itemController.galleryProvider.gid} favCat ${itemController.favCat}');
                               return _FavcatIcon(
                                 favCat: itemController.favCat,
+                                isFavorite: itemController.hasFavoriteColor,
                               );
                             }),
                             // 图片数量
@@ -437,19 +439,21 @@ class _Filecont extends StatelessWidget {
 }
 
 class _FavcatIcon extends StatelessWidget {
-  const _FavcatIcon({Key? key, required this.favCat}) : super(key: key);
+  const _FavcatIcon({
+    Key? key,
+    required this.favCat,
+    required this.isFavorite,
+  }) : super(key: key);
   final String favCat;
+  final bool isFavorite;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: favCat.isNotEmpty
+      child: isFavorite
           ? Container(
               padding: const EdgeInsets.only(bottom: 2, right: 2, left: 2),
-              child: FaIcon(FontAwesomeIcons.solidHeart,
-                size: 12,
-                color: ThemeColors.favColor[favCat],
-              ),
+              child: FavoriteIcon(category: favCat, size: 12),
             )
           : Container(),
     );

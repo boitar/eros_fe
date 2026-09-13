@@ -1,7 +1,7 @@
+import 'package:eros_fe/pages/item/favorite_icon.dart';
 import 'package:blur/blur.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
@@ -164,11 +164,8 @@ class GalleryItemGrid extends StatelessWidget {
 
   Widget _buildFavCatIcon({bool blur = false}) {
     return Obx(() {
-      Widget icon = FaIcon(FontAwesomeIcons.solidHeart,
-        size: 12,
-        color: ThemeColors
-            .favColor[galleryProviderController.galleryProvider.favcat],
-      );
+      Widget icon =
+          FavoriteIcon(category: galleryProviderController.favCat, size: 12);
 
       if (blur) {
         icon = icon.frosted(
@@ -191,7 +188,9 @@ class GalleryItemGrid extends StatelessWidget {
 
       return Container(
         padding: const EdgeInsets.only(left: 2),
-        child: galleryProviderController.isFav ? icon : const SizedBox(),
+        child: galleryProviderController.hasFavoriteColor
+            ? icon
+            : const SizedBox(),
       );
     });
   }

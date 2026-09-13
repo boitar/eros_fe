@@ -57,6 +57,7 @@ class FavoriteSelectorController extends GetxController
 
   void increase(String favId) {
     final _index = _favcatList.indexWhere((element) => element.favId == favId);
+    if (_index < 0) return;
     final int _num = (_favcatList[_index].totNum ?? 0) + 1;
     _favcatList[_index] = _favcatList[_index].copyWith(totNum: _num.oN);
     logger.t(' $_num');
@@ -65,7 +66,8 @@ class FavoriteSelectorController extends GetxController
 
   void decrease(String favId) {
     final _index = _favcatList.indexWhere((element) => element.favId == favId);
-    final int _num = (_favcatList[_index].totNum ?? 1) - 1;
+    if (_index < 0) return;
+    final int _num = ((_favcatList[_index].totNum ?? 1) - 1).clamp(0, 1 << 31);
     _favcatList[_index] = _favcatList[_index].copyWith(totNum: _num.oN);
     change(_favcatList, status: RxStatus.success());
   }

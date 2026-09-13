@@ -340,6 +340,10 @@ class ThemeColors {
     'l': Color.fromARGB(255, 169, 158, 104),
   };
 
+  /// 收藏颜色解析失败时仍显示收藏状态。
+  static Color favColorFor(String? favcat) =>
+      favColor[favcat] ?? CupertinoColors.systemGrey;
+
   static const CupertinoDynamicColor navigationBarBackground =
       CupertinoDynamicColor.withBrightness(
     debugLabel: 'navigationBarBackground',

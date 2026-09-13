@@ -10,6 +10,31 @@ import 'package:intl/intl.dart';
 import '../../const/const.dart';
 import '../../utils/logger.dart';
 
+/// null means unrecognized markup; an empty category means explicitly unfavorited.
+(String?, String?) parseDetailFavorite(Document document) {
+  final link = document.querySelector('#favoritelink');
+  final favorite = document.querySelector('#fav');
+  if (link == null || favorite == null) return (null, null);
+  final style = favorite.querySelector('div')?.attributes['style'] ?? '';
+  final match = RegExp(
+    r'background-position\s*:\s*0(?:px)?\s+-(\d+)px',
+    caseSensitive: false,
+  ).firstMatch(style);
+  if (match != null) {
+    final offset = int.tryParse(match.group(1)!);
+    if (offset != null && offset >= 2 && (offset - 2) % 19 == 0) {
+      final category = (offset - 2) ~/ 19;
+      if (category <= 9) return ('$category', link.text.trim());
+    }
+    return (null, null);
+  }
+  // Do not interpret an unknown icon or an absent node as cancellation.
+  if (favorite.children.isEmpty && link.text.trim() == 'Add to Favorites') {
+    return ('', '');
+  }
+  return (null, null);
+}
+
 String parseErrGallery(String response) {
   final Document document = parse(response);
   const String msgSelect = 'div > p';
@@ -207,24 +232,9 @@ Future<GalleryProvider> parseGalleryDetail(String response) async {
       RegExp(r'url\((.+)\)').firstMatch(_imageElemStyle);
   final String _imageUrl = _match?.group(1) ?? '';
 
-  // 收藏夹标题
-  String _favTitle = '';
-  final Element? fav = document.querySelector('#favoritelink');
-  if (fav?.nodes.length == 1) {
-    _favTitle = fav?.text.trim() ?? '';
-  }
-
-  // 收藏夹序号
-  String _favCat = '';
-  final Element? _favCatElm = document.querySelector('#fav');
-  if (_favCatElm?.nodes.isNotEmpty ?? false) {
-    final Element? _div = _favCatElm?.querySelector('div');
-    final String _catStyle = _div?.attributes['style'] ?? '';
-    final String _catPosition = RegExp(r'background-position:0px -(\d+)px;')
-            .firstMatch(_catStyle)?[1] ??
-        '';
-    _favCat = '${(int.parse(_catPosition) - 2) ~/ 19}';
-  }
+  final favorite = parseDetailFavorite(document);
+  final String? _favTitle = favorite.$2;
+  final String? _favCat = favorite.$1;
 
   // apiUid
   final String _apiUid =

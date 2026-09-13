@@ -62,13 +62,34 @@ class GalleryTask {
     if (dirPath == null) {
       return dirPath;
     }
-    if (GetPlatform.isIOS) {
-      final List<String> pathList = path.split(dirPath!).reversed.toList();
-      // logger.t('$pathList');
-      return path.join(Global.appDocPath, pathList[1], pathList[0]);
-    } else {
+    if (!GetPlatform.isIOS || dirPath!.startsWith('content://')) {
       return dirPath;
     }
+
+    final storedPath = path.normalize(dirPath!);
+    final appDocPath = path.normalize(Global.appDocPath);
+
+    // Restored .info files contain an absolute path. Keep it when it already
+    // belongs to this installation; only rewrite paths from an old container.
+    if (path.isAbsolute(storedPath) &&
+        appDocPath.isNotEmpty &&
+        (storedPath == appDocPath ||
+            storedPath.startsWith('$appDocPath${path.separator}'))) {
+      return storedPath;
+    }
+
+    final pathList = path.split(storedPath);
+    if (pathList.length < 2) {
+      return path.join(Global.appDocPath, storedPath);
+    }
+
+    // iOS stores the default download path relative to Documents. Rebuild it
+    // from the final two components so paths remain valid after reinstall.
+    return path.join(
+      Global.appDocPath,
+      pathList[pathList.length - 2],
+      pathList.last,
+    );
   }
 
   @override

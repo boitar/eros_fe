@@ -16,6 +16,10 @@ class DioHttpClient {
 
   late final AppDio _dio;
 
+  /// Exposes the configured Dio instance to streaming clients that need
+  /// request-level control, such as Range downloads.
+  Dio get dio => _dio;
+
   Future<DioHttpResponse> get(String uri,
       {Map<String, dynamic>? queryParameters,
       Options? options,

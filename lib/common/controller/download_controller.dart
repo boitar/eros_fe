@@ -27,6 +27,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:synchronized/synchronized.dart';
 
 import 'cache_controller.dart';
 import 'download_state.dart'
@@ -54,6 +55,11 @@ typedef TaskStatus = dtm.TaskStatus;
 class DownloadController extends GetxController {
   final DownloadState dState = DownloadState();
 
+  // 首屏初始化只等待数据库快照；文件完整性修复在后台执行。
+  Future<void>? _downloadInitialization;
+  Future<void> get downloadInitialization =>
+      _downloadInitialization ?? Future<void>.value();
+
   final EhSettingService ehSettingService = Get.find();
   final CacheController cacheController = Get.find();
 
@@ -64,6 +70,11 @@ class DownloadController extends GetxController {
   late final ImageDownloadProcessor imageProcessor;
   late final StorageAdapter storageAdapter;
   late final GallerySlotManager gallerySlotManager;
+  final Map<int, Lock> _completionLocks = <int, Lock>{};
+  final Lock _concurrencyResetLock = Lock();
+
+  Lock _completionLockFor(int gid) =>
+      _completionLocks.putIfAbsent(gid, () => Lock());
 
   @override
   void onInit() {
@@ -87,7 +98,7 @@ class DownloadController extends GetxController {
       onUpdateStatus: galleryTaskUpdateStatus,
     );
 
-    asyncInit();
+    _downloadInitialization = asyncInit();
   }
 
   @override
@@ -98,11 +109,14 @@ class DownloadController extends GetxController {
 
   Future<void> asyncInit() async {
     await pathManager.updateCustomDownloadPath();
-    pathManager.allowMediaScan(ehSettingService.allowMediaScan);
+    await pathManager.allowMediaScan(ehSettingService.allowMediaScan);
     await taskManager.initGalleryTasks(
       addGalleryTaskCallback: _addGalleryTask,
       downloadTaskMigrationCallback: downloadTaskMigration,
+      waitForReconciliation: false,
+      onTaskReconciledCallback: _onTaskReconciled,
     );
+    _refreshDownloadGalleryList();
   }
 
   Future<void> updateCustomDownloadPath() async {
@@ -181,7 +195,8 @@ class DownloadController extends GetxController {
     );
 
     logger.d('add NewTask ${galleryTask.toString()}');
-    isarHelper.putGalleryTaskIsolate(galleryTask, replaceOnConflict: false);
+    await isarHelper.putGalleryTaskIsolate(galleryTask,
+        replaceOnConflict: false);
     dState.galleryTaskMap[galleryTask.gid] = galleryTask;
     downloadViewAnimateListAdd();
     showToast('${galleryTask.gid} Download task start');
@@ -204,6 +219,11 @@ class DownloadController extends GetxController {
 
   /// 更新任务为已完成
   Future<GalleryTask?> galleryTaskComplete(int gid) async {
+    return _completionLockFor(gid)
+        .synchronized(() => _completeGalleryTask(gid));
+  }
+
+  Future<GalleryTask?> _completeGalleryTask(int gid) async {
     logger.d('画廊任务完成: gid=$gid');
     final task = await taskManager.galleryTaskComplete(
       gid,
@@ -211,13 +231,15 @@ class DownloadController extends GetxController {
     );
     _updateDownloadView(['DownloadGalleryItem_$gid']);
 
-    // 清理该画廊的所有重试计数
-    imageProcessor.clearGalleryReDownloadCounts(gid);
+    if (task?.status == TaskStatus.complete.value) {
+      // 清理该画廊的所有重试计数
+      imageProcessor.clearGalleryReDownloadCounts(gid);
 
-    // 通知槽位管理器状态变化
-    logger.d('通知槽位管理器画廊任务完成: gid=$gid');
-    await gallerySlotManager.onGalleryStatusChanged(gid, TaskStatus.complete);
-    logger.d('槽位管理器处理完成: gid=$gid');
+      // 通知槽位管理器状态变化
+      logger.d('通知槽位管理器画廊任务完成: gid=$gid');
+      await gallerySlotManager.onGalleryStatusChanged(gid, TaskStatus.complete);
+      logger.d('槽位管理器处理完成: gid=$gid');
+    }
 
     return task;
   }
@@ -234,74 +256,82 @@ class DownloadController extends GetxController {
       _updateDownloadView(['DownloadGalleryItem_$gid']);
     }
 
-    // 通知槽位管理器状态变化
-    logger.d('通知槽位管理器画廊任务暂停: gid=$gid');
-    await gallerySlotManager.onGalleryStatusChanged(gid, TaskStatus.paused);
-    logger.d('槽位管理器处理完成: gid=$gid');
+    if (silent || task?.status == TaskStatus.paused.value) {
+      // 通知槽位管理器状态变化
+      logger.d('通知槽位管理器画廊任务暂停: gid=$gid');
+      await gallerySlotManager.onGalleryStatusChanged(gid, TaskStatus.paused);
+      logger.d('槽位管理器处理完成: gid=$gid');
+    }
 
     return task;
   }
 
   /// 恢复任务
   Future<void> galleryTaskResume(int gid) async {
-    logger.d('画廊任务恢复: gid=$gid');
+    await _completionLockFor(gid).synchronized(() async {
+      logger.d('画廊任务恢复: gid=$gid');
 
-    // 先标记为enqueued，确保槽位管理器能正确处理此任务
-    await galleryTaskUpdateStatus(gid, TaskStatus.enqueued);
+      // 先标记为enqueued，确保槽位管理器能正确处理此任务
+      await galleryTaskUpdateStatus(gid, TaskStatus.enqueued);
 
-    // 恢复任务，addGalleryTask会将任务添加到槽位管理器
-    await taskManager.galleryTaskResume(
-      gid,
-      addGalleryTaskCallback: _addGalleryTask,
-    );
+      // 恢复任务，addGalleryTask会将任务添加到槽位管理器
+      await taskManager.galleryTaskResume(
+        gid,
+        addGalleryTaskCallback: _addGalleryTask,
+      );
 
-    // 注意：现在不再直接通知槽位管理器状态为running
-    // 由槽位管理器自己管理状态变更，在合适的时候启动任务
-    logger.d('恢复任务完成: gid=$gid');
+      // 注意：现在不再直接通知槽位管理器状态为running
+      // 由槽位管理器自己管理状态变更，在合适的时候启动任务
+      logger.d('恢复任务完成: gid=$gid');
+    });
   }
 
   /// 重下任务
   Future<void> galleryTaskRestart(int gid) async {
-    loggerSimple.d('重启任务开始: gid=$gid');
+    await _completionLockFor(gid).synchronized(() async {
+      loggerSimple.d('重启任务开始: gid=$gid');
 
-    // 先尝试暂停正在进行的任务（如果有）
-    // 这将取消现有下载和计时器
-    if (dState.galleryTaskMap.containsKey(gid) &&
-        dState.galleryTaskMap[gid]?.status == TaskStatus.running.value) {
-      loggerSimple.d('先暂停当前运行中的任务: gid=$gid');
-      await galleryTaskPaused(gid, silent: true);
-    }
+      // 先尝试暂停正在进行的任务（如果有）
+      // 这将取消现有下载和计时器
+      if (dState.galleryTaskMap.containsKey(gid) &&
+          dState.galleryTaskMap[gid]?.status == TaskStatus.running.value) {
+        loggerSimple.d('先暂停当前运行中的任务: gid=$gid');
+        await galleryTaskPaused(gid, silent: true);
+      }
 
-    // 取消特定任务的所有网络请求
-    if (dState.cancelTokenMap.containsKey(gid) &&
-        !(dState.cancelTokenMap[gid]?.isCancelled ?? true)) {
-      loggerSimple.d('取消现有下载请求: gid=$gid');
-      dState.cancelTokenMap[gid]?.cancel();
-    }
+      // 取消特定任务的所有网络请求
+      if (dState.cancelTokenMap.containsKey(gid) &&
+          !(dState.cancelTokenMap[gid]?.isCancelled ?? true)) {
+        loggerSimple.d('取消现有下载请求: gid=$gid');
+        dState.cancelTokenMap[gid]?.cancel();
+      }
 
-    // 取消该任务的计时器
-    _cancelDownloadStateChkTimer(gid);
+      // 取消该任务的计时器
+      _cancelDownloadStateChkTimer(gid);
 
-    // 调用taskManager执行任务重启
-    loggerSimple.d('执行任务重启: gid=$gid');
-    await taskManager.galleryTaskRestart(
-      gid,
-      addGalleryTaskCallback: _addGalleryTask,
-    );
+      // 调用taskManager执行任务重启
+      loggerSimple.d('执行任务重启: gid=$gid');
+      await taskManager.galleryTaskRestart(
+        gid,
+        addGalleryTaskCallback: _addGalleryTask,
+      );
 
-    loggerSimple.d('重启任务完成: gid=$gid');
+      loggerSimple.d('重启任务完成: gid=$gid');
+    });
   }
 
   /// 更新任务进度
-  GalleryTask? galleryTaskUpdate(
+  Future<GalleryTask?> galleryTaskUpdate(
     int gid, {
     int? countComplete,
     String? coverImg,
+    bool completeWhenReached = false,
   }) {
     return taskManager.galleryTaskUpdate(
       gid,
       countComplete: countComplete,
       coverImg: coverImg,
+      completeWhenReached: completeWhenReached,
     );
   }
 
@@ -336,87 +366,93 @@ class DownloadController extends GetxController {
     required int gid,
     bool shouldDeleteContent = true,
   }) async {
-    // 清理该画廊的所有重试计数
-    imageProcessor.clearGalleryReDownloadCounts(gid);
+    await _completionLockFor(gid).synchronized(() async {
+      // 清理该画廊的所有重试计数
+      imageProcessor.clearGalleryReDownloadCounts(gid);
 
-    await taskManager.removeDownloadGalleryTask(
-      gid: gid,
-      shouldDeleteContent: shouldDeleteContent,
-    );
+      await taskManager.removeDownloadGalleryTask(
+        gid: gid,
+        shouldDeleteContent: shouldDeleteContent,
+      );
+    });
   }
 
-  void resetConcurrency() {
-    loggerSimple.d('重置并发设置开始');
+  Future<void> resetConcurrency() {
+    return _concurrencyResetLock.synchronized(() async {
+      loggerSimple.d('重置并发设置开始');
 
-    // 记录当前正在运行的任务GID列表，用于后续恢复
-    final List<int> runningTaskGids = dState.galleryTasks
-        .where((task) => task.status == TaskStatus.running.value)
-        .map((task) => task.gid)
-        .toList();
-    loggerSimple.d('当前运行中的任务: $runningTaskGids');
+      // 记录当前正在运行的任务GID列表，用于后续恢复
+      final List<int> runningTaskGids = dState.galleryTasks
+          .where((task) => task.status == TaskStatus.running.value)
+          .map((task) => task.gid)
+          .toList();
+      loggerSimple.d('当前运行中的任务: $runningTaskGids');
 
-    // 重置UI状态，将所有运行中的任务临时标记为入队状态
-    for (final gid in runningTaskGids) {
-      if (dState.galleryTaskMap.containsKey(gid)) {
-        GalleryTask? oldTask = dState.galleryTaskMap[gid];
-        dState.galleryTaskMap[gid] =
-            oldTask!.copyWith(status: TaskStatus.enqueued.value);
-        _updateDownloadView(['DownloadGalleryItem_$gid']);
+      // 重置UI状态，将所有运行中的任务临时标记为入队状态
+      for (final gid in runningTaskGids) {
+        if (dState.galleryTaskMap.containsKey(gid)) {
+          GalleryTask? oldTask = dState.galleryTaskMap[gid];
+          dState.galleryTaskMap[gid] =
+              oldTask!.copyWith(status: TaskStatus.enqueued.value);
+          _updateDownloadView(['DownloadGalleryItem_$gid']);
+        }
       }
-    }
 
-    // 取消所有网络请求
-    for (final ct in dState.cancelTokenMap.values) {
-      if (!ct.isCancelled) {
-        ct.cancel();
+      // 取消所有网络请求
+      for (final ct in dState.cancelTokenMap.values) {
+        if (!ct.isCancelled) {
+          ct.cancel();
+        }
       }
-    }
-    dState.cancelTokenMap.clear();
+      dState.cancelTokenMap.clear();
 
-    // 取消所有计时器
-    _cancelDownloadStateChkTimer();
+      // 取消所有计时器
+      _cancelDownloadStateChkTimer();
 
-    // 关闭旧的executor以释放资源
-    loggerSimple.d('关闭旧的executor');
-    try {
-      dState.executor.close();
-      loggerSimple.d('旧的executor已关闭');
-    } catch (e) {
-      loggerSimple.e('关闭executor出错: $e');
-    }
-
-    // 创建新的executor
-    loggerSimple.d('创建新的executor，并发数: ${ehSettingService.multiDownload}');
-    dState.executor = Executor(concurrency: ehSettingService.multiDownload);
-
-    // 设置槽位管理器的并发数
-    loggerSimple.d('设置槽位管理器的并发数: ${ehSettingService.concurrentGalleries}');
-    gallerySlotManager
-        .setMaxConcurrentGalleries(ehSettingService.concurrentGalleries);
-
-    // 清空当前槽位状态和队列
-    gallerySlotManager.resetState();
-
-    // 清除下载缓存信息，确保重新开始不受旧状态影响
-    dState.curComplete.clear();
-    dState.lastCounts.clear();
-    dState.noSpeed.clear();
-    dState.downloadSpeeds.clear();
-    dState.preComplete.clear();
-    dState.reDownloadCounts.clear(); // 清理所有重试计数
-
-    // 保存数据库中的状态更改
-    for (final gid in runningTaskGids) {
-      if (dState.galleryTaskMap.containsKey(gid)) {
-        isarHelper.putGalleryTaskIsolate(dState.galleryTaskMap[gid]!);
+      // 等待旧 executor 中的任务结束，再创建新的 executor，避免两套
+      // 下载队列同时运行。
+      loggerSimple.d('关闭旧的executor');
+      final oldExecutor = dState.executor;
+      try {
+        await oldExecutor.close();
+        loggerSimple.d('旧的executor已关闭');
+      } catch (e) {
+        loggerSimple.e('关闭executor出错: $e');
       }
-    }
 
-    // 重新初始化所有任务
-    loggerSimple.d('重新初始化所有任务');
-    initGalleryTasks();
+      // 创建新的executor
+      loggerSimple.d('创建新的executor，并发数: ${ehSettingService.multiDownload}');
+      dState.executor = Executor(concurrency: ehSettingService.multiDownload);
 
-    loggerSimple.d('重置并发设置完成');
+      // 设置槽位管理器的并发数
+      loggerSimple.d('设置槽位管理器的并发数: ${ehSettingService.concurrentGalleries}');
+      await gallerySlotManager
+          .setMaxConcurrentGalleries(ehSettingService.concurrentGalleries);
+
+      // 清空当前槽位状态和队列
+      gallerySlotManager.resetState();
+
+      // 清除下载缓存信息，确保重新开始不受旧状态影响
+      dState.curComplete.clear();
+      dState.lastCounts.clear();
+      dState.noSpeed.clear();
+      dState.downloadSpeeds.clear();
+      dState.preComplete.clear();
+      dState.reDownloadCounts.clear(); // 清理所有重试计数
+
+      // 保存数据库中的状态更改，并等待写入完成后再恢复任务。
+      for (final gid in runningTaskGids) {
+        if (dState.galleryTaskMap.containsKey(gid)) {
+          await isarHelper.putGalleryTaskIsolate(dState.galleryTaskMap[gid]!);
+        }
+      }
+
+      // 重新初始化所有任务
+      loggerSimple.d('重新初始化所有任务');
+      await initGalleryTasks();
+
+      loggerSimple.d('重置并发设置完成');
+    });
   }
 
   void _addAllImages(int gid, List<GalleryImage> galleryImages) {
@@ -465,15 +501,20 @@ class DownloadController extends GetxController {
     loggerSimple.d(
         '准备添加任务到队列: gid=${galleryTask.gid}, fileCount=${galleryTask.fileCount}, groupCount=$groupCount}');
     dState.queueTask.add(
-      ({name}) {
+      ({name}) async {
         logger.d('队列执行任务: $name, gid=${galleryTask.gid}');
-        _startImageTask(
-          galleryTask: galleryTask,
-          groupCount: groupCount,
-          images: images,
-        );
+        try {
+          await _startImageTask(
+            galleryTask: galleryTask,
+            groupCount: groupCount,
+            images: images,
+          );
+        } on Object catch (error, stack) {
+          await _markImageTaskError(galleryTask.gid, error, stack);
+        }
         logger.d('_startImageTask执行完成: gid=${galleryTask.gid}');
       },
+      taskCancelToken: dState.taskCancelTokens[galleryTask.gid],
       taskName: '${galleryTask.gid}',
     );
     logger.d('任务已添加到队列: gid=${galleryTask.gid}');
@@ -519,7 +560,7 @@ class DownloadController extends GetxController {
       onTimerCallback: (int gid, Timer timer) {
         final task = dState.galleryTaskMap[gid];
         if (task != null && task.fileCount == task.completCount) {
-          galleryTaskComplete(gid);
+          unawaited(galleryTaskComplete(gid));
           return;
         }
 
@@ -561,6 +602,7 @@ class DownloadController extends GetxController {
     await taskManager.initGalleryTasks(
       addGalleryTaskCallback: _addGalleryTask,
       downloadTaskMigrationCallback: downloadTaskMigration,
+      onTaskReconciledCallback: _onTaskReconciled,
     );
 
     // 额外处理：找出所有应该继续的任务（已入队或运行中）
@@ -593,7 +635,7 @@ class DownloadController extends GetxController {
     if (!isMigrationed) {
       logger.d('start download task Migration');
       await restoreGalleryTasks();
-      hiveHelper.setDownloadTaskMigration(true);
+      await hiveHelper.setDownloadTaskMigration(true);
     }
   }
 
@@ -606,6 +648,7 @@ class DownloadController extends GetxController {
       onInitCallback: onInit,
       resetDownloadViewAnimationKeyCallback: resetDownloadViewAnimationKey,
     );
+    _refreshDownloadGalleryList();
   }
 
   Future<void> restoreGalleryTasksWithSAF(String currentDownloadPath) async {
@@ -630,12 +673,22 @@ class DownloadController extends GetxController {
   Future<void> rebuildGalleryTasks() async {
     final tasks = await isarHelper.findAllGalleryTasksIsolate();
 
-    for (final task in tasks) {
-      if (task.coverImage == null) {
-        await isarHelper.updateGalleryTaskCover(task.gid);
-      }
-      storageAdapter.writeTaskInfoFile(task);
+    for (final originalTask in tasks) {
+      final task = await taskManager.reconcileGalleryTask(originalTask);
+      dState.galleryTaskMap[task.gid] = task;
+      await storageAdapter.writeTaskInfoFile(task);
     }
+    _refreshDownloadGalleryList();
+  }
+
+  void _refreshDownloadGalleryList() {
+    if (Get.isRegistered<DownloadViewController>()) {
+      Get.find<DownloadViewController>().refreshGalleryList();
+    }
+  }
+
+  void _onTaskReconciled(GalleryTask task) {
+    _updateDownloadView(['DownloadGalleryItem_${task.gid}']);
   }
 
   void _updateShowKey(
@@ -668,15 +721,6 @@ class DownloadController extends GetxController {
     logger.d(
         '开始下载任务: gid=${galleryTask.gid}, 标题=${galleryTask.title}, 状态=${galleryTask.status}');
 
-    // 如果完成数等于文件数 那么更新状态为完成
-    if (galleryTask.completCount == galleryTask.fileCount) {
-      logger.d(
-          '任务已完成: gid=${galleryTask.gid}, 完成数=${galleryTask.completCount}/${galleryTask.fileCount}');
-      await galleryTaskComplete(galleryTask.gid);
-      _updateDownloadView(['DownloadGalleryItem_${galleryTask.gid}']);
-      return;
-    }
-
     // 初始化下载计时控制
     // logger.d('初始化下载计时器: gid=${galleryTask.gid}');
     _initDownloadStateChkTimer(galleryTask.gid);
@@ -691,8 +735,23 @@ class DownloadController extends GetxController {
     logger.d(
         '已完成图片数: gid=${galleryTask.gid}, 完成数=$completeCount/${imageTasksOri.length}');
 
-    await isarHelper.putGalleryTaskIsolate(
-        galleryTask.copyWith(completCount: completeCount));
+    final progressTask = await galleryTaskUpdate(
+      galleryTask.gid,
+      countComplete: completeCount,
+    );
+    if (progressTask == null) {
+      return;
+    }
+
+    if (completeCount >= galleryTask.fileCount &&
+        imageTasksOri.length >= galleryTask.fileCount &&
+        galleryTask.fileCount > 0) {
+      logger.d(
+          '任务已完成: gid=${galleryTask.gid}, 完成数=$completeCount/${galleryTask.fileCount}');
+      await galleryTaskComplete(galleryTask.gid);
+      _updateDownloadView(['DownloadGalleryItem_${galleryTask.gid}']);
+      return;
+    }
 
     // 初始化下载Map
     final initCount = _initDownloadMapByGid(galleryTask.gid, images: images);
@@ -702,7 +761,7 @@ class DownloadController extends GetxController {
     logger.d('更新图片任务到数据库: gid=${galleryTask.gid}, 更新数量=$putCount');
 
     logger.d('更新任务状态为running: gid=${galleryTask.gid}');
-    galleryTaskUpdateStatus(galleryTask.gid, TaskStatus.running);
+    await galleryTaskUpdateStatus(galleryTask.gid, TaskStatus.running);
 
     _clearErrInfo(galleryTask.gid, updateView: false);
 
@@ -712,6 +771,11 @@ class DownloadController extends GetxController {
     final realDirPath = galleryTask.realDirPath;
     if (realDirPath == null) {
       logger.e('下载路径为空: gid=${galleryTask.gid}');
+      await _markImageTaskError(
+        galleryTask.gid,
+        StateError('Download path is empty'),
+        StackTrace.current,
+      );
       return;
     }
 
@@ -761,7 +825,7 @@ class DownloadController extends GetxController {
             '获取到showKey: gid=${galleryTask.gid}, showKey=${dState.showKeyMap[galleryTask.gid]}');
       }
 
-      dState.executor.scheduleTask(() async {
+      final imageFuture = dState.executor.scheduleTask<void>(() async {
         logger.d('开始处理图片任务: gid=${galleryTask.gid}, ser=$itemSer');
         final GalleryImage? preImage =
             await imageProcessor.checkAndGetImageList(
@@ -780,68 +844,138 @@ class DownloadController extends GetxController {
               '获取到图片信息: gid=${galleryTask.gid}, ser=$itemSer, imageUrl=${preImage.imageUrl}');
           final int maxSer = galleryTask.fileCount + 1;
 
-          try {
-            logger.t('开始下载图片: gid=${galleryTask.gid}, ser=$itemSer');
-            await imageProcessor.downloadImageFlow(
-              preImage,
-              oriImageTask,
+          logger.t('开始下载图片: gid=${galleryTask.gid}, ser=$itemSer');
+          await imageProcessor.downloadImageFlow(
+            preImage,
+            oriImageTask,
+            galleryTask.gid,
+            downloadParentPath,
+            maxSer,
+            showKey: dState.showKeyMap[galleryTask.gid],
+            downloadOrigImage: galleryTask.downloadOrigImage ?? false,
+            cancelToken: cancelToken,
+            reDownload: itemSer > 1 && itemSer < maxCompleteSer + 2,
+            onDownloadCompleteWithFileName: (String fileName) =>
+                _onDownloadComplete(
+              fileName,
               galleryTask.gid,
-              downloadParentPath,
-              maxSer,
-              showKey: dState.showKeyMap[galleryTask.gid],
-              downloadOrigImage: galleryTask.downloadOrigImage ?? false,
-              cancelToken: cancelToken,
-              reDownload: itemSer > 1 && itemSer < maxCompleteSer + 2,
-              onDownloadCompleteWithFileName: (String fileName) =>
-                  _onDownloadComplete(
-                fileName,
-                galleryTask.gid,
-                itemSer,
-              ),
-              putImageTaskCallback: _putImageTask,
-            );
-            logger.t('下载图片完成: gid=${galleryTask.gid}, ser=$itemSer');
-          } on DioException catch (e) {
-            // 忽略 [DioErrorType.cancel]
-            if (!CancelToken.isCancel(e)) {
-              logger.e(
-                  '下载图片Dio错误: gid=${galleryTask.gid}, ser=$itemSer, error=$e');
-              rethrow;
-            }
-            logger.t('下载图片取消: gid=${galleryTask.gid}, ser=$itemSer');
-          } on EhError catch (e) {
-            logger
-                .e('下载图片EH错误: gid=${galleryTask.gid}, ser=$itemSer, error=$e');
-            if (e.type == EhErrorType.image509) {
-              show509Toast();
-              _galleryTaskPausedAll();
-              dState.executor.close();
-              resetConcurrency();
-              _updateErrInfo(galleryTask.gid, '509');
-            }
-            rethrow;
-          } on HttpException catch (e) {
-            logger.e(
-                '下载图片HTTP错误: gid=${galleryTask.gid}, ser=$itemSer, error=$e');
-            if (e is BadRequestException && e.code == 429) {
-              show429Toast();
-              _galleryTaskPausedAll();
-              dState.executor.close();
-              resetConcurrency();
-              _updateErrInfo(galleryTask.gid, '429');
-            }
-            rethrow;
-          } catch (e) {
-            logger
-                .e('下载图片未知错误: gid=${galleryTask.gid}, ser=$itemSer, error=$e');
-            rethrow;
-          }
+              itemSer,
+            ),
+            putImageTaskCallback: _putImageTask,
+          );
+          logger.t('下载图片完成: gid=${galleryTask.gid}, ser=$itemSer');
         } else {
-          logger.e('获取图片信息失败: gid=${galleryTask.gid}, ser=$itemSer');
+          throw StateError(
+              'Unable to obtain image information for $galleryTask.gid.$itemSer');
         }
       });
+      unawaited(imageFuture.catchError((Object error, StackTrace stack) async {
+        await _handleImageTaskError(
+          galleryTask.gid,
+          itemSer,
+          error,
+          stack,
+          taskCancelToken: cancelToken,
+        );
+      }));
     }
     logger.d('所有图片任务已加入队列: gid=${galleryTask.gid}');
+  }
+
+  Future<void> _markImageTaskError(
+    int gid,
+    Object error,
+    StackTrace stack,
+  ) async {
+    await _handleImageTaskError(gid, 0, error, stack);
+  }
+
+  Future<void> _handleImageTaskError(
+    int gid,
+    int itemSer,
+    Object error,
+    StackTrace stack, {
+    CancelToken? taskCancelToken,
+  }) async {
+    await _completionLockFor(gid).synchronized(() async {
+      await _handleImageTaskErrorLocked(
+        gid,
+        itemSer,
+        error,
+        stack,
+        taskCancelToken: taskCancelToken,
+      );
+    });
+  }
+
+  Future<void> _handleImageTaskErrorLocked(
+    int gid,
+    int itemSer,
+    Object error,
+    StackTrace stack, {
+    CancelToken? taskCancelToken,
+  }) async {
+    logger.e(
+      '下载图片失败: gid=$gid, ser=$itemSer, error=$error',
+      error: error,
+      stackTrace: stack,
+    );
+
+    // Ignore a worker that belongs to a cancelled or replaced attempt.
+    final currentToken = dState.cancelTokenMap[gid];
+    if (taskCancelToken != null &&
+        (!identical(currentToken, taskCancelToken) ||
+            taskCancelToken.isCancelled)) {
+      return;
+    }
+    if (error is DioException && CancelToken.isCancel(error)) {
+      return;
+    }
+
+    final currentTask = dState.galleryTaskMap[gid];
+    if (currentTask?.status == TaskStatus.complete.value ||
+        currentTask?.status == TaskStatus.paused.value ||
+        currentTask?.status == TaskStatus.failed.value) {
+      return;
+    }
+
+    final dioStatusCode =
+        error is DioException ? error.response?.statusCode : null;
+    final is509 = error is EhError && error.type == EhErrorType.image509;
+    if (is509 || dioStatusCode == 509) {
+      show509Toast();
+      await _galleryTaskPausedAll();
+      _updateErrInfo(gid, '509');
+      return;
+    }
+
+    final is429 = error is HttpException && error.code == 429;
+    if (is429 || dioStatusCode == 429) {
+      show429Toast();
+      await _galleryTaskPausedAll();
+      _updateErrInfo(gid, '429');
+      return;
+    }
+
+    await taskManager.cancelGalleryWork(
+      gid,
+      cancelTimerCallback: _cancelDownloadStateChkTimer,
+    );
+    final task = await galleryTaskUpdateStatus(gid, TaskStatus.failed);
+    if (task?.status == TaskStatus.failed.value) {
+      _updateErrInfo(gid, _formatDownloadError(error));
+      await gallerySlotManager.onGalleryStatusChanged(gid, TaskStatus.failed);
+    }
+  }
+
+  String _formatDownloadError(Object error) {
+    if (error is HttpException) {
+      return error.code > 0 ? '${error.code}: ${error.message}' : error.message;
+    }
+    if (error is DioException) {
+      return error.message ?? error.type.toString();
+    }
+    return error.toString();
   }
 
   void _updateErrInfo(int gid, String error) {
@@ -857,56 +991,58 @@ class DownloadController extends GetxController {
   }
 
   // 下载完成回调
-  Future _onDownloadComplete(String fileName, int gid, int itemSer) async {
-    loggerSimple.d('画廊项目下载完成: gid=$gid, 序号=$itemSer, 文件=$fileName');
+  Future<void> _onDownloadComplete(
+      String fileName, int gid, int itemSer) async {
+    await _completionLockFor(gid).synchronized(() async {
+      loggerSimple.d('画廊项目下载完成: gid=$gid, 序号=$itemSer, 文件=$fileName');
 
-    // 下载完成 更新数据库明细
-    final List<GalleryImageTask> listComplete = kDebugMode
-        ? await isarHelper.onDownloadComplete(
-            gid,
-            itemSer,
-            TaskStatus.complete.value,
-          )
-        : await isarHelper.onDownloadCompleteIsolate(
-            gid,
-            itemSer,
-            TaskStatus.complete.value,
-          );
+      // 下载完成 更新数据库明细
+      final List<GalleryImageTask> listComplete = kDebugMode
+          ? await isarHelper.onDownloadComplete(
+              gid,
+              itemSer,
+              TaskStatus.complete.value,
+            )
+          : await isarHelper.onDownloadCompleteIsolate(
+              gid,
+              itemSer,
+              TaskStatus.complete.value,
+            );
 
-    loggerSimple.d('已完成图片: gid=$gid, 数量=${listComplete.length}');
-    loggerSimple.d(
-        '序号列表=${listComplete.map((e) => e.ser).sorted((a, b) => a.compareTo(b)).join(',')}');
+      loggerSimple.d('已完成图片: gid=$gid, 数量=${listComplete.length}');
+      loggerSimple.d(
+          '序号列表=${listComplete.map((e) => e.ser).sorted((a, b) => a.compareTo(b)).join(',')}');
 
-    final coverImg =
-        listComplete.firstWhereOrNull((element) => element.ser == 1)?.filePath;
-    loggerSimple.t('封面图片: gid=$gid, 路径=$coverImg');
+      final coverImg = listComplete
+          .firstWhereOrNull((element) => element.ser == 1)
+          ?.filePath;
+      loggerSimple.t('封面图片: gid=$gid, 路径=$coverImg');
 
-    final GalleryTask? task = galleryTaskUpdate(
-      gid,
-      countComplete: listComplete.length,
-      coverImg: coverImg,
-    );
+      final GalleryTask? task = await galleryTaskUpdate(
+        gid,
+        countComplete: listComplete.length,
+        coverImg: coverImg,
+        completeWhenReached: true,
+      );
 
-    if (task != null) {
-      loggerSimple.t(
-          '检查画廊是否完成: gid=$gid, 已完成=${listComplete.length}/${task.fileCount}');
+      if (task != null) {
+        loggerSimple.t(
+            '检查画廊是否完成: gid=$gid, 已完成=${listComplete.length}/${task.fileCount}');
 
-      if (task.fileCount == listComplete.length) {
-        loggerSimple
-            .d('画廊任务全部完成: gid=$gid, ${listComplete.length}/${task.fileCount}');
-        galleryTaskComplete(gid);
+        if (task.status == TaskStatus.complete.value) {
+          loggerSimple.d(
+              '画廊任务全部完成: gid=$gid, ${listComplete.length}/${task.fileCount}');
+          await _completeGalleryTask(gid);
+        } else {
+          loggerSimple.d(
+              '画廊任务部分完成: gid=$gid, ${listComplete.length}/${task.fileCount}');
+        }
       } else {
-        loggerSimple
-            .d('画廊任务部分完成: gid=$gid, ${listComplete.length}/${task.fileCount}');
+        logger.e('无法更新画廊任务: gid=$gid, 任务不存在');
       }
-    } else {
-      logger.e('无法更新画廊任务: gid=$gid, 任务不存在');
-    }
 
-    if (task != null) {
-      await isarHelper.putGalleryTask(task);
-    }
-    _updateDownloadView(['DownloadGalleryItem_$gid']);
+      _updateDownloadView(['DownloadGalleryItem_$gid']);
+    });
   }
 
   void _updateDownloadView([List<Object>? ids]) {
@@ -967,17 +1103,25 @@ class DownloadController extends GetxController {
   Future<int> _updateImageTasksByGid(int gid,
       {List<GalleryImage>? images}) async {
     // 插入所有任务明细
+    final sourceImages = images ?? dState.downloadMap[gid];
+    final existingTasks = await isarHelper.findImageTaskAllByGidIsolate(gid);
+    final existingBySer = <int, GalleryImageTask>{
+      for (final task in existingTasks) task.ser: task,
+    };
     final List<GalleryImageTask>? galleryImageTasks =
-        (images ?? dState.downloadMap[gid])
-            ?.map((GalleryImage e) => GalleryImageTask(
-                  gid: gid,
-                  token: '',
-                  href: e.href,
-                  ser: e.ser,
-                  imageUrl: e.imageUrl,
-                  sourceId: e.sourceId,
-                ))
-            .toList();
+        sourceImages?.map((GalleryImage e) {
+      final existing = existingBySer[e.ser];
+      return GalleryImageTask(
+        gid: gid,
+        token: existing?.token ?? e.token ?? '',
+        href: e.href ?? existing?.href,
+        ser: e.ser,
+        imageUrl: e.imageUrl ?? existing?.imageUrl,
+        sourceId: e.sourceId ?? existing?.sourceId,
+        filePath: existing?.filePath,
+        status: existing?.status,
+      );
+    }).toList();
 
     if (galleryImageTasks != null) {
       logger.d('插入所有任务明细 $gid ${galleryImageTasks.length}');
@@ -988,13 +1132,15 @@ class DownloadController extends GetxController {
   }
 
   // 暂停所有任务
-  void _galleryTaskPausedAll() {
+  Future<void> _galleryTaskPausedAll() async {
+    final futures = <Future<void>>[];
     for (final task in dState.galleryTasks) {
       if (task.status != TaskStatus.complete.value) {
-        galleryTaskPaused(task.gid);
+        futures.add(galleryTaskPaused(task.gid).then<void>((_) {}));
         _updateDownloadView(['DownloadGalleryItem_${task.gid}']);
       }
     }
+    await Future.wait(futures);
   }
 
   /// 设置同时下载的画廊数
@@ -1017,7 +1163,7 @@ class DownloadController extends GetxController {
   }
 
   /// 设置最大下载图片线程数
-  void setMultiDownload(int count) {
+  Future<void> setMultiDownload(int count) async {
     loggerSimple
         .d('请求设置最大下载图片线程数: $count, 当前值: ${ehSettingService.multiDownload}');
 
@@ -1027,7 +1173,7 @@ class DownloadController extends GetxController {
       loggerSimple.d('设置最大下载图片线程数成功: $oldValue -> $count');
 
       // 重置并发设置，应用新的线程数
-      resetConcurrency();
+      await resetConcurrency();
     } else {
       logger.e('设置最大下载图片线程数失败: 值超出范围(1-32): $count');
     }

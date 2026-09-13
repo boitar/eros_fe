@@ -52,6 +52,10 @@ class DownloadViewController extends GetxController {
   final GlobalKey<AnimatedListState> animatedArchiverListKey =
       GlobalKey<AnimatedListState>();
 
+  // AnimatedList 的 initialItemCount 只在首次创建时生效。任务恢复完成后
+  // 递增此版本号，让下载页用新的 key 按实际任务数重建列表。
+  final RxInt galleryListRevision = 0.obs;
+
   late String tabTag;
 
   final _viewType = DownloadType.gallery.obs;
@@ -234,6 +238,11 @@ class DownloadViewController extends GetxController {
     if (galleryTasks.isNotEmpty) {
       animatedGalleryListKey.currentState?.insertItem(galleryTasks.length - 1);
     }
+  }
+
+  void refreshGalleryList() {
+    animatedGalleryListKey = GlobalKey<AnimatedListState>();
+    galleryListRevision.value++;
   }
 
   void animateArchiverListAddTask({int? index}) {

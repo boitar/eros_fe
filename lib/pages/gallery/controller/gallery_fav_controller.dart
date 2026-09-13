@@ -1,5 +1,5 @@
+import 'package:eros_fe/common/controller/favorite_state_store.dart';
 import 'package:eros_fe/common/controller/cache_controller.dart';
-import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/extension.dart';
@@ -69,14 +69,19 @@ class GalleryFavController extends GetxController {
   bool get localFav => _pageState.localFav;
 
   final RxString _favTitle = L10n.of(Get.context!).notFav.obs;
-  String get favTitle => _favTitle.value;
+  String get favTitle =>
+      favoriteStates[_pageState.gid]?.title ?? _favTitle.value;
 
   final RxString _favcat = ''.obs;
-  String get favcat => _favcat.value;
+  String get favcat {
+    final category = favoriteStates[_pageState.gid]?.category ?? _favcat.value;
+    return category.isEmpty && localFav ? 'l' : category;
+  }
 
   void setFav(String favcat, String favtitle) {
     _favTitle.value = favtitle;
     _favcat.value = favcat;
+    if (favcat == 'l') _pageState.localFav = true;
     // logger.d('setFav $favcat $favtitle');
     if (favcat.isNotEmpty) {
       _ehSettingService.lastFavcat = favcat;
@@ -87,7 +92,7 @@ class GalleryFavController extends GetxController {
         _itemController.setFavTitleAndFavcat(
             favTitle: favTitle, favcat: favcat);
       }
-      _pageState.galleryProvider
+      _pageState.galleryProvider = _pageState.galleryProvider
           ?.copyWith(favcat: favcat.oN, favTitle: favtitle.oN);
     } catch (_) {}
   }
@@ -98,39 +103,31 @@ class GalleryFavController extends GetxController {
   Future<bool> _addToLastFavcat(String _lastFavcat) async {
     isLoading = true;
 
-    final String _favTitleFromProfile =
-        Global.profile.user.favcat![int.parse(_lastFavcat) + 1].favTitle;
-
     try {
-      await favController.addToLastFavcat(
-        _pageState.galleryProvider?.gid ?? '0',
+      final result = await favController.addToLastFavcat(
+        _pageState.gid,
         _pageState.galleryProvider?.token ?? '',
         _lastFavcat,
       );
-      setFav(_lastFavcat, _favTitleFromProfile);
-      _removeGalleryCache();
+      setFav(result.favId, result.favTitle);
+      await _removeGalleryCache();
+      return true;
     } catch (e) {
+      showToast('$e');
       return false;
     } finally {
       isLoading = false;
-      _favTitle.value = _favTitleFromProfile;
-      _favcat.value = _lastFavcat;
-      _pageState.galleryProvider
-          ?.copyWith(favcat: favcat.oN, favTitle: _favTitleFromProfile.oN);
-      if (isRegItemController) {
-        _itemController.setFavTitleAndFavcat(
-            favTitle: favTitle, favcat: favcat);
-      }
     }
-    return true;
   }
 
   /// 点击收藏按钮处理
   Future<void> tapFav() async {
+    if (isLoading || favoriteStates.isBusy(_pageState.gid)) return;
+
     /// 网络收藏或者本地收藏
     if (favcat.isNotEmpty || _pageState.localFav) {
       logger.d(' del fav');
-      delFav();
+      await delFav();
     } else {
       logger.d(' add fav');
       final String _lastFavcat = _ehSettingService.lastFavcat;
@@ -139,7 +136,7 @@ class GalleryFavController extends GetxController {
       // 添加到上次收藏夹
       if ((_ehSettingService.isFavLongTap.value) && _lastFavcat.isNotEmpty) {
         logger.d('添加到上次收藏夹 $_lastFavcat');
-        _addToLastFavcat(_lastFavcat);
+        await _addToLastFavcat(_lastFavcat);
       } else {
         // 手选收藏夹
         logger.d('手选收藏夹');
@@ -171,7 +168,7 @@ class GalleryFavController extends GetxController {
         logger
             .d('after _showAddFavDialog ${_pageState.galleryProvider?.favcat}');
         setFav(favcat, favTitle);
-        _removeGalleryCache();
+        await _removeGalleryCache();
       }
     } catch (e, stack) {
       showToast('$e\n$stack');
@@ -182,19 +179,22 @@ class GalleryFavController extends GetxController {
 
   /// 删除收藏
   Future<void> delFav() async {
+    if (isLoading || favoriteStates.isBusy(_pageState.gid)) return;
     isLoading = true;
+    final deletingLocal = favcat == 'l';
     try {
       await favController.delFav(
         favcat,
         _pageState.galleryProvider?.gid ?? '0',
         _pageState.galleryProvider?.token ?? '',
       );
-      _removeGalleryCache();
+      if (deletingLocal) _pageState.localFav = false;
       _favTitle.value = '';
       _favcat.value = '';
       _pageState.galleryProvider =
           _pageState.galleryProvider?.copyWith(favcat: ''.oN, favTitle: ''.oN);
       setFav(favcat, favTitle);
+      await _removeGalleryCache();
     } catch (e, stack) {
       showToast('$e\n$stack');
     } finally {
@@ -204,17 +204,27 @@ class GalleryFavController extends GetxController {
 
   // 长按事件
   Future<void> longTapFav() async {
+    if (isLoading || favoriteStates.isBusy(_pageState.gid)) return;
     vibrateUtil.heavy();
     // 手选收藏夹
     await _selectToSave();
   }
 
-  void _removeGalleryCache() {
-    if (!isRegItemController) {
-      return;
+  Future<void> _removeGalleryCache() async {
+    final detailUrl = _pageState.galleryProvider?.url ??
+        (isRegItemController ? _itemController.galleryProvider.url : null);
+    final paths = <String>{
+      if (detailUrl != null && detailUrl.isNotEmpty)
+        Uri.parse(Api.getBaseUrl()).resolve(detailUrl).toString(),
+      '${Api.getBaseUrl()}/favorites.php',
+    };
+
+    logger.d('delete favorite caches: ${paths.join(', ')}');
+    try {
+      await Future.wait(
+          paths.map((path) => cacheController.clearDioCache(path: path)));
+    } catch (_) {
+      logger.w('Favorite saved; HTTP cache cleanup failed');
     }
-    final url = _itemController.galleryProvider.url;
-    logger.d('delete cache $url');
-    cacheController.clearDioCache(path: '${Api.getBaseUrl()}$url');
   }
 }

@@ -1,3 +1,4 @@
+import 'package:eros_fe/common/controller/favorite_state_store.dart';
 import 'dart:collection';
 import 'dart:convert';
 
@@ -23,13 +24,30 @@ class GalleryCacheController extends GetxController {
   final Map<String, GalleryProvider?> _galleryProviderCache = {};
 
   GalleryProvider? getGalleryProviderCache(String? gid) {
-    return _galleryProviderCache[gid ?? ''];
+    final provider = _galleryProviderCache[gid ?? ''];
+    return provider == null ? null : favoriteStates.overlay(provider);
   }
 
   void setGalleryProviderCache(String? gid, GalleryProvider? galleryProvider) {
     logger.t('setGalleryProviderCache');
     // clone一个新的对象 避免后续加载更多image影响
     _galleryProviderCache[gid ?? ''] = galleryProvider?.clone();
+  }
+
+  void syncFavorite(String gid) {
+    final provider = _galleryProviderCache[gid];
+    if (provider != null)
+      _galleryProviderCache[gid] = favoriteStates.overlay(provider);
+    for (final state in pageStateList.where((state) => state.gid == gid)) {
+      final provider = state.galleryProvider;
+      if (provider != null)
+        state.galleryProvider = favoriteStates.overlay(provider);
+    }
+  }
+
+  void clearFavoriteAccountCaches() {
+    _galleryProviderCache.clear();
+    pageStateList.clear();
   }
 
   final debSync = Debouncing(duration: const Duration(seconds: 5));

@@ -51,8 +51,17 @@ class QueueTask {
       }
 
       _taskCount += 1;
-      await taskInfo.workTask.call(name: taskInfo.taskName);
-      _taskCount -= 1;
+      try {
+        final result = taskInfo.workTask.call(name: taskInfo.taskName);
+        if (result is Future) {
+          await result;
+        }
+      } catch (e, stack) {
+        logger.e('queue task ${taskInfo.taskName} failed',
+            error: e, stackTrace: stack);
+      } finally {
+        _taskCount -= 1;
+      }
     }
     _exec();
   }
@@ -74,6 +83,9 @@ class TaskCancelToken {
   bool isCancelled = false;
 
   void cancel() {
+    if (isCancelled) {
+      return;
+    }
     isCancelled = true;
     _completer.complete();
   }

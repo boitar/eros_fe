@@ -42,7 +42,7 @@ class StorageAdapter {
       if (infoDomFile?.name != null) {
         await ss.delete(Uri.parse('$dirPath%2F.info'));
       }
-      ss.createFileAsBytes(
+      await ss.createFileAsBytes(
         Uri.parse(dirPath),
         mimeType: '',
         displayName: '.info',
@@ -50,7 +50,7 @@ class StorageAdapter {
       );
     } else {
       final File infoFile = File(path.join(dirPath, '.info'));
-      infoFile.writeAsString(info);
+      await infoFile.writeAsString(info);
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:eros_fe/common/controller/favorite_state_store.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/network/api.dart';
@@ -16,7 +17,11 @@ class GalleryPageState {
   late final GalleryRepository? galleryRepository;
 
   /// 画廊数据对象
-  GalleryProvider? galleryProvider;
+  GalleryProvider? _galleryProvider;
+  GalleryProvider? get galleryProvider => _galleryProvider == null
+      ? null
+      : favoriteStates.overlay(_galleryProvider!);
+  set galleryProvider(GalleryProvider? value) => _galleryProvider = value;
 
   String get url =>
       '${galleryProvider!.url?.startsWith('http') ?? false ? '' : Api.getBaseUrl()}${galleryProvider!.url}';

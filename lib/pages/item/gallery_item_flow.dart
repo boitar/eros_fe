@@ -1,8 +1,8 @@
+import 'package:eros_fe/pages/item/favorite_icon.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
@@ -28,13 +28,14 @@ class GalleryItemFlow extends StatelessWidget {
     return Obx(() {
       // logger.d('${_galleryProviderController.isFav}');
       return Container(
-        child: galleryProviderController.isFav
+        child: galleryProviderController.hasFavoriteColor
             ? Container(
-                child: FaIcon(FontAwesomeIcons.solidHeart,
-                  size: 12,
-                  color: ThemeColors.favColor[
-                      galleryProviderController.galleryProvider.favcat],
-                ),
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                    color: const Color(0xDDFFFFFF),
+                    borderRadius: BorderRadius.circular(4)),
+                child: FavoriteIcon(
+                    category: galleryProviderController.favCat, size: 12),
               )
             : Container(),
       );
@@ -67,8 +68,7 @@ class GalleryItemFlow extends StatelessWidget {
       }
 
       final Widget container = Container(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: <Widget>[
             Hero(
               tag: '${galleryProvider.gid}_cover_${tabTag}',
@@ -109,6 +109,7 @@ class GalleryItemFlow extends StatelessWidget {
                 ),
               ),
             ),
+            Positioned(left: 4, bottom: 4, child: _buildFavcatIcon()),
           ],
         ),
       );
