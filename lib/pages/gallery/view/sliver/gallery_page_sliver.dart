@@ -8,12 +8,12 @@ import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
 import 'package:eros_fe/pages/gallery/view/const.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_widget.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/slivers.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyrefresh/easy_refresh.dart';
 import 'package:get/get.dart';
 import 'package:keframe/keframe.dart';
-import 'package:share_plus/share_plus.dart';
 
 import 'header_sliver.dart';
 
@@ -359,20 +359,37 @@ class _GallerySliverPageState extends State<GallerySliverPage> {
                 _controller.addTag();
               },
             ),
-            CupertinoButton(
-              padding: const EdgeInsets.all(0),
-              minSize: 38,
-              child: const MouseRegionClick(
-                child: Icon(CupertinoIcons.share, size: 26),
-              ),
-              onPressed: () {
-                if (provider == null) {
-                  return;
-                }
-                final String _url =
-                    '${Api.getBaseUrl()}/g/${provider.gid}/${provider.token}';
-                logger.d('share $_url');
-                Share.share(_url);
+            Builder(
+              builder: (buttonContext) {
+                return CupertinoButton(
+                  padding: const EdgeInsets.all(0),
+                  minSize: 38,
+                  child: const MouseRegionClick(
+                    child: Icon(CupertinoIcons.share, size: 26),
+                  ),
+                  onPressed: () async {
+                    final currentProvider = _controller.gState.galleryProvider;
+                    if (currentProvider == null) {
+                      showToast('Gallery is not ready');
+                      return;
+                    }
+                    final gid = currentProvider.gid;
+                    final token = currentProvider.token;
+                    if (gid == null ||
+                        gid.isEmpty ||
+                        token == null ||
+                        token.isEmpty) {
+                      showToast('Gallery link is unavailable');
+                      return;
+                    }
+                    final String url = '${Api.getBaseUrl()}/g/$gid/$token';
+                    logger.d('share gallery gid=$gid');
+                    await ShareService.shareText(
+                      url,
+                      context: buttonContext,
+                    );
+                  },
+                );
               },
             ),
           ],
