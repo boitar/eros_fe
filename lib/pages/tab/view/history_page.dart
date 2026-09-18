@@ -116,7 +116,6 @@ class _HistoryTabState extends State<HistoryTab> {
         SliverSafeArea(
           top: false,
           sliver: GetBuilder<HistoryController>(
-            init: HistoryController(),
             builder: (logic) {
               return getGallerySliverList(
                 logic.histories,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:eros_fe/common/controller/mysql_controller.dart';
@@ -12,11 +13,16 @@ import 'package:throttling/throttling.dart';
 
 class HistoryController extends GetxController {
   final List<GalleryProvider> _histories = <GalleryProvider>[];
+  Future<void>? _initHistoriesFuture;
+  bool _historiesInitialized = false;
+
   List<GalleryProvider> get histories {
     _histories
         .sort((a, b) => (b.lastViewTime ?? 0).compareTo(a.lastViewTime ?? 0));
     return _histories;
   }
+
+  bool get historiesInitialized => _historiesInitialized;
 
   // 登记删除gid和删除时间，用于同步远程时筛选
   final List<HistoryIndexGid> _delHistories = <HistoryIndexGid>[];
@@ -72,7 +78,7 @@ class HistoryController extends GetxController {
         hisViewController.sliverAnimatedListKey.currentState?.insertItem(0);
       }
 
-      isarHelper.addHistoryIsolate(item);
+      unawaited(isarHelper.addHistoryAsync(item));
     } else {
       _histories.add(item);
       final insertIndex = histories.indexOf(item);
@@ -81,7 +87,7 @@ class HistoryController extends GetxController {
             ?.insertItem(insertIndex);
       }
 
-      isarHelper.addHistoryIsolate(item);
+      unawaited(isarHelper.addHistoryAsync(item));
     }
 
     logger.t('add ${galleryProvider.gid} update1');
@@ -140,11 +146,11 @@ class HistoryController extends GetxController {
     hiveHelper.removeHistoryDel(gid);
   }
 
-  void cleanHistory() {
+  Future<void> cleanHistory() async {
     histories.clear();
     update();
     // hiveHelper.cleanHistory();
-    isarHelper.cleanHistory();
+    await isarHelper.cleanHistory();
   }
 
   @override
@@ -153,14 +159,33 @@ class HistoryController extends GetxController {
 
     // _histories.addAll(hiveHelper.getAllHistory());
     // _delHistories.addAll(hiveHelper.getAllHistoryDel());
-    initHistories();
+    unawaited(initHistories());
   }
 
-  Future<void> initHistories() async {
+  Future<void> initHistories() {
+    return _initHistoriesFuture ??= _loadHistories();
+  }
+
+  Future<void> _loadHistories() async {
     // 历史迁移
     await historyMigration();
-    final histories = await isarHelper.getAllHistory();
-    _histories.addAll(histories);
+    final loadedHistories = await isarHelper.getAllHistory();
+    _histories
+      ..clear()
+      ..addAll(loadedHistories);
+    _historiesInitialized = true;
+    update();
+  }
+
+  Future<void> reloadHistories() async {
+    if (!_historiesInitialized) {
+      await initHistories();
+      return;
+    }
+
+    final future = _loadHistories();
+    _initHistoriesFuture = future;
+    await future;
   }
 
   Future<void> historyMigration() async {
@@ -168,9 +193,8 @@ class HistoryController extends GetxController {
     logger.t('historyMigration $isMigration');
     if (!isMigration) {
       logger.d('start history Migration');
-      // await isarHelper.addHistoriesAsync(hiveHelper.getAllHistory());
-      await isarHelper.addHistoriesIsolate(hiveHelper.getAllHistory());
-      hiveHelper.setViewHistoryMigration(true);
+      await isarHelper.addHistoriesAsync(hiveHelper.getAllHistory());
+      await hiveHelper.setViewHistoryMigration(true);
     }
   }
 
@@ -187,8 +211,10 @@ class HistoryController extends GetxController {
     logger.t('listLocal ${listLocal.length} \n${listLocal.map((e) => e?.g)}');
     logger.t('${jsonEncode(listLocal)} ');
 
-    syncHistoryMySQL(listLocal);
-    syncHistoryWebDAV(listLocal);
+    await Future.wait<void>([
+      syncHistoryMySQL(listLocal),
+      syncHistoryWebDAV(listLocal),
+    ]);
   }
 
   /// 通过mysql同步历史记录
