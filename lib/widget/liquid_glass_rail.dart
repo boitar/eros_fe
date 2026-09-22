@@ -2,6 +2,9 @@ import 'dart:math' as math;
 
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 
 /// A small, local control in the transparent Glass Rail.
 class LiquidGlassRailAction {
@@ -333,6 +336,28 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
         final visibleCategories = categories.take(visibleCount).toList();
         final slotWidth = availableWidth / visibleCount;
         final itemWidths = List<double>.filled(visibleCount, slotWidth);
+        final displayedIndex = _displayedCategoryIndex;
+        final selectedVisibleIndex =
+            displayedIndex < visibleCategories.length ? displayedIndex : null;
+        if (LiquidGlassPlatform.isSupported) {
+          return _NativeCategoryRail(
+            key: const ValueKey<String>('liquid-glass-category-selection'),
+            categories: visibleCategories,
+            selectedIndex: selectedVisibleIndex ?? -1,
+            followSystemTransparency: widget.followSystemTransparency,
+            brightness: CupertinoTheme.brightnessOf(context),
+            fontSize: MediaQuery.textScalerOf(context).scale(15.0),
+          );
+        }
+        const selectionInset = 4.0;
+        final selectionHeight = math.max(
+          0.0,
+          LiquidGlassRail.controlSize - selectionInset * 2.0,
+        );
+        final selectionWidth = math.max(
+          0.0,
+          slotWidth - selectionInset * 2.0,
+        );
         return LiquidGlassSurface(
           key: const ValueKey<String>('liquid-glass-category-selection'),
           enabled: true,
@@ -356,15 +381,52 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             onPointerCancel: _onCategoryPointerCancel,
             child: SizedBox(
               height: LiquidGlassRail.controlSize,
-              child: Row(
+              child: Stack(
+                fit: StackFit.expand,
                 children: <Widget>[
-                  for (int index = 0; index < visibleCategories.length; index++)
-                    _categorySlot(
-                      context,
-                      visibleCategories[index],
-                      index,
-                      slotWidth,
+                  if (selectedVisibleIndex != null)
+                    AnimatedPositioned(
+                      key: const ValueKey<String>(
+                        'liquid-glass-category-selection-indicator',
+                      ),
+                      duration: _categoryDragging
+                          ? Duration.zero
+                          : const Duration(milliseconds: 240),
+                      curve: Curves.easeOutCubic,
+                      left: selectedVisibleIndex * slotWidth + selectionInset,
+                      top: selectionInset,
+                      width: selectionWidth,
+                      height: selectionHeight,
+                      child: IgnorePointer(
+                        child: LiquidGlassSurface(
+                          enabled: true,
+                          borderRadius: BorderRadius.circular(
+                            selectionHeight / 2.0,
+                          ),
+                          style: LiquidGlassStyle.clear,
+                          followSystemTransparency:
+                              widget.followSystemTransparency,
+                          useNativeGlass: false,
+                          emphasizeFallbackEdge: true,
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
                     ),
+                  Positioned.fill(
+                    child: Row(
+                      children: <Widget>[
+                        for (int index = 0;
+                            index < visibleCategories.length;
+                            index++)
+                          _categorySlot(
+                            context,
+                            visibleCategories[index],
+                            index,
+                            slotWidth,
+                          ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -468,6 +530,97 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// UIKit owns the entire category control, including its labels, so native
+/// glass never has to be composited behind sibling Flutter text.
+class _NativeCategoryRail extends StatefulWidget {
+  const _NativeCategoryRail({
+    super.key,
+    required this.categories,
+    required this.selectedIndex,
+    required this.followSystemTransparency,
+    required this.brightness,
+    required this.fontSize,
+  });
+
+  final List<LiquidGlassRailCategory> categories;
+  final int selectedIndex;
+  final bool followSystemTransparency;
+  final Brightness brightness;
+  final double fontSize;
+
+  @override
+  State<_NativeCategoryRail> createState() => _NativeCategoryRailState();
+}
+
+class _NativeCategoryRailState extends State<_NativeCategoryRail> {
+  MethodChannel? _channel;
+
+  Map<String, Object> get _parameters => <String, Object>{
+        'titles': widget.categories.map((item) => item.title).toList(),
+        'longPressEnabled':
+            widget.categories.map((item) => item.onLongPress != null).toList(),
+        'selectedIndex': widget.selectedIndex,
+        'followSystemTransparency': widget.followSystemTransparency,
+        'dark': widget.brightness == Brightness.dark,
+        'fontSize': widget.fontSize,
+      };
+
+  void _created(int viewId) {
+    final channel = MethodChannel('eros/liquid-glass-categories/$viewId');
+    _channel = channel;
+    channel.setMethodCallHandler((call) async {
+      if (!mounted || call.arguments is! int) {
+        return;
+      }
+      final index = call.arguments as int;
+      if (index < 0 || index >= widget.categories.length) {
+        return;
+      }
+      switch (call.method) {
+        case 'select':
+          widget.categories[index].onTap();
+          break;
+        case 'longPress':
+          widget.categories[index].onLongPress?.call();
+          break;
+      }
+    });
+    channel.invokeMethod<void>('update', _parameters);
+  }
+
+  @override
+  void didUpdateWidget(covariant _NativeCategoryRail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _channel?.invokeMethod<void>('update', _parameters);
+  }
+
+  @override
+  void dispose() {
+    _channel?.setMethodCallHandler(null);
+    _channel = null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: LiquidGlassRail.controlSize,
+      child: UiKitView(
+        viewType: 'eros/liquid-glass-categories',
+        creationParams: _parameters,
+        creationParamsCodec: const StandardMessageCodec(),
+        onPlatformViewCreated: _created,
+        // Claim horizontal category drags without taking vertical list scrolls.
+        gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{
+          Factory<HorizontalDragGestureRecognizer>(
+            HorizontalDragGestureRecognizer.new,
+          ),
+        },
       ),
     );
   }

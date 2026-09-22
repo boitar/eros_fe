@@ -480,6 +480,57 @@ void main() {
     expect((capsule.center.dy - label.center.dy).abs(), lessThan(1.0));
   });
 
+  testWidgets('top glass rail shows and animates its selected capsule',
+      (WidgetTester tester) async {
+    Widget app(int selectedIndex) {
+      return CupertinoApp(
+        home: SizedBox(
+          width: 390,
+          height: 180,
+          child: LiquidGlassRail(
+            title: '画廊',
+            safeTop: 59,
+            collapseProgress: 0,
+            dockingTranslation: 0,
+            selectedIndex: selectedIndex,
+            categories: <LiquidGlassRailCategory>[
+              LiquidGlassRailCategory(title: '热门', onTap: () {}),
+              LiquidGlassRailCategory(title: '画廊', onTap: () {}),
+            ],
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(app(0));
+    await tester.pumpAndSettle();
+
+    final Finder indicator = find.byKey(
+      const ValueKey<String>('liquid-glass-category-selection-indicator'),
+    );
+    final Rect initialRect = tester.getRect(indicator);
+    final Rect outerRect = tester.getRect(
+      find.byKey(
+        const ValueKey<String>('liquid-glass-category-selection'),
+      ),
+    );
+    expect(initialRect.left, greaterThan(outerRect.left));
+    expect(initialRect.right, lessThan(outerRect.right));
+    expect(
+      initialRect.width,
+      lessThan(outerRect.width),
+    );
+
+    await tester.pumpWidget(app(1));
+    await tester.pump(const Duration(milliseconds: 100));
+    final double midLeft = tester.getRect(indicator).left;
+    await tester.pumpAndSettle();
+    final Rect finalRect = tester.getRect(indicator);
+    expect(midLeft, greaterThan(initialRect.left));
+    expect(midLeft, lessThan(finalRect.left));
+    expect(finalRect.left, greaterThan(initialRect.left));
+  });
+
   testWidgets('glass rail collapses without overflowing its sliver',
       (WidgetTester tester) async {
     final layout = LiquidGlassTopLayout.fromTopInset(59);

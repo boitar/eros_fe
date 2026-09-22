@@ -33,6 +33,10 @@ import CoreText
                 LiquidGlassTabBarViewFactory(messenger: glassRegistrar.messenger()),
                 withId: LiquidGlassTabBarViewFactory.viewType
             )
+            glassRegistrar.register(
+                LiquidGlassCategoryViewFactory(messenger: glassRegistrar.messenger()),
+                withId: LiquidGlassCategoryViewFactory.viewType
+            )
         }
     }
     
@@ -1421,5 +1425,248 @@ private final class ErosSharePlugin: NSObject, FlutterPlugin {
             mapping["addToHomeScreen"] = .addToHomeScreen
         }
         return values.compactMap { mapping[$0] }
+    }
+}
+
+/// Keep the material, selection lens and labels in one native platform view.
+/// Separate effect views retain the inner lens rather than merging it into
+/// the encompassing shell as overlapping members of a glass container would.
+private final class LiquidGlassCategoryViewFactory: NSObject, FlutterPlatformViewFactory {
+    static let viewType = "eros/liquid-glass-categories"
+    private let messenger: FlutterBinaryMessenger
+
+    init(messenger: FlutterBinaryMessenger) {
+        self.messenger = messenger
+        super.init()
+    }
+
+    func create(withFrame frame: CGRect, viewIdentifier viewId: Int64,
+                arguments args: Any?) -> FlutterPlatformView {
+        LiquidGlassCategoryPlatformView(frame: frame, viewId: viewId,
+                                       arguments: args, messenger: messenger)
+    }
+
+    func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+        FlutterStandardMessageCodec.sharedInstance()
+    }
+}
+
+private final class LiquidGlassCategoryPlatformView: NSObject,
+    FlutterPlatformView, UIGestureRecognizerDelegate {
+    private let root: ErosLiquidGlassRootView
+    private let shell = ErosPassthroughGlassView()
+    private let lens = ErosPassthroughGlassView()
+    private let controls = UIView()
+    private let channel: FlutterMethodChannel
+    private var buttons: [UIButton] = []
+    private var titles: [String] = []
+    private var longPressEnabled: [Bool] = []
+    private var selectedIndex = -1
+    private var previewIndex = -1
+    private var dragging = false
+    private var followSystem = true
+    private var effectsConfigured = false
+    private var fontSize: CGFloat = 15
+
+    init(frame: CGRect, viewId: Int64, arguments: Any?, messenger: FlutterBinaryMessenger) {
+        root = ErosLiquidGlassRootView(frame: frame)
+        channel = FlutterMethodChannel(name: "eros/liquid-glass-categories/\(viewId)",
+                                       binaryMessenger: messenger)
+        super.init()
+        root.backgroundColor = .clear
+        root.isAccessibilityElement = false
+        for effect in [shell, lens] {
+            effect.isUserInteractionEnabled = false
+            effect.accessibilityElementsHidden = true
+            effect.layer.masksToBounds = true
+            root.addSubview(effect)
+        }
+        root.addSubview(controls)
+        root.onLayout = { [weak self] in self?.layout() }
+        channel.setMethodCallHandler { [weak self] call, result in
+            guard let self else { result(nil); return }
+            if call.method == "update", let arguments = call.arguments as? [String: Any] {
+                self.apply(arguments)
+                result(nil)
+            } else {
+                result(FlutterMethodNotImplemented)
+            }
+        }
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(pan(_:)))
+        pan.delegate = self
+        root.addGestureRecognizer(pan)
+        NotificationCenter.default.addObserver(self, selector: #selector(updateEffects),
+            name: UIAccessibility.reduceTransparencyStatusDidChangeNotification, object: nil)
+        apply(arguments as? [String: Any] ?? [:])
+    }
+
+    deinit {
+        channel.setMethodCallHandler(nil)
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    func view() -> UIView { root }
+
+    private func apply(_ arguments: [String: Any]) {
+        let nextTitles = arguments["titles"] as? [String] ?? titles
+        let rebuild = nextTitles != titles
+        titles = nextTitles
+        longPressEnabled = arguments["longPressEnabled"] as? [Bool] ?? longPressEnabled
+        fontSize = CGFloat((arguments["fontSize"] as? NSNumber)?.doubleValue ?? 15)
+        root.overrideUserInterfaceStyle = (arguments["dark"] as? Bool ?? false) ? .dark : .light
+        let nextFollow = arguments["followSystemTransparency"] as? Bool ?? followSystem
+        if nextFollow != followSystem || !effectsConfigured {
+            followSystem = nextFollow
+            updateEffects()
+        }
+        let nextIndex = (arguments["selectedIndex"] as? NSNumber)?.intValue ?? selectedIndex
+        selectedIndex = titles.indices.contains(nextIndex) ? nextIndex : -1
+        if rebuild {
+            dragging = false
+            buttons.forEach { $0.removeFromSuperview() }
+            buttons = titles.enumerated().map { index, title in
+                let button = UIButton(type: .custom)
+                button.tag = index
+                button.setTitle(title, for: .normal)
+                button.titleLabel?.lineBreakMode = .byTruncatingTail
+                button.accessibilityLabel = title
+                button.accessibilityIdentifier = "liquid-glass-category-\(index)"
+                button.addTarget(self, action: #selector(tapped(_:)), for: .touchUpInside)
+                let longPress = UILongPressGestureRecognizer(target: self, action: #selector(held(_:)))
+                longPress.delegate = self
+                button.addGestureRecognizer(longPress)
+                controls.addSubview(button)
+                return button
+            }
+            previewIndex = selectedIndex
+            layout()
+        } else if !dragging && previewIndex != selectedIndex {
+            showSelection(selectedIndex, animated: true)
+        }
+        updateLabels()
+    }
+
+    @objc private func updateEffects() {
+        if #available(iOS 26.0, *), followSystem {
+            shell.effect = UIGlassEffect(style: .regular)
+            lens.effect = UIGlassEffect(style: .clear)
+            shell.backgroundColor = .clear
+            lens.backgroundColor = .clear
+        } else if UIAccessibility.isReduceTransparencyEnabled {
+            shell.effect = nil
+            lens.effect = nil
+            shell.backgroundColor = .secondarySystemBackground
+            lens.backgroundColor = .tertiarySystemBackground
+        } else {
+            shell.effect = UIBlurEffect(style: .systemMaterial)
+            lens.effect = UIBlurEffect(style: .systemThinMaterial)
+            shell.backgroundColor = .clear
+            lens.backgroundColor = .clear
+        }
+        effectsConfigured = true
+    }
+
+    private func layout() {
+        shell.frame = root.bounds
+        shell.layer.cornerRadius = root.bounds.height / 2
+        controls.frame = root.bounds
+        let width = root.bounds.width / CGFloat(max(1, titles.count))
+        for (index, button) in buttons.enumerated() {
+            button.frame = CGRect(x: CGFloat(index) * width, y: 0,
+                                  width: width, height: root.bounds.height)
+        }
+        lens.frame = selectionFrame(previewIndex)
+        lens.layer.cornerRadius = max(0, root.bounds.height / 2 - 4)
+        lens.isHidden = !titles.indices.contains(previewIndex)
+    }
+
+    private func selectionFrame(_ index: Int) -> CGRect {
+        guard buttons.indices.contains(index) else { return .zero }
+        return buttons[index].frame.insetBy(dx: 4, dy: 4)
+    }
+
+    private func updateLabels() {
+        for (index, button) in buttons.enumerated() {
+            let selected = index == previewIndex
+            button.isSelected = selected
+            button.setTitleColor(selected ? .systemBlue : .label, for: .normal)
+            button.titleLabel?.font = .systemFont(ofSize: fontSize,
+                                                  weight: selected ? .semibold : .regular)
+            button.accessibilityTraits = selected ? [.button, .selected] : [.button]
+        }
+    }
+
+    private func showSelection(_ index: Int, animated: Bool) {
+        let wasHidden = lens.isHidden
+        previewIndex = index
+        updateLabels()
+        lens.isHidden = !titles.indices.contains(index)
+        let target = selectionFrame(index)
+        guard animated, !wasHidden, !lens.isHidden,
+              !UIAccessibility.isReduceMotionEnabled else {
+            lens.layer.removeAllAnimations()
+            lens.frame = target
+            return
+        }
+        UIView.animate(withDuration: 0.30, delay: 0,
+                       usingSpringWithDamping: 0.86, initialSpringVelocity: 0,
+                       options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.lens.frame = target
+        }
+    }
+
+    @objc private func tapped(_ button: UIButton) {
+        guard !dragging else { return }
+        commit(button.tag)
+    }
+
+    private func commit(_ index: Int) {
+        guard titles.indices.contains(index) else { return }
+        selectedIndex = index
+        showSelection(index, animated: true)
+        channel.invokeMethod("select", arguments: index)
+    }
+
+    @objc private func held(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began, let button = gesture.view as? UIButton,
+              longPressEnabled.indices.contains(button.tag), longPressEnabled[button.tag] else { return }
+        channel.invokeMethod("longPress", arguments: button.tag)
+    }
+
+    func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
+        if let pan = gesture as? UIPanGestureRecognizer {
+            let velocity = pan.velocity(in: root)
+            return titles.count > 1 && abs(velocity.x) > abs(velocity.y)
+        }
+        if let button = gesture.view as? UIButton {
+            return longPressEnabled.indices.contains(button.tag) && longPressEnabled[button.tag]
+        }
+        return true
+    }
+
+    @objc private func pan(_ gesture: UIPanGestureRecognizer) {
+        guard !titles.isEmpty, root.bounds.width > 0 else { return }
+        let x = gesture.location(in: root).x
+        let width = root.bounds.width / CGFloat(titles.count)
+        let index = min(titles.count - 1, max(0, Int(x / width)))
+        switch gesture.state {
+        case .began, .changed:
+            dragging = true
+            previewIndex = index
+            lens.layer.removeAllAnimations()
+            lens.isHidden = false
+            let left = min(root.bounds.width - width + 4, max(4, x - (width - 8) / 2))
+            lens.frame = CGRect(x: left, y: 4, width: max(0, width - 8),
+                                height: max(0, root.bounds.height - 8))
+            updateLabels()
+        case .ended:
+            dragging = false
+            commit(index)
+        case .cancelled, .failed:
+            dragging = false
+            showSelection(selectedIndex, animated: true)
+        default:
+            break
+        }
     }
 }
