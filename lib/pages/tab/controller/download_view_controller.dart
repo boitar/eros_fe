@@ -14,6 +14,7 @@ import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/store/db/entity/gallery_image_task.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:eros_fe/utils/toast.dart';
 import 'package:eros_fe/utils/utility.dart';
 import 'package:eros_fe/utils/vibrate.dart';
@@ -265,17 +266,17 @@ class DownloadViewController extends GetxController {
     DownloadType type, {
     GalleryTask? task,
   }) async {
-    final BuildContext context = Get.context!;
+    final BuildContext pageContext = Get.context!;
 
     await showCupertinoModalPopup<void>(
-        context: context,
-        builder: (BuildContext context) {
+        context: pageContext,
+        builder: (BuildContext sheetContext) {
           return CupertinoActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
                 },
-                child: Text(L10n.of(context).cancel)),
+                child: Text(L10n.of(sheetContext).cancel)),
             actions: <Widget>[
               if (type == DownloadType.archiver)
                 CupertinoActionSheetAction(
@@ -284,7 +285,7 @@ class DownloadViewController extends GetxController {
                     openArchiverTaskFile(taskIndex);
                   },
                   child: Text(
-                    L10n.of(context).open_with_other_apps,
+                    L10n.of(sheetContext).open_with_other_apps,
                   ),
                 ),
               // gallery重新下载
@@ -295,19 +296,25 @@ class DownloadViewController extends GetxController {
                     restartGalleryDownload(task?.gid);
                   },
                   child: Text(
-                    L10n.of(context).redownload,
+                    L10n.of(sheetContext).redownload,
                   ),
                 ),
               // gallery导出
               if (type == DownloadType.gallery &&
                   task?.status == TaskStatus.complete.value)
                 CupertinoActionSheetAction(
-                  onPressed: () {
+                  onPressed: () async {
                     Get.back();
-                    _showExportSheet(task: task);
+                    await ShareService.waitForModalDismissal();
+                    if (pageContext.mounted) {
+                      await _showExportSheet(
+                        pageContext: pageContext,
+                        task: task,
+                      );
+                    }
                   },
                   child: Text(
-                    L10n.of(context).export,
+                    L10n.of(sheetContext).export,
                   ),
                 ),
               // 删除
@@ -317,7 +324,7 @@ class DownloadViewController extends GetxController {
                   _showDeleteSheet(taskIndex, type);
                 },
                 child: Text(
-                  L10n.of(context).delete,
+                  L10n.of(sheetContext).delete,
                   style: const TextStyle(color: CupertinoColors.destructiveRed),
                 ),
               ),
@@ -413,27 +420,39 @@ class DownloadViewController extends GetxController {
     );
   }
 
-  Future<void> _showExportSheet({GalleryTask? task}) async {
+  Future<void> _showExportSheet({
+    GalleryTask? task,
+    BuildContext? pageContext,
+  }) async {
     if (task == null) {
       return;
     }
+    final BuildContext sharePageContext = pageContext ?? Get.context!;
     await showCupertinoModalPopup<void>(
-        context: Get.context!,
-        builder: (BuildContext context) {
+        context: sharePageContext,
+        builder: (BuildContext sheetContext) {
           return CupertinoActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
                 },
-                child: Text(L10n.of(context).cancel)),
+                child: Text(L10n.of(sheetContext).cancel)),
             actions: <Widget>[
               // ZIP
               CupertinoActionSheetAction(
-                onPressed: () {
+                onPressed: () async {
                   logger.d('导出zip');
+                  final shareOrigin = ShareService.positionOrigin(sheetContext);
                   Get.back();
-
-                  _exportZip(context, task);
+                  await ShareService.waitForModalDismissal();
+                  if (!sharePageContext.mounted) {
+                    return;
+                  }
+                  await _exportZip(
+                    sharePageContext,
+                    task,
+                    sharePositionOrigin: shareOrigin,
+                  );
                 },
                 child: const Text(
                   'ZIP',
@@ -441,10 +460,19 @@ class DownloadViewController extends GetxController {
               ),
               // ZIP
               CupertinoActionSheetAction(
-                onPressed: () {
+                onPressed: () async {
                   logger.d('导出epub');
+                  final shareOrigin = ShareService.positionOrigin(sheetContext);
                   Get.back();
-                  _exportEpub(context, task);
+                  await ShareService.waitForModalDismissal();
+                  if (!sharePageContext.mounted) {
+                    return;
+                  }
+                  await _exportEpub(
+                    sharePageContext,
+                    task,
+                    sharePositionOrigin: shareOrigin,
+                  );
                 },
                 child: const Text(
                   'EPUB',
@@ -455,16 +483,24 @@ class DownloadViewController extends GetxController {
         });
   }
 
-  Future<String?> _exportZip(BuildContext context, GalleryTask task) async {
+  Future<String?> _exportZip(
+    BuildContext context,
+    GalleryTask task, {
+    Rect? sharePositionOrigin,
+  }) async {
     logger.d('export zip , dir path ${task.dirPath}');
     if (task.dirPath == null) {
       return null;
     }
+    final origin = sharePositionOrigin ?? ShareService.positionOrigin(context);
 
     final zipPath = await _exportGallery(context, () => _compZip(task));
 
     if (zipPath != null) {
-      Share.shareXFiles([XFile(zipPath)]);
+      await ShareService.shareFiles(
+        [XFile(zipPath)],
+        sharePositionOrigin: origin,
+      );
     }
     return null;
   }
@@ -526,17 +562,25 @@ class DownloadViewController extends GetxController {
     return zipPath;
   }
 
-  Future<String?> _exportEpub(BuildContext context, GalleryTask task) async {
+  Future<String?> _exportEpub(
+    BuildContext context,
+    GalleryTask task, {
+    Rect? sharePositionOrigin,
+  }) async {
     logger.d('export epub , dir path ${task.dirPath}');
     if (task.dirPath == null) {
       return null;
     }
+    final origin = sharePositionOrigin ?? ShareService.positionOrigin(context);
 
     final exportFilePath =
         await _exportGallery(context, () => _buildEpub(task));
 
     if (exportFilePath != null) {
-      Share.shareXFiles([XFile(exportFilePath)]);
+      await ShareService.shareFiles(
+        [XFile(exportFilePath)],
+        sharePositionOrigin: origin,
+      );
     }
     return null;
   }
@@ -717,10 +761,17 @@ class DownloadViewController extends GetxController {
     return path.join(Global.appDocPath, 'FEhDownloadTask_$nowTime.zip');
   }
 
-  Future shareTaskInfoFile() async {
+  Future<void> shareTaskInfoFile({
+    BuildContext? context,
+    Rect? sharePositionOrigin,
+  }) async {
+    final origin = sharePositionOrigin ?? ShareService.positionOrigin(context);
     final tempFilePath = await _writeTaskInfoFile();
     if (tempFilePath != null) {
-      Share.shareXFiles([XFile(tempFilePath)]);
+      await ShareService.shareFiles(
+        [XFile(tempFilePath)],
+        sharePositionOrigin: origin,
+      );
     }
   }
 

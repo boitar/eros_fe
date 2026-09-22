@@ -6,6 +6,7 @@ import 'package:eros_fe/pages/item/download_gallery_item.dart';
 import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -84,7 +85,7 @@ class _DownloadTabState extends State<DownloadTab> {
                   CupertinoButton(
                     minimumSize: const Size(40, 40),
                     padding: const EdgeInsets.all(0),
-                    onPressed: _showExportDialog,
+                    onPressed: () => _showExportDialog(context),
                     child: const Icon(
                       CupertinoIcons.arrow_up_arrow_down_square_fill,
                       size: 28,
@@ -106,19 +107,26 @@ class _DownloadTabState extends State<DownloadTab> {
     );
   }
 
-  Future<void> _showExportDialog() async {
+  Future<void> _showExportDialog(BuildContext pageContext) async {
     return showCupertinoDialog<void>(
-      context: Get.overlayContext!,
+      context: pageContext,
       barrierDismissible: true,
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return CupertinoAlertDialog(
           title: const Text('Import & Export'),
           content: const Text('Import and Export download task'),
           actions: [
             CupertinoDialogAction(
               onPressed: () async {
+                final shareOrigin = ShareService.positionOrigin(sheetContext);
                 Get.back();
-                controller.shareTaskInfoFile();
+                await ShareService.waitForModalDismissal();
+                if (!pageContext.mounted) {
+                  return;
+                }
+                await controller.shareTaskInfoFile(
+                  sharePositionOrigin: shareOrigin,
+                );
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,

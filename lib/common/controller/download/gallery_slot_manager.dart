@@ -176,6 +176,13 @@ class GallerySlotManager {
       loggerSimple.d(
           '释放前队列状态: 活动=${_activeGalleries.length}/${_maxConcurrentGalleries}, 等待=${_waitingQueue.length}');
 
+      final removedWaitingCount =
+          _waitingQueue.where((task) => task.gid == gid).length;
+      _waitingQueue.removeWhere((task) => task.gid == gid);
+      if (removedWaitingCount > 0) {
+        loggerSimple.d('从等待队列移除画廊: gid=$gid, 数量=$removedWaitingCount');
+      }
+
       // 释放槽位
       _activeGalleries.remove(gid);
       loggerSimple.d(

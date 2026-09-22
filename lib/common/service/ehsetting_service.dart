@@ -273,6 +273,31 @@ class EhSettingService extends ProfileService {
   bool get hideTopBarOnScroll => _hideTopBarOnScroll.value;
   set hideTopBarOnScroll(bool val) => _hideTopBarOnScroll.value = val;
 
+  // liquidGlass
+  final _liquidGlass = false.obs;
+  bool get liquidGlass => _liquidGlass.value;
+  set liquidGlass(bool val) => _liquidGlass.value = val;
+
+  /// Whether native Liquid Glass should be used so UIKit can apply the
+  /// device's system Liquid Glass appearance and accessibility settings.
+  ///
+  /// The persisted name is retained for profile compatibility. It no longer
+  /// means only Reduce Transparency; the system appearance slider is owned by
+  /// UIKit and is intentionally not read through private preferences.
+  final _liquidGlassFollowSystemTransparency = true.obs;
+  bool get liquidGlassFollowSystemTransparency =>
+      _liquidGlassFollowSystemTransparency.value;
+  set liquidGlassFollowSystemTransparency(bool val) =>
+      _liquidGlassFollowSystemTransparency.value = val;
+
+  /// Keep the search control visible by default to preserve the v10 behavior.
+  /// Users can opt into hiding it with the collapsing bottom bar.
+  final _hideLiquidGlassSearchOnScroll = false.obs;
+  bool get hideLiquidGlassSearchOnScroll =>
+      _hideLiquidGlassSearchOnScroll.value;
+  set hideLiquidGlassSearchOnScroll(bool val) =>
+      _hideLiquidGlassSearchOnScroll.value = val;
+
   final _itemConfigList = <ItemConfig>[].obs;
   final _itemConfigMap = <ListModeEnum, ItemConfig>{}.obs;
   Map<ListModeEnum, ItemConfig> get mapItemConfig => _itemConfigMap;
@@ -435,6 +460,30 @@ class EhSettingService extends ProfileService {
     hideTopBarOnScroll = ehConfig.hideTopBarOnScroll ?? hideTopBarOnScroll;
     everProfile<bool>(_hideTopBarOnScroll, (value) {
       ehConfig = ehConfig.copyWith(hideTopBarOnScroll: value.oN);
+    });
+
+    // liquidGlass
+    liquidGlass = ehConfig.liquidGlass ?? liquidGlass;
+    everProfile<bool>(_liquidGlass, (value) {
+      ehConfig = ehConfig.copyWith(liquidGlass: value.oN);
+    });
+
+    liquidGlassFollowSystemTransparency =
+        ehConfig.liquidGlassFollowSystemTransparency ??
+            liquidGlassFollowSystemTransparency;
+    everProfile<bool>(_liquidGlassFollowSystemTransparency, (value) {
+      ehConfig = ehConfig.copyWith(
+        liquidGlassFollowSystemTransparency: value.oN,
+      );
+    });
+
+    // hideLiquidGlassSearchOnScroll
+    hideLiquidGlassSearchOnScroll =
+        ehConfig.hideLiquidGlassSearchOnScroll ?? hideLiquidGlassSearchOnScroll;
+    everProfile<bool>(_hideLiquidGlassSearchOnScroll, (value) {
+      ehConfig = ehConfig.copyWith(
+        hideLiquidGlassSearchOnScroll: value.oN,
+      );
     });
 
     // webDAVMaxConnections

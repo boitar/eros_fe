@@ -7,6 +7,7 @@ import 'package:eros_fe/pages/tab/view/history_page.dart';
 import 'package:eros_fe/pages/tab/view/tabbar/custom_tabbar_page.dart';
 import 'package:eros_fe/pages/tab/view/tabbar/favorite_tabbar_page.dart';
 import 'package:eros_fe/pages/tab/view/toplist_page.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -44,6 +45,19 @@ class TabPages {
     EHRoutes.setting: FontAwesomeIcons.cog,
     EHRoutes.customList: FontAwesomeIcons.layerGroup,
     EHRoutes.favoriteTabbar: FontAwesomeIcons.heartBroken,
+  };
+
+  final Map<String, String> liquidGlassFallbackSymbols = <String, String>{
+    EHRoutes.popular: 'flame.fill',
+    EHRoutes.watched: 'eye.fill',
+    EHRoutes.gallery: 'square.grid.2x2.fill',
+    EHRoutes.favorite: 'heart.fill',
+    EHRoutes.toplist: 'list.number',
+    EHRoutes.history: 'clock.arrow.circlepath',
+    EHRoutes.download: 'arrow.down.circle.fill',
+    EHRoutes.setting: 'gearshape.fill',
+    EHRoutes.customList: 'square.grid.2x2.fill',
+    EHRoutes.favoriteTabbar: 'heart.slash.fill',
   };
 
   Map<String, Widget> get tabIcons => iconDatas
@@ -217,6 +231,18 @@ class TabHomeController extends GetxController {
             label: tabPages.tabTitles[e],
           ))
       .toList();
+
+  List<LiquidGlassTabItem> get liquidGlassTabItems => _showTabs.map((route) {
+        final FaIconData icon = tabPages.iconDatas[route]!;
+        return LiquidGlassTabItem(
+          label: tabPages.tabTitles[route] ?? route,
+          codePoint: icon.codePoint,
+          fontFamily: icon.fontFamily,
+          fontPackage: icon.fontPackage,
+          fallbackSymbol:
+              tabPages.liquidGlassFallbackSymbols[route] ?? 'circle.fill',
+        );
+      }).toList();
 
   late BuildContext tContext;
 

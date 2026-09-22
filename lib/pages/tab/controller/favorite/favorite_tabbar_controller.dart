@@ -45,13 +45,10 @@ class FavoriteTabBarController extends DefaultTabViewController {
       Get.lazyPut(() => FavoriteSubListController(), tag: favcat.favId);
     }
 
-    // index
-    index = favConfig?.lastIndex ?? 0;
-    ever<int>(_index, (value) {
-      favConfig = favConfig?.copyWith(lastIndex: value.oN) ??
-          FavConfig(lastIndex: value);
-      Global.saveProfile();
-    });
+    // The selected favorite category is transient UI state. Always start at
+    // the first category so the PageView and Liquid Glass rail reset together
+    // after relaunch instead of restoring an old rail-only selection.
+    index = 0;
   }
 
   String get orderText =>

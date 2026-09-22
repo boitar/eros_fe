@@ -1,10 +1,15 @@
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/index.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/tab/controller/toplist_controller.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/utils/cust_lib/persistent_header_builder.dart';
 import 'package:eros_fe/utils/cust_lib/sliver/sliver_persistent_header.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/refresh.dart';
+import 'package:eros_fe/widget/liquid_glass_rail.dart';
+import 'package:eros_fe/widget/link_scroll_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -34,6 +39,61 @@ class _ToplistTabState extends State<ToplistTab> {
     controller.initStateForListPage(
       context: context,
       ehTabController: ehTabController,
+    );
+  }
+
+  LiquidGlassRail _buildGlassRail(
+    BuildContext context,
+    LiquidGlassTopLayout layout,
+    double collapseProgress,
+  ) {
+    final l10n = L10n.of(context);
+    final periodTitles = <String>[
+      l10n.tolist_yesterday,
+      l10n.tolist_past_month,
+      l10n.tolist_past_year,
+      l10n.tolist_alltime,
+    ];
+    return LiquidGlassRail(
+      title: controller.getTopListTitle,
+      safeTop: layout.safeTop,
+      collapseProgress: collapseProgress,
+      dockingTranslation: layout.dockingTranslation,
+      selectedIndex:
+          ToplistType.values.indexOf(controller.ehSettingService.toplist),
+      followSystemTransparency:
+          _ehSettingService.liquidGlassFollowSystemTransparency,
+      leading: LiquidGlassRailAction(
+        icon: CupertinoIcons.time,
+        label: '浏览历史',
+        onPressed: () {
+          Get.toNamed(EHRoutes.history, id: isLayoutLarge ? 1 : null);
+        },
+      ),
+      trailing: <LiquidGlassRailAction>[
+        LiquidGlassRailAction(
+          icon: CupertinoIcons.sort_down,
+          label: '切换排行周期',
+          onPressed: () => controller.setToplist(context),
+        ),
+        LiquidGlassRailAction(
+          icon: CupertinoIcons.arrow_uturn_down_circle,
+          label: '跳转/搜寻',
+          onPressed: () => controller.showJumpDialog(context),
+        ),
+      ],
+      categories: <LiquidGlassRailCategory>[
+        for (int index = 0; index < periodTitles.length; index++)
+          LiquidGlassRailCategory(
+            title: periodTitles[index],
+            onTap: () => controller.setToplist(
+              context,
+              type: ToplistType.values[index],
+            ),
+          ),
+      ],
+      onTitleTap: () => controller.scrollToTop(context),
+      refreshing: controller.isBackgroundRefresh,
     );
   }
 
@@ -148,14 +208,46 @@ class _ToplistTabState extends State<ToplistTab> {
       ),
     );
 
-    final customScrollView = Obx(() {
-      final hideTopBarOnScroll = _ehSettingService.hideTopBarOnScroll;
-      return CustomScrollView(
+    return Obx(() {
+      final useLiquidGlass =
+          _ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+      final hideTopBarOnScroll =
+          _ehSettingService.hideTopBarOnScroll || useLiquidGlass;
+      final mediaQuery = MediaQuery.of(context);
+      final layout = LiquidGlassTopLayout.fromMediaQuery(mediaQuery);
+      final headerMaxHeight = mediaQuery.viewPadding.top +
+          (useLiquidGlass
+              ? LiquidGlassRail.expandedHeight
+              : kMinInteractiveDimensionCupertino);
+      final dockTopBar =
+          useLiquidGlass && hideTopBarOnScroll && layout.canDockTopRail;
+
+      final customScrollView = CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: <Widget>[
-          // sliverNavigationBar,
-
-          if (hideTopBarOnScroll)
+          if (useLiquidGlass)
+            SliverPersistentHeader(
+              floating: true,
+              pinned: true,
+              delegate: FooSliverPersistentHeaderDelegate(
+                builder: (context, offset, _) => Obx(
+                  () => _buildGlassRail(
+                    context,
+                    layout,
+                    dockTopBar
+                        ? layout.collapseProgress(
+                            offset,
+                            headerMaxHeight - layout.collapsedHeaderHeight,
+                          )
+                        : 0.0,
+                  ),
+                ),
+                minHeight:
+                    dockTopBar ? layout.collapsedHeaderHeight : headerMaxHeight,
+                maxHeight: headerMaxHeight,
+              ),
+            )
+          else if (hideTopBarOnScroll)
             SliverFloatingPinnedPersistentHeader(
               delegate: SliverFloatingPinnedPersistentHeaderBuilder(
                 minExtentProtoType: SizedBox(
@@ -167,7 +259,7 @@ class _ToplistTabState extends State<ToplistTab> {
             ),
           SliverPadding(
             padding: EdgeInsets.only(
-              top: hideTopBarOnScroll
+              top: useLiquidGlass || hideTopBarOnScroll
                   ? 0
                   : (kMinInteractiveDimensionCupertino +
                       context.mediaQueryPadding.top),
@@ -191,12 +283,10 @@ class _ToplistTabState extends State<ToplistTab> {
           }),
         ],
       );
-    });
 
-    return Obx(() {
-      final hideTopBarOnScroll = _ehSettingService.hideTopBarOnScroll;
       return CupertinoPageScaffold(
-        navigationBar: hideTopBarOnScroll ? null : navigationBar,
+        navigationBar:
+            useLiquidGlass || hideTopBarOnScroll ? null : navigationBar,
         child: SizeCacheWidget(child: customScrollView),
       );
     });
@@ -254,7 +344,8 @@ class _ToplistTabState extends State<ToplistTab> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FaIcon(FontAwesomeIcons.hippo,
+                FaIcon(
+                  FontAwesomeIcons.hippo,
                   size: 100,
                   color: CupertinoDynamicColor.resolve(
                       CupertinoColors.systemGrey, context),

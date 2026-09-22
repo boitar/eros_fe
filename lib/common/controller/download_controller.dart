@@ -760,13 +760,24 @@ class DownloadController extends GetxController {
     final putCount = await _updateImageTasksByGid(galleryTask.gid);
     logger.d('更新图片任务到数据库: gid=${galleryTask.gid}, 更新数量=$putCount');
 
+    if (_shouldStopImageTask(galleryTask.gid)) {
+      logger.d('下载任务在启动前已取消或进入终态: gid=${galleryTask.gid}');
+      return;
+    }
+
     logger.d('更新任务状态为running: gid=${galleryTask.gid}');
     await galleryTaskUpdateStatus(galleryTask.gid, TaskStatus.running);
 
-    _clearErrInfo(galleryTask.gid, updateView: false);
-
     final CancelToken cancelToken = CancelToken();
+    if (_shouldStopImageTask(galleryTask.gid, cancelToken)) {
+      logger.d('下载任务在切换running时已取消: gid=${galleryTask.gid}');
+      cancelToken.cancel();
+      return;
+    }
     dState.cancelTokenMap[galleryTask.gid] = cancelToken;
+    _updateDownloadView(['DownloadGalleryItem_${galleryTask.gid}']);
+
+    _clearErrInfo(galleryTask.gid, updateView: false);
 
     final realDirPath = galleryTask.realDirPath;
     if (realDirPath == null) {
@@ -794,6 +805,11 @@ class DownloadController extends GetxController {
     // 循环进行下载图片
     logger.d('开始循环下载: gid=${galleryTask.gid}, 文件总数=${galleryTask.fileCount}');
     for (int index = 0; index < galleryTask.fileCount; index++) {
+      if (_shouldStopImageTask(galleryTask.gid, cancelToken)) {
+        logger.d('下载任务已取消或进入终态，停止继续入队: gid=${galleryTask.gid}');
+        break;
+      }
+
       final itemSer = index + 1;
 
       final oriImageTask =
@@ -818,11 +834,11 @@ class DownloadController extends GetxController {
       final showKey = dState.showKeyMap[galleryTask.gid];
 
       if (index > 0 && showKey == null) {
-        logger.d('等待showKey: gid=${galleryTask.gid}, index=$index');
-        dState.showKeyCompleteMap[galleryTask.gid] = Completer<bool>.sync();
-        await dState.showKeyCompleteMap[galleryTask.gid]?.future;
-        logger.d(
-            '获取到showKey: gid=${galleryTask.gid}, showKey=${dState.showKeyMap[galleryTask.gid]}');
+        // 没有 showKey 时，fetchImageInfoByApi 会自动回退到 HTML 解析。
+        // 这里不能等待前一张图片成功后才继续，否则前一张图片失败时
+        // Completer 永远不会完成，并会卡住整个串行画廊队列。
+        logger
+            .d('showKey暂不可用，直接使用HTML解析: gid=${galleryTask.gid}, index=$index');
       }
 
       final imageFuture = dState.executor.scheduleTask<void>(() async {
@@ -882,6 +898,19 @@ class DownloadController extends GetxController {
     logger.d('所有图片任务已加入队列: gid=${galleryTask.gid}');
   }
 
+  bool _shouldStopImageTask(int gid, [CancelToken? cancelToken]) {
+    if ((cancelToken?.isCancelled ?? false) ||
+        dState.taskCancelTokens[gid]?.isCancelled == true) {
+      return true;
+    }
+
+    final status = dState.galleryTaskMap[gid]?.status;
+    return status == TaskStatus.paused.value ||
+        status == TaskStatus.failed.value ||
+        status == TaskStatus.canceled.value ||
+        status == TaskStatus.complete.value;
+  }
+
   Future<void> _markImageTaskError(
     int gid,
     Object error,
@@ -915,12 +944,6 @@ class DownloadController extends GetxController {
     StackTrace stack, {
     CancelToken? taskCancelToken,
   }) async {
-    logger.e(
-      '下载图片失败: gid=$gid, ser=$itemSer, error=$error',
-      error: error,
-      stackTrace: stack,
-    );
-
     // Ignore a worker that belongs to a cancelled or replaced attempt.
     final currentToken = dState.cancelTokenMap[gid];
     if (taskCancelToken != null &&
@@ -938,6 +961,12 @@ class DownloadController extends GetxController {
         currentTask?.status == TaskStatus.failed.value) {
       return;
     }
+
+    logger.e(
+      '下载图片失败: gid=$gid, ser=$itemSer, error=$error',
+      error: error,
+      stackTrace: stack,
+    );
 
     final dioStatusCode =
         error is DioException ? error.response?.statusCode : null;

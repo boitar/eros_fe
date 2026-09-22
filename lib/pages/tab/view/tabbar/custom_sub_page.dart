@@ -4,6 +4,7 @@ import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/liquid_glass_rail.dart';
 
 import '../../comm.dart';
 import '../constants.dart';
@@ -15,10 +16,12 @@ class SubListView<T extends CustomSubListController> extends StatefulWidget {
     super.key,
     required this.profileUuid,
     this.pinned = true,
+    this.liquidGlass = false,
   });
 
   final String profileUuid;
   final bool pinned;
+  final bool liquidGlass;
 
   @override
   State<SubListView> createState() => _SubListViewState<T>();
@@ -84,11 +87,15 @@ class _SubListViewState<T extends CustomSubListController>
   }
 
   Widget _buildRefresh(BuildContext context) {
+    final double headerPadding = widget.liquidGlass
+        ? (widget.pinned
+            ? LiquidGlassRail.expandedHeight
+            : context.mediaQueryPadding.top)
+        : widget.pinned
+            ? kHeaderMaxHeight
+            : context.mediaQueryPadding.top + kTopTabbarHeight;
     return SliverPadding(
-        padding: widget.pinned
-            ? const EdgeInsets.only(top: kHeaderMaxHeight)
-            : EdgeInsets.only(
-                top: context.mediaQueryPadding.top + kTopTabbarHeight),
+        padding: EdgeInsets.only(top: headerPadding),
         sliver: EhCupertinoSliverRefreshControl(
           onRefresh: subController.onRefresh,
         ));
@@ -145,7 +152,8 @@ class _SubListViewState<T extends CustomSubListController>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FaIcon(FontAwesomeIcons.hippo,
+                FaIcon(
+                  FontAwesomeIcons.hippo,
                   size: 100,
                   color: CupertinoDynamicColor.resolve(
                       CupertinoColors.systemGrey, context),

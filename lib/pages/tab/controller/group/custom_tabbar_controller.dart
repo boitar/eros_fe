@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
@@ -100,20 +99,20 @@ class CustomTabbarController extends DefaultTabViewController {
       Global.saveProfile();
     });
 
-    index = customTabConfig?.lastIndex ?? 0;
-    ever<int>(_index, (value) {
-      customTabConfig = customTabConfig?.copyWith(lastIndex: value.oN) ??
-          CustomTabConfig(lastIndex: value);
-      Global.saveProfile();
-    });
+    // The selected category is transient UI state. Start both PageView and
+    // the Liquid Glass rail at the first visible profile on every new app
+    // session; restoring lastIndex caused the rail and page to disagree after
+    // relaunch.
+    final visibleProfiles = profilesShow;
+    index = 0;
 
     delProfiles(hiveHelper.getProfileDelList());
     debounce<List<CustomProfile>>(delProfiles, (value) {
       hiveHelper.setProfileDelList(value);
     }, time: const Duration(seconds: 2));
 
-    if (profiles.isNotEmpty) {
-      currProfileUuid = profiles[min(max(index, 0), profiles.length - 1)].uuid;
+    if (visibleProfiles.isNotEmpty) {
+      currProfileUuid = visibleProfiles.first.uuid;
     }
 
     for (final profile in profiles) {
@@ -132,8 +131,32 @@ class CustomTabbarController extends DefaultTabViewController {
   }
 
   void onPageChanged(int index) {
-    currProfileUuid = profiles[index].uuid;
+    final visibleProfiles = profilesShow;
+    if (index < 0 || index >= visibleProfiles.length) return;
+    currProfileUuid = visibleProfiles[index].uuid;
     this.index = index;
+  }
+
+  /// Update the rail immediately and let the PageView animate to the same
+  /// destination. Waiting for PageView.onPageChanged made the page and its
+  /// Liquid Glass selection visibly lag behind one another.
+  void selectPage(int target) {
+    final visibleProfiles = profilesShow;
+    if (target < 0 || target >= visibleProfiles.length) return;
+
+    linkScrollBarController.scrollToItem(target);
+    onPageChanged(target);
+    if (!pageController.hasClients) return;
+
+    final currentPage = pageController.page;
+    if (currentPage != null && (currentPage - target).abs() < 0.001) {
+      return;
+    }
+    pageController.animateToPage(
+      target,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -210,7 +233,8 @@ class CustomTabbarController extends DefaultTabViewController {
     final _profileUuid = currProfileUuid;
     final _profile = profiles.removeAt(oldIndex);
     profiles.insert(newIndex, _profile);
-    index = profiles.indexWhere((element) => element.uuid == _profileUuid);
+    index = profilesShow.indexWhere((element) => element.uuid == _profileUuid);
+    if (index < 0 && profilesShow.isNotEmpty) index = 0;
     await 200.milliseconds.delay();
     pageController.jumpToPage(index);
     linkScrollBarController.scrollToItem(index);

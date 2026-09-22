@@ -4,6 +4,7 @@ import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/liquid_glass_rail.dart';
 
 import '../../comm.dart';
 import '../constants.dart';
@@ -11,10 +12,16 @@ import '../gallery_base.dart';
 import '../list/tab_base.dart';
 
 class FavoriteSubPage extends StatefulWidget {
-  const FavoriteSubPage({super.key, required this.favcat, this.pinned = true});
+  const FavoriteSubPage({
+    super.key,
+    required this.favcat,
+    this.pinned = true,
+    this.liquidGlass = false,
+  });
 
   final String favcat;
   final bool pinned;
+  final bool liquidGlass;
 
   @override
   State<FavoriteSubPage> createState() => _FavoriteSubPageState();
@@ -69,11 +76,15 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
   }
 
   Widget _buildRefresh(BuildContext context) {
+    final double headerPadding = widget.liquidGlass
+        ? (widget.pinned
+            ? LiquidGlassRail.expandedHeight
+            : context.mediaQueryPadding.top)
+        : widget.pinned
+            ? kHeaderMaxHeight
+            : context.mediaQueryPadding.top + kTopTabbarHeight;
     return SliverPadding(
-        padding: widget.pinned
-            ? const EdgeInsets.only(top: kHeaderMaxHeight)
-            : EdgeInsets.only(
-                top: context.mediaQueryPadding.top + kTopTabbarHeight),
+        padding: EdgeInsets.only(top: headerPadding),
         sliver: EhCupertinoSliverRefreshControl(
           onRefresh: _favoriteSubListController.onRefresh,
         ));
@@ -131,7 +142,8 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  FaIcon(FontAwesomeIcons.hippo,
+                  FaIcon(
+                    FontAwesomeIcons.hippo,
                     size: 100,
                     color: CupertinoDynamicColor.resolve(
                         CupertinoColors.systemGrey, context),

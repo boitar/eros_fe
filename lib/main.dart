@@ -166,6 +166,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangePlatformBrightness() {
     themeService.platformBrightness.value =
         View.of(context).platformDispatcher.platformBrightness;
+    themeService.syncNativeAppearance();
   }
 
   @override

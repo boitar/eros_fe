@@ -69,3 +69,15 @@ fonts/NotoColorEmoji.ttf
 fonts/OpenMoji-Color.ttf
 
 .cursor
+
+# Local planning and prototype documents
+/docs/
+/prototypes/
+/*-plan.md
+/*-status.md
+/*-review-*.md
+/*-analysis.md
+/*-iteration-*.md
+/dev-commit-message-review-*.md
+/ios/Flutter/ephemeral/
+/fix-waterfall-*.md

@@ -531,11 +531,19 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
           controller.resumeGalleryDownload(galleryTask.gid);
         },
       ).paddingSymmetric(),
-      TaskStatus.enqueued: Container(
-        width: minSize,
-        height: minSize,
-        child: const CupertinoActivityIndicator(
-          radius: 10,
+      // 排队中的任务也可以暂停，避免队列阻塞时只能看到转圈而无法操作。
+      TaskStatus.enqueued: CupertinoTheme(
+        data: const CupertinoThemeData(primaryColor: CupertinoColors.systemRed),
+        child: CupertinoButton(
+          padding: buttonPadding,
+          minSize: minSize,
+          child: const FaIcon(
+            FontAwesomeIcons.pause,
+            size: iconSize,
+          ),
+          onPressed: () {
+            controller.pauseGalleryDownload(_taskInfo?.gid ?? galleryTask.gid);
+          },
         ),
       ),
       TaskStatus.undefined: Container(
@@ -547,8 +555,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       ),
     };
 
-    return statusMap[TaskStatus(galleryTask.status ?? 0)] ??
-        const SizedBox(width: 40);
+    final currentStatus = _taskInfo?.status ?? galleryTask.status ?? 0;
+    return statusMap[TaskStatus(currentStatus)] ?? const SizedBox(width: 40);
   }
 }
 

@@ -17,6 +17,7 @@ import 'package:shared_storage/shared_storage.dart' as ss;
 import 'package:sprintf/sprintf.dart' as sp;
 
 const int _kDefNameLen = 4;
+const int _kTransientRetryCount = 2;
 
 /// 用于传递下载信息的数据类
 class ImageDownloadInfo {
@@ -46,6 +47,55 @@ class ImageDownloadProcessor {
 
   /// 下载图片流程控制
   Future<void> downloadImageFlow(
+    GalleryImage preImage,
+    GalleryImageTask? imageTask,
+    int gid,
+    String downloadParentPath,
+    int maxSer, {
+    bool downloadOrigImage = false,
+    bool reDownload = false,
+    CancelToken? cancelToken,
+    Future<void> Function(String fileName)? onDownloadCompleteWithFileName,
+    String? showKey,
+    Future<void> Function(
+            int gid, GalleryImage image, String? fileName, int? status)?
+        putImageTaskCallback,
+  }) async {
+    for (var retry = 0;; retry++) {
+      try {
+        await _downloadImageFlowOnce(
+          preImage,
+          imageTask,
+          gid,
+          downloadParentPath,
+          maxSer,
+          downloadOrigImage: downloadOrigImage,
+          reDownload: reDownload,
+          cancelToken: cancelToken,
+          onDownloadCompleteWithFileName: onDownloadCompleteWithFileName,
+          showKey: showKey,
+          putImageTaskCallback: putImageTaskCallback,
+        );
+        return;
+      } on Object catch (error) {
+        if (retry >= _kTransientRetryCount ||
+            cancelToken?.isCancelled == true ||
+            !_isTransientNetworkError(error)) {
+          rethrow;
+        }
+
+        final delay = Duration(milliseconds: 500 * (retry + 1));
+        logger.w(
+          '图片下载遇到临时网络错误，${delay.inMilliseconds}ms后重试: '
+          'gid=$gid, ser=${preImage.ser}, retry=${retry + 1}/$_kTransientRetryCount, '
+          'error=$error',
+        );
+        await Future<void>.delayed(delay);
+      }
+    }
+  }
+
+  Future<void> _downloadImageFlowOnce(
     GalleryImage preImage,
     GalleryImageTask? imageTask,
     int gid,
@@ -144,6 +194,31 @@ class ImageDownloadProcessor {
         rethrow;
       }
     }
+  }
+
+  bool _isTransientNetworkError(Object error) {
+    if (error is DioException) {
+      if (CancelToken.isCancel(error)) {
+        return false;
+      }
+
+      final statusCode = error.response?.statusCode;
+      if (statusCode != null) {
+        return statusCode >= 500 && statusCode != 509;
+      }
+
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.sendTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.connectionError) {
+        return true;
+      }
+
+      return error.error is HandshakeException ||
+          error.error is SocketException;
+    }
+
+    return error is HandshakeException || error is SocketException;
   }
 
   /// 获取下载URL和更新的图片信息

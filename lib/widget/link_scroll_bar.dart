@@ -1,11 +1,14 @@
 import 'dart:math';
 
+import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get/get.dart';
 
 const kDuration = Duration(milliseconds: 300);
 const double kDefIndicatorHeight = 4;
@@ -268,6 +271,9 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
   @override
   Widget build(BuildContext context) {
     final scrollViewWidth = _maxScrollViewWidth;
+    final bool useLiquidGlass = Get.isRegistered<EhSettingService>() &&
+        Get.find<EhSettingService>().liquidGlass &&
+        LiquidGlassPlatform.isSupported;
 
     final indicator = AnimatedContainer(
       height: widget.indicatorHeight,
@@ -297,7 +303,7 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
                   children: _getBarItems(context, c.maxWidth),
                 ),
               ),
-              if (widget.pageController == null)
+              if (!useLiquidGlass && widget.pageController == null)
                 Stack(
                   children: [
                     SizedBox(
@@ -310,7 +316,7 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
                     ),
                   ],
                 ),
-              if (widget.pageController != null)
+              if (!useLiquidGlass && widget.pageController != null)
                 TitleIndicator(
                   height: widget.indicatorHeight,
                   pageController: widget.pageController,
@@ -489,11 +495,27 @@ class _InnerLinkTabItemState extends State<InnerLinkTabItem> {
 
   @override
   Widget build(BuildContext context) {
+    if (Get.isRegistered<EhSettingService>()) {
+      return Obx(() => _buildItem(
+            context,
+            Get.find<EhSettingService>().liquidGlass &&
+                LiquidGlassPlatform.isSupported,
+            Get.find<EhSettingService>().liquidGlassFollowSystemTransparency,
+          ));
+    }
+    return _buildItem(context, false, true);
+  }
+
+  Widget _buildItem(
+    BuildContext context,
+    bool liquidGlassEnabled,
+    bool followSystemTransparency,
+  ) {
     WSLGetWidgetWithNotification(
             width: width + widget.iconSize + 4, index: widget.index)
         .dispatch(context);
 
-    return Container(
+    final Widget item = Container(
       key: _key,
       padding: widget.padding,
       child: Column(
@@ -519,6 +541,17 @@ class _InnerLinkTabItemState extends State<InnerLinkTabItem> {
           const Spacer(),
         ],
       ),
+    );
+
+    if (!liquidGlassEnabled || !widget.selected) {
+      return item;
+    }
+
+    return LiquidGlassSurface(
+      enabled: true,
+      borderRadius: BorderRadius.circular(18),
+      followSystemTransparency: followSystemTransparency,
+      child: item,
     );
   }
 }
@@ -591,8 +624,10 @@ class FooSliverPersistentHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return minHeight != oldDelegate.minExtent ||
-        maxHeight != oldDelegate.maxExtent;
+    // The builder captures live tab state (selected index, categories and
+    // Liquid Glass transition progress). Comparing only the extents leaves a
+    // stale header in place after PageView changes tabs.
+    return true;
   }
 }
 

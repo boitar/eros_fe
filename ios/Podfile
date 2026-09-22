@@ -9,6 +9,7 @@ ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
   'Debug' => :debug,
+  'Debug-SimulatorUI' => :debug,
   'Profile' => :release,
   'Release' => :release,
 }
@@ -40,9 +41,23 @@ target 'Runner' do
 end
 
 post_install do |installer|
+  simulator_ui_configuration = 'Debug-SimulatorUI'
+  mlkit_frameworks = %w[
+    MLImage
+    MLKitBarcodeScanning
+    MLKitCommon
+    MLKitLanguageID
+    MLKitNaturalLanguage
+    MLKitVision
+    google_mlkit_barcode_scanning
+    google_mlkit_commons
+    google_mlkit_language_id
+  ]
+
   installer.pods_project.build_configurations.each do |config|
 #       config.build_settings["EXCLUDED_ARCHS[sdk=*]"] = "armv7"
-      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] =
+        config.name == simulator_ui_configuration ? "" : "arm64"
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
   end
   installer.pods_project.targets.each do |target|
@@ -54,7 +69,8 @@ post_install do |installer|
       File.open(xcconfig_path, "w") { |file| file << xcconfig_mod }
 
 #       config.build_settings["EXCLUDED_ARCHS[sdk=*]"] = "armv7"
-      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] =
+        config.name == simulator_ui_configuration ? "" : "arm64"
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
       config.build_settings['SWIFT_VERSION'] = '5.0'  # required by simple_permission
       config.build_settings['ENABLE_BITCODE'] = 'NO'
@@ -109,6 +125,28 @@ post_install do |installer|
         ## dart: PermissionGroup.appTrackingTransparency
         # 'PERMISSION_APP_TRACKING_TRANSPARENCY=1'
       ]
+      if config.name == simulator_ui_configuration
+        definitions = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS']
+        if definitions.is_a?(Array)
+          definitions << 'EROS_SIMULATOR_UI_TEST=1'
+        else
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = [
+            definitions,
+            'EROS_SIMULATOR_UI_TEST=1',
+          ].compact
+        end
+      end
     end
+  end
+
+  installer.aggregate_targets.each do |aggregate_target|
+    xcconfig = aggregate_target.build_settings(simulator_ui_configuration).xcconfig
+    next unless xcconfig
+
+    xcconfig.attributes['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = ''
+    mlkit_frameworks.each do |framework_name|
+      xcconfig.other_linker_flags[:frameworks].delete(framework_name)
+    end
+    xcconfig.save_as(aggregate_target.xcconfig_path(simulator_ui_configuration))
   end
 end

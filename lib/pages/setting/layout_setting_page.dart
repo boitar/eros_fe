@@ -8,6 +8,7 @@ import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/login/controller/login_controller.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -190,6 +191,56 @@ class LayoutSettingList extends StatelessWidget {
         ],
       ),
       SliverCupertinoListSection.listInsetGrouped(children: [
+        if (LiquidGlassPlatform.isSupported)
+          EhCupertinoListTile(
+            title: const Text('iOS 液态玻璃'),
+            subtitle: const Text(
+              'iOS 26+ 使用原生 Liquid Glass；与“滚动隐藏顶栏”独立，支持灵动岛或刘海安全区收束',
+            ),
+            trailing: Obx(() {
+              return CupertinoSwitch(
+                value: _ehSettingService.liquidGlass,
+                onChanged: (bool val) {
+                  _ehSettingService.liquidGlass = val;
+                },
+              );
+            }),
+          ),
+        if (LiquidGlassPlatform.isSupported)
+          Obx(() {
+            if (!_ehSettingService.liquidGlass) {
+              return const SizedBox.shrink();
+            }
+            return EhCupertinoListTile(
+              title: const Text('使用系统 Liquid Glass 外观'),
+              subtitle: const Text(
+                '开启时使用系统原生 Liquid Glass；关闭时使用传统材质，并遵循辅助功能中的降低透明度',
+              ),
+              trailing: CupertinoSwitch(
+                value: _ehSettingService.liquidGlassFollowSystemTransparency,
+                onChanged: (bool val) {
+                  _ehSettingService.liquidGlassFollowSystemTransparency = val;
+                },
+              ),
+            );
+          }),
+        if (LiquidGlassPlatform.isSupported)
+          Obx(() {
+            if (!_ehSettingService.liquidGlass) {
+              return const SizedBox.shrink();
+            }
+            return EhCupertinoListTile(
+              title: const Text('滚动时隐藏底部搜索按钮'),
+              subtitle: const Text('底栏收缩到左下角时，同时隐藏右下角搜索按钮'),
+              trailing: CupertinoSwitch(
+                value: _ehSettingService.hideLiquidGlassSearchOnScroll,
+                onChanged: (bool val) {
+                  _ehSettingService.hideLiquidGlassSearchOnScroll = val;
+                },
+              ),
+            );
+          }),
+
         // hide_top_bar_on_scroll switch
         EhCupertinoListTile(
           title: Text(L10n.of(context).hide_top_bar_on_scroll),

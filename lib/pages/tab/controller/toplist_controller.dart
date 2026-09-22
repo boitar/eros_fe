@@ -57,11 +57,18 @@ class TopListViewController extends DefaultTabViewController {
         L10n.of(Get.context!).tab_toplist;
   }
 
-  Future<void> setToplist(BuildContext context) async {
-    final ToplistType? type = await ehSettingService.showToplistsSel(context);
-    if (type != null) {
-      change(state, status: RxStatus.loading());
-      reloadData();
-    }
+  Future<void> setToplist(
+    BuildContext context, {
+    ToplistType? type,
+  }) async {
+    final previous = ehSettingService.toplist;
+    final selected = type ?? await ehSettingService.showToplistsSel(context);
+    if (selected == null || selected == previous) return;
+
+    // showToplistsSel updates the setting itself; direct rail taps need to do
+    // the same explicitly before the title and request state are rebuilt.
+    if (type != null) ehSettingService.toplist = selected;
+    change(state, status: RxStatus.loading());
+    await reloadData();
   }
 }
