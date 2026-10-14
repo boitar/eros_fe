@@ -5,6 +5,71 @@
 
 一个 flutter 编写的 e-hentai app
 
+## 独立瀑布流模块
+
+本机 `codex/custom-waterfall` 分支直接基于 `master` 的 `2fe86b737` 重建
+（2026-10-14），应用版本保留 `1.9.2+566`。这里只包含 boitar fork 的瀑布流
+稳定性修复，不需要其他 custom 业务分支作为前置。上游基础介绍、功能、截图
+和致谢均保留。
+
+### 使用稳定的瀑布流列表
+
+在“设置 → 样式 → 列表样式”选择“瀑布流”或“瀑布流 - 大”。封面尺寸缺失或
+非法时使用有限的回退比例；大卡直接以真实高度布局，不再使用延迟占位卡。
+分页追加及前插复用既有列表对象，未变化的画廊对象在重建时保留条目控制器。
+
+### 独立构建和验证
+
+需要 Flutter 3.41 或更新版本，本次工具链为 Flutter 3.47.1 / Xcode 27.0。
+按上游编译说明使用公开的空白配置模板，不包含个人加密配置。所有 iOS
+构建配置的应用标识为 `cn.honjow.fehv`。必要的 iOS 27 Scene 生命周期及
+ARM64 Simulator 适配随本分支提供，不依赖其他业务分支。
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+# Flutter 自动迁移分析配置时，保留原基线的排除范围。
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub
+```
+
+当前验证：29 项单元／组件测试通过，覆盖真实瀑布流卡片渲染、异常封面尺寸、
+追加后控制器身份、回滑位置、横竖屏、明暗主题及 1.6 倍文字缩放。独立 ARM64
+`Debug-SimulatorUI` 使用正式 `lib/main.dart`，有／无离线夹具定义均构建通过。
+iPhone 18 Pro 与 iPad Pro 11-inch（M5）、iOS 27.0（24A434）共 8 次原生
+XCTest 执行通过：每台设备在浅色／默认字号、深色／系统 accessibility-medium
+字号下执行 2 项用例，检查重启后配置恢复、两种瀑布流、手势后的真实视口变化，
+以及横竖屏回滑后卡片矩形恢复。与适配后的固定 master 比较，分析错误为零，
+没有新增诊断；保留基线已有 warning／info，不扩大排除范围。
+
+原生复现需要 CocoaPods、XcodeGen、公开空白配置以及新建并启动的隔离 iOS 27
+模拟器。日志和结果目录放在仓库外，每次使用不同的运行名：
+
+```sh
+bash benchmark/waterfall_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" waterfall-light
+# 在隔离设备上设置外观和系统字号后重跑：
+xcrun simctl ui "$DEVICE_UUID" appearance dark
+xcrun simctl ui "$DEVICE_UUID" content_size accessibility-medium
+bash benchmark/waterfall_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" waterfall-dark-large
+```
+
+离线适配器提供中性的画廊 HTML 和小尺寸封面，拒绝未知 API 请求及修改请求，
+仅在 debug 构建指定 `EROS_OFFLINE_ACCEPTANCE=true` 时启用。测试标识同样仅用于
+调试；小瀑布流卡片原本就不显示标题。
+
+继承的 UI 限制：未修改的 master 分类栏文字宽度测量未跟随系统缩放，大字体下
+会溢出；原有固定高度的瀑布流标签行也可能裁切放大的文字。原生功能检查不表示
+这些既有读屏／布局问题已修复，也不表示整个 UI 已达到发布验收条件。
+
+`Debug-SimulatorUI` 明确跳过 MLKit 和旧下载插件的注册，仅用于隔离 UI 验收，
+不能验证完整下载／OCR 或发布业务功能。真实账号、真机行为、LiveContainer
+及其他未测平台不在本次验收结论内。
+
 ## iOS 安装
 1. 下载最新 ipa 文件 [Releases](https://github.com/erosTeam/eros_fe/releases/latest).
 2. 使用 [AltStore](https://altstore.io) 之类的 app 安装到设备上. 或者直接使用 [AltStore.json](https://config-feh.vercel.app/AltStore.json)

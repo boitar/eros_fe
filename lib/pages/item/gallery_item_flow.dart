@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
+import 'cover_ratio.dart';
 import 'gallery_item.dart';
 
 const double kRadius = 6.0;
@@ -52,15 +53,17 @@ class GalleryItemFlow extends StatelessWidget {
               CupertinoColors.systemBackground,
           context);
 
-      // 获取图片高度
-      int? _getHeight() {
-        if ((galleryProvider.imgWidth ?? 0) >= constraints.maxWidth) {
-          return (galleryProvider.imgHeight ?? 0) *
-              constraints.maxWidth ~/
-              (galleryProvider.imgWidth ?? 0);
-        } else {
-          return galleryProvider.imgHeight;
+      // 获取图片高度：统一走比例守卫，尺寸缺失/非法回退默认比例，
+      // 不再裸用 imgHeight 像素值当逻辑高度（小图/缺尺寸时高度失真）
+      double? _getHeight() {
+        if (!constraints.maxWidth.isFinite) {
+          return null;
         }
+        return constraints.maxWidth /
+            coverAspectRatio(
+              imgWidth: galleryProvider.imgWidth ?? 0,
+              imgHeight: galleryProvider.imgHeight ?? 0,
+            );
       }
 
       final Widget container = Container(
@@ -100,9 +103,7 @@ class GalleryItemFlow extends StatelessWidget {
                       ),
                     ),
                     alignment: Alignment.center,
-                    height: galleryProvider.imgWidth != null
-                        ? _getHeight()?.toDouble()
-                        : null,
+                    height: _getHeight(),
                     child: CoverImg(imgUrl: galleryProvider.imgUrl!),
                   ),
                 ),

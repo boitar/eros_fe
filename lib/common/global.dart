@@ -117,7 +117,11 @@ class Global {
     // 判断是否debug模式
     inDebugMode = kDebugMode;
 
-    if (GetPlatform.isMobile) {
+    final isIosDebugSimulator = Platform.isIOS &&
+        kDebugMode &&
+        !(await deviceInfo.iosInfo).isPhysicalDevice;
+
+    if (GetPlatform.isMobile && !isIosDebugSimulator) {
       await FlutterDownloader.initialize(debug: kDebugMode, ignoreSsl: true);
     }
 

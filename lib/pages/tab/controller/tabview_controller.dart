@@ -271,7 +271,12 @@ abstract class TabViewController extends GetxController {
 
       logger.t('insertIndex $insertIndex');
 
-      change([...?state, ...resultList], status: RxStatus.success());
+      if (state == null) {
+        change(resultList, status: RxStatus.success());
+      } else {
+        state!.addAll(resultList);
+        change(state, status: RxStatus.success());
+      }
     } catch (e, stack) {
       pageState = PageState.LoadingException;
       rethrow;
@@ -324,7 +329,12 @@ abstract class TabViewController extends GetxController {
       }
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        change([...resultList, ...?state], status: RxStatus.success());
+        if (state == null) {
+          change(resultList, status: RxStatus.success());
+        } else {
+          state!.insertAll(0, resultList);
+          change(state, status: RxStatus.success());
+        }
       });
     } catch (e, stack) {
       pageState = PageState.LoadingException;
