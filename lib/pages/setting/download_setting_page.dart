@@ -245,7 +245,7 @@ Widget _buildMultiDownloadItem(BuildContext context) {
           if (result != null) {
             if (ehSettingService.multiDownload != result) {
               ehSettingService.multiDownload = result;
-              Get.find<DownloadController>().resetConcurrency();
+              await Get.find<DownloadController>().resetConcurrency();
             }
           }
         },
@@ -294,7 +294,7 @@ Widget _buildConcurrentGalleriesItem(BuildContext context) {
           if (result != null) {
             if (ehSettingService.concurrentGalleries != result) {
               ehSettingService.concurrentGalleries = result;
-              Get.find<DownloadController>().resetConcurrency();
+              await Get.find<DownloadController>().resetConcurrency();
             }
           }
         },

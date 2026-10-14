@@ -143,7 +143,9 @@ class MessageLookup extends MessageLookupByLibrary {
             "Нажмите еще раз, чтобы выйти"),
         "double_page_model": MessageLookupByLibrary.simpleMessage(
             "Модель просмотра двух страниц"),
-        "download": MessageLookupByLibrary.simpleMessage("Загрузки"),
+        "download_files_unavailable": MessageLookupByLibrary.simpleMessage("Файлы временно недоступны"),
+    "check_download_files_and_continue": MessageLookupByLibrary.simpleMessage("Проверить файлы и продолжить"),
+    "download": MessageLookupByLibrary.simpleMessage("Загрузки"),
         "download_location":
             MessageLookupByLibrary.simpleMessage("Каталог загрузок"),
         "download_ori_image": MessageLookupByLibrary.simpleMessage(

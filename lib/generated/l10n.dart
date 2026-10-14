@@ -4543,6 +4543,26 @@ class L10n {
       args: [],
     );
   }
+
+  /// `Files temporarily unavailable`
+  String get download_files_unavailable {
+    return Intl.message(
+      'Files temporarily unavailable',
+      name: 'download_files_unavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check files and continue`
+  String get check_download_files_and_continue {
+    return Intl.message(
+      'Check files and continue',
+      name: 'check_download_files_and_continue',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

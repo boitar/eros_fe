@@ -446,5 +446,7 @@
   "page_view_type": "Page View Type",
   "slide_out_page": "Slide Out Page",
   "high_resolution_images_limited": "High Resolution Images Limited",
-  "refresh_igneous": "Refresh Igneous"
+  "refresh_igneous": "Refresh Igneous",
+  "download_files_unavailable": "Файлы временно недоступны",
+  "check_download_files_and_continue": "Проверить файлы и продолжить"
 }

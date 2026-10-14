@@ -446,5 +446,7 @@
   "page_view_type": "Page View Type",
   "slide_out_page": "Slide Out Page",
   "high_resolution_images_limited": "High Resolution Images Limited",
-  "refresh_igneous": "Refresh Igneous"
+  "refresh_igneous": "Refresh Igneous",
+  "download_files_unavailable": "ファイルは一時的に利用できません",
+  "check_download_files_and_continue": "ファイルを確認して続行"
 }

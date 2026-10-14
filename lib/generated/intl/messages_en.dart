@@ -139,7 +139,9 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Press again to exit"),
         "double_page_model":
             MessageLookupByLibrary.simpleMessage("Double page model"),
-        "download": MessageLookupByLibrary.simpleMessage("Download"),
+        "download_files_unavailable": MessageLookupByLibrary.simpleMessage("Files temporarily unavailable"),
+    "check_download_files_and_continue": MessageLookupByLibrary.simpleMessage("Check files and continue"),
+    "download": MessageLookupByLibrary.simpleMessage("Download"),
         "download_location":
             MessageLookupByLibrary.simpleMessage("Download Location"),
         "download_ori_image":

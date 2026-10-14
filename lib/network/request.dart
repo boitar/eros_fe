@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cookie_jar/cookie_jar.dart';
@@ -760,7 +761,7 @@ Future<void> ehDownload({
   CancelToken? cancelToken,
   bool? errToast,
   bool deleteOnError = true,
-  VoidCallback? onDownloadComplete,
+  FutureOr<void> Function()? onDownloadComplete,
   ProgressCallback? progressCallback,
 }) async {
   assert(savePath != null || savePathBuilder != null);
@@ -783,25 +784,17 @@ Future<void> ehDownload({
     throw ArgumentError('savePath and savePathBuild is null');
   }
 
-  try {
-    await dioHttpClient.download(
-      downloadUrl,
-      dioSavePath,
-      deleteOnError: deleteOnError,
-      onReceiveProgress: (int count, int total) {
-        progressCallback?.call(count, total);
-        if (count == total) {
-          onDownloadComplete?.call();
-        }
-      },
-      cancelToken: cancelToken,
-      options: getCacheOptions(refresh: false, forceCache: false),
-    );
-  } on CancelException catch (e) {
-    logger.d('cancel');
-  } on Exception catch (e) {
-    rethrow;
-  }
+  await dioHttpClient.download(
+    downloadUrl,
+    dioSavePath,
+    deleteOnError: deleteOnError,
+    onReceiveProgress: (int count, int total) {
+      progressCallback?.call(count, total);
+    },
+    cancelToken: cancelToken,
+    options: getCacheOptions(refresh: false, forceCache: false),
+  );
+  await onDownloadComplete?.call();
 }
 
 Future<User?> userLogin(String username, String passwd) async {

@@ -117,7 +117,9 @@ class MessageLookup extends MessageLookupByLibrary {
         "done": MessageLookupByLibrary.simpleMessage("完成"),
         "double_click_back": MessageLookupByLibrary.simpleMessage("再按一次返回退出"),
         "double_page_model": MessageLookupByLibrary.simpleMessage("雙頁模式"),
-        "download": MessageLookupByLibrary.simpleMessage("下載"),
+        "download_files_unavailable": MessageLookupByLibrary.simpleMessage("檔案暫時無法使用"),
+    "check_download_files_and_continue": MessageLookupByLibrary.simpleMessage("核對檔案並繼續"),
+    "download": MessageLookupByLibrary.simpleMessage("下載"),
         "download_location": MessageLookupByLibrary.simpleMessage("下載路徑"),
         "download_ori_image": MessageLookupByLibrary.simpleMessage("下載原圖"),
         "download_ori_image_summary":
