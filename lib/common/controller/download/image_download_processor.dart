@@ -4,18 +4,21 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:eros_fe/common/controller/cache_controller.dart';
 import 'package:eros_fe/common/controller/download/download_task_manager.dart';
+import 'package:eros_fe/common/controller/download/resumable_file_downloader.dart';
+import 'package:eros_fe/common/controller/download/storage_adapter.dart';
 import 'package:eros_fe/common/controller/download_state.dart';
 import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
+import 'package:eros_fe/network/app_dio/dio_http_cli.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/store/db/entity/gallery_image_task.dart';
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_storage/shared_storage.dart' as ss;
 import 'package:sprintf/sprintf.dart' as sp;
 
 const int _kDefNameLen = 4;
+const int _kTransientRetryCount = 2;
 
 /// 用于传递下载信息的数据类
 class ImageDownloadInfo {
@@ -30,9 +33,50 @@ class ImageDownloadInfo {
 }
 
 class ImageDownloadProcessor {
-  ImageDownloadProcessor(this.dState, this.cacheController);
+  ImageDownloadProcessor(
+    this.dState,
+    this.cacheController, {
+    ResumableFileDownloader? downloader,
+  }) : _downloader = downloader ??
+            ResumableFileDownloader(
+              DioHttpClient(dioConfig: globalDioConfig).dio,
+            );
+
   final DownloadState dState;
   final CacheController cacheController;
+  final ResumableFileDownloader _downloader;
+  final StorageAdapter _storage = StorageAdapter();
+
+  bool _isCurrentAttempt(int gid, CancelToken? token) =>
+      token == null ||
+      (!token.isCancelled && identical(dState.cancelTokenMap[gid], token));
+
+  void _checkCurrentAttempt(int gid, CancelToken? token) {
+    if (!_isCurrentAttempt(gid, token)) {
+      throw DioException(
+        requestOptions: RequestOptions(path: 'gallery/$gid'),
+        type: DioExceptionType.cancel,
+        message: 'Ignored cancelled or superseded image worker',
+      );
+    }
+  }
+
+  Future<String?> _claimedFileName(int gid, String parentPath,
+      {int? ser, String? baseName}) async {
+    final claims = dState.claimedImageFiles[gid] ?? const <int, String>{};
+    final names = <String?>[
+      if (ser != null) claims[ser] else ...claims.values,
+    ];
+    for (final name in names) {
+      if (name != null &&
+          (baseName == null ||
+              path.basenameWithoutExtension(name) == baseName) &&
+          await _storage.downloadFileExists(parentPath, name)) {
+        return name;
+      }
+    }
+    return null;
+  }
 
   /// 下载图片流程控制
   Future<void> downloadImageFlow(
@@ -44,12 +88,69 @@ class ImageDownloadProcessor {
     bool downloadOrigImage = false,
     bool reDownload = false,
     CancelToken? cancelToken,
-    ValueChanged<String>? onDownloadCompleteWithFileName,
+    Future<void> Function(String fileName)? onDownloadCompleteWithFileName,
     String? showKey,
     Future<void> Function(
             int gid, GalleryImage image, String? fileName, int? status)?
         putImageTaskCallback,
   }) async {
+    for (var retry = 0;; retry++) {
+      try {
+        await _downloadImageFlowOnce(
+          preImage,
+          imageTask,
+          gid,
+          downloadParentPath,
+          maxSer,
+          downloadOrigImage: downloadOrigImage,
+          reDownload: reDownload,
+          cancelToken: cancelToken,
+          onDownloadCompleteWithFileName: onDownloadCompleteWithFileName,
+          showKey: showKey,
+          putImageTaskCallback: putImageTaskCallback,
+        );
+        return;
+      } on Object catch (error) {
+        if (retry >= _kTransientRetryCount ||
+            cancelToken?.isCancelled == true ||
+            !_isTransientNetworkError(error)) {
+          rethrow;
+        }
+
+        final delay = Duration(milliseconds: 500 * (retry + 1));
+        logger.w(
+          '图片下载遇到临时网络错误，${delay.inMilliseconds}ms后重试: '
+          'gid=$gid, ser=${preImage.ser}, retry=${retry + 1}/$_kTransientRetryCount, '
+          'error=$error',
+        );
+        await Future<void>.delayed(delay);
+      }
+    }
+  }
+
+  Future<void> _downloadImageFlowOnce(
+    GalleryImage preImage,
+    GalleryImageTask? imageTask,
+    int gid,
+    String downloadParentPath,
+    int maxSer, {
+    bool downloadOrigImage = false,
+    bool reDownload = false,
+    CancelToken? cancelToken,
+    Future<void> Function(String fileName)? onDownloadCompleteWithFileName,
+    String? showKey,
+    Future<void> Function(
+            int gid, GalleryImage image, String? fileName, int? status)?
+        putImageTaskCallback,
+  }) async {
+    _checkCurrentAttempt(gid, cancelToken);
+    final claimed =
+        await _claimedFileName(gid, downloadParentPath, ser: preImage.ser);
+    _checkCurrentAttempt(gid, cancelToken);
+    if (claimed != null) {
+      await onDownloadCompleteWithFileName?.call(claimed);
+      return;
+    }
     loggerSimple.t('${preImage.ser} start');
     if (reDownload) {
       logger.t('${preImage.ser} redownload ');
@@ -72,6 +173,7 @@ class ImageDownloadProcessor {
         }
       },
     );
+    _checkCurrentAttempt(gid, cancelToken);
 
     if (downloadInfo.updatedImage.sourceId?.isEmpty ?? true) {
       logger.d(
@@ -80,7 +182,9 @@ class ImageDownloadProcessor {
 
     // 定义下载进度回调
     void progressCallback(int count, int total) {
-      dState.downloadCounts['${gid}_${preImage.ser}'] = count;
+      if (_isCurrentAttempt(gid, cancelToken)) {
+        dState.downloadCounts['${gid}_${preImage.ser}'] = count;
+      }
     }
 
     try {
@@ -89,8 +193,14 @@ class ImageDownloadProcessor {
         downloadInfo.imageUrl,
         downloadParentPath,
         downloadInfo.fileNameWithoutExtension,
+        gid: gid,
+        fileExtension: _fileExtension(
+          downloadInfo.updatedImage,
+          downloadInfo.imageUrl,
+        ),
         cancelToken: cancelToken,
         onDownloadCompleteWithFileName: (fileName) async {
+          _checkCurrentAttempt(gid, cancelToken);
           // 下载成功，重置重试计数
           resetReDownloadCount(gid, preImage.ser);
 
@@ -102,7 +212,8 @@ class ImageDownloadProcessor {
               TaskStatus.complete.value,
             );
           }
-          onDownloadCompleteWithFileName?.call(fileName);
+          _checkCurrentAttempt(gid, cancelToken);
+          await onDownloadCompleteWithFileName?.call(fileName);
         },
         progressCallback: progressCallback,
       );
@@ -119,12 +230,41 @@ class ImageDownloadProcessor {
           onDownloadCompleteWithFileName,
           downloadInfo.updatedImage.sourceId,
           showKey,
+          fileExtension: _fileExtension(
+            downloadInfo.updatedImage,
+            downloadInfo.imageUrl,
+          ),
           putImageTaskCallback: putImageTaskCallback,
         );
       } else {
         rethrow;
       }
     }
+  }
+
+  bool _isTransientNetworkError(Object error) {
+    if (error is DioException) {
+      if (CancelToken.isCancel(error)) {
+        return false;
+      }
+
+      final statusCode = error.response?.statusCode;
+      if (statusCode != null) {
+        return statusCode >= 500 && statusCode != 509;
+      }
+
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.sendTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.connectionError) {
+        return true;
+      }
+
+      return error.error is HandshakeException ||
+          error.error is SocketException;
+    }
+
+    return error is HandshakeException || error is SocketException;
   }
 
   /// 获取下载URL和更新的图片信息
@@ -169,7 +309,7 @@ class ImageDownloadProcessor {
       if (reDownload) {
         logger.d(
             '重下载 ${preImage.ser}, 清除缓存 ${preImage.href} , sourceId:${imageTask?.sourceId}');
-        cacheController.clearDioCache(path: preImage.href ?? '');
+        await cacheController.clearDioCache(path: preImage.href ?? '');
         logger.d(
             'reDownload >>>>>>>>>>>>>>>> imageTask : ${jsonEncode(imageTask)}, preImage: ${jsonEncode(preImage)}');
 
@@ -257,9 +397,10 @@ class ImageDownloadProcessor {
     bool downloadOrigImage,
     CancelToken? cancelToken,
     ProgressCallback progressCallback,
-    ValueChanged<String>? onDownloadCompleteWithFileName,
+    Future<void> Function(String fileName)? onDownloadCompleteWithFileName,
     String? sourceId,
     String? showKey, {
+    String? fileExtension,
     Function? addAllImagesCallback,
     Future<void> Function(
             int gid, GalleryImage image, String? fileName, int? status)?
@@ -292,6 +433,7 @@ class ImageDownloadProcessor {
       sourceId: sourceIdToUse, // 使用计算后的sourceId
       showKey: showKey,
     );
+    _checkCurrentAttempt(gid, cancelToken);
 
     // 更新 showkey
     final resShowKey = imageFetched.showKey;
@@ -321,8 +463,11 @@ class ImageDownloadProcessor {
       newImageUrl,
       downloadParentPath,
       fileNameWithoutExtension,
+      gid: gid,
+      fileExtension: fileExtension ?? _fileExtension(imageFetched, newImageUrl),
       cancelToken: cancelToken,
       onDownloadCompleteWithFileName: (fileName) async {
+        _checkCurrentAttempt(gid, cancelToken);
         // 下载成功，重置重试计数
         resetReDownloadCount(gid, image.ser);
 
@@ -334,7 +479,8 @@ class ImageDownloadProcessor {
             TaskStatus.complete.value,
           );
         }
-        onDownloadCompleteWithFileName?.call(fileName);
+        _checkCurrentAttempt(gid, cancelToken);
+        await onDownloadCompleteWithFileName?.call(fileName);
       },
       progressCallback: progressCallback,
     );
@@ -345,109 +491,107 @@ class ImageDownloadProcessor {
     String url,
     String parentPath,
     String fileNameWithoutExtension, {
+    required int gid,
+    String? fileExtension,
     CancelToken? cancelToken,
-    ValueChanged<String>? onDownloadCompleteWithFileName,
+    Future<void> Function(String fileName)? onDownloadCompleteWithFileName,
     ProgressCallback? progressCallback,
   }) async {
+    _checkCurrentAttempt(gid, cancelToken);
+    // This also protects the cache writer, which bypasses the downloader.
+    final claimed = await _claimedFileName(gid, parentPath,
+        baseName: fileNameWithoutExtension);
+    if (claimed != null) {
+      await onDownloadCompleteWithFileName?.call(claimed);
+      return;
+    }
     // 根据url读取缓存 存在的话直接将缓存写文件
     try {
       final filePath = await Api.saveImageFromExtendedCache(
         imageUrl: url,
         parentPath: parentPath,
         fileNameWithoutExtension: fileNameWithoutExtension,
+        existingClaimedFileName: () {
+          _checkCurrentAttempt(gid, cancelToken);
+          return _claimedFileName(gid, parentPath,
+              baseName: fileNameWithoutExtension);
+        },
       );
       if (filePath != null) {
         logger.d('从缓存读取文件 $filePath');
-        onDownloadCompleteWithFileName?.call(path.basename(filePath));
+        await onDownloadCompleteWithFileName?.call(path.basename(filePath));
         return;
       }
     } catch (e) {
       logger.e('$e');
     }
 
-    // 缓存不存在的话下载
-    String realSaveFullPath = '';
-    String tempSavePath = '';
-    String savePathBuild(Headers headers) {
-      logger.t('headers:\n$headers');
-      final contentDisposition = headers.value('content-disposition');
-      logger.t('contentDisposition $contentDisposition');
-      final filename =
-          contentDisposition?.split(RegExp(r"filename(=|\*=UTF-8'')")).last ??
-              '';
-      final fileNameDecode =
-          Uri.decodeFull(filename).replaceAll('/', '_').replaceAll('"', '');
+    final extension = fileExtension ?? _fileExtension(null, url);
+    final fileName = '$fileNameWithoutExtension$extension';
+    final destinationPath = parentPath.isContentUri
+        ? path.join(
+            Global.extStoreTempPath,
+            'temp_download',
+            '$gid',
+            fileName,
+          )
+        : path.join(parentPath, fileName);
 
-      late String ext;
-      if (fileNameDecode.isEmpty) {
-        logger.t('url: $url');
-        ext = path.extension(url);
-      } else {
-        logger.t(
-            'fileNameDecode: $fileNameDecode, fileBaseNameNotExt: $fileNameWithoutExtension');
-        ext = path.extension(fileNameDecode);
-      }
+    final result = await _downloader.download(
+      url: url,
+      destinationPath: destinationPath,
+      cancelToken: cancelToken,
+      onReceiveProgress: progressCallback,
+      isDestinationClaimed: parentPath.isContentUri
+          ? null
+          : () async =>
+              await _claimedFileName(gid, parentPath,
+                  baseName: fileNameWithoutExtension) ==
+              fileName,
+    );
+    _checkCurrentAttempt(gid, cancelToken);
 
-      if (parentPath.isContentUri) {
-        // temp save path ,临时下载路径，完成后再复制到SAF路径
-        tempSavePath = path.join(
-          Global.extStoreTempPath,
-          'temp_download',
-          '${generateUuidv4()}_$fileNameWithoutExtension$ext',
-        );
-        logger.t('SAF temp savePath:$tempSavePath');
-        return tempSavePath;
-      } else {
-        realSaveFullPath =
-            path.join(parentPath, '$fileNameWithoutExtension$ext');
-        return realSaveFullPath;
+    if (parentPath.isContentUri) {
+      final claimed = await _claimedFileName(gid, parentPath,
+          baseName: fileNameWithoutExtension);
+      if (claimed != null) {
+        await onDownloadCompleteWithFileName?.call(claimed);
+        return;
       }
+      final file = File(result.path);
+      final bytes = await file.readAsBytes();
+      final created = await ss.createFileAsBytes(
+        Uri.parse(parentPath),
+        mimeType: '*/*',
+        displayName: fileName,
+        bytes: bytes,
+      );
+      if (created == null) {
+        throw const FileSystemException(
+            'Unable to write downloaded file to SAF');
+      }
+      await file.delete();
     }
 
-    // 调用 request 下载文件
-    await ehDownload(
-      url: url,
-      savePathBuilder: savePathBuild,
-      cancelToken: cancelToken,
-      onDownloadComplete: () async {
-        logger.t('onDownloadComplete');
+    await onDownloadCompleteWithFileName?.call(fileName);
+  }
 
-        if (parentPath.isContentUri && tempSavePath.isNotEmpty) {
-          // read file
-          final File file = File(tempSavePath);
-
-          // 限定 [0-9a-zA-Z]
-          final extension = path
-              .extension(tempSavePath)
-              .replaceAll(RegExp(r'[^0-9a-zA-Z.]'), '');
-
-          logger.t('extension $extension');
-
-          final parentUri = Uri.parse(parentPath);
-
-          // SAF write file
-          final fileName = '$fileNameWithoutExtension$extension';
-
-          file
-              .readAsBytes()
-              .then((bytes) {
-                ss.createFileAsBytes(
-                  parentUri,
-                  mimeType: '*/*',
-                  displayName: fileName,
-                  bytes: bytes,
-                );
-              })
-              .then((value) => file.delete())
-              .whenComplete(
-                  () => onDownloadCompleteWithFileName?.call(fileName));
-        } else {
-          logger.t('normal realSaveFullPath $realSaveFullPath');
-          onDownloadCompleteWithFileName?.call(path.basename(realSaveFullPath));
-        }
-      },
-      progressCallback: progressCallback,
-    );
+  String _fileExtension(GalleryImage? image, String url) {
+    final candidates = <String?>[
+      image?.filename,
+      Uri.tryParse(url)?.path,
+      url,
+    ];
+    for (final candidate in candidates) {
+      if (candidate == null || candidate.isEmpty) {
+        continue;
+      }
+      final extension = path.extension(candidate).toLowerCase();
+      if (RegExp(r'^\.[a-z0-9]{1,8}$').hasMatch(extension)) {
+        return extension;
+      }
+    }
+    return '.jpg';
   }
 
   /// 根据ser获取image信息

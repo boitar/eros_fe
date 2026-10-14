@@ -130,7 +130,9 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("한번 더 누르면 종료됩니다."),
         "double_page_model":
             MessageLookupByLibrary.simpleMessage("Double page model"),
-        "download": MessageLookupByLibrary.simpleMessage("다운로드"),
+        "download_files_unavailable": MessageLookupByLibrary.simpleMessage("파일을 일시적으로 사용할 수 없습니다"),
+    "check_download_files_and_continue": MessageLookupByLibrary.simpleMessage("파일 확인 후 계속"),
+    "download": MessageLookupByLibrary.simpleMessage("다운로드"),
         "download_location": MessageLookupByLibrary.simpleMessage("다운로드 경로"),
         "download_ori_image":
             MessageLookupByLibrary.simpleMessage("Download original image"),

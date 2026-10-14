@@ -414,6 +414,7 @@ class Api {
     required String imageUrl,
     required String parentPath,
     required String fileNameWithoutExtension,
+    Future<String?> Function()? existingClaimedFileName,
   }) async {
     if (!(await cachedImageExists(imageUrl))) {
       return null;
@@ -435,6 +436,14 @@ class Api {
     logger.d('mimeType $mimeType');
     final ext = mimeType?.split('/').last ?? 'jpg';
     final fileName = '$fileNameWithoutExtension.$ext';
+
+    // Cache reads can finish after reconciliation has claimed the final file.
+    final claimedName = await existingClaimedFileName?.call();
+    if (claimedName != null) {
+      return parentPath.isContentUri
+          ? claimedName
+          : path.join(parentPath, claimedName);
+    }
 
     if (parentPath.isContentUri) {
       // SAF 方式

@@ -151,7 +151,7 @@ class DownloadPathManager {
 
         if (allow && await noMediaFile.exists()) {
           logger.d('delete $noMediaFile');
-          noMediaFile.delete(recursive: true);
+          await noMediaFile.delete(recursive: true);
         } else if (!allow && !await noMediaFile.exists()) {
           logger.d('create $noMediaFile');
           noMediaFile.create(recursive: true);

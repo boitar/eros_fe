@@ -57,6 +57,9 @@ class DownloadMonitor {
     if (gid != null) {
       dState.downloadSpeeds.remove(gid);
       dState.noSpeed.remove(gid);
+      dState.lastCounts.remove(gid);
+      dState.downloadCounts
+          .removeWhere((key, value) => key.startsWith('${gid}_'));
       dState.chkTimers[gid]?.cancel();
     } else {
       for (final Timer? timer in dState.chkTimers.values) {
@@ -64,6 +67,8 @@ class DownloadMonitor {
       }
       dState.downloadSpeeds.clear();
       dState.noSpeed.clear();
+      dState.lastCounts.clear();
+      dState.downloadCounts.clear();
     }
   }
 

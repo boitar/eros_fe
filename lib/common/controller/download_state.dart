@@ -33,6 +33,10 @@ class DownloadState {
 
   final errInfoMap = <int, String>{};
 
+  // Availability is separate from persisted completion and user pause state.
+  final unavailableGalleryFiles = <int>{};
+  final claimedImageFiles = <int, Map<int, String>>{};
+
   late Executor executor;
 
   QueueTask queueTask = QueueTask();

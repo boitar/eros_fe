@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:eros_fe/common/controller/download/download_file_path.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/store/db/entity/gallery_image_task.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
+import 'package:eros_fe/store/db/isar_helper.dart';
 import 'package:eros_fe/utils/saf_helper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -12,6 +14,105 @@ import 'package:saf/saf.dart';
 import 'package:shared_storage/shared_storage.dart' as ss;
 
 class StorageAdapter {
+  StorageAdapter({IsarHelper? taskStore}) : taskStore = taskStore ?? isarHelper;
+  final IsarHelper taskStore;
+  Future<bool> downloadDirectoryAvailable(GalleryTask task) async {
+    final dirPath = task.realDirPath;
+    if (dirPath == null || dirPath.isEmpty) {
+      return false;
+    }
+    if (dirPath.isContentUri) {
+      final uri = Uri.parse(dirPath);
+      return await ss.exists(uri) == true && await ss.canRead(uri) == true;
+    }
+    final directory = Directory(dirPath);
+    if (!await directory.exists()) {
+      return false;
+    }
+    // Probe readability without scanning image contents or the whole directory.
+    await directory.list(followLinks: false).take(1).drain<void>();
+    return true;
+  }
+
+  Future<bool> downloadFileExists(
+      String? directoryPath, String? fileName) async {
+    if (!isDownloadFinalFileName(fileName)) {
+      return false;
+    }
+    final filePath = buildDownloadFilePath(
+      directoryPath: directoryPath,
+      fileName: fileName,
+    );
+    if (filePath == null) {
+      return false;
+    }
+    if (directoryPath!.isContentUri) {
+      final uri = Uri.parse(filePath);
+      if (await ss.exists(uri) != true) {
+        return false;
+      }
+      if (await ss.canRead(uri) != true) {
+        throw FileSystemException('Download file is not readable', filePath);
+      }
+      return (await ss.documentLength(uri) ?? 0) > 0;
+    }
+    final file = File(filePath);
+    return await file.exists() && await file.length() > 0;
+  }
+
+  /// Read identity metadata without importing it over current DB/pause state.
+  Future<List<GalleryImageTask>> readTaskImageInfo(GalleryTask task) async {
+    final dirPath = task.realDirPath;
+    if (dirPath == null || dirPath.isEmpty) {
+      return [];
+    }
+    String? info;
+    if (dirPath.isContentUri) {
+      final document = await ss.findFile(Uri.parse(dirPath), '.info');
+      if (document != null) {
+        info = await document.getContentAsString();
+      }
+    } else {
+      final file = File(path.join(dirPath, '.info'));
+      if (await file.exists()) {
+        info = await file.readAsString();
+      }
+    }
+    if (info == null) {
+      return [];
+    }
+    try {
+      final lines =
+          info.split('\n').where((line) => line.trim().isNotEmpty).toList();
+      if (lines.length < 2) {
+        return [];
+      }
+      final gallery =
+          GalleryTask.fromJson(jsonDecode(lines[0]) as Map<String, dynamic>);
+      if (gallery.gid != task.gid || gallery.token != task.token) {
+        return [];
+      }
+      final images = (jsonDecode(lines[1]) as List<dynamic>)
+          .map(
+              (json) => GalleryImageTask.fromJson(json as Map<String, dynamic>))
+          .where((image) =>
+              image.gid == task.gid &&
+              image.ser > 0 &&
+              image.ser <= task.fileCount)
+          .toList();
+      // Ambiguous serials cannot provide association evidence.
+      final counts = <int, int>{};
+      for (final image in images) {
+        counts.update(image.ser, (count) => count + 1, ifAbsent: () => 1);
+      }
+      return images.where((image) => counts[image.ser] == 1).toList();
+    } on FormatException {
+      return [];
+    } on TypeError {
+      return [];
+    }
+  }
+
   /// 写入元数据文件，用于恢复任务
   Future<void> writeTaskInfoFile(GalleryTask? galleryTask) async {
     if (galleryTask == null) {
@@ -19,7 +120,7 @@ class StorageAdapter {
     }
 
     final imageTaskList =
-        (await isarHelper.findImageTaskAllByGidIsolate(galleryTask.gid))
+        (await taskStore.findImageTaskAllByGidIsolate(galleryTask.gid))
             .map((e) => e.copyWith(imageUrl: ''))
             .toList();
 
@@ -42,7 +143,7 @@ class StorageAdapter {
       if (infoDomFile?.name != null) {
         await ss.delete(Uri.parse('$dirPath%2F.info'));
       }
-      ss.createFileAsBytes(
+      await ss.createFileAsBytes(
         Uri.parse(dirPath),
         mimeType: '',
         displayName: '.info',
@@ -50,7 +151,7 @@ class StorageAdapter {
       );
     } else {
       final File infoFile = File(path.join(dirPath, '.info'));
-      infoFile.writeAsString(info);
+      await infoFile.writeAsString(info);
     }
   }
 
@@ -80,8 +181,8 @@ class StorageAdapter {
         galleryImageTaskList.add(galleryImageTask);
       }
 
-      await isarHelper.putAllImageTaskIsolate(galleryImageTaskList);
-      await isarHelper.putGalleryTaskIsolate(galleryTask);
+      await taskStore.putAllImageTaskIsolate(galleryImageTaskList);
+      await taskStore.putGalleryTaskIsolate(galleryTask);
     } catch (e, stack) {
       logger.e('$e\n$stack');
     }

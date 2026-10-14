@@ -123,7 +123,9 @@ class MessageLookup extends MessageLookupByLibrary {
         "done": MessageLookupByLibrary.simpleMessage("完了"),
         "double_click_back": MessageLookupByLibrary.simpleMessage("一度押して終了します"),
         "double_page_model": MessageLookupByLibrary.simpleMessage("両ページモード"),
-        "download": MessageLookupByLibrary.simpleMessage("ダウンロード"),
+        "download_files_unavailable": MessageLookupByLibrary.simpleMessage("ファイルは一時的に利用できません"),
+    "check_download_files_and_continue": MessageLookupByLibrary.simpleMessage("ファイルを確認して続行"),
+    "download": MessageLookupByLibrary.simpleMessage("ダウンロード"),
         "download_location": MessageLookupByLibrary.simpleMessage("ダウンロードパス"),
         "download_ori_image":
             MessageLookupByLibrary.simpleMessage("オリジナル画像をダウンロード"),

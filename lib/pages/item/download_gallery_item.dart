@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
+import 'package:eros_fe/common/controller/download/download_file_path.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
@@ -19,7 +21,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:path/path.dart' as path;
 
 const kCardRadius = 10.0;
 
@@ -112,7 +113,9 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         final List<GalleryImageTask> imageTasks =
             await controller.getImageTasks(galleryTask.gid);
         final GalleryTask? gTask = controller.galleryTaskMap[galleryTask.gid];
-        if (gTask == null || gTask.status != TaskStatus.complete.value) {
+        if (gTask == null ||
+            gTask.status != TaskStatus.complete.value ||
+            controller.filesUnavailable(galleryTask.gid)) {
           return;
         }
 
@@ -141,13 +144,21 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
           pics = imageTasks
               .where((element) =>
                   element.filePath != null && element.filePath!.isNotEmpty)
-              .map((e) => '$dirPath%2F${e.filePath}')
+              .map((e) => buildDownloadFilePath(
+                    directoryPath: dirPath,
+                    fileName: e.filePath,
+                  ))
+              .whereType<String>()
               .toList();
         } else {
           pics = imageTasks
               .where((element) =>
                   element.filePath != null && element.filePath!.isNotEmpty)
-              .map((e) => path.join(dirPath ?? '', e.filePath ?? ''))
+              .map((e) => buildDownloadFilePath(
+                    directoryPath: dirPath,
+                    fileName: e.filePath,
+                  ))
+              .whereType<String>()
               .toList();
         }
 
@@ -201,7 +212,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         color: ehTheme.itemBackgroundColor,
         borderRadius: BorderRadius.circular(kCardRadius),
       ),
-      height: 120,
+      height: 120 * math.max(1, MediaQuery.textScalerOf(context).scale(13) / 13),
       child: Row(
         children: [
           // 封面
@@ -254,13 +265,10 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       child: Padding(
         padding: const EdgeInsets.only(right: 8.0),
         child: DownloadItemCoverImage(
-          filePath: (galleryTask.coverImage != null &&
-                  galleryTask.coverImage!.isNotEmpty)
-              ? (galleryTask.realDirPath?.isContentUri ?? false)
-                  ? '${galleryTask.realDirPath}%2F${galleryTask.coverImage}'
-                  : path.join(
-                      galleryTask.realDirPath ?? '', galleryTask.coverImage)
-              : null,
+          filePath: buildDownloadFilePath(
+            directoryPath: galleryTask.realDirPath,
+            fileName: galleryTask.coverImage,
+          ),
           url: galleryTask.coverUrl,
           cardType: cardType,
         ),
@@ -308,22 +316,30 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          galleryTask.uploader ?? '',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: CupertinoDynamicColor.resolve(
-                                CupertinoColors.secondaryLabel, context),
+                        Expanded(
+                          child: Text(
+                            galleryTask.uploader ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: CupertinoDynamicColor.resolve(
+                                  CupertinoColors.secondaryLabel, context),
+                            ),
                           ),
                         ),
-                        const Spacer(),
                         // 任务添加时间
-                        Text(
-                          addTime ?? '',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: CupertinoDynamicColor.resolve(
-                                CupertinoColors.secondaryLabel, context),
+                        Flexible(
+                          flex: 2,
+                          child: Text(
+                            addTime ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: CupertinoDynamicColor.resolve(
+                                  CupertinoColors.secondaryLabel, context),
+                            ),
                           ),
                         ),
                       ],
@@ -349,8 +365,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
                     // 下载速度 下载进度
                     Row(
                       children: [
-                        if (!isComplete)
-                          _buildDownloadCtl(context)
+                        if (!isComplete || (errInfo?.isNotEmpty ?? false))
+                          Expanded(child: _buildDownloadCtl(context))
                         else
                           _buildCategory(galleryTask.category),
                         const Spacer(),
@@ -380,7 +396,11 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
   Widget _buildDownloadCtl(BuildContext context) {
     if (errInfo != null && errInfo!.isNotEmpty) {
       return Text(
-        errInfo ?? '',
+        controller.filesUnavailable(galleryTask.gid)
+            ? L10n.of(context).download_files_unavailable
+            : errInfo ?? '',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
             fontSize: 13,
             color: CupertinoDynamicColor.resolve(
@@ -456,6 +476,22 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
     const iconSize = 18.0;
     const buttonPadding = EdgeInsets.only(left: 8.0);
 
+    if (controller.filesUnavailable(galleryTask.gid)) {
+      return Semantics(
+        label: L10n.of(Get.context!).check_download_files_and_continue,
+        child: CupertinoTheme(
+          data: const CupertinoThemeData(
+              primaryColor: CupertinoColors.activeGreen),
+          child: CupertinoButton(
+            padding: buttonPadding,
+            minimumSize: const Size(minSize, minSize),
+            child: const FaIcon(FontAwesomeIcons.play, size: iconSize),
+            onPressed: () => controller.resumeGalleryDownload(galleryTask.gid),
+          ),
+        ),
+      );
+    }
+
     final Map<TaskStatus, Widget> statusMap = {
       // 下载时，显示暂停按钮
       TaskStatus.running: CupertinoTheme(
@@ -463,7 +499,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minSize: minSize,
-          child: const FaIcon(FontAwesomeIcons.pause,
+          child: const FaIcon(
+            FontAwesomeIcons.pause,
             size: iconSize,
           ),
           onPressed: () {
@@ -478,7 +515,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minSize: minSize,
-          child: const FaIcon(FontAwesomeIcons.check,
+          child: const FaIcon(
+            FontAwesomeIcons.check,
             size: iconSize,
           ),
           onPressed: () {},
@@ -491,7 +529,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minSize: minSize,
-          child: const FaIcon(FontAwesomeIcons.play,
+          child: const FaIcon(
+            FontAwesomeIcons.play,
             size: iconSize,
           ),
           onPressed: () {
@@ -503,29 +542,39 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       TaskStatus.failed: CupertinoButton(
         padding: buttonPadding,
         minSize: minSize,
-        child: const FaIcon(FontAwesomeIcons.play,
+        child: const FaIcon(
+          FontAwesomeIcons.play,
           size: iconSize,
         ),
         onPressed: () {
-          controller.retryArchiverDownload(galleryTask.gid);
+          controller.resumeGalleryDownload(galleryTask.gid);
         },
       ),
       // 取消状态 显示重试按钮。按下重试任务
       TaskStatus.canceled: CupertinoButton(
         padding: buttonPadding,
         minSize: minSize,
-        child: const FaIcon(FontAwesomeIcons.redo,
+        child: const FaIcon(
+          FontAwesomeIcons.redo,
           size: iconSize,
         ),
         onPressed: () {
-          controller.retryArchiverDownload(galleryTask.gid);
+          controller.resumeGalleryDownload(galleryTask.gid);
         },
       ).paddingSymmetric(),
-      TaskStatus.enqueued: Container(
-        width: minSize,
-        height: minSize,
-        child: const CupertinoActivityIndicator(
-          radius: 10,
+      // 排队中的任务也可以暂停，避免队列阻塞时只能看到转圈而无法操作。
+      TaskStatus.enqueued: CupertinoTheme(
+        data: const CupertinoThemeData(primaryColor: CupertinoColors.systemRed),
+        child: CupertinoButton(
+          padding: buttonPadding,
+          minimumSize: const Size(minSize, minSize),
+          child: const FaIcon(
+            FontAwesomeIcons.pause,
+            size: iconSize,
+          ),
+          onPressed: () {
+            controller.pauseGalleryDownload(_taskInfo?.gid ?? galleryTask.gid);
+          },
         ),
       ),
       TaskStatus.undefined: Container(
@@ -537,8 +586,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       ),
     };
 
-    return statusMap[TaskStatus(galleryTask.status ?? 0)] ??
-        const SizedBox(width: 40);
+    final currentStatus = _taskInfo?.status ?? galleryTask.status ?? 0;
+    return statusMap[TaskStatus(currentStatus)] ?? const SizedBox(width: 40);
   }
 }
 
@@ -569,10 +618,20 @@ class DownloadItemCoverImage extends StatelessWidget {
               child: const CupertinoActivityIndicator(),
             );
           }
+          if (state.extendedImageLoadState == LoadState.failed) {
+            logger.w('下载列表封面加载失败: $filePath');
+            if (url != null && url!.isNotEmpty) {
+              return EhNetworkImage(
+                imageUrl: url!,
+                fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
+              );
+            }
+            return _buildCoverPlaceholder(context);
+          }
           return null;
         }
 
-        const filterQuality = FilterQuality.high;
+        const filterQuality = FilterQuality.medium;
         final image = ((filePath?.isContentUri ?? false)
             ? ExtendedSafImageProvider(Uri.parse(filePath!))
             : ExtendedFileImageProvider(File(filePath!))) as ImageProvider;
@@ -581,6 +640,10 @@ class DownloadItemCoverImage extends StatelessWidget {
           fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
           loadStateChanged: loadStateChanged,
           filterQuality: filterQuality,
+          clearMemoryCacheIfFailed: true,
+          // Download-list covers are small thumbnails. Keep them in Flutter's
+          // normal LRU cache so scrolling back does not show a spinner again.
+          clearMemoryCacheWhenDispose: false,
         );
       } else if (url != null) {
         return EhNetworkImage(
@@ -588,7 +651,7 @@ class DownloadItemCoverImage extends StatelessWidget {
           fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
         );
       } else {
-        return const SizedBox.expand();
+        return _buildCoverPlaceholder(context);
       }
     }();
 
@@ -616,6 +679,18 @@ class DownloadItemCoverImage extends StatelessWidget {
               ],
       ),
       child: image,
+    );
+  }
+
+  Widget _buildCoverPlaceholder(BuildContext context) {
+    return Container(
+      alignment: Alignment.center,
+      color:
+          CupertinoDynamicColor.resolve(CupertinoColors.systemGrey5, context),
+      child: const Icon(
+        CupertinoIcons.photo,
+        color: CupertinoColors.systemGrey,
+      ),
     );
   }
 }

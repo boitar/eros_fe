@@ -8,6 +8,7 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/debug/offline_acceptance.dart';
+import 'package:eros_fe/debug/offline_downloads.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/widget/system_ui_overlay.dart';
 import 'package:flutter/cupertino.dart';
@@ -35,6 +36,7 @@ Future<void> main() async {
   Get.lazyPut(() => LogService(), fenix: true);
 
   await Global.init();
+  await initializeOfflineDownloads();
   getinit();
   Global.proxyInit();
 

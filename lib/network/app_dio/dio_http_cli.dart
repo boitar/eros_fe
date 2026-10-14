@@ -16,6 +16,9 @@ class DioHttpClient {
 
   late final AppDio _dio;
 
+  /// Configured transport for streamed Range downloads.
+  Dio get dio => _dio;
+
   Future<DioHttpResponse> get(String uri,
       {Map<String, dynamic>? queryParameters,
       Options? options,

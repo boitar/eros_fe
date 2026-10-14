@@ -52,6 +52,9 @@ class DownloadViewController extends GetxController {
   final GlobalKey<AnimatedListState> animatedArchiverListKey =
       GlobalKey<AnimatedListState>();
 
+  // Rebuild AnimatedList only when the persisted task snapshot is restored.
+  final RxInt galleryListRevision = 0.obs;
+
   late String tabTag;
 
   final _viewType = DownloadType.gallery.obs;
@@ -100,6 +103,9 @@ class DownloadViewController extends GetxController {
       _downloadController.dState.downloadSpeeds;
 
   Map<int, String> get errInfoMap => _downloadController.dState.errInfoMap;
+
+  bool filesUnavailable(int gid) =>
+      _downloadController.dState.unavailableGalleryFiles.contains(gid);
 
   Future<List<GalleryImageTask>> getImageTasks(int gid) async {
     return await _downloadController.getImageTasks(gid);
@@ -234,6 +240,11 @@ class DownloadViewController extends GetxController {
     if (galleryTasks.isNotEmpty) {
       animatedGalleryListKey.currentState?.insertItem(galleryTasks.length - 1);
     }
+  }
+
+  void refreshGalleryList() {
+    animatedGalleryListKey = GlobalKey<AnimatedListState>();
+    galleryListRevision.value++;
   }
 
   void animateArchiverListAddTask({int? index}) {
