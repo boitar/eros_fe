@@ -344,7 +344,6 @@ Widget getGallerySliverList(
   bool keepPosition = false,
 }) {
   final EhSettingService ehSettingService = Get.find();
-  final _key = key ?? ValueKey(galleryProviders.hashCode);
 
   final BlockController blockController = Get.find();
 
