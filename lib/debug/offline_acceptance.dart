@@ -95,6 +95,16 @@ String offlineGalleryList({int page = 0, bool invalidCoverSizes = false,
     String titlePrefix = 'Offline gallery', int gidBase = 9100000}) {
   final rows = List.generate(48, (index) {
     final gid = gidBase + page * 48 + index;
+    const gridTags = bool.fromEnvironment('EROS_GRID_TAGS_ACCEPTANCE');
+    final tags = gridTags
+        ? (index % 6 == 5
+            ? ''
+            : List.generate(
+                    18,
+                    (i) =>
+                        '<div class="gt">grid-tag-$i-long-neutral-label</div>')
+                .join())
+        : '<div class="gt">offline</div><div class="gt">long-neutral-layout-tag</div>';
     final dimensions = invalidCoverSizes && index % 3 == 0
         ? 'height:0px;width:0px'
         : 'height:${280 + index % 7 * 20}px;width:200px';
@@ -110,7 +120,7 @@ style="background-position:32px 0px"></div></div>
 </td>
 <td class="gl3c glname"><a href="https://e-hentai.org/g/$gid/0000000000/">
 <div class="glink">$titlePrefix $index - neutral layout fixture</div></a>
-<div class="gt">offline</div><div class="gt">long-neutral-layout-tag</div></td>
+$tags</td>
 <td class="gl4c glhide"><div>offline</div><div>20 pages</div></td>
 </tr>''';
   }).join();

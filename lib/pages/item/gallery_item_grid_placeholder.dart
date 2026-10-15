@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 import '../../common/service/theme_service.dart';
+import 'gallery_grid_tags.dart';
 import 'item_base.dart';
 
 const int kTitleMaxLines = 2;
@@ -11,14 +12,23 @@ const double kCategoryHeight = 20.0;
 const double kCoverRatio = 1.4;
 
 class GalleryItemGridPlaceHolder extends StatelessWidget {
-  const GalleryItemGridPlaceHolder({Key? key}) : super(key: key);
+  const GalleryItemGridPlaceHolder({
+    Key? key,
+    this.showTags = false,
+    this.showLoadingIndicator = true,
+  }) : super(key: key);
+
+  final bool showTags;
+  final bool showLoadingIndicator;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
       // 封面高度
-      final coverHeight = kCoverRatio * constraints.maxWidth;
+      final coverHeight =
+          (showTags ? GalleryGridTagsMetrics.coverHeightRatio : kCoverRatio) *
+              constraints.maxWidth;
 
       return Container(
         decoration: BoxDecoration(
@@ -50,30 +60,83 @@ class GalleryItemGridPlaceHolder extends StatelessWidget {
                 child: Container(
                   color: CupertinoDynamicColor.resolve(
                       CupertinoColors.systemGrey6, context),
-                  child: const CupertinoActivityIndicator(),
+                  child: showLoadingIndicator
+                      ? const CupertinoActivityIndicator()
+                      : null,
                 ),
               ),
             ),
 
             /// 画廊信息等
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: const [
-                        Expanded(child: PlaceHolderLine()),
-                      ],
-                    ),
-                  ],
-                ).paddingAll(6.0),
+            if (showTags)
+              const _GridTagsPlaceholderInfo()
+            else
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Expanded(child: PlaceHolderLine()),
+                        ],
+                      ),
+                    ],
+                  ).paddingAll(6.0),
+                ),
               ),
-            ),
           ],
         ),
       );
     });
+  }
+}
+
+class _GridTagsPlaceholderInfo extends StatelessWidget {
+  const _GridTagsPlaceholderInfo();
+
+  @override
+  Widget build(BuildContext context) {
+    final metrics = GalleryGridTagsMetrics.of(context);
+    final color =
+        CupertinoDynamicColor.resolve(CupertinoColors.systemGrey5, context);
+    Widget bar(double height) => Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.all(GalleryGridTagsMetrics.padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: metrics.titleHeight,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [bar(6), bar(6)],
+            ),
+          ),
+          const SizedBox(height: GalleryGridTagsMetrics.titleGap),
+          SizedBox(
+            height: metrics.tagsHeight,
+            child: Column(children: [
+              bar(metrics.tagRowExtent),
+              const SizedBox(height: GalleryGridTagsMetrics.tagGap),
+              bar(metrics.tagRowExtent),
+            ]),
+          ),
+          const SizedBox(height: GalleryGridTagsMetrics.timeGap),
+          SizedBox(
+            height: metrics.timeLineHeight,
+            child: Center(child: bar(6)),
+          ),
+        ],
+      ),
+    );
   }
 }

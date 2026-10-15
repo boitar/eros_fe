@@ -327,6 +327,7 @@ Widget _buildListModeItem(BuildContext context) {
     ListModeEnum.waterfall: L10n.of(context).listmode_waterfall,
     ListModeEnum.waterfallLarge: L10n.of(context).listmode_waterfall_large,
     ListModeEnum.grid: L10n.of(context).listmode_grid,
+    ListModeEnum.gridTags: L10n.of(context).listmode_grid_tags,
     if (!kReleaseMode || ehSettingService.debugMode)
       ListModeEnum.debugSimple: 'debugSimple',
   };

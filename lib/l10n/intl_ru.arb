@@ -88,6 +88,7 @@
   "listmode_waterfall": "Водопад",
   "listmode_waterfall_large": "Водопад - Крупный",
   "listmode_grid": "Сетка",
+  "listmode_grid_tags": "Сетка - Теги",
   "favorites_order": "Упорядочить избранное",
   "favorites_order_Use_posted": "По дате обновления галереи",
   "favorites_order_Use_favorited": "По дате добавления в избранное",

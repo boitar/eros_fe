@@ -940,6 +940,16 @@ class L10n {
     );
   }
 
+  /// `Grid - Tags`
+  String get listmode_grid_tags {
+    return Intl.message(
+      'Grid - Tags',
+      name: 'listmode_grid_tags',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Favorites Order`
   String get favorites_order {
     return Intl.message(

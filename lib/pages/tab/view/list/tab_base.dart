@@ -411,9 +411,11 @@ Widget getGallerySliverList(
           keepPosition: keepPosition,
         );
       case ListModeEnum.grid:
+      case ListModeEnum.gridTags:
         return EhGridView(
           galleryProviders ?? [],
           tabTag,
+          mode: mod,
           next: next,
           lastComplete: lastComplete,
           centerKey: centerKey,

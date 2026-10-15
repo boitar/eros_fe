@@ -21,20 +21,23 @@ currently integrates the following independently deliverable modules:
 | Action accessibility | Labels for existing traditional controls; decorative no-op prefix excluded | `codex/custom-accessibility` |
 | Haptics | Native bridge, progressive pulls, application switch and operation feedback | `codex/custom-haptics` |
 | Avatar | Album/Files/URL, verified upload retry, local preview and container recovery | `codex/custom-avatar` |
+| Grid tags | Aligned cards, two-row horizontal tags, independent width and restoration | `codex/custom-grid-tags` |
 
 Each business branch has a single complete commit directly on the same fixed
 master. This integration preserves those commit IDs through explicit merges.
-The remaining two planned business modules are not integrated yet.
+Liquid Glass remains unintegrated.
 
-All 278 tests passed on the nine-module integration, with zero analyzer errors
+All 295 tests passed on the ten-module integration, with zero analyzer errors
 or new diagnostics. Production `lib/main.dart` ARM64 Debug-SimulatorUI builds
 passed with and without offline definitions. On the highest installed available
-iOS 27.0 (24A434), isolated iPhone 18 Pro and iPad Pro 11-inch (M5) passed 16
-native avatar checks across light/default and dark/accessibility-medium profiles:
-URL, album, actual document selection, invalid input, cancellation, local preview,
-rotation, restart and container recovery after repeated installation. Regressions
-cover account races and preserving favorite caches/newer folder metadata during
-avatar updates. The independent avatar module passed 41 tests and 16 native checks.
+iOS 27.0 (24A434), isolated iPhone 18 Pro and iPad Pro 11-inch (M5) passed 12
+native grid-tags checks across light/default and dark/accessibility-medium:
+aligned cards, rotation, actual mode selection and width-slider changes. Four
+pairs of actual UI values matched exactly after process restart. The verifier
+compares observations from both phases instead of storing expectations in the
+XCTest runner. The independent grid-tags branch passed 23 tests and 12 native
+checks. Implementation hashes match the tree used for the full tests and both
+builds; the standalone verifier correction retains its earlier tag for traceability.
 
 Real forum uploads and live Cloudflare remain unverified; local HTTP tests cover
 authentication, multipart requests, errors, 403 responses and verification retries.
@@ -82,6 +85,8 @@ bash benchmark/haptics_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" haptics
 bash benchmark/avatar_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" avatar
+bash benchmark/grid_tags_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" grid-tags
 ```
 
 The inherited Flutter refresh armed mediumImpact is separate from the enhanced
@@ -200,3 +205,5 @@ Translation
 flutter version is the latest release version \
 rename `lib/config/config.dart.sample` to `lib/config/config.dart` \
 rename `lib/firebase_options_sample.dart` to `lib/firebase_options.dart`
+
+The unchanged master traditional header still overflows by about 22px in the narrow iPad pane at accessibility-medium; grid cards, actual settings and restoration passed.

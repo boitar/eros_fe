@@ -49,16 +49,19 @@ class TagWaterfallFlowViewBox extends StatelessWidget {
       {Key? key,
       this.simpleTags,
       this.crossAxisCount = 2,
-      this.splitFrame = false})
+      this.splitFrame = false,
+      this.rowExtent = 18,
+      this.endPadding = 0})
       : super(key: key);
 
   final List<SimpleTag>? simpleTags;
   final int crossAxisCount;
   final bool splitFrame;
+  final double rowExtent;
+  final double endPadding;
 
   @override
   Widget build(BuildContext context) {
-    ScrollController controller = ScrollController();
     final EhSettingService _ehSettingService = Get.find();
 
     return Obx(() {
@@ -70,10 +73,10 @@ class TagWaterfallFlowViewBox extends StatelessWidget {
       }
 
       return Container(
-        height: crossAxisCount * 22 - 4,
+        height: crossAxisCount * rowExtent + (crossAxisCount - 1) * 4,
         child: WaterfallFlow.builder(
           shrinkWrap: true,
-          controller: controller,
+          padding: EdgeInsetsDirectional.only(end: endPadding),
           primary: false,
           scrollDirection: Axis.horizontal,
           gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(

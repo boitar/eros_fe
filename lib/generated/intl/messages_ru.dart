@@ -265,6 +265,7 @@ class MessageLookup extends MessageLookupByLibrary {
             "Загрузка не удалась... нажмите, чтобы попробовать еще раз"),
         "list_mode": MessageLookupByLibrary.simpleMessage("Отображение"),
         "listmode_grid": MessageLookupByLibrary.simpleMessage("Сетка"),
+    "listmode_grid_tags": MessageLookupByLibrary.simpleMessage("Сетка - Теги"),
         "listmode_medium":
             MessageLookupByLibrary.simpleMessage("Список - Средний"),
         "listmode_small":

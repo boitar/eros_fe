@@ -88,6 +88,7 @@
   "listmode_waterfall": "瀑布流",
   "listmode_waterfall_large": "瀑布流 - 大",
   "listmode_grid": "網格",
+  "listmode_grid_tags": "網格 - 標籤",
   "favorites_order": "收藏夾排序",
   "favorites_order_Use_posted": "按照發布時間",
   "favorites_order_Use_favorited": "按照收藏時間",

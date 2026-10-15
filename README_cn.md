@@ -20,16 +20,18 @@
 | 操作语义 | 传统控件操作标签，排除无效装饰前缀 | `codex/custom-accessibility` |
 | 触感 | 原生桥接、渐进下拉、应用开关及操作反馈 | `codex/custom-haptics` |
 | 头像 | 相册／文件／URL、论坛验证重试、本机预览与安装后路径恢复 | `codex/custom-avatar` |
+| 网格标签 | 等高卡片、两行横滑标签、独立宽度和恢复 | `codex/custom-grid-tags` |
 
 每个业务分支都是直接基于同一固定 master 的完整单提交，通过显式合并保留原始提交编号。
-其余两个计划业务模块尚未整合。
+最后的液态玻璃模块尚未整合。
 
-九模块整合树全量 278 项测试通过，分析 0 error、无新增诊断；正式 `lib/main.dart`
+十模块整合树全量 295 项测试通过，分析 0 error、无新增诊断；正式 `lib/main.dart`
 ARM64 Debug-SimulatorUI 有／无离线定义构建通过。最高已安装可用 iOS 27.0（24A434），
 隔离 iPhone 18 Pro、iPad Pro 11-inch（M5）浅色默认字号／深色 accessibility-medium 共
-16 项头像原生检查通过，覆盖 URL、相册、实际文件选择、输入失败、取消、本机预览、旋转、
-重启和重复安装后的路径恢复。头像资料更新保留收藏缓存与更新过的分类，账号切换和迟到结果
-由回归测试覆盖。独立头像分支 41 项测试和 16 项原生检查通过。
+12 项网格标签原生检查通过：等高卡片、旋转、真实模式切换与宽度滑块改值；四组实际界面数值
+在进程重启后逐一精确读回。脚本比较两阶段实际观测日志，不依赖 XCTest runner 偏好存储。
+独立网格标签分支 23 项测试和 12 项原生检查通过。组合业务源码与全量测试／双构建已验树哈希
+一致，原生验收脚本的独立修正保留了原 tag，并生成新的验收 tag。
 
 真实论坛上传和在线 Cloudflare 尚未验收，本地 HTTP 测试覆盖表单、认证、上传错误、403 和验证重试。
 操作语义标签保留来源中文；模拟器语义检查不代表真机 VoiceOver 播报／焦点验收。
@@ -74,6 +76,8 @@ bash benchmark/haptics_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" haptics
 bash benchmark/avatar_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" avatar
+bash benchmark/grid_tags_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" grid-tags
 ```
 
 Flutter 原有下拉刷新 armed mediumImpact 独立于增强反馈开关；原生接受调用计数不代表
@@ -92,6 +96,8 @@ master 传统分组栏仍按未缩放文字测宽，无障碍大字号下可能�
 默认字号点击通过，大字号映射通过既有 PageView 手势验证。
 历史页保留 master 固定卡片布局，iPad 窄栏 accessibility-medium 字号下仍有 29px 溢出；
 历史顺序、清理及重启检查通过。
+本轮网格原生截图中，未修改的 master 传统顶栏在 iPad 窄栏大字号下仍有约 22px 溢出；
+网格卡片、实际设置和恢复通过。
 
 ## iOS 安装
 1. 下载最新 ipa 文件 [Releases](https://github.com/erosTeam/eros_fe/releases/latest).
