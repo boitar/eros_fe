@@ -8,6 +8,7 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/debug/offline_acceptance.dart';
+import 'package:eros_fe/debug/offline_accessibility.dart';
 import 'package:eros_fe/debug/offline_downloads.dart';
 import 'package:eros_fe/debug/offline_favorites.dart';
 import 'package:eros_fe/debug/offline_group_index.dart';
@@ -45,6 +46,7 @@ Future<void> main() async {
   await initializeOfflineSharing();
   await initializeOfflineHistory();
   await initializeOfflineGroupIndex();
+  initializeOfflineAccessibility();
   getinit();
   Global.proxyInit();
 

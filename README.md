@@ -18,20 +18,19 @@ currently integrates the following independently deliverable modules:
 | Sharing | Native iOS/iPadOS links, images, files and exports with modal/anchor handling | `codex/custom-sharing` |
 | History | Shared initialization, serialized local persistence/clear and awaited sync | `codex/custom-history` |
 | Visible group index | Stable visible UUID/page mapping, reorder/delete and restart restoration | `codex/custom-group-index` |
+| Action accessibility | Labels for existing traditional controls; decorative no-op prefix excluded | `codex/custom-accessibility` |
 
 Each business branch has a single complete commit directly on the same fixed
 master. This integration preserves those commit IDs through explicit merges.
-The remaining five planned business modules are not integrated yet.
+The remaining four planned business modules are not integrated yet.
 
-Current merged-tree validation: 217 tests pass, with zero analyzer errors and
-no new diagnostics against adapted master. Production `lib/main.dart` builds
-with and without offline defines. Twelve fresh native checks on isolated
-iPhone 18 Pro and iPad Pro 11-inch (M5), highest available iOS 27.0 (24A434),
-cover visible-group selection/rotation, real content after reorder/current
-deletion, selection restoration and all-hidden fallback/restoration. Earlier
-history, share/export and favorite integration checks remain documented on
-their independent branches. These offline checks do not accept cloud accounts
-or physical-device behavior.
+The seven-module integration passed all 224 tests, analysis with no new
+diagnostics, and production-entry builds with and without offline definitions.
+Eight native accessibility checks passed on iPhone 18 Pro and iPad Pro 11-inch
+(M5), iOS 27.0 (24A434), in light/default and dark/accessibility-medium profiles.
+Action labels remain Chinese; XCTest semantics do not establish physical
+VoiceOver speech or focus acceptance. The independent module passed 13 tests
+and eight native checks.
 
 ### Build and verify
 
@@ -68,6 +67,8 @@ bash benchmark/history_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" history
 bash benchmark/group_index_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" group-index
+bash benchmark/accessibility_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" accessibility
 ```
 
 The module branches' bilingual READMEs describe their own checks and boundaries.

@@ -17,15 +17,15 @@
 | 分享 | iOS／iPadOS 链接、图片、文件和导出，处理弹层时序及展示锚点 | `codex/custom-sharing` |
 | 历史 | 共享初始化、串行本地写入／清理、等待同步 | `codex/custom-history` |
 | 可见分组索引 | 可见 UUID／页面对应、重排／删除和重启恢复 | `codex/custom-group-index` |
+| 操作语义 | 传统控件操作标签，排除无效装饰前缀 | `codex/custom-accessibility` |
 
 每个业务分支都是直接基于同一固定 master 的完整单提交，通过显式合并保留原始提交编号。
-其余五个计划业务模块尚未整合。
+其余四个计划业务模块尚未整合。
 
-当前整合树 217 项测试通过；分析 0 error，相对适配 master 无新增诊断。
-正式 `lib/main.dart` 有／无离线定义构建通过。最高可用 iOS 27.0（24A434）上，隔离
-iPhone 18 Pro、iPad Pro 11-inch（M5）另跑 12 项可见分组选择／旋转、重排／删除当前
-分组后的真实内容、选择恢复、仅剩隐藏分组空态及其恢复检查，并全部通过。此前历史、
-分享／导出和收藏整合检查保留在各独立分支；真实云端账号及真机行为仍未验收。
+七模块整合版全量 224 项测试通过，分析无新增诊断，有／无离线定义的正式入口构建通过。
+iPhone 18 Pro 和 iPad Pro 11-inch（M5），iOS 27.0（24A434）的浅色默认字号、深色
+accessibility-medium 字号共八项操作语义原生检查通过。标签沿用来源中文；XCTest 语义检查
+不代表真机 VoiceOver 播报／焦点验收。独立模块 13 项测试和八项原生检查通过。
 
 ### 构建与验证
 
@@ -61,6 +61,8 @@ bash benchmark/history_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" history
 bash benchmark/group_index_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" group-index
+bash benchmark/accessibility_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" accessibility
 ```
 
 各独立分支的中英文 README 记录本模块的实际检查和边界。整合树另跑测试及原生入口，
