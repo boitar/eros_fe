@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
@@ -59,7 +58,13 @@ class CustomTabbarController extends DefaultTabViewController {
   CustomSubListController? get _currSubController =>
       subControllerMap[currProfileUuid];
 
-  late PageController pageController;
+  PageController? _pageController;
+  PageController get pageController =>
+      _pageController ??= PageController(initialPage: index);
+  set pageController(PageController value) => _pageController = value;
+
+  int _selectionEpoch = 0;
+  bool _pendingPageSync = false;
 
   final LinkScrollBarController linkScrollBarController =
       LinkScrollBarController();
@@ -95,12 +100,14 @@ class CustomTabbarController extends DefaultTabViewController {
         ];
 
     ever<List<CustomProfile>>(profiles, (value) {
+      _reconcileSelection();
       customTabConfig = customTabConfig?.copyWith(profiles: value.oN) ??
           CustomTabConfig(profiles: value);
       Global.saveProfile();
     });
 
-    index = customTabConfig?.lastIndex ?? 0;
+    final savedIndex = customTabConfig?.lastIndex ?? 0;
+    _reconcileSelection(fallbackIndex: savedIndex, synchronizePage: false);
     ever<int>(_index, (value) {
       customTabConfig = customTabConfig?.copyWith(lastIndex: value.oN) ??
           CustomTabConfig(lastIndex: value);
@@ -112,8 +119,9 @@ class CustomTabbarController extends DefaultTabViewController {
       hiveHelper.setProfileDelList(value);
     }, time: const Duration(seconds: 2));
 
-    if (profiles.isNotEmpty) {
-      currProfileUuid = profiles[min(max(index, 0), profiles.length - 1)].uuid;
+    if (index != savedIndex) {
+      customTabConfig = customTabConfig?.copyWith(lastIndex: index.oN);
+      Global.saveProfile();
     }
 
     for (final profile in profiles) {
@@ -127,13 +135,68 @@ class CustomTabbarController extends DefaultTabViewController {
   @override
   void onClose() {
     super.onClose();
-    pageController.dispose();
+    _pageController?.dispose();
     linkScrollBarController.dispose();
   }
 
   void onPageChanged(int index) {
-    currProfileUuid = profiles[index].uuid;
+    if (_pendingPageSync) {
+      return;
+    }
+    final visible = profilesShow;
+    if (visible.isEmpty) {
+      _reconcileSelection(synchronizePage: false);
+      return;
+    }
+    if (index < 0 || index >= visible.length) {
+      return;
+    }
+    currProfileUuid = visible[index].uuid;
     this.index = index;
+  }
+
+  void _reconcileSelection({
+    String? preferredUuid,
+    int? fallbackIndex,
+    bool synchronizePage = true,
+  }) {
+    final epoch = ++_selectionEpoch;
+    final visible = profilesShow;
+    _pendingPageSync = false;
+    if (visible.isEmpty) {
+      index = 0;
+      currProfileUuid = '';
+      return;
+    }
+    final retained = visible.indexWhere(
+        (profile) => profile.uuid == (preferredUuid ?? currProfileUuid));
+    final target = retained >= 0
+        ? retained
+        : (fallbackIndex ?? index).clamp(0, visible.length - 1).toInt();
+    final selectedUuid = visible[target].uuid;
+    currProfileUuid = selectedUuid;
+    index = target;
+    if (!synchronizePage) {
+      return;
+    }
+    // Rebuilding a PageView can report its old numeric page before the new
+    // children settle. Keep the selected UUID until that frame is reconciled.
+    _pendingPageSync = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isClosed || epoch != _selectionEpoch) {
+        return;
+      }
+      final currentIndex =
+          profilesShow.indexWhere((profile) => profile.uuid == selectedUuid);
+      if (currentIndex >= 0) {
+        final page = _pageController;
+        if (page != null && page.hasClients && page.positions.length == 1) {
+          page.jumpToPage(currentIndex);
+        }
+        linkScrollBarController.scrollToItem(currentIndex);
+      }
+      _pendingPageSync = false;
+    });
   }
 
   @override
@@ -207,29 +270,41 @@ class CustomTabbarController extends DefaultTabViewController {
 
   // 交换位置
   Future<void> onReorder(int oldIndex, int newIndex) async {
+    if (oldIndex < 0 ||
+        oldIndex >= profiles.length ||
+        newIndex < 0 ||
+        newIndex > profiles.length) {
+      return;
+    }
     final _profileUuid = currProfileUuid;
+    final target = newIndex.clamp(0, profiles.length - 1).toInt();
     final _profile = profiles.removeAt(oldIndex);
-    profiles.insert(newIndex, _profile);
-    index = profiles.indexWhere((element) => element.uuid == _profileUuid);
-    await 200.milliseconds.delay();
-    pageController.jumpToPage(index);
-    linkScrollBarController.scrollToItem(index);
+    profiles.insert(target, _profile);
+    _reconcileSelection(preferredUuid: _profileUuid);
 
-    syncProfiles();
+    await syncProfiles();
   }
 
   // 删除分组配置
   Future<void> deleteProfile({required String uuid}) async {
     final _profileUuid = currProfileUuid;
+    final profile = profiles.firstWhereOrNull((item) => item.uuid == uuid);
+    if (profile == null) {
+      return;
+    }
+    final oldVisibleIndex =
+        profilesShow.indexWhere((item) => item.uuid == uuid);
 
     if (_profileUuid == uuid) {
       await 200.milliseconds.delay();
     }
 
-    addDelProfile(profiles.firstWhere((element) => element.uuid == uuid));
+    addDelProfile(profile);
     profiles.removeWhere((element) => element.uuid == uuid);
+    _reconcileSelection(
+        preferredUuid: _profileUuid, fallbackIndex: oldVisibleIndex);
 
-    syncProfiles();
+    await syncProfiles();
   }
 
   // 添加到已删除列表 记录删除时间

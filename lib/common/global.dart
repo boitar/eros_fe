@@ -73,6 +73,7 @@ final EhHttpOverrides ehHttpOverrides = EhHttpOverrides();
 // 全局配置
 // ignore: avoid_classes_with_only_static_members
 class Global {
+  static bool isIosDebugSimulator = false;
   // 是否第一次打开
   static bool isFirstOpen = false;
   static bool inDebugMode = false;
@@ -117,7 +118,11 @@ class Global {
     // 判断是否debug模式
     inDebugMode = kDebugMode;
 
-    if (GetPlatform.isMobile) {
+    isIosDebugSimulator = Platform.isIOS &&
+        kDebugMode &&
+        !(await deviceInfo.iosInfo).isPhysicalDevice;
+
+    if (GetPlatform.isMobile && !isIosDebugSimulator) {
       await FlutterDownloader.initialize(debug: kDebugMode, ignoreSsl: true);
     }
 
