@@ -14,15 +14,15 @@
 | 瀑布流稳定性 | 设置 → 布局 → 瀑布流／瀑布流大卡片；稳定封面尺寸、回滑及分页列表／控制器复用 | `codex/custom-waterfall` |
 | 下载 | 暂停、继续或移回下载目录后重新检查，先认领已有文件再调度缺失图片 | `codex/custom-downloads` |
 | 收藏 | 传统表单、服务器读回确认、账号隔离及备注编辑保护 | `codex/custom-favorites` |
+| 分享 | iOS／iPadOS 链接、图片、文件和导出，处理弹层时序及展示锚点 | `codex/custom-sharing` |
 
 每个业务分支都是直接基于同一固定 master 的完整单提交，通过显式合并保留原始提交编号。
-其余八个计划业务模块尚未整合。
+其余七个计划业务模块尚未整合。
 
-当前整合树 180 项测试通过，全量分析 0 error，相对适配 master 无新增诊断。
-两种 ARM64 正式入口夹具构建通过；隔离 iPhone 18 Pro、iPad Pro 11-inch（M5），
-iOS 27.0（24A434）共十项原生检查通过，覆盖收藏表单编辑／样式／重启与横屏、
-瀑布流回滑及布局恢复、下载恢复和本地阅读器。iPad 运行器启动失败证据保留，串行重跑已通过。
-真实服务器写入和真机仍未验收。
+当前整合树 197 项测试通过，全量分析 0 error，相对适配 master 无新增诊断。
+ARM64 正式入口构建通过；隔离 iPhone 18 Pro、iPad Pro 11-inch（M5），iOS 27.0（24A434）
+共八项分享／导出原生检查通过，运行时包含既有下载与收藏实现。此前收藏整合另通过十项
+滚动、恢复、本地阅读及表单检查。不以本次结果声明真实发送或真机验收。
 
 ### 构建与验证
 
@@ -52,6 +52,8 @@ bash benchmark/downloads_ui_tests/run-recovery.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" recovery
 bash benchmark/favorites_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" favorites
+bash benchmark/sharing_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" sharing
 ```
 
 各独立分支的中英文 README 记录本模块的实际检查和边界。整合树另跑测试及原生入口，
@@ -61,6 +63,7 @@ bash benchmark/favorites_ui_tests/run-native.sh \
 LiveContainer、Release 及其他未测平台不在验收范围。master 原有的大字体分类栏溢出及固定高度
 瀑布流标签行裁切仍是继承限制。iPad 窄栏的固定高度普通列表卡片在系统
 accessibility-medium 字号下也会溢出，收藏表单仍可操作。本次重建不生成 IPA，也不向远端发布分支或 tag。
+旧 Debug 下载任务信息生成器在 master／来源中均未实现，不声明为可用导出。
 
 ## iOS 安装
 1. 下载最新 ipa 文件 [Releases](https://github.com/erosTeam/eros_fe/releases/latest).

@@ -6,11 +6,11 @@ import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/gallery/controller/torrent_controller.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class TorrentView extends StatelessWidget {
@@ -155,21 +155,27 @@ class TorrentItem extends StatelessWidget {
                   },
                 ),
               ),
-              CupertinoTheme(
-                data: const CupertinoThemeData(
-                    primaryColor: CupertinoColors.systemRed),
-                child: CupertinoButton(
-                  padding: const EdgeInsets.only(left: 0),
-                  minSize: 30,
-                  child: const FaIcon(FontAwesomeIcons.magnet,
-                    size: 16,
+              Builder(
+                builder: (buttonContext) => CupertinoTheme(
+                  data: const CupertinoThemeData(
+                      primaryColor: CupertinoColors.systemRed),
+                  child: CupertinoButton(
+                    padding: const EdgeInsets.only(left: 0),
+                    minSize: 30,
+                    child: const FaIcon(
+                      FontAwesomeIcons.magnet,
+                      size: 16,
+                    ),
+                    onPressed: () async {
+                      final String magnet =
+                          'magnet:?xt=urn:btih:${torrent.hash}';
+                      logger.t('share torrent magnet');
+                      await ShareService.shareText(
+                        magnet,
+                        context: buttonContext,
+                      );
+                    },
                   ),
-                  onPressed: () {
-                    final String _magnet =
-                        'magnet:?xt=urn:btih:${torrent.hash}';
-                    logger.t(_magnet);
-                    Share.share(_magnet);
-                  },
                 ),
               )
             ],

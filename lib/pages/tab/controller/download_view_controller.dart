@@ -13,7 +13,9 @@ import 'package:eros_fe/pages/tab/view/download_page.dart';
 import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/store/db/entity/gallery_image_task.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
+import 'package:eros_fe/utils/export_progress.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:eros_fe/utils/toast.dart';
 import 'package:eros_fe/utils/utility.dart';
 import 'package:eros_fe/utils/vibrate.dart';
@@ -32,7 +34,7 @@ enum DownloadType {
   archiver,
 }
 
-typedef FunctionExport = Future Function();
+typedef FunctionExport = Future<String?> Function();
 
 const String idDownloadGalleryView = 'DownloadGalleryView';
 const String idDownloadArchiverView = 'DownloadArchiverView';
@@ -267,10 +269,10 @@ class DownloadViewController extends GetxController {
     DownloadType type, {
     GalleryTask? task,
   }) async {
-    final BuildContext context = Get.context!;
+    final BuildContext pageContext = Get.context!;
 
     await showCupertinoModalPopup<void>(
-        context: context,
+        context: pageContext,
         builder: (BuildContext context) {
           return CupertinoActionSheet(
             cancelButton: CupertinoActionSheetAction(
@@ -304,9 +306,12 @@ class DownloadViewController extends GetxController {
               if (type == DownloadType.gallery &&
                   task?.status == TaskStatus.complete.value)
                 CupertinoActionSheetAction(
-                  onPressed: () {
+                  onPressed: () async {
                     Get.back();
-                    _showExportSheet(task: task);
+                    await ShareService.waitForModalDismissal();
+                    if (pageContext.mounted) {
+                      await _showExportSheet(pageContext: pageContext, task: task);
+                    }
                   },
                   child: Text(
                     L10n.of(context).export,
@@ -415,27 +420,39 @@ class DownloadViewController extends GetxController {
     );
   }
 
-  Future<void> _showExportSheet({GalleryTask? task}) async {
+  Future<void> _showExportSheet({
+    GalleryTask? task,
+    BuildContext? pageContext,
+  }) async {
     if (task == null) {
       return;
     }
+    final BuildContext sharePageContext = pageContext ?? Get.context!;
     await showCupertinoModalPopup<void>(
-        context: Get.context!,
-        builder: (BuildContext context) {
+        context: sharePageContext,
+        builder: (BuildContext sheetContext) {
           return CupertinoActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
                 },
-                child: Text(L10n.of(context).cancel)),
+                child: Text(L10n.of(sheetContext).cancel)),
             actions: <Widget>[
               // ZIP
               CupertinoActionSheetAction(
-                onPressed: () {
+                onPressed: () async {
                   logger.d('导出zip');
+                  final shareOrigin = ShareService.positionOrigin(sheetContext);
                   Get.back();
-
-                  _exportZip(context, task);
+                  await ShareService.waitForModalDismissal();
+                  if (!sharePageContext.mounted) {
+                    return;
+                  }
+                  await _exportZip(
+                    sharePageContext,
+                    task,
+                    sharePositionOrigin: shareOrigin,
+                  );
                 },
                 child: const Text(
                   'ZIP',
@@ -443,10 +460,19 @@ class DownloadViewController extends GetxController {
               ),
               // ZIP
               CupertinoActionSheetAction(
-                onPressed: () {
+                onPressed: () async {
                   logger.d('导出epub');
+                  final shareOrigin = ShareService.positionOrigin(sheetContext);
                   Get.back();
-                  _exportEpub(context, task);
+                  await ShareService.waitForModalDismissal();
+                  if (!sharePageContext.mounted) {
+                    return;
+                  }
+                  await _exportEpub(
+                    sharePageContext,
+                    task,
+                    sharePositionOrigin: shareOrigin,
+                  );
                 },
                 child: const Text(
                   'EPUB',
@@ -457,22 +483,35 @@ class DownloadViewController extends GetxController {
         });
   }
 
-  Future<String?> _exportZip(BuildContext context, GalleryTask task) async {
+  Future<String?> _exportZip(
+    BuildContext context,
+    GalleryTask task, {
+    Rect? sharePositionOrigin,
+  }) async {
     logger.d('export zip , dir path ${task.dirPath}');
     if (task.dirPath == null) {
       return null;
     }
+    final origin = sharePositionOrigin ?? ShareService.positionOrigin(context);
 
     final zipPath = await _exportGallery(context, () => _compZip(task));
 
     if (zipPath != null) {
-      Share.shareXFiles([XFile(zipPath)]);
+      await ShareService.waitForModalDismissal();
+      await ShareService.shareFiles(
+        [XFile(zipPath)],
+        sharePositionOrigin: origin,
+      );
     }
     return null;
   }
 
+  String get _exportTempRoot => Global.extStoreTempPath.isNotEmpty
+      ? Global.extStoreTempPath
+      : Global.tempPath;
+
   Future<String?> _compZip(GalleryTask task) async {
-    final tempPath = path.join(Global.extStoreTempPath, 'export_temp');
+    final tempPath = path.join(_exportTempRoot, 'export_temp');
     Directory tempDir = Directory(tempPath);
     if (tempDir.existsSync()) {
       tempDir.deleteSync(recursive: true);
@@ -481,8 +520,9 @@ class DownloadViewController extends GetxController {
 
     // 打包zip
     final encoder = ZipFileEncoder();
-    final zipPath = path.join(
-        Global.extStoreTempPath, 'zip', '${task.gid}_${task.title}.zip');
+    final title = task.title.replaceAll(RegExp(r'[/:*"<>|]'), '_');
+    final zipPath = path.join(_exportTempRoot, 'zip', '${task.gid}_$title.zip');
+    await Directory(path.dirname(zipPath)).create(recursive: true);
     encoder.create(zipPath);
 
     if (task.realDirPath?.isContentUri ?? false) {
@@ -504,7 +544,7 @@ class DownloadViewController extends GetxController {
         }
         final filePath = path.join(tempPath, domFile.name);
         File(filePath).writeAsBytesSync(bytes);
-        encoder.addFile(File(filePath));
+        await encoder.addFile(File(filePath));
       }
     } else {
       // 添加文件
@@ -513,7 +553,7 @@ class DownloadViewController extends GetxController {
         if ((await FileSystemEntity.type(imgFile.path)) ==
             FileSystemEntityType.file) {
           final srcFile = File(imgFile.path);
-          encoder.addFile(srcFile);
+          await encoder.addFile(srcFile);
         }
       }
     }
@@ -524,35 +564,46 @@ class DownloadViewController extends GetxController {
       logger.d('zip file len ${file.lengthSync()}');
     }
 
-    encoder.close();
+    await encoder.close();
     return zipPath;
   }
 
-  Future<String?> _exportEpub(BuildContext context, GalleryTask task) async {
+  Future<String?> _exportEpub(
+    BuildContext context,
+    GalleryTask task, {
+    Rect? sharePositionOrigin,
+  }) async {
     logger.d('export epub , dir path ${task.dirPath}');
     if (task.dirPath == null) {
       return null;
     }
+    final origin = sharePositionOrigin ?? ShareService.positionOrigin(context);
 
     final exportFilePath =
         await _exportGallery(context, () => _buildEpub(task));
 
     if (exportFilePath != null) {
-      Share.shareXFiles([XFile(exportFilePath)]);
+      await ShareService.waitForModalDismissal();
+      await ShareService.shareFiles(
+        [XFile(exportFilePath)],
+        sharePositionOrigin: origin,
+      );
     }
     return null;
   }
 
   Future<String?> _buildEpub(GalleryTask task) async {
     loggerTime.t('start buildEpub');
-    final tempEpubPath = await buildEpub(task);
+    final tempEpubPath = await buildEpub(task,
+        tempPath: path.join(_exportTempRoot, 'export_epub_temp'));
     loggerTime.t('end buildEpub');
 
     final title = task.title.replaceAll(RegExp(r'[/:*"<>|]'), '_');
 
     // 打包epub文件
     final epubPath =
-        path.join(Global.extStoreTempPath, 'epub', '${task.gid}_$title.epub');
+        path.join(_exportTempRoot, 'epub', '${task.gid}_$title.epub');
+    await Directory(path.dirname(epubPath)).create(recursive: true);
     await compute(isolateCompactDirToZip, [epubPath, tempEpubPath]);
 
     if (kDebugMode) {
@@ -719,10 +770,17 @@ class DownloadViewController extends GetxController {
     return path.join(Global.appDocPath, 'FEhDownloadTask_$nowTime.zip');
   }
 
-  Future shareTaskInfoFile() async {
+  Future<void> shareTaskInfoFile({
+    BuildContext? context,
+    Rect? sharePositionOrigin,
+  }) async {
+    final origin = sharePositionOrigin ?? ShareService.positionOrigin(context);
     final tempFilePath = await _writeTaskInfoFile();
     if (tempFilePath != null) {
-      Share.shareXFiles([XFile(tempFilePath)]);
+      await ShareService.shareFiles(
+        [XFile(tempFilePath)],
+        sharePositionOrigin: origin,
+      );
     }
   }
 
@@ -766,40 +824,9 @@ Future<String?> _exportGallery(
   BuildContext context,
   FunctionExport funExport, {
   FunctionExport? funcCancel,
-}) async {
-  Future<String?> showExportDialog() async {
-    return await showCupertinoDialog<String?>(
-      context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: Text(L10n.of(context).processing),
-          content: GetBuilder<DownloadViewController>(
-            initState: (state) async {
-              final _path = await funExport();
-              Get.back(result: _path);
-            },
-            builder: (logic) {
-              return const CupertinoActivityIndicator(radius: 16);
-            },
-          ).paddingOnly(top: 10.0),
-          actions: [
-            CupertinoDialogAction(
-              child: Text(
-                L10n.of(context).cancel,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: CupertinoColors.destructiveRed),
-              ),
-              onPressed: () {
-                funcCancel?.call();
-                Get.back();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  return await showExportDialog();
-}
+}) => showExportProgress(
+  context,
+  funExport,
+  onCancel: () { funcCancel?.call(); },
+  onError: (error, stack) { showToast('Export failed'); },
+);

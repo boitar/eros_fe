@@ -27,13 +27,13 @@ void compactZip(String outputPath, String inputDirPath) {
   loggerTime.d('end compactZip');
 }
 
-void isolateCompactDirToZip(List<String> para) {
+Future<void> isolateCompactDirToZip(List<String> para) async {
   final outputPath = para[0];
   final inputDirPath = para[1];
   final encoder = ZipFileEncoder();
   encoder.create(outputPath);
-  encoder.addDirectory(Directory(inputDirPath), includeDirName: false);
-  encoder.close();
+  await encoder.addDirectory(Directory(inputDirPath), includeDirName: false);
+  await encoder.close();
 }
 
 Future<String> buildEpub(GalleryTask task, {String? tempPath}) async {

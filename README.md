@@ -15,18 +15,19 @@ currently integrates the following independently deliverable modules:
 | Waterfall stability | Settings > Layout > Waterfall / Waterfall - Large; stable cover dimensions, return scrolling and pagination/controller reuse | `codex/custom-waterfall` |
 | Downloads | Pause/continue or restore a moved folder, then recheck existing files before missing images are queued | `codex/custom-downloads` |
 | Favorites | Traditional forms, confirmed server results, account isolation and protected note edits | `codex/custom-favorites` |
+| Sharing | Native iOS/iPadOS links, images, files and exports with modal/anchor handling | `codex/custom-sharing` |
 
 Each business branch has a single complete commit directly on the same fixed
 master. This integration preserves those commit IDs through explicit merges.
-The remaining eight planned business modules are not integrated yet.
+The remaining seven planned business modules are not integrated yet.
 
-Current merged-tree validation: 180 tests pass, with zero analyzer errors and
-no new diagnostics against the adapted master baseline. Both ARM64 production
-entry fixture builds pass. Ten native checks pass on isolated iPhone 18 Pro and
-iPad Pro 11-inch (M5), iOS 27.0 (24A434): favorite form editing/style/restart and
-rotation, waterfall scroll/layout persistence, download restoration and local
-reader opening. An iPad runner bootstrap failure was retained and passed on a
-serial rerun. Real server writes and physical devices remain unverified.
+Current merged-tree validation: 197 tests pass; static analysis has zero errors
+and no new diagnostics against adapted master. The ARM64 production entry build
+passes. Eight native checks on isolated iPhone 18 Pro and iPad Pro 11-inch (M5),
+iOS 27.0 (24A434), cover sharing and exports with the existing download and
+favorite implementation present. The earlier favorite integration separately
+passed ten native scroll, restore, reader and form checks. No real recipient
+sends or physical-device behavior is certified.
 
 ### Build and verify
 
@@ -57,6 +58,8 @@ bash benchmark/downloads_ui_tests/run-recovery.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" recovery
 bash benchmark/favorites_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" favorites
+bash benchmark/sharing_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" sharing
 ```
 
 The module branches' bilingual READMEs describe their own checks and boundaries.
@@ -70,7 +73,8 @@ Master's large-text category-bar overflow and fixed-height waterfall tag clippin
 remain inherited UI limitations. Ordinary fixed-height list cards also overflow
 in a narrow iPad pane with OS accessibility-medium text; the favorites form is
 functional in that profile. This reconstruction produces no IPA and does
-not publish branches or tags remotely.
+not publish branches or tags remotely. The legacy debug download-task metadata
+writer remains unimplemented in master and source; it is not a working export.
 
 ## 🔍 Translations Wanted 🔍
 Please submit a pull request if you want to help with translation.

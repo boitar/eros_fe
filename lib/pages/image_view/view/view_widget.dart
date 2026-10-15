@@ -10,6 +10,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/image_view/controller/view_state.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:eros_fe/widget/image/extended_saf_image_privider.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -1894,35 +1895,47 @@ Future<void> showShareActionSheet(
 }) {
   return showCupertinoModalPopup<void>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         final CupertinoActionSheet dialog = CupertinoActionSheet(
-          title: Text(L10n.of(context).share_image),
+          title: Text(L10n.of(sheetContext).share_image),
           cancelButton: CupertinoActionSheetAction(
               onPressed: () {
                 Get.back();
               },
-              child: Text(L10n.of(context).cancel)),
+              child: Text(L10n.of(sheetContext).cancel)),
           actions: <Widget>[
             CupertinoActionSheetAction(
               onPressed: () async {
                 logger.t('重采样图片');
+                final shareOrigin = ShareService.positionOrigin(sheetContext);
                 Get.back();
-                if (filePath != null && filePath.isNotEmpty) {
-                  await Api.shareLocalImage(
-                    filePath,
-                    context: context,
-                    gid: gid,
-                  );
-                } else if (imageUrl != null && imageUrl.isNotEmpty) {
-                  await Api.shareNetworkImage(
-                    imageUrl,
-                    context: context,
-                    gid: gid,
-                    ser: ser,
-                    filename: filename,
-                  );
-                } else {
-                  showToast('imageUrl is null or file is null');
+                await ShareService.waitForModalDismissal();
+                try {
+                  if (filePath != null && filePath.isNotEmpty) {
+                    await Api.shareLocalImage(
+                      filePath,
+                      gid: gid,
+                      sharePositionOrigin: shareOrigin,
+                    );
+                  } else if (imageUrl != null && imageUrl.isNotEmpty) {
+                    await Api.shareNetworkImage(
+                      imageUrl,
+                      gid: gid,
+                      ser: ser,
+                      filename: filename,
+                      sharePositionOrigin: shareOrigin,
+                    );
+                  } else {
+                    showToast('imageUrl is null or file is null');
+                  }
+                } on EhError catch (error, stackTrace) {
+                  logger.e('share image failed',
+                      error: error, stackTrace: stackTrace);
+                  showToast(error.message);
+                } catch (error, stackTrace) {
+                  logger.e('share image failed',
+                      error: error, stackTrace: stackTrace);
+                  showToast('Share failed');
                 }
               },
               child: Text(L10n.of(context).resample_image),
@@ -1931,7 +1944,9 @@ Future<void> showShareActionSheet(
               CupertinoActionSheetAction(
                 onPressed: () async {
                   logger.t('原图');
+                  final shareOrigin = ShareService.positionOrigin(sheetContext);
                   Get.back();
+                  await ShareService.waitForModalDismissal();
 
                   if (origImageUrl.isEmpty) {
                     showToast('origImageUrl is null');
@@ -1945,10 +1960,10 @@ Future<void> showShareActionSheet(
                   try {
                     await Api.shareNetworkImage(
                       origImageUrl,
-                      context: context,
                       gid: gid,
                       ser: ser,
                       filename: filename,
+                      sharePositionOrigin: shareOrigin,
                       progressCallback: (int count, int total) {
                         // logger.d('$count $total');
                       },
@@ -1965,7 +1980,7 @@ Future<void> showShareActionSheet(
                     SmartDialog.dismiss();
                   }
                 },
-                child: Text(L10n.of(context).original_image),
+                child: Text(L10n.of(sheetContext).original_image),
               ),
           ],
         );
@@ -1987,21 +2002,21 @@ Future<void> showImageSheet(
 }) {
   return showCupertinoModalPopup<void>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         final CupertinoActionSheet dialog = CupertinoActionSheet(
           title: title != null ? Text(title) : null,
           cancelButton: CupertinoActionSheetAction(
               onPressed: () {
                 Get.back();
               },
-              child: Text(L10n.of(context).cancel)),
+              child: Text(L10n.of(sheetContext).cancel)),
           actions: <Widget>[
             CupertinoActionSheetAction(
                 onPressed: () {
                   reload();
                   Get.back();
                 },
-                child: Text(L10n.of(context).reload_image)),
+                child: Text(L10n.of(sheetContext).reload_image)),
             CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
@@ -2016,22 +2031,25 @@ Future<void> showImageSheet(
                     isLocal: isLocal,
                   );
                 },
-                child: Text(L10n.of(context).save_into_album)),
+                child: Text(L10n.of(sheetContext).save_into_album)),
             CupertinoActionSheetAction(
-                onPressed: () {
+                onPressed: () async {
                   Get.back();
-                  showShareActionSheet(
-                    context,
-                    imageUrl: imageUrl,
-                    filePath: filePath,
-                    origImageUrl: origImageUrl,
-                    gid: gid,
-                    ser: ser,
-                    filename: filename,
-                    isLocal: isLocal,
-                  );
+                  await ShareService.waitForModalDismissal();
+                  if (context.mounted) {
+                    await showShareActionSheet(
+                      context,
+                      imageUrl: imageUrl,
+                      filePath: filePath,
+                      origImageUrl: origImageUrl,
+                      gid: gid,
+                      ser: ser,
+                      filename: filename,
+                      isLocal: isLocal,
+                    );
+                  }
                 },
-                child: Text(L10n.of(context).share_image)),
+                child: Text(L10n.of(sheetContext).share_image)),
           ],
         );
         return EhDarkCupertinoTheme(child: dialog);
