@@ -14,16 +14,19 @@ currently integrates the following independently deliverable modules:
 | --- | --- | --- |
 | Waterfall stability | Settings > Layout > Waterfall / Waterfall - Large; stable cover dimensions, return scrolling and pagination/controller reuse | `codex/custom-waterfall` |
 | Downloads | Pause/continue or restore a moved folder, then recheck existing files before missing images are queued | `codex/custom-downloads` |
+| Favorites | Traditional forms, confirmed server results, account isolation and protected note edits | `codex/custom-favorites` |
 
 Each business branch has a single complete commit directly on the same fixed
 master. This integration preserves those commit IDs through explicit merges.
-The remaining nine planned business modules are not integrated yet.
+The remaining eight planned business modules are not integrated yet.
 
-Current merged-tree validation: 65 tests pass, with zero analyzer errors and no
-new diagnostics against the adapted master baseline. The ARM64 Simulator
-production-entry build passes; six native checks on iPhone 18 Pro and iPad Pro
-11-inch (M5), iOS 27.0 (24A434), cover waterfall scroll return, layout persistence,
-download restoration, rotation/restart and opening a completed local download.
+Current merged-tree validation: 180 tests pass, with zero analyzer errors and
+no new diagnostics against the adapted master baseline. Both ARM64 production
+entry fixture builds pass. Ten native checks pass on isolated iPhone 18 Pro and
+iPad Pro 11-inch (M5), iOS 27.0 (24A434): favorite form editing/style/restart and
+rotation, waterfall scroll/layout persistence, download restoration and local
+reader opening. An iPad runner bootstrap failure was retained and passed on a
+serial rerun. Real server writes and physical devices remain unverified.
 
 ### Build and verify
 
@@ -52,6 +55,8 @@ bash benchmark/downloads_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" downloads
 bash benchmark/downloads_ui_tests/run-recovery.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" recovery
+bash benchmark/favorites_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" favorites
 ```
 
 The module branches' bilingual READMEs describe their own checks and boundaries.
@@ -62,7 +67,9 @@ Integration tests and native entry checks are rerun on the merged tree; source
 Physical devices, Android SAF hardware, OCR, legacy archive downloads,
 LiveContainer, Release and other untested platforms are outside acceptance.
 Master's large-text category-bar overflow and fixed-height waterfall tag clipping
-remain inherited UI limitations. This reconstruction produces no IPA and does
+remain inherited UI limitations. Ordinary fixed-height list cards also overflow
+in a narrow iPad pane with OS accessibility-medium text; the favorites form is
+functional in that profile. This reconstruction produces no IPA and does
 not publish branches or tags remotely.
 
 ## 🔍 Translations Wanted 🔍

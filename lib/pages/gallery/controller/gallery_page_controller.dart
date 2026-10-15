@@ -586,7 +586,7 @@ class GalleryPageController extends GetxController
           if (changeSource) {
             logger.d('itemSer$itemSer 换源加载 start');
             // 删除旧缓存
-            _cacheController.clearDioCache(
+            await _cacheController.clearDioCache(
                 path: gState.imageMap[itemSer]?.href ?? '');
           }
 

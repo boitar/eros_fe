@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:eros_fe/debug/offline_favorites.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
@@ -41,6 +42,16 @@ class OfflineAcceptanceAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    if (offlineFavoriteAcceptanceEnabled) {
+      final page = int.tryParse('${options.queryParameters['page'] ?? 0}') ?? 0;
+      final response = await offlineFavoriteResponse(
+          options, offlineGalleryList(page: page,
+              invalidCoverSizes:
+                  const bool.fromEnvironment('EROS_WATERFALL_EDGE_CASES')));
+      if (response != null) {
+        return response;
+      }
+    }
     if (options.method != 'GET') {
       return ResponseBody.fromString('Offline fixture: mutation blocked', 501);
     }

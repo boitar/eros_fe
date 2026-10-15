@@ -5,6 +5,8 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:eros_fe/common/controller/advance_search_controller.dart';
+import 'package:eros_fe/common/controller/favorite_state_store.dart';
+import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/parser/eh_parser.dart';
 import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/index.dart';
@@ -13,10 +15,12 @@ import 'package:eros_fe/pages/gallery/controller/torrent_controller.dart';
 import 'package:eros_fe/pages/tab/fetch_list.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide FormData, Response, MultipartFile;
+import 'package:html/parser.dart' show parse;
 import 'package:http_parser/http_parser.dart' as http_parser;
 
 import 'api.dart';
 import 'app_dio/pdio.dart';
+import 'favorite_mutation.dart';
 
 Options getCacheOptions({
   bool refresh = false,
@@ -55,6 +59,8 @@ Future<GalleryList?> getGallery({
   AdvanceSearch? advanceSearch,
   bool globalSearch = false,
 }) async {
+  final favoriteVersion = favoriteStates.version;
+  final favoriteEpoch = favoriteStates.epoch;
   final AdvanceSearchController searchController = Get.find();
   DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
 
@@ -128,12 +134,14 @@ Future<GalleryList?> getGallery({
 
   logger.t('url:$_url $_params');
 
+  // Favorite markers are account state carried by the list HTML. Fetch fresh
+  // data even on first entry, rather than reusing a forced cached snapshot.
   DioHttpResponse httpResponse = await dioHttpClient.get(
     _url,
     queryParameters: _params,
     httpTransformer:
         isFav ? FavoriteListHttpTransformer() : GalleryListHttpTransformer(),
-    options: getCacheOptions(refresh: refresh),
+    options: favoriteNetworkCacheOptions(Api.cacheOption).toOptions(),
     cancelToken: cancelToken,
   );
 
@@ -147,7 +155,7 @@ Future<GalleryList?> getGallery({
       queryParameters: _params,
       httpTransformer:
           isFav ? FavoriteListHttpTransformer() : GalleryListHttpTransformer(),
-      options: getCacheOptions(refresh: true),
+      options: favoriteNetworkCacheOptions(Api.cacheOption).toOptions(),
       cancelToken: cancelToken,
     );
   }
@@ -164,7 +172,7 @@ Future<GalleryList?> getGallery({
       queryParameters: _params,
       httpTransformer:
           isFav ? FavoriteListHttpTransformer() : GalleryListHttpTransformer(),
-      options: getCacheOptions(refresh: false)
+      options: favoriteNetworkCacheOptions(Api.cacheOption).toOptions()
         ..followRedirects = true
         ..validateStatus = (status) => (status ?? 0) < 500,
       cancelToken: cancelToken,
@@ -172,7 +180,27 @@ Future<GalleryList?> getGallery({
   }
 
   if (httpResponse.ok && httpResponse.data is GalleryList) {
-    return httpResponse.data as GalleryList;
+    final result = httpResponse.data as GalleryList;
+    if (favoriteEpoch != favoriteStates.epoch) {
+      return const GalleryList();
+    }
+    final providers = (result.gallerys ?? <GalleryProvider>[]).map((provider) {
+      var parsed = provider;
+      // A validated single-category favorites response supplies its category
+      // even if the site's row omits the badge. Never infer this on "all".
+      if (isFav &&
+          isNetworkFavoriteCategory(favcat) &&
+          result.favList?.length == 10 &&
+          (provider.favcat?.isEmpty ?? true)) {
+        final title = result.favList!
+            .firstWhere((category) => category.favId == favcat)
+            .favTitle;
+        parsed = provider.copyWith(favcat: favcat.oN, favTitle: title.oN);
+      }
+      favoriteStates.acceptRead(parsed, favoriteVersion, favoriteEpoch);
+      return favoriteStates.overlay(parsed);
+    }).toList();
+    return result.copyWith(gallerys: providers.oN);
   } else {
     logger.d('${httpResponse.error.runtimeType}');
     if (httpResponse.error is CancelException) {
@@ -221,16 +249,25 @@ Future<GalleryProvider?> getGalleryDetail({
   bool refresh = false,
   CancelToken? cancelToken,
 }) async {
+  final favoriteVersion = favoriteStates.version;
+  final favoriteEpoch = favoriteStates.epoch;
   DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
   DioHttpResponse httpResponse = await dioHttpClient.get(
     url,
     httpTransformer: GalleryHttpTransformer(),
-    options: getCacheOptions(refresh: refresh),
+    options: favoriteNetworkCacheOptions(Api.cacheOption).toOptions(),
     cancelToken: cancelToken,
   );
   logger.t('httpResponse.ok ${httpResponse.ok}');
   if (httpResponse.ok && httpResponse.data is GalleryProvider) {
-    return httpResponse.data as GalleryProvider;
+    if (favoriteEpoch != favoriteStates.epoch) {
+      throw StateError('账号已切换，请重新打开画廊');
+    }
+    final provider = httpResponse.data as GalleryProvider;
+    // Fresh detail responses are authoritative; old in-flight reads are fenced.
+    favoriteStates.acceptRead(provider, favoriteVersion, favoriteEpoch,
+        authoritative: true);
+    return favoriteStates.overlay(provider);
   } else {
     // logger.e('${httpResponse.error}');
     if (httpResponse.error?.code == 404) {
@@ -897,34 +934,93 @@ Future<void> galleryAddFavorite(
   String favcat = 'favdel',
   String favnote = '',
 }) async {
-  const String url = '/gallerypopups.php';
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  final Map<String, dynamic> _params = {
-    'gid': gid,
-    't': token,
-    'act': 'addfav',
-  };
-
-  final FormData formData = FormData.fromMap({
-    'favcat': favcat,
-    'update': '1',
-    'favnote': favnote,
+  await favoriteStates.mutate(gid, () async {
+    final epoch = favoriteStates.epoch;
+    final baseUrl = Api.getBaseUrl();
+    final client = DioHttpClient(dioConfig: globalDioConfig);
+    final confirmed = await confirmFavoriteMutation(
+      category: favcat,
+      submit: () async {
+        final response = await client.post(
+          '$baseUrl/gallerypopups.php',
+          queryParameters: {'gid': gid, 't': token, 'act': 'addfav'},
+          data: FormData.fromMap({
+            'favcat': favcat,
+            'update': '1',
+            'favnote': favnote,
+          }),
+          options: favoriteNetworkCacheOptions(Api.cacheOption, transient: true)
+              .toOptions(),
+        );
+        if (!response.ok) {
+          throw StateError('收藏请求未成功');
+        }
+      },
+      readRemoval: () async {
+        if (epoch != favoriteStates.epoch) {
+          throw StateError('账号已切换');
+        }
+        // Do not use getGalleryDetail: its overlay/cache contains the previous
+        // favorite while this mutation is still pending.
+        final response = await client.get(
+          '$baseUrl/g/$gid/$token/',
+          options: favoriteNetworkCacheOptions(Api.cacheOption, transient: true)
+              .toOptions(),
+          httpTransformer: HttpTransformerBuilder((response) {
+            return DioHttpResponse<String?>.success(
+                parseDetailFavorite(parse(response.data as String)).$1);
+          }),
+        );
+        if (!response.ok) {
+          throw StateError('取消收藏确认请求失败');
+        }
+        final category = response.data;
+        if (category == '') {
+          return true;
+        }
+        if (category is String && isNetworkFavoriteCategory(category)) {
+          return false;
+        }
+        return null;
+      },
+      readBack: () {
+        if (epoch != favoriteStates.epoch) {
+          throw StateError('账号已切换');
+        }
+        return galleryGetFavorite(gid, token, baseUrl: baseUrl);
+      },
+    );
+    if (epoch != favoriteStates.epoch) {
+      throw StateError('账号已切换');
+    }
+    final category = confirmed.selectFavcat ?? '';
+    final title = category.isEmpty
+        ? ''
+        : confirmed.favcats
+            .firstWhere((value) => value.favId == category)
+            .favTitle;
+    favoriteStates.commit(gid, category, title);
+    if (Get.isRegistered<GalleryCacheController>()) {
+      Get.find<GalleryCacheController>().syncFavorite(gid);
+    }
+    // Cache cleanup failure must not turn a confirmed mutation into a failure.
+    try {
+      for (final base in [EHConst.EH_BASE_URL, EHConst.EX_BASE_URL]) {
+        await Api.cacheOption.store
+            ?.deleteFromPath(RegExp(RegExp.escape('$base/g/$gid/')));
+      }
+    } catch (_) {
+      logger.w('Favorite saved; detail HTTP cache invalidation failed');
+    }
   });
-
-  DioHttpResponse httpResponse = await dioHttpClient.post(
-    url,
-    queryParameters: _params,
-    data: formData,
-    options: getCacheOptions(refresh: true),
-  );
 }
 
 Future<FavAdd> galleryGetFavorite(
   String gid,
-  String token,
-) async {
-  const String url = '/gallerypopups.php';
+  String token, {
+  String? baseUrl,
+}) async {
+  final String url = '${baseUrl ?? Api.getBaseUrl()}/gallerypopups.php';
   DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
 
   final Map<String, dynamic> _params = {
@@ -936,7 +1032,8 @@ Future<FavAdd> galleryGetFavorite(
   DioHttpResponse httpResponse = await dioHttpClient.get(
     url,
     queryParameters: _params,
-    options: getCacheOptions(refresh: true),
+    options: favoriteNetworkCacheOptions(Api.cacheOption, transient: true)
+        .toOptions(),
     httpTransformer: HttpTransformerBuilder(
       (response) async {
         final favAdd = await compute(parserAddFavPage, response.data as String);
