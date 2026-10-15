@@ -5,6 +5,68 @@ English | [简体中文](https://github.com/erosTeam/eros_fe/blob/master/README_
 
 An Unofficial e-hentai app make on flutter
 
+## Standalone sharing module
+
+`codex/custom-sharing` is rebuilt directly from fixed master `2fe86b737` and
+retains version `1.9.2+566`. Gallery links, reader images, torrents, quick-search
+exports, downloaded ZIP/EPUB files, app-profile exports and log exports use one sharing service. iOS and
+iPadOS present UIKit activity controllers through this branch's own native
+plugin; other platforms keep the existing share_plus fallback.
+
+The service waits for Flutter modal dismissal, uses a live native presenter and
+a non-empty window-coordinate popover anchor, and rejects overlapping requests.
+Cancellation releases the guard. Native failures report an error; text/link
+requests can fall back to copying the supplied text. Personal user information
+is excluded from app-profile exports by the existing export implementation.
+
+### Independent validation
+
+The current candidate passes 23 unit/widget tests for text/URI metadata, image
+and file paths, invalid anchors, concurrent requests, cancellation, failure
+fallback, detached contexts, modal dismissal, complete archive output, and
+progress success/failure/cancellation. iOS ZIP/EPUB exports use application
+temporary storage when Android external cache is unavailable, await archive
+writes, and close progress safely on failure or cancellation. Full analysis reports zero
+errors and no new diagnostics against the adapted master baseline. Production
+`lib/main.dart` ARM64 Simulator builds pass with and without offline defines.
+All 16 production-entry XCTest checks pass on isolated iPhone 18 Pro and iPad
+Pro 11-inch (M5), iOS 27.0 (24A434), in light/default and dark/accessibility-medium
+profiles. Native checks cover link cancellation/reopen, profile files, reader
+images and ZIP/EPUB export. Both device types produce archives whose entries and
+CRCs are verified. One iPad system accessibility snapshot timed out; the same
+entry passed after restarting the isolated simulator, with the failure retained.
+
+Use Flutter 3.47.1, Xcode 27.0, CocoaPods and XcodeGen. Minimum Flutter is 3.41;
+iOS configurations use `cn.honjow.fehv`. Prepare the public empty config and
+preserve the analyzer options while Flutter resolves packages:
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub
+bash benchmark/sharing_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" sharing-light
+```
+
+Use isolated iPhone and iPad instances, repeat in dark appearance with OS
+accessibility-medium text, and choose a unique run name outside the checkout.
+The native harness starts production routes in fresh processes and exercises
+gallery-link sharing, cancellation/reopen, a profile file export, and local
+reader image sharing after closing its Flutter sheet, plus ZIP/EPUB exports. It cancels system shares
+without sending anything. Debug-only fixtures use neutral local files and an
+empty account; unknown HTTP requests and mutations are blocked.
+
+`Debug-SimulatorUI` excludes MLKit and legacy archive-downloader registration.
+The legacy debug download-task metadata writer is unimplemented in both master
+and the source snapshot; only its sharing call is routed here, and that writer
+is not accepted as a working export. Physical devices, recipient apps, successful external sends, LiveContainer,
+Release, OCR and other platforms are unverified. No IPA or remote publication
+is produced by this reconstruction.
+
 ## 🔍 Translations Wanted 🔍
 Please submit a pull request if you want to help with translation.
 

@@ -14,6 +14,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/setting/controller/eh_mysettings_controller.dart';
 import 'package:eros_fe/store/db/entity/tag_translat.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart' hide Response, FormData;
@@ -687,9 +688,11 @@ class Api {
     String? filename,
     ProgressCallback? progressCallback,
     BuildContext? context,
+    Rect? sharePositionOrigin,
   }) async {
-    logger.d('imageUrl $imageUrl');
+    logger.d('share network image gid=$gid ser=$ser');
     logger.d('开始下载图片');
+    final origin = sharePositionOrigin ?? ShareService.positionOrigin(context);
 
     io.File? file;
     late String realFileName;
@@ -722,10 +725,11 @@ class Api {
       realFileName = '$gid-$realFileName';
     }
 
-    await SharePlus.instance.share(
+    await ShareService.share(
       ShareParams(
         files: [XFile(file.path)],
         subject: realFileName,
+        sharePositionOrigin: origin,
       ),
     );
   }
@@ -762,14 +766,19 @@ class Api {
     String? gid,
     ProgressCallback? progressCallback,
     BuildContext? context,
+    Rect? sharePositionOrigin,
   }) async {
     final file = io.File(imagePath);
     if (!file.existsSync()) {
       throw EhError(error: 'File not found');
     }
+    final origin = sharePositionOrigin ?? ShareService.positionOrigin(context);
 
-    await SharePlus.instance.share(
-      ShareParams(files: [XFile(imagePath)]),
+    await ShareService.share(
+      ShareParams(
+        files: [XFile(imagePath)],
+        sharePositionOrigin: origin,
+      ),
     );
   }
 }

@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:eros_fe/common/controller/quicksearch_controller.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
@@ -53,7 +55,11 @@ Future<void> importQuickSearchFromFile() async {
   }
 }
 
-Future<void> exportQuickSearchToFile() async {
+Future<void> exportQuickSearchToFile({
+  BuildContext? context,
+  Rect? sharePositionOrigin,
+}) async {
+  final origin = sharePositionOrigin ?? ShareService.positionOrigin(context);
   try {
     final _tempFilePath = await writeQuickSearchTempFile();
     if (_tempFilePath != null) {
@@ -73,13 +79,16 @@ Future<void> exportQuickSearchToFile() async {
         }
       } else {
         if (Platform.isIOS) {
-          Share.shareXFiles([
-            XFile(
-              _tempFilePath,
-              mimeType: '*/*',
-              name: path.basename(_tempFilePath),
-            )
-          ]);
+          await ShareService.shareFiles(
+            [
+              XFile(
+                _tempFilePath,
+                mimeType: '*/*',
+                name: path.basename(_tempFilePath),
+              )
+            ],
+            sharePositionOrigin: origin,
+          );
           return;
         }
 
@@ -160,7 +169,11 @@ Future<void> importAppDataFromFile() async {
   showToast('Import success');
 }
 
-Future<void> exportAppDataToFile({bool base64 = true}) async {
+Future<void> exportAppDataToFile({
+  bool base64 = true,
+  BuildContext? context,
+}) async {
+  final origin = ShareService.positionOrigin(context);
   final Profile profile = Global.profile.copyWith(user: kDefUser);
   final String jsonStr = jsonEncode(profile.toJson());
   final String base64Str = base64Encode(utf8.encode(jsonStr));
@@ -187,13 +200,16 @@ Future<void> exportAppDataToFile({bool base64 = true}) async {
       }
     } else {
       if (Platform.isIOS) {
-        Share.shareXFiles([
-          XFile(
-            tempFilePath,
-            mimeType: '*/*',
-            name: path.basename(tempFilePath),
-          )
-        ]);
+        await ShareService.shareFiles(
+          [
+            XFile(
+              tempFilePath,
+              mimeType: '*/*',
+              name: path.basename(tempFilePath),
+            )
+          ],
+          sharePositionOrigin: origin,
+        );
         return;
       }
       logger.d('saveToDirPath');

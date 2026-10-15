@@ -6,6 +6,7 @@ import 'package:eros_fe/pages/item/download_gallery_item.dart';
 import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -107,8 +108,9 @@ class _DownloadTabState extends State<DownloadTab> {
   }
 
   Future<void> _showExportDialog() async {
+    final pageContext = Get.context!;
     return showCupertinoDialog<void>(
-      context: Get.overlayContext!,
+      context: pageContext,
       barrierDismissible: true,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
@@ -117,8 +119,12 @@ class _DownloadTabState extends State<DownloadTab> {
           actions: [
             CupertinoDialogAction(
               onPressed: () async {
+                final origin = ShareService.positionOrigin(context);
                 Get.back();
-                controller.shareTaskInfoFile();
+                await ShareService.waitForModalDismissal();
+                if (pageContext.mounted) {
+                  await controller.shareTaskInfoFile(sharePositionOrigin: origin);
+                }
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,

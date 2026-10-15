@@ -5,6 +5,7 @@ import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/utils/import_export.dart';
+import 'package:eros_fe/utils/share_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -46,7 +47,7 @@ class QuickSearchListPage extends StatelessWidget {
             CupertinoButton(
               minSize: 40,
               padding: const EdgeInsets.all(0),
-              onPressed: _showFile,
+              onPressed: () => _showFile(context),
               child: const FaIcon(
                 FontAwesomeIcons.solidFileLines,
                 size: 20,
@@ -87,22 +88,27 @@ class QuickSearchListPage extends StatelessWidget {
     );
   }
 
-  Future<void> _showFile() async {
+  Future<void> _showFile(BuildContext pageContext) async {
     return showCupertinoDialog<void>(
-      context: Get.overlayContext!,
+      context: pageContext,
       barrierDismissible: true,
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return CupertinoAlertDialog(
           title: const Text('Import and Export'),
           // content: Text('Sync with Google Cloud Firestore'),
           actions: [
             CupertinoDialogAction(
               onPressed: () async {
+                final shareOrigin = ShareService.positionOrigin(sheetContext);
                 final _tempFilePath = await writeQuickSearchTempFile();
-                if (_tempFilePath != null) {
-                  Share.shareXFiles([XFile(_tempFilePath)]);
-                }
                 Get.back();
+                await ShareService.waitForModalDismissal();
+                if (_tempFilePath != null) {
+                  await ShareService.shareFiles(
+                    [XFile(_tempFilePath)],
+                    sharePositionOrigin: shareOrigin,
+                  );
+                }
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -122,9 +128,13 @@ class QuickSearchListPage extends StatelessWidget {
                 ],
               ),
               onPressed: () async {
+                final shareOrigin = ShareService.positionOrigin(sheetContext);
                 Get.back();
+                await ShareService.waitForModalDismissal();
                 logger.d('Export');
-                exportQuickSearchToFile();
+                await exportQuickSearchToFile(
+                  sharePositionOrigin: shareOrigin,
+                );
               },
             ),
             CupertinoDialogAction(
@@ -145,7 +155,7 @@ class QuickSearchListPage extends StatelessWidget {
                 onPressed: () {
                   Get.back();
                 },
-                child: Text(L10n.of(context).cancel)),
+                child: Text(L10n.of(sheetContext).cancel)),
           ],
         );
       },

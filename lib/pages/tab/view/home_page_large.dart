@@ -47,33 +47,38 @@ class TabHomeLarge extends GetView<TabHomeController> {
           width: getSideWidth(context),
           duration: const Duration(milliseconds: 500),
           curve: Curves.ease,
-          child: ClipRect(
-            child: Navigator(
-                key: Get.nestedKey(1),
-                observers: [
-                  FirstNavigatorObserver(),
-                  if (mainNavigatorObserver.navigator == null)
-                    mainNavigatorObserver
-                ],
-                onGenerateRoute: (settings) {
-                  final GetPage? _route = AppPages.routes
-                      .firstWhereOrNull((GetPage e) => e.name == settings.name);
-                  if (_route != null &&
-                      _route.name != EHRoutes.root &&
-                      _route.name != EHRoutes.home) {
-                    return GetPageRoute(
-                      settings: settings,
-                      showCupertinoParallax: false,
-                      page: _route.page,
-                    );
-                  } else {
-                    return GetPageRoute(
-                      settings: settings,
-                      page: () => const TabHomeSmall(),
-                      showCupertinoParallax: false,
-                    );
-                  }
-                }),
+          // Isolate each navigator's modal barrier from its sibling pane.
+          child: Semantics(
+            container: true,
+            explicitChildNodes: true,
+            child: ClipRect(
+              child: Navigator(
+                  key: Get.nestedKey(1),
+                  observers: [
+                    FirstNavigatorObserver(),
+                    if (mainNavigatorObserver.navigator == null)
+                      mainNavigatorObserver
+                  ],
+                  onGenerateRoute: (settings) {
+                    final GetPage? _route = AppPages.routes.firstWhereOrNull(
+                        (GetPage e) => e.name == settings.name);
+                    if (_route != null &&
+                        _route.name != EHRoutes.root &&
+                        _route.name != EHRoutes.home) {
+                      return GetPageRoute(
+                        settings: settings,
+                        showCupertinoParallax: false,
+                        page: _route.page,
+                      );
+                    } else {
+                      return GetPageRoute(
+                        settings: settings,
+                        page: () => const TabHomeSmall(),
+                        showCupertinoParallax: false,
+                      );
+                    }
+                  }),
+            ),
           ),
         ),
         Expanded(
@@ -86,13 +91,17 @@ class TabHomeLarge extends GetView<TabHomeController> {
                   width: 0.6,
                 ),
                 Expanded(
-                  child: ClipRect(
-                    child: Navigator(
-                      key: Get.nestedKey(2),
-                      observers: [SecondNavigatorObserver()],
-                      // observers: [MainNavigatorObserver()],
-                      initialRoute: EHRoutes.empty,
-                      onGenerateRoute: AppPages.onGenerateRoute,
+                  child: Semantics(
+                    container: true,
+                    explicitChildNodes: true,
+                    child: ClipRect(
+                      child: Navigator(
+                        key: Get.nestedKey(2),
+                        observers: [SecondNavigatorObserver()],
+                        // observers: [MainNavigatorObserver()],
+                        initialRoute: EHRoutes.empty,
+                        onGenerateRoute: AppPages.onGenerateRoute,
+                      ),
                     ),
                   ),
                 ),
