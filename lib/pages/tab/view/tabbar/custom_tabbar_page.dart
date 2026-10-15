@@ -219,10 +219,12 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
             CupertinoButton(
               minSize: 40,
               padding: const EdgeInsets.all(0),
-              child: const Icon(
-                CupertinoIcons.search,
-                size: 28,
-              ),
+              child: Semantics(
+                  label: '搜索',
+                  child: const Icon(
+                    CupertinoIcons.search,
+                    size: 28,
+                  )),
               onPressed: () {
                 NavigatorUtil.goSearchPage();
               },
@@ -234,10 +236,12 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
                 return CupertinoButton(
                   minSize: 40,
                   padding: const EdgeInsets.all(0),
-                  child: const Icon(
-                    CupertinoIcons.arrow_up_circle,
-                    size: 28,
-                  ),
+                  child: Semantics(
+                      label: '回到顶部',
+                      child: const Icon(
+                        CupertinoIcons.arrow_up_circle,
+                        size: 28,
+                      )),
                   onPressed: () {
                     controller.jumpToTop();
                   },
@@ -249,10 +253,12 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
             CupertinoButton(
               minSize: 40,
               padding: const EdgeInsets.all(0),
-              child: const Icon(
-                CupertinoIcons.arrow_uturn_down_circle,
-                size: 28,
-              ),
+              child: Semantics(
+                  label: '跳转/搜寻',
+                  child: const Icon(
+                    CupertinoIcons.arrow_uturn_down_circle,
+                    size: 28,
+                  )),
               onPressed: () {
                 controller.showJumpDialog(context);
               },
@@ -406,9 +412,12 @@ class CustomTabBar extends StatelessWidget {
                               padding: const EdgeInsets.all(0),
                               child: isRefresh
                                   ? const CupertinoActivityIndicator(radius: 10)
-                                  : const FaIcon(FontAwesomeIcons.rotateRight,
-                                      size: 20,
-                                    ),
+                                  : Semantics(
+                                      label: '刷新',
+                                      child: const FaIcon(
+                                        FontAwesomeIcons.rotateRight,
+                                        size: 20,
+                                      )),
                               onPressed: () async {
                                 setState(() {
                                   isRefresh = true;
@@ -428,9 +437,12 @@ class CustomTabBar extends StatelessWidget {
                         minSize: 40,
                         padding: const EdgeInsets.all(0),
                         onPressed: controller.pressedBar,
-                        child: const FaIcon(FontAwesomeIcons.bars,
-                          size: 20,
-                        ),
+                        child: Semantics(
+                            label: '分组管理',
+                            child: const FaIcon(
+                              FontAwesomeIcons.bars,
+                              size: 20,
+                            )),
                       ),
                     ],
                   ),

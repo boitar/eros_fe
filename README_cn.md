@@ -5,6 +5,46 @@
 
 一个 flutter 编写的 e-hentai app
 
+## 独立操作语义模块
+
+`codex/custom-accessibility` 以一个完整提交直接基于固定 master `2fe86b737`，保留
+`1.9.2+566`。为传统画廊、收藏和搜索页面补充 20 项既有操作语义：搜索、回顶／跳转、
+分组管理、收藏排序／选择、以图搜图／筛选、桌面刷新、快速搜索、清空输入及打开画廊链接。
+标签沿用来源的中文措辞，保留既有回调及指针点击行为。搜索框前的装饰图标维持外观和
+空回调，但从语义树排除，避免读出点击后没有动作的“搜索按钮”。
+
+全量 13 项单元／组件测试通过；分析零错误，相对同工具链 master 无新增诊断。
+先复现装饰图标的伪按钮，再验证修复；组件测试核对语义点击动作及搜索编辑、URL 输入、
+桌面刷新、收藏导航的原回调，并覆盖大字号和深色主题。正式 `lib/main.dart` 有／无
+离线定义构建通过。最高可用 iOS 27.0（24A434），隔离 iPhone 18 Pro、iPad Pro 11-inch
+（M5）的浅色默认／深色 accessibility-medium 四组共 8 项原生检查通过：实际打开分组管理、
+跳转和搜索，横竖屏检查操作标签，清空输入，URL 输入显示对应操作而非加入快速搜索。
+
+### 构建与验证
+
+使用 Flutter 3.47.1、Xcode 27.0（最低 Flutter 3.41），应用标识为 `cn.honjow.fehv`。
+准备上游公开空配置：
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub
+bash benchmark/accessibility_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" accessibility
+```
+
+使用隔离 iPhone／iPad 安装，分别设置浅色默认、深色 accessibility-medium。
+仅 Debug 生效的夹具从正式入口配置中性离线 HTTP 响应，不使用登录账号；测试读取实际
+Flutter／原生语义并触发原有控件，证据留在 Git 外。不依赖玻璃、增强触感或其他 custom
+业务模块。中文标签沿用来源，未新增其他语言翻译。XCTest 不代表 VoiceOver 实际朗读或
+真机焦点手势验收；以图搜图／OCR、真实账号操作、Release、LiveContainer 及其他未测平台
+不在范围内。master 原有大字号栏／卡片布局限制保留。`Debug-SimulatorUI` 排除 MLKit 和
+旧归档下载插件注册；本次不生成 IPA。
+
 ## iOS 安装
 1. 下载最新 ipa 文件 [Releases](https://github.com/erosTeam/eros_fe/releases/latest).
 2. 使用 [AltStore](https://altstore.io) 之类的 app 安装到设备上. 或者直接使用 [AltStore.json](https://config-feh.vercel.app/AltStore.json)

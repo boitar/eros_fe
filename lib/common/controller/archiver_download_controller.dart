@@ -31,6 +31,10 @@ class ArchiverDownloadController extends GetxController {
   void onInit() {
     super.onInit();
     logger.t('ArchiverDownloadController onInit');
+    // SimulatorUI deliberately omits the device-only legacy downloader.
+    if (Global.isIosDebugSimulator) {
+      return;
+    }
     bindBackgroundIsolate(updateTaskCallback);
 
     // 初始化 taskMap
