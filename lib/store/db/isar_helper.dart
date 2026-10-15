@@ -55,7 +55,7 @@ class IsarHelper {
 
   Future<void> addHistoryIsolate(GalleryProvider galleryProvider) async {
     // return;
-    compute(iAddHistory, galleryProvider);
+    await compute(iAddHistory, galleryProvider);
   }
 
   Future<void> removeHistory(String gidStr) async {
@@ -85,7 +85,7 @@ class IsarHelper {
   }
 
   Future<void> addHistoriesIsolate(List<GalleryProvider> allHistory) async {
-    compute(iAddHistories, allHistory);
+    await compute(iAddHistories, allHistory);
   }
 
   Future<void> putAllTagTranslate(

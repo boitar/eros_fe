@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/controller/history_controller.dart';
+import 'package:eros_fe/debug/offline_history.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/tab/controller/history_view_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
@@ -118,10 +119,14 @@ class _HistoryTabState extends State<HistoryTab> {
           sliver: GetBuilder<HistoryController>(
             init: HistoryController(),
             builder: (logic) {
-              return getGallerySliverList(
-                logic.histories,
-                controller.heroTag,
-                key: controller.sliverAnimatedListKey,
+              return offlineHistorySliver(
+                initialized: logic.historiesInitialized,
+                count: logic.histories.length,
+                sliver: getGallerySliverList(
+                  logic.histories,
+                  controller.heroTag,
+                  key: controller.sliverAnimatedListKey,
+                ),
               );
             },
           ),
