@@ -5,6 +5,57 @@ English | [简体中文](https://github.com/erosTeam/eros_fe/blob/master/README_
 
 An Unofficial e-hentai app make on flutter
 
+## Standalone history module
+
+`codex/custom-history` starts directly at fixed master `2fe86b737`, retaining
+`1.9.2+566`. It reuses one initialization future, waits for migration and database
+loading before publishing history, and serializes local writes and clearing.
+Sync waits for initialized local data and pending writes. Gallery-item history
+controllers are resolved lazily; other custom business modules are not required.
+
+The standalone version passes 14 full-suite unit/widget tests, with zero analyzer
+errors and no new diagnostics against master under the same toolchain. Delayed-storage
+regressions reproduced four failures before repair: early clear, early sync,
+a new visit overwritten by initialization, and a late write surviving clear.
+The regressions now pass. Production `lib/main.dart` builds with and without
+offline defines. Eight native checks passed on isolated iPhone 18 Pro and
+iPad Pro 11-inch (M5) devices with the highest available iOS 27.0 (24A434),
+covering light/default and dark/accessibility-medium cold history, rotation,
+clearing, and reading the empty database in a fresh process.
+
+### Build and verify
+
+Use Flutter 3.47.1 and Xcode 27.0, with minimum Flutter 3.41 and bundle identifier
+`cn.honjow.fehv`. Prepare the public empty configuration:
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub
+bash benchmark/history_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" history
+```
+
+Use isolated iPhone and iPad instances for light/default and
+dark/accessibility-medium profiles. Run populated-list checks before clearing. The native harness opens production history
+as the first configured tab, checks real Isar rows and ordering, rotates, clears
+through the existing confirmation dialog, and restarts to read the empty database.
+A debug-only readiness identifier comes from completed initialization, so an
+unloaded blank frame cannot satisfy the empty-history assertion. The seed marker
+prevents a restart from recreating cleared test records. Outputs stay outside Git.
+
+The unchanged master fixed-height history card still overflows by 29 px in the
+narrow iPad pane at accessibility-medium text. This data module does not alter
+that layout; initialization, ordering, clearing and restart checks still pass.
+
+`Debug-SimulatorUI` omits MLKit and legacy archive-downloader registration.
+Real cloud accounts, physical devices, Release, LiveContainer, OCR and other
+platforms are not accepted by these offline checks. No IPA is produced.
+
 ## 🔍 Translations Wanted 🔍
 Please submit a pull request if you want to help with translation.
 

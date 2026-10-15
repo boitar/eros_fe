@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:eros_fe/common/controller/mysql_controller.dart';
@@ -6,17 +7,43 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/history_view_controller.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
+import 'package:eros_fe/store/db/isar_helper.dart';
+import 'package:eros_fe/store/hive/hive.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:throttling/throttling.dart';
 
 class HistoryController extends GetxController {
+  HistoryController({IsarHelper? historyStorage, HiveHelper? legacyStorage})
+      : _historyStorage = historyStorage ?? isarHelper,
+        _legacyStorage = legacyStorage ?? hiveHelper;
+
+  final IsarHelper _historyStorage;
+  final HiveHelper _legacyStorage;
   final List<GalleryProvider> _histories = <GalleryProvider>[];
+  Future<void>? _initHistoriesFuture;
+  bool _historiesInitialized = false;
+  Future<void> _pendingWrites = Future<void>.value();
+
+  Future<void> _enqueueHistoryMutation(Future<void> Function() action) {
+    final future = _pendingWrites.then((_) async {
+      await initHistories();
+      await action();
+    });
+    // Keep later operations usable after a failed write; callers still receive
+    // the original failure through the returned future.
+    _pendingWrites =
+        future.then<void>((_) {}, onError: (Object error, StackTrace stack) {});
+    return future;
+  }
+
   List<GalleryProvider> get histories {
     _histories
         .sort((a, b) => (b.lastViewTime ?? 0).compareTo(a.lastViewTime ?? 0));
     return _histories;
   }
+
+  bool get historiesInitialized => _historiesInitialized;
 
   // 登记删除gid和删除时间，用于同步远程时筛选
   final List<HistoryIndexGid> _delHistories = <HistoryIndexGid>[];
@@ -32,145 +59,165 @@ class HistoryController extends GetxController {
       _ehSettingService.listMode.value == ListModeEnum.list ||
       _ehSettingService.listMode.value == ListModeEnum.simpleList;
 
-  void addHistory(
+  Future<void> addHistory(
     GalleryProvider galleryProvider, {
     bool updateTime = true,
     bool sync = true,
-  }) {
-    final hisViewController = Get.find<HistoryViewController>();
+  }) =>
+      _enqueueHistoryMutation(() async {
+        final hisViewController = Get.find<HistoryViewController>();
 
-    final int nowTime = DateTime.now().millisecondsSinceEpoch;
-    final item = galleryProvider.copyWith(
-      lastViewTime: updateTime ? nowTime.oN : null,
-      galleryImages: <GalleryImage>[].oN,
-      galleryComment: <GalleryComment>[].oN,
-    );
+        final int nowTime = DateTime.now().millisecondsSinceEpoch;
+        final item = galleryProvider.copyWith(
+          lastViewTime: updateTime ? nowTime.oN : null,
+          galleryImages: <GalleryImage>[].oN,
+          galleryComment: <GalleryComment>[].oN,
+        );
 
-    final eDelFlg =
-        _delHistories.firstWhereOrNull((eDel) => eDel.g == galleryProvider.gid);
-    if (nowTime > (eDelFlg?.t ?? 0)) {
-      _removeHistoryDelFlg(galleryProvider.gid ?? '');
-    }
+        final eDelFlg = _delHistories
+            .firstWhereOrNull((eDel) => eDel.g == galleryProvider.gid);
+        if (nowTime > (eDelFlg?.t ?? 0)) {
+          await _removeHistoryDelFlg(galleryProvider.gid ?? '');
+        }
 
-    final int curIndex = histories.indexWhere((element) {
-      return element.gid == item.gid;
-    });
+        final int curIndex = histories.indexWhere((element) {
+          return element.gid == item.gid;
+        });
 
-    if (curIndex >= 0) {
-      histories.removeAt(curIndex);
-      if (curIndex > 0 && isListView) {
-        // removeItem 动画
-        hisViewController.sliverAnimatedListKey.currentState?.removeItem(
-            curIndex,
-            (context, Animation<double> animation) =>
-                buildDelGallerySliverListItem(item, curIndex, animation));
-      }
+        if (curIndex >= 0) {
+          histories.removeAt(curIndex);
+          if (curIndex > 0 && isListView) {
+            // removeItem 动画
+            hisViewController.sliverAnimatedListKey.currentState?.removeItem(
+                curIndex,
+                (context, Animation<double> animation) =>
+                    buildDelGallerySliverListItem(item, curIndex, animation));
+          }
 
-      _histories.add(item);
-      if (curIndex > 0 && isListView) {
-        // insertItem 动画
-        hisViewController.sliverAnimatedListKey.currentState?.insertItem(0);
-      }
+          _histories.add(item);
+          if (curIndex > 0 && isListView) {
+            // insertItem 动画
+            hisViewController.sliverAnimatedListKey.currentState?.insertItem(0);
+          }
 
-      isarHelper.addHistoryIsolate(item);
-    } else {
-      _histories.add(item);
-      final insertIndex = histories.indexOf(item);
-      if (isListView) {
-        hisViewController.sliverAnimatedListKey.currentState
-            ?.insertItem(insertIndex);
-      }
+          await _historyStorage.addHistoryAsync(item);
+        } else {
+          _histories.add(item);
+          final insertIndex = histories.indexOf(item);
+          if (isListView) {
+            hisViewController.sliverAnimatedListKey.currentState
+                ?.insertItem(insertIndex);
+          }
 
-      isarHelper.addHistoryIsolate(item);
-    }
+          await _historyStorage.addHistoryAsync(item);
+        }
 
-    logger.t('add ${galleryProvider.gid} update1');
-    update();
+        logger.t('add ${galleryProvider.gid} update1');
+        update();
 
-    if (sync) {
-      // 节流函数 最多每分钟一次同步
-      thrSync.throttle(() {
-        logger.t('throttle syncHistory');
-        return syncHistory();
+        if (sync) {
+          // 节流函数 最多每分钟一次同步
+          thrSync.throttle(() {
+            logger.t('throttle syncHistory');
+            return syncHistory();
+          });
+
+          debSync.debounce(syncHistory);
+        }
       });
 
-      debSync.debounce(syncHistory);
-    }
-  }
+  Future<void> removeHistory(String gid, {bool sync = true}) =>
+      _enqueueHistoryMutation(() async {
+        final hisViewController = Get.find<HistoryViewController>();
 
-  void removeHistory(String gid, {bool sync = true}) {
-    final hisViewController = Get.find<HistoryViewController>();
+        final index = histories.indexWhere((element) => element.gid == gid);
+        if (index < 0) {
+          return;
+        }
+        final item = histories[index];
+        histories.removeAt(index);
+        if (isListView) {
+          hisViewController.sliverAnimatedListKey.currentState?.removeItem(
+              index,
+              (context, Animation<double> animation) =>
+                  buildDelGallerySliverListItem(item, index, animation));
+          update();
+        } else {
+          update();
+        }
 
-    final index = histories.indexWhere((element) => element.gid == gid);
-    final item = histories[index];
-    histories.removeAt(index);
-    if (isListView) {
-      hisViewController.sliverAnimatedListKey.currentState?.removeItem(
-          index,
-          (context, Animation<double> animation) =>
-              buildDelGallerySliverListItem(item, index, animation));
-      update();
-    } else {
-      update();
-    }
+        await _historyStorage.removeHistory(gid);
+        await _addHistoryDelFlg(gid);
 
-    isarHelper.removeHistory(gid);
-    _addHistoryDelFlg(gid);
+        if (sync) {
+          // 节流函数 最多每分钟一次同步
+          thrSync.throttle(() {
+            logger.t('throttle syncHistory');
+            return syncHistory();
+          });
 
-    if (sync) {
-      // 节流函数 最多每分钟一次同步
-      thrSync.throttle(() {
-        logger.t('throttle syncHistory');
-        return syncHistory();
+          debSync.debounce(syncHistory);
+        }
       });
 
-      debSync.debounce(syncHistory);
-    }
-  }
-
-  void _addHistoryDelFlg(String gid) {
+  Future<void> _addHistoryDelFlg(String gid) async {
     final int nowTime = DateTime.now().millisecondsSinceEpoch;
     final del = HistoryIndexGid(t: nowTime, g: gid);
     _delHistories.add(del);
-    hiveHelper.addHistoryDel(del);
+    await _legacyStorage.addHistoryDel(del);
   }
 
-  void _removeHistoryDelFlg(String gid) {
+  Future<void> _removeHistoryDelFlg(String gid) async {
     _delHistories.removeWhere((element) => element.g == gid);
-    hiveHelper.removeHistoryDel(gid);
+    await _legacyStorage.removeHistoryDel(gid);
   }
 
-  void cleanHistory() {
-    histories.clear();
-    update();
-    // hiveHelper.cleanHistory();
-    isarHelper.cleanHistory();
-  }
+  Future<void> cleanHistory() => _enqueueHistoryMutation(() async {
+        histories.clear();
+        update();
+        await _historyStorage.cleanHistory();
+      });
 
   @override
   void onInit() {
     super.onInit();
 
-    // _histories.addAll(hiveHelper.getAllHistory());
-    // _delHistories.addAll(hiveHelper.getAllHistoryDel());
-    initHistories();
+    // _histories.addAll(_legacyStorage.getAllHistory());
+    // _delHistories.addAll(_legacyStorage.getAllHistoryDel());
+    unawaited(initHistories());
   }
 
-  Future<void> initHistories() async {
+  Future<void> initHistories() {
+    return _initHistoriesFuture ??= _loadHistories();
+  }
+
+  Future<void> _loadHistories() async {
     // 历史迁移
     await historyMigration();
-    final histories = await isarHelper.getAllHistory();
-    _histories.addAll(histories);
+    final loadedHistories = await _historyStorage.getAllHistory();
+    _histories
+      ..clear()
+      ..addAll(loadedHistories);
+    _delHistories
+      ..clear()
+      ..addAll(_legacyStorage.getAllHistoryDel());
+    _historiesInitialized = true;
+    update();
   }
 
+  Future<void> reloadHistories() => _enqueueHistoryMutation(() async {
+        final future = _loadHistories();
+        _initHistoriesFuture = future;
+        await future;
+      });
+
   Future<void> historyMigration() async {
-    final isMigration = hiveHelper.getViewHistoryMigration();
+    final isMigration = _legacyStorage.getViewHistoryMigration();
     logger.t('historyMigration $isMigration');
     if (!isMigration) {
       logger.d('start history Migration');
-      // await isarHelper.addHistoriesAsync(hiveHelper.getAllHistory());
-      await isarHelper.addHistoriesIsolate(hiveHelper.getAllHistory());
-      hiveHelper.setViewHistoryMigration(true);
+      await _historyStorage.addHistoriesAsync(_legacyStorage.getAllHistory());
+      await _legacyStorage.setViewHistoryMigration(true);
     }
   }
 
@@ -181,14 +228,18 @@ class HistoryController extends GetxController {
 
   /// 同步历史记录
   Future<void> syncHistory() async {
+    await initHistories();
+    await _pendingWrites;
     final List<HistoryIndexGid?> listLocal = histories
         .map((e) => HistoryIndexGid(t: e.lastViewTime, g: e.gid))
         .toList();
     logger.t('listLocal ${listLocal.length} \n${listLocal.map((e) => e?.g)}');
     logger.t('${jsonEncode(listLocal)} ');
 
-    syncHistoryMySQL(listLocal);
-    syncHistoryWebDAV(listLocal);
+    await Future.wait<void>([
+      syncHistoryMySQL(listLocal),
+      syncHistoryWebDAV(listLocal),
+    ]);
   }
 
   /// 通过mysql同步历史记录
@@ -224,7 +275,7 @@ class HistoryController extends GetxController {
             (image.lastViewTime ?? 0) <= (ori.lastViewTime ?? 0)) {
           continue;
         }
-        addHistory(image, updateTime: false, sync: false);
+        await addHistory(image, updateTime: false, sync: false);
       }
     }
   }
@@ -257,7 +308,7 @@ class HistoryController extends GetxController {
             if (ori != null && (gid.t ?? 0) <= (ori.lastViewTime ?? 0)) {
               return;
             }
-            addHistory(image, updateTime: false, sync: false);
+            await addHistory(image, updateTime: false, sync: false);
           }
         }
       });

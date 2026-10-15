@@ -18,7 +18,7 @@ class GalleryItemController extends GetxController {
   final EhSettingService _ehSettingService = Get.find();
   final FavController _favDialogController = Get.find();
   final TabHomeController _tabHomeController = Get.find();
-  final HistoryController _historyController = Get.find();
+  HistoryController get _historyController => Get.find();
 
   late List<GalleryImage> firstPageImage;
   final GalleryProvider galleryProvider;

@@ -11,6 +11,7 @@ import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/dns_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/const/const.dart';
+import 'package:eros_fe/debug/offline_acceptance.dart';
 import 'package:eros_fe/network/app_dio/proxy.dart';
 import 'package:eros_fe/network/dio_interceptor/domain_fronting/domain_fronting.dart';
 import 'package:eros_fe/network/dio_interceptor/eh_cookie_interceptor/eh_cookie_interceptor.dart';
@@ -62,6 +63,10 @@ class AppDio with DioMixin implements Dio {
       },
     );
     this.options = options;
+    if (offlineAcceptanceEnabled) {
+      httpClientAdapter = OfflineAcceptanceAdapter();
+      return;
+    }
 
     logger.t('dioConfig ${dioConfig?.toString()}');
 

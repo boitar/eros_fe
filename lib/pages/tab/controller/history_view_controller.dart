@@ -24,13 +24,15 @@ class HistoryViewController extends DefaultTabViewController {
 
   Future<List<GalleryProvider>> loadData() async {
     logger.t('_loadData ');
-    final List<GalleryProvider> histories = historyController.histories;
-
-    return Future<List<GalleryProvider>>.value(histories);
+    await historyController.initHistories();
+    return List<GalleryProvider>.of(historyController.histories);
   }
 
+  @override
   Future<void> reloadData() async {
-    final List<GalleryProvider> gallerItemBeans = await loadData();
+    await historyController.reloadHistories();
+    final List<GalleryProvider> gallerItemBeans =
+        List<GalleryProvider>.of(historyController.histories);
     change(gallerItemBeans);
     update();
   }
@@ -51,10 +53,10 @@ class HistoryViewController extends DefaultTabViewController {
             ),
             CupertinoDialogAction(
               child: Text(L10n.of(context).ok),
-              onPressed: () {
-                historyController.cleanHistory();
+              onPressed: () async {
+                await historyController.cleanHistory();
                 Get.back();
-                reloadData();
+                await reloadData();
               },
             ),
           ],
@@ -64,7 +66,6 @@ class HistoryViewController extends DefaultTabViewController {
   }
 
   Future<void> syncHistory() async {
-    historyController.syncHistory();
-    await Future.delayed(const Duration(seconds: 1));
+    await historyController.syncHistory();
   }
 }
