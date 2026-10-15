@@ -734,6 +734,8 @@ class ViewExtController extends GetxController {
     if (vState.viewMode == ViewMode.topToBottom && vState.isScrolling) {
       return;
     }
+    // 工具栏显隐是最频繁的阅读器交互，用 selection 轻点而非 impact。
+    await vibrateUtil.selection();
 
     // android会有抖动
     if (GetPlatform.isIOS) {

@@ -12,6 +12,7 @@ import 'package:eros_fe/debug/offline_accessibility.dart';
 import 'package:eros_fe/debug/offline_downloads.dart';
 import 'package:eros_fe/debug/offline_favorites.dart';
 import 'package:eros_fe/debug/offline_group_index.dart';
+import 'package:eros_fe/debug/offline_haptics.dart';
 import 'package:eros_fe/debug/offline_history.dart';
 import 'package:eros_fe/debug/offline_sharing.dart';
 import 'package:eros_fe/index.dart';
@@ -47,7 +48,9 @@ Future<void> main() async {
   await initializeOfflineHistory();
   await initializeOfflineGroupIndex();
   initializeOfflineAccessibility();
+  await initializeOfflineHaptics();
   getinit();
+  await probeOfflineHaptics();
   Global.proxyInit();
 
   if (Get.find<EhSettingService>().debugMode || kDebugMode) {
@@ -254,7 +257,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
 
     return OKToast(
-      child: cupertinoApp(),
+      child: offlineHapticsOverlay(cupertinoApp()),
     );
   }
 }

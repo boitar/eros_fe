@@ -530,6 +530,7 @@ class _TextSwitchItemState extends State<TextSwitchItem> {
                     CupertinoSwitch(
                       onChanged: widget.onChanged != null
                           ? (bool value) {
+                              vibrateUtil.selection();
                               setState(() {
                                 _switchValue = value;
                                 widget.onChanged?.call(value);

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		252CCB6AC4FF211C0D125EEA /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E484F12FF97E4360040832A /* Pods_Runner.framework */; };
+		36BD69AF93B43BC825A96022 /* HapticsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D54F227E16543C455729F0B3 /* HapticsPlugin.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		5F1C56E3DEC66AFE6B4D0376 /* SharePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0304BC467603E942949DC27D /* SharePlugin.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
@@ -89,6 +90,7 @@
 		BAFF47DE2AFC7152008C4C27 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		BAFF47DF2AFC7152008C4C27 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/MainInterface.strings; sourceTree = "<group>"; };
 		BAFF47E02AFC7152008C4C27 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D54F227E16543C455729F0B3 /* HapticsPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HapticsPlugin.swift; sourceTree = "<group>"; };
 		F41D3CF3E08C82EC7233BE93 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -155,6 +157,7 @@
 				BA373B2825D2A11600C042FA /* SecurityBlurEffect.swift */,
 				BAABB81D2AF5A144009C2DA3 /* InfoPlist.strings */,
 				0304BC467603E942949DC27D /* SharePlugin.swift */,
+				D54F227E16543C455729F0B3 /* HapticsPlugin.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -381,6 +384,7 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				BA373B2925D2A11600C042FA /* SecurityBlurEffect.swift in Sources */,
 				5F1C56E3DEC66AFE6B4D0376 /* SharePlugin.swift in Sources */,
+				36BD69AF93B43BC825A96022 /* HapticsPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

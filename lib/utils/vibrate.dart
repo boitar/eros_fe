@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:eros_fe/common/service/ehsetting_service.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:vibration/vibration.dart';
 
@@ -10,87 +9,131 @@ import 'logger.dart';
 final VibrateUtil vibrateUtil = VibrateUtil();
 
 class VibrateUtil {
-  VibrateUtil();
+  VibrateUtil({TargetPlatform? platform})
+      : _platform = platform ?? defaultTargetPlatform;
 
-  /// 设备是否具有控制振动幅度的能力
-  Future<bool?> get _hasCustomVibrationsSupport =>
-      Vibration.hasCustomVibrationsSupport();
+  final TargetPlatform _platform;
+  static const MethodChannel _hapticsChannel = MethodChannel('eros/haptics');
+  bool _hapticsPrepared = false;
 
-  /// 设备是否能够按照自定义的持续时间，模式或强度振动
-  Future<bool?> get _hasAmplitudeControl => Vibration.hasAmplitudeControl();
+  bool get _isIOS => _platform == TargetPlatform.iOS;
+  bool get _isAndroid => _platform == TargetPlatform.android;
+  bool get _vibrateOn =>
+      !Get.isRegistered<EhSettingService>() ||
+      Get.find<EhSettingService>().vibrate.value;
 
-  EhSettingService get _ehSettingService => Get.find();
-
-  Future<void> impact() async {
-    if (!_ehSettingService.vibrate.value) {
+  // Decorative feedback must never interrupt the operation it accompanies.
+  Future<void> _run(Future<void> Function() action) async {
+    if (!_vibrateOn || (!_isIOS && !_isAndroid)) {
       return;
     }
-    if (Platform.isIOS || (await _hasAmplitudeControl ?? false)) {
-      Vibrate.feedback(FeedbackType.impact);
-    } else if (Platform.isAndroid) {
-      Vibration.vibrate(duration: 2);
+    try {
+      await action();
+    } catch (error) {
+      logger.t('Haptic feedback unavailable: $error');
     }
   }
 
-  Future<void> light() async {
-    if (!_ehSettingService.vibrate.value) {
-      return;
-    }
-    if (Platform.isIOS) {
-      Vibrate.feedback(FeedbackType.light);
-    } else if (Platform.isAndroid && (await _hasAmplitudeControl ?? false)) {
-      Vibration.vibrate(amplitude: 100, duration: 5);
-    } else if (Platform.isAndroid) {
-      Vibration.vibrate(duration: 5);
-    }
-  }
-
-  Future<void> medium() async {
-    logger
-        .v('_hasCustomVibrationsSupport:${await _hasCustomVibrationsSupport}\n'
-            '_hasAmplitudeControl:${await _hasAmplitudeControl}');
-
-    if (!_ehSettingService.vibrate.value) {
-      return;
-    }
-
-    if (Platform.isIOS) {
-      Vibrate.feedback(FeedbackType.medium);
-    } else if (Platform.isAndroid && (await _hasAmplitudeControl ?? false)) {
-      Vibration.vibrate(amplitude: 120, duration: 15);
-    } else if (Platform.isAndroid) {
-      Vibration.vibrate(duration: 20);
+  Future<void> _androidPulse(int duration,
+      {int? amplitude, int? customDuration}) async {
+    var amplitudeSupported = false;
+    try {
+      amplitudeSupported = await Vibration.hasAmplitudeControl();
+    } catch (_) {}
+    if (amplitudeSupported && amplitude != null) {
+      await Vibration.vibrate(
+          duration: customDuration ?? duration, amplitude: amplitude);
+    } else {
+      await Vibration.vibrate(duration: duration);
     }
   }
 
-  Future<void> heavy() async {
-    if (!_ehSettingService.vibrate.value) {
+  Future<void> impact() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('impact');
+        } else {
+          await _androidPulse(2);
+        }
+      });
+
+  Future<void> light() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('light');
+        } else {
+          await _androidPulse(5, amplitude: 100);
+        }
+      });
+
+  Future<void> medium() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('medium');
+        } else {
+          await _androidPulse(20, amplitude: 120, customDuration: 15);
+        }
+      });
+
+  Future<void> heavy() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('heavy');
+        } else {
+          await _androidPulse(35, amplitude: 255, customDuration: 10);
+        }
+      });
+
+  Future<void> success() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('success');
+        }
+      });
+
+  Future<void> error() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('error');
+        }
+      });
+
+  Future<void> selection() => _run(HapticFeedback.selectionClick);
+
+  Future<void> pullTick(double progress) => _run(() async {
+        if (_isIOS) {
+          final p = progress.clamp(0.0, 1.0).toDouble();
+          await _coreHapticsTick(
+            intensity: 0.2 + 0.7 * p,
+            sharpness: 0.9 - 0.5 * p,
+          );
+        } else {
+          await HapticFeedback.lightImpact();
+        }
+      });
+
+  /// Prewarm each new pull session without producing a pulse.
+  Future<void> prepareHaptics() async {
+    if (!_vibrateOn || !_isIOS) {
       return;
     }
-    if (Platform.isIOS) {
-      Vibrate.feedback(FeedbackType.heavy);
-    } else if (Platform.isAndroid && (await _hasAmplitudeControl ?? false)) {
-      Vibration.vibrate(amplitude: 255, duration: 10);
-    } else if (Platform.isAndroid) {
-      Vibration.vibrate(duration: 35);
+    _hapticsPrepared = true;
+    try {
+      await _hapticsChannel.invokeMethod<void>('prepare');
+    } catch (error) {
+      logger.t('Haptics prepare unavailable: $error');
     }
   }
 
-  Future<void> success() async {
-    if (!_ehSettingService.vibrate.value) {
-      return;
+  Future<void> _coreHapticsTick({
+    required double intensity,
+    required double sharpness,
+  }) async {
+    if (!_hapticsPrepared) {
+      await prepareHaptics();
     }
-    if (Platform.isIOS) {
-      Vibrate.feedback(FeedbackType.success);
-    }
-  }
-
-  Future<void> error() async {
-    if (!_ehSettingService.vibrate.value) {
-      return;
-    }
-    if (Platform.isIOS) {
-      Vibrate.feedback(FeedbackType.error);
+    try {
+      await _hapticsChannel.invokeMethod<void>('tick', <String, double>{
+        'intensity': intensity,
+        'sharpness': sharpness,
+      });
+    } catch (error) {
+      logger.t('Haptics tick unavailable: $error');
+      await HapticFeedback.lightImpact();
     }
   }
 }

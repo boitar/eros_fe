@@ -19,18 +19,21 @@ currently integrates the following independently deliverable modules:
 | History | Shared initialization, serialized local persistence/clear and awaited sync | `codex/custom-history` |
 | Visible group index | Stable visible UUID/page mapping, reorder/delete and restart restoration | `codex/custom-group-index` |
 | Action accessibility | Labels for existing traditional controls; decorative no-op prefix excluded | `codex/custom-accessibility` |
+| Haptics | Native bridge, progressive pulls, application switch and operation feedback | `codex/custom-haptics` |
 
 Each business branch has a single complete commit directly on the same fixed
 master. This integration preserves those commit IDs through explicit merges.
-The remaining four planned business modules are not integrated yet.
+The remaining three planned business modules are not integrated yet.
 
-The seven-module integration passed all 224 tests, analysis with no new
-diagnostics, and production-entry builds with and without offline definitions.
-Eight native accessibility checks passed on iPhone 18 Pro and iPad Pro 11-inch
-(M5), iOS 27.0 (24A434), in light/default and dark/accessibility-medium profiles.
-Action labels remain Chinese; XCTest semantics do not establish physical
-VoiceOver speech or focus acceptance. The independent module passed 13 tests
-and eight native checks.
+All 243 tests passed on the eight-module integration, with no new analyzer
+diagnostics. Production `lib/main.dart` ARM64 Debug-SimulatorUI builds passed with
+and without offline definitions. On iPhone 18 Pro and iPad Pro 11-inch (M5),
+iOS 27.0 (24A434), twelve native haptics checks passed across light/default and
+dark/accessibility-medium profiles, including real pulls, six accepted style
+calls, prepare/tick, switch disable, disabled restart, re-enable and rotation.
+The independent haptics module passed 25 tests and twelve native checks.
+Accessibility labels remain Chinese; its eight integration native checks do not
+establish physical VoiceOver speech/focus acceptance.
 
 ### Build and verify
 
@@ -69,7 +72,13 @@ bash benchmark/group_index_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" group-index
 bash benchmark/accessibility_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" accessibility
+bash benchmark/haptics_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" haptics
 ```
+
+The inherited Flutter refresh armed mediumImpact is separate from the enhanced
+application feedback switch. Accepted native counters do not establish physical
+vibration or strength.
 
 The module branches' bilingual READMEs describe their own checks and boundaries.
 Integration tests and native entry checks are rerun on the merged tree; source

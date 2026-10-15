@@ -980,6 +980,7 @@ class ViewTopBar extends GetView<ViewExtController> {
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: () {
+                              vibrateUtil.light();
                               controller.tapShare(context);
                             },
                             child: const SizedBox(
@@ -998,6 +999,7 @@ class ViewTopBar extends GetView<ViewExtController> {
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: () async {
+                              vibrateUtil.light();
                               controller.cancelVolumeKeydownListen();
                               await Get.toNamed(EHRoutes.readSetting);
                               controller.addVolumeKeydownListen();
@@ -1180,6 +1182,7 @@ class ControllerButtonBar extends StatelessWidget {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
+              vibrateUtil.light();
               controller.tapSave(context);
             },
             child: SizedBox(
@@ -1272,9 +1275,11 @@ class ControllerButtonBar extends StatelessWidget {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
+              vibrateUtil.light();
               controller.tapAutoRead(context);
             },
             onLongPress: () {
+              vibrateUtil.medium();
               controller.longTapAutoRead(context);
             },
             child: GetBuilder<ViewExtController>(
@@ -1325,6 +1330,7 @@ class ControllerButtonBar extends StatelessWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
+                vibrateUtil.light();
                 controller.switchShowThumbList();
               },
               onLongPress: () {
@@ -1711,6 +1717,7 @@ class ViewPageSlider extends StatefulWidget {
 
 class _ViewPageSliderState extends State<ViewPageSlider> {
   late double _value;
+  int _lastTickedPage = -1;
 
   @override
   void initState() {
@@ -1752,13 +1759,24 @@ class _ViewPageSliderState extends State<ViewPageSlider> {
               min: 0,
               max: widget.max,
               value: widget.sliderValue,
+              // CupertinoSlider 自带的触感只在滑到两端时触发，这里按"跨过
+              // 一页"给 selection tick，拖动跟手；松手时 light 收尾。
+              onChangeStart: (double newValue) {
+                _lastTickedPage = newValue.round();
+              },
               onChanged: (double newValue) {
                 setState(() {
                   _value = newValue;
                 });
+                final page = newValue.round();
+                if (page != _lastTickedPage) {
+                  _lastTickedPage = page;
+                  vibrateUtil.selection();
+                }
                 widget.onChanged(newValue);
               },
               onChangeEnd: (double newValue) {
+                vibrateUtil.light();
                 widget.onChangedEnd(newValue);
               },
             ),

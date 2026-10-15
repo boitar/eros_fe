@@ -224,12 +224,17 @@ class DownloadController extends GetxController {
   }
 
   Future<GalleryTask?> _completeGalleryTask(int gid) async {
+    final wasComplete =
+        dState.galleryTaskMap[gid]?.status == TaskStatus.complete.value;
     logger.d('画廊任务完成: gid=$gid');
     final task = await taskManager.galleryTaskComplete(
       gid,
       cancelTimerCallback: _cancelDownloadStateChkTimer,
     );
     _updateDownloadView(['DownloadGalleryItem_$gid']);
+    if (!wasComplete && task?.status == TaskStatus.complete.value) {
+      await vibrateUtil.success();
+    }
 
     if (task?.status == TaskStatus.complete.value) {
       // 清理该画廊的所有重试计数
@@ -353,6 +358,10 @@ class DownloadController extends GetxController {
     // 通过taskManager更新状态
     final task = await taskManager.galleryTaskUpdateStatus(gid, status);
 
+    if (oldStatus != TaskStatus.failed.value &&
+        task?.status == TaskStatus.failed.value) {
+      await vibrateUtil.error();
+    }
     logger.d('状态更新完成: gid=$gid, 任务=${task?.title}, 新状态=${task?.status}');
     return task;
   }

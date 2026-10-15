@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/gallery/controller/rate_controller.dart';
+import 'package:eros_fe/utils/vibrate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -43,6 +44,8 @@ class RateView extends StatelessWidget {
               ),
               onRatingUpdate: (double rating) {
                 // logger.d(rating);
+                // 每变动一档（含半星）一记 selection 轻点，跟手。
+                vibrateUtil.selection();
                 controller.rate = rating;
               },
             ),

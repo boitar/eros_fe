@@ -119,9 +119,11 @@ class GalleryFavController extends GetxController {
       );
       setFav(result.favId, result.favTitle);
       await _removeGalleryCache();
+      await vibrateUtil.success();
       return true;
     } catch (e) {
       showToast('$e');
+      await vibrateUtil.error();
       return false;
     } finally {
       isLoading = false;
@@ -133,6 +135,8 @@ class GalleryFavController extends GetxController {
     if (isLoading || favoriteStates.isBusy(_pageState.gid)) {
       return;
     }
+
+    await vibrateUtil.light();
 
     /// 网络收藏或者本地收藏
     if (favcat.isNotEmpty || _pageState.localFav) {
@@ -179,9 +183,11 @@ class GalleryFavController extends GetxController {
             .d('after _showAddFavDialog ${_pageState.galleryProvider?.favcat}');
         setFav(favcat, favTitle);
         await _removeGalleryCache();
+      await vibrateUtil.success();
       }
     } catch (e, stack) {
       showToast('$e\n$stack');
+      await vibrateUtil.error();
     } finally {
       isLoading = false;
     }
@@ -209,8 +215,10 @@ class GalleryFavController extends GetxController {
           _pageState.galleryProvider?.copyWith(favcat: ''.oN, favTitle: ''.oN);
       setFav(favcat, favTitle);
       await _removeGalleryCache();
+      await vibrateUtil.success();
     } catch (e, stack) {
       showToast('$e\n$stack');
+      await vibrateUtil.error();
     } finally {
       isLoading = false;
     }

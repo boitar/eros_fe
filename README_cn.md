@@ -18,14 +18,17 @@
 | 历史 | 共享初始化、串行本地写入／清理、等待同步 | `codex/custom-history` |
 | 可见分组索引 | 可见 UUID／页面对应、重排／删除和重启恢复 | `codex/custom-group-index` |
 | 操作语义 | 传统控件操作标签，排除无效装饰前缀 | `codex/custom-accessibility` |
+| 触感 | 原生桥接、渐进下拉、应用开关及操作反馈 | `codex/custom-haptics` |
 
 每个业务分支都是直接基于同一固定 master 的完整单提交，通过显式合并保留原始提交编号。
-其余四个计划业务模块尚未整合。
+其余三个计划业务模块尚未整合。
 
-七模块整合版全量 224 项测试通过，分析无新增诊断，有／无离线定义的正式入口构建通过。
-iPhone 18 Pro 和 iPad Pro 11-inch（M5），iOS 27.0（24A434）的浅色默认字号、深色
-accessibility-medium 字号共八项操作语义原生检查通过。标签沿用来源中文；XCTest 语义检查
-不代表真机 VoiceOver 播报／焦点验收。独立模块 13 项测试和八项原生检查通过。
+八模块整合树全量 243 项测试通过，分析 0 error、无新增诊断；正式 `lib/main.dart`
+ARM64 Debug-SimulatorUI 有／无离线定义构建通过。iPhone 18 Pro、iPad Pro 11-inch（M5），
+iOS 27.0（24A434）的浅色默认字号／深色 accessibility-medium 共十二项触感原生检查通过，
+覆盖真实下拉、六类接受调用、prepare/tick、关闭开关、重启保持关闭、重新开启和旋转。
+独立触感模块 25 项测试及十二项原生检查通过。操作语义标签保留来源中文，其此前八项整合
+原生检查不代表真机 VoiceOver 播报／焦点验收。
 
 ### 构建与验证
 
@@ -63,7 +66,12 @@ bash benchmark/group_index_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" group-index
 bash benchmark/accessibility_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" accessibility
+bash benchmark/haptics_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" haptics
 ```
+
+Flutter 原有下拉刷新 armed mediumImpact 独立于增强反馈开关；原生接受调用计数不代表
+实际震动或强度。
 
 各独立分支的中英文 README 记录本模块的实际检查和边界。整合树另跑测试及原生入口，
 不能以来源 dev 的测试总数或安装包代替本分支验收。

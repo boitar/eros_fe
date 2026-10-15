@@ -1,0 +1,32 @@
+name: CustomBranchAcceptance
+options:
+  deploymentTarget:
+    iOS: "27.0"
+targets:
+  CustomBranchAcceptance:
+    type: application
+    platform: iOS
+    sources:
+      - App
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.codex.eros-custom-acceptance
+      GENERATE_INFOPLIST_FILE: YES
+  CustomBranchAcceptanceUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - UITests
+    dependencies:
+      - target: CustomBranchAcceptance
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.codex.eros-custom-acceptance.uitests
+      TEST_TARGET_NAME: CustomBranchAcceptance
+      GENERATE_INFOPLIST_FILE: YES
+schemes:
+  CustomBranchAcceptance:
+    build:
+      targets:
+        CustomBranchAcceptance: all
+    test:
+      targets:
+        - CustomBranchAcceptanceUITests

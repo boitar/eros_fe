@@ -3,6 +3,7 @@ import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/utils/toast.dart';
+import 'package:eros_fe/utils/vibrate.dart';
 import 'package:get/get.dart';
 
 import 'gallery_page_controller.dart';
@@ -32,19 +33,25 @@ class RateController extends GetxController {
     logger.t('rating $rate');
     logger.t('${_item?.apiuid} ${_item?.apikey}');
     logger.t('${(rate * 2).round()}');
-    final Map<String, dynamic> rultMap = await Api.setRating(
-      apikey: _item!.apikey ?? '',
-      apiuid: _item!.apiuid ?? '',
-      gid: _item!.gid ?? '0',
-      token: _item!.token ?? '',
-      rating: (rate * 2).round(),
-    );
-    pageController.afterRating(
-      ratingUsr: double.parse(rultMap['rating_usr'].toString()),
-      ratingAvg: double.parse(rultMap['rating_avg'].toString()),
-      ratingCnt: rultMap['rating_cnt'] as int,
-      colorRating: rultMap['rating_cls'] as String,
-    );
-    showToast('Ratting successfully');
+    try {
+      final Map<String, dynamic> rultMap = await Api.setRating(
+        apikey: _item!.apikey ?? '',
+        apiuid: _item!.apiuid ?? '',
+        gid: _item!.gid ?? '0',
+        token: _item!.token ?? '',
+        rating: (rate * 2).round(),
+      );
+      pageController.afterRating(
+        ratingUsr: double.parse(rultMap['rating_usr'].toString()),
+        ratingAvg: double.parse(rultMap['rating_avg'].toString()),
+        ratingCnt: rultMap['rating_cnt'] as int,
+        colorRating: rultMap['rating_cls'] as String,
+      );
+      showToast('Ratting successfully');
+      await vibrateUtil.success();
+    } catch (e) {
+      await vibrateUtil.error();
+      rethrow;
+    }
   }
 }
