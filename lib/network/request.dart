@@ -10,6 +10,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/archiver_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/torrent_controller.dart';
 import 'package:eros_fe/pages/tab/fetch_list.dart';
+import 'package:eros_fe/utils/avatar_store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide FormData, Response, MultipartFile;
 import 'package:http_parser/http_parser.dart' as http_parser;
@@ -852,6 +853,93 @@ Future<User?> getUserInfo(String userId, {bool forceRefresh = true}) async {
   } else {
     throw httpResponse.error ?? HttpException('get user info error');
   }
+}
+
+http_parser.MediaType _avatarMediaType(String filePath) {
+  final String ext =
+      filePath.substring(filePath.lastIndexOf('.') + 1).toLowerCase();
+  switch (ext) {
+    case 'png':
+      return http_parser.MediaType('image', 'png');
+    case 'gif':
+      return http_parser.MediaType('image', 'gif');
+    case 'webp':
+      return http_parser.MediaType('image', 'webp');
+    default:
+      return http_parser.MediaType('image', 'jpeg');
+  }
+}
+
+/// 获取论坛 UserCP 头像上传表单的 auth_key（CODE=24 头像设置页）
+Future<String> getAvatarAuthKey({CancelToken? cancelToken, Dio? client}) async {
+  final dio = client ?? AppDio(dioConfig: globalDioConfig);
+  final response = await dio.get<String>(
+    'https://forums.e-hentai.org/index.php',
+    queryParameters: <String, dynamic>{'act': 'UserCP', 'CODE': '24'},
+    cancelToken: cancelToken,
+    options: Options(
+      responseType: ResponseType.plain,
+      headers: <String, String>{'referer': 'https://forums.e-hentai.org/index.php'},
+      validateStatus: (status) => status != null && status < 500,
+    ),
+  );
+  final html = response.data ?? '';
+  if (isCloudflareChallenge(html)) {
+    throw EhError(type: EhErrorType.cfBlocked, error: 'Cloudflare verification required');
+  }
+  final key = parseAvatarAuthKey(html);
+  if (response.statusCode != 200 || key == null || key.isEmpty) {
+    throw EhError(error: 'Avatar form not found');
+  }
+  return key;
+}
+
+/// Success requires a recognizable avatar response, including on HTTP 403.
+Future<bool> uploadAvatarToForum(String filePath, {
+  CancelToken? cancelToken,
+  Dio? client,
+  void Function()? checkAccount,
+}) async {
+  checkAccount?.call();
+  final extension = await AvatarStore.validateImage(filePath);
+  checkAccount?.call();
+  final dio = client ?? AppDio(dioConfig: globalDioConfig);
+  final authKey = await getAvatarAuthKey(cancelToken: cancelToken, client: dio);
+  checkAccount?.call();
+  final formData = FormData.fromMap(<String, dynamic>{
+    'act': 'UserCP',
+    'CODE': '25',
+    'MAX_FILE_SIZE': '9000000',
+    'upload_avatar': await MultipartFile.fromFile(
+      filePath,
+      filename: 'avatar$extension',
+      contentType: _avatarMediaType('avatar$extension'),
+    ),
+    'submit': 'Update Avatar',
+  });
+  checkAccount?.call();
+  final response = await dio.post<String>(
+    'https://forums.e-hentai.org/index.php',
+    queryParameters: <String, dynamic>{'auth_key': authKey},
+    data: formData,
+    cancelToken: cancelToken,
+    options: Options(
+      responseType: ResponseType.plain,
+      headers: <String, String>{
+        'referer': 'https://forums.e-hentai.org/index.php?act=UserCP&CODE=24',
+      },
+      validateStatus: (status) => status != null && status < 500,
+    ),
+  );
+  checkAccount?.call();
+  final result = parseAvatarUpdateResult(response.data ?? '');
+  if (result.cfBlocked) {
+    throw EhError(type: EhErrorType.cfBlocked, error: result.message);
+  }
+  if (response.statusCode == 200 && result.success) {
+    return true;
+  }
+  throw EhError(error: result.message ?? 'Avatar upload failed');
 }
 
 Future<bool?> postComment({

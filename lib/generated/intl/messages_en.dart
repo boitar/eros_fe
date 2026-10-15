@@ -45,6 +45,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
+        "avatar_source": MessageLookupByLibrary.simpleMessage("Choose Image Source"),
+        "avatar_from_album": MessageLookupByLibrary.simpleMessage("Photo Library"),
+        "avatar_from_file": MessageLookupByLibrary.simpleMessage("Files"),
+        "avatar_from_url": MessageLookupByLibrary.simpleMessage("Image URL"),
+        "avatar_target": MessageLookupByLibrary.simpleMessage("Where to use this avatar?"),
+        "avatar_use_forum": MessageLookupByLibrary.simpleMessage("Upload to EH Forum"),
+        "avatar_use_local": MessageLookupByLibrary.simpleMessage("Use on This Device Only"),
+        "avatar_upload_success": MessageLookupByLibrary.simpleMessage("Avatar uploaded"),
+        "avatar_local_success": MessageLookupByLibrary.simpleMessage("Avatar updated"),
+        "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare Verification Required"),
+        "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("The forum is protected by Cloudflare. Complete the verification in the built-in browser; the upload will retry automatically afterwards."),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("KEEP IT SAFE"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage(
             "Block images containing QR codes"),

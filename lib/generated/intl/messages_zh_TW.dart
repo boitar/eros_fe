@@ -45,6 +45,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "upload_avatar": MessageLookupByLibrary.simpleMessage("上傳頭像"),
+        "avatar_source": MessageLookupByLibrary.simpleMessage("選擇圖片來源"),
+        "avatar_from_album": MessageLookupByLibrary.simpleMessage("相簿"),
+        "avatar_from_file": MessageLookupByLibrary.simpleMessage("檔案"),
+        "avatar_from_url": MessageLookupByLibrary.simpleMessage("圖片 URL"),
+        "avatar_target": MessageLookupByLibrary.simpleMessage("將頭像用在哪裡？"),
+        "avatar_use_forum": MessageLookupByLibrary.simpleMessage("上傳到 EH 論壇"),
+        "avatar_use_local": MessageLookupByLibrary.simpleMessage("僅本機使用"),
+        "avatar_upload_success": MessageLookupByLibrary.simpleMessage("頭像已上傳"),
+        "avatar_local_success": MessageLookupByLibrary.simpleMessage("頭像已更新"),
+        "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("需要 Cloudflare 驗證"),
+        "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("論壇啟用了 Cloudflare 防護，請在內建瀏覽器中完成人機驗證，完成後將自動重試上傳。"),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("注意資料安全"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage("封鎖含有QR Code的圖片"),
         "about": MessageLookupByLibrary.simpleMessage("關於"),

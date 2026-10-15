@@ -45,6 +45,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "upload_avatar": MessageLookupByLibrary.simpleMessage("Загрузить аватар"),
+        "avatar_source": MessageLookupByLibrary.simpleMessage("Выберите источник изображения"),
+        "avatar_from_album": MessageLookupByLibrary.simpleMessage("Медиатека"),
+        "avatar_from_file": MessageLookupByLibrary.simpleMessage("Файлы"),
+        "avatar_from_url": MessageLookupByLibrary.simpleMessage("URL изображения"),
+        "avatar_target": MessageLookupByLibrary.simpleMessage("Где использовать аватар?"),
+        "avatar_use_forum": MessageLookupByLibrary.simpleMessage("Загрузить на форум EH"),
+        "avatar_use_local": MessageLookupByLibrary.simpleMessage("Использовать только на устройстве"),
+        "avatar_upload_success": MessageLookupByLibrary.simpleMessage("Аватар загружен"),
+        "avatar_local_success": MessageLookupByLibrary.simpleMessage("Аватар обновлён"),
+        "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Требуется проверка Cloudflare"),
+        "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("Форум защищён Cloudflare. Пройдите проверку во встроенном браузере, после чего загрузка будет повторена автоматически."),
         "KEEP_IT_SAFE":
             MessageLookupByLibrary.simpleMessage("Никому не показывайте"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage(

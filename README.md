@@ -5,6 +5,56 @@ English | [简体中文](https://github.com/erosTeam/eros_fe/blob/master/README_
 
 An Unofficial e-hentai app make on flutter
 
+## Independent avatar module
+
+`codex/custom-avatar` is directly based on fixed master `2fe86b737`, retaining
+`1.9.2+566`. In Settings > E·H > Upload avatar, select Album, Files or Image URL,
+then choose forum upload or local use. This standalone module keeps traditional
+dialogs. Files opens the system document picker; Album opens the photo picker.
+JPEG, PNG, GIF and WebP must decode successfully and be between 1 byte and 9 MB.
+Local avatars use unique persistent account-owned copies, with preview and restart
+restoration, including recovery after iOS data-container relocation on update. HTTP(S) image URLs cannot embed credentials, and image downloads do
+not receive forum cookies. Account changes and late results cannot overwrite the
+current avatar. Avatar metadata updates preserve favorite caches and newer folder
+metadata.
+
+Forum upload uses the authenticated session and actual form, and reports success
+only for a confirmed response. A Cloudflare challenge opens the in-app forum;
+complete verification and await cookie synchronization before one retry. Cancelled
+or incomplete verification does not retry. Real forum uploads and live Cloudflare
+are not accepted here. Local HTTP tests cover authentication, multipart uploads,
+empty/error/403 responses, verification retries and account races.
+
+Use Flutter 3.47.1, Xcode 27.0 and Bundle ID `cn.honjow.fehv`:
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub --concurrency=1
+bash benchmark/avatar_ui_tests/run-native.sh "$DEVICE_UUID" "$OUTPUT_DIRECTORY" avatar
+```
+
+All 41 tests passed with zero analyzer errors or new diagnostics against the
+adapted master baseline. Production `lib/main.dart` ARM64 Debug-SimulatorUI builds
+passed with and without offline definitions. Native acceptance uses the highest
+installed available iOS 27.0 (24A434), isolated iPhone 18 Pro and iPad Pro 11-inch
+(M5), light/default and dark/accessibility-medium profiles, rotation and restart.
+All 16 native checks passed: URL/album/actual document selection, invalid input,
+cancellation, local preview, rotation, process restart and avatar path recovery
+after repeated installation.
+
+Debug-only neutral fixtures require an isolated account. Before running the native
+script, boot a fresh isolated device on the highest available runtime; the script
+imports a neutral image and installs the app. Keep logs, screenshots and results
+outside the checkout. Debug-SimulatorUI omits MLKit and legacy archive-downloader
+registration. Physical devices, Release, LiveContainer, OCR, legacy archive
+downloads and untested platforms are outside acceptance. No IPA or remote
+publication is produced.
+
 ## 🔍 Translations Wanted 🔍
 Please submit a pull request if you want to help with translation.
 

@@ -4,10 +4,8 @@ import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/route/routes.dart';
-import 'package:eros_fe/utils/logger.dart';
-import 'package:eros_fe/widget/image/eh_network_image.dart';
+import 'package:eros_fe/widget/user_avatar_image.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
 class UserItem extends StatefulWidget {
@@ -59,43 +57,10 @@ class _UserItem extends State<UserItem> {
     }
 
     Widget _buildAvastat() {
-      const Widget _defAvatar = FaIcon(FontAwesomeIcons.solidUserCircle,
-        size: 55.0,
-        color: CupertinoColors.systemGrey,
-      );
-
-      logger.d('${_userController.user().avatarUrl} ');
-      final String _avatarUrl = _userController.user().avatarUrl ?? '';
-      if (_userController.isLogin && _avatarUrl.isNotEmpty) {
-        return ClipOval(
-          child: EhNetworkImage(
-            imageUrl: _avatarUrl,
-            width: 55,
-            height: 55,
-            fit: BoxFit.cover,
-            errorWidget: (_, __, ___) => _defAvatar,
-            placeholder: (_, __) => _defAvatar,
-          ),
-          // child: ExtendedImage.network(
-          //   _avatarUrl.dfUrl,
-          //   width: 55,
-          //   height: 55,
-          //   fit: BoxFit.cover,
-          //   loadStateChanged: (ExtendedImageState state) {
-          //     switch (state.extendedImageLoadState) {
-          //       case LoadState.loading:
-          //         return _defAvatar;
-          //       case LoadState.failed:
-          //         return _defAvatar;
-          //       default:
-          //         return null;
-          //     }
-          //   },
-          // ),
-        );
-      } else {
-        return _defAvatar;
-      }
+      return Obx(() {
+        final String avatarUrl = _userController.user().avatarUrl ?? '';
+        return UserAvatarImage(url: avatarUrl, size: 55.0);
+      });
     }
 
     final Widget row = Container(
@@ -146,28 +111,10 @@ const double kNameTextSize = 13.0;
 
 class UserWidget extends GetView<UserController> {
   Widget _buildAvastat() {
-    const Widget _defAvatar = FaIcon(FontAwesomeIcons.solidCircleUser,
-      size: kAvatarSize,
-      color: CupertinoColors.systemGrey,
-    );
-
-    // logger.d('${controller.user().toJson()} ');
-    final String _avatarUrl = controller.user().avatarUrl ?? '';
+    // avatarUrl 需在 Obx 内读取，user() 更新后头像才会刷新
     return Obx(() {
-      if (controller.isLogin && _avatarUrl.isNotEmpty) {
-        return ClipOval(
-          child: EhNetworkImage(
-            imageUrl: _avatarUrl,
-            width: kAvatarSize,
-            height: kAvatarSize,
-            fit: BoxFit.cover,
-            errorWidget: (_, __, ___) => _defAvatar,
-            placeholder: (_, __) => _defAvatar,
-          ),
-        );
-      } else {
-        return _defAvatar;
-      }
+      final String avatarUrl = controller.user().avatarUrl ?? '';
+      return UserAvatarImage(url: avatarUrl, size: kAvatarSize);
     });
   }
 

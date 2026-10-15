@@ -6,6 +6,7 @@ version: 1.9.2+566
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.41.0'
 
 dependencies:
   flutter:
@@ -141,7 +142,8 @@ dependencies:
       url: https://github.com/honjow/open_by_default.git
   flex_color_picker: ^3.0.0
   bitsdojo_window: ^0.1.1
-#  image_picker: ^0.8.5
+  # 相册图片选择（上传头像）
+  image_picker: ^1.2.0
   sliver_tools: ^0.2.6
   flutter_boring_avatars:
     git:
@@ -212,6 +214,8 @@ dependencies:
   path: ^1.9.1
 
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
 #  flutter_test:
 #    sdk: flutter
 

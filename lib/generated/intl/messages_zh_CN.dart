@@ -45,6 +45,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "upload_avatar": MessageLookupByLibrary.simpleMessage("上传头像"),
+        "avatar_source": MessageLookupByLibrary.simpleMessage("选择图片来源"),
+        "avatar_from_album": MessageLookupByLibrary.simpleMessage("相册"),
+        "avatar_from_file": MessageLookupByLibrary.simpleMessage("文件"),
+        "avatar_from_url": MessageLookupByLibrary.simpleMessage("图片 URL"),
+        "avatar_target": MessageLookupByLibrary.simpleMessage("将头像用在哪里？"),
+        "avatar_use_forum": MessageLookupByLibrary.simpleMessage("上传到 EH 论坛"),
+        "avatar_use_local": MessageLookupByLibrary.simpleMessage("仅本机使用"),
+        "avatar_upload_success": MessageLookupByLibrary.simpleMessage("头像已上传"),
+        "avatar_local_success": MessageLookupByLibrary.simpleMessage("头像已更新"),
+        "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("需要 Cloudflare 验证"),
+        "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("论坛启用了 Cloudflare 防护，请在内置浏览器中完成人机验证，完成后将自动重试上传。"),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("注意数据安全"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage("屏蔽含有二维码的图片"),
         "about": MessageLookupByLibrary.simpleMessage("关于"),

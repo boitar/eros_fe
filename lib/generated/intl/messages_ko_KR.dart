@@ -45,6 +45,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
+        "avatar_source": MessageLookupByLibrary.simpleMessage("이미지 소스 선택"),
+        "avatar_from_album": MessageLookupByLibrary.simpleMessage("사진 보관함"),
+        "avatar_from_file": MessageLookupByLibrary.simpleMessage("파일"),
+        "avatar_from_url": MessageLookupByLibrary.simpleMessage("이미지 URL"),
+        "avatar_target": MessageLookupByLibrary.simpleMessage("아바타 사용 위치 선택"),
+        "avatar_use_forum": MessageLookupByLibrary.simpleMessage("EH 포럼에 업로드"),
+        "avatar_use_local": MessageLookupByLibrary.simpleMessage("이 기기에서만 사용"),
+        "avatar_upload_success": MessageLookupByLibrary.simpleMessage("아바타가 업로드되었습니다"),
+        "avatar_local_success": MessageLookupByLibrary.simpleMessage("아바타가 업데이트되었습니다"),
+        "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 인증 필요"),
+        "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("포럼이 Cloudflare로 보호되어 있습니다. 내장 브라우저에서 인증을 완료하면 업로드가 자동으로 재시도됩니다."),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("안전하게 보관하세요!"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage(
             "Block images containing QR codes"),

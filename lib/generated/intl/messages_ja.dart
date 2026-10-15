@@ -45,6 +45,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
+        "avatar_source": MessageLookupByLibrary.simpleMessage("画像の取得元を選択"),
+        "avatar_from_album": MessageLookupByLibrary.simpleMessage("フォトライブラリ"),
+        "avatar_from_file": MessageLookupByLibrary.simpleMessage("ファイル"),
+        "avatar_from_url": MessageLookupByLibrary.simpleMessage("画像 URL"),
+        "avatar_target": MessageLookupByLibrary.simpleMessage("アバターの使用先を選択"),
+        "avatar_use_forum": MessageLookupByLibrary.simpleMessage("EH フォーラムにアップロード"),
+        "avatar_use_local": MessageLookupByLibrary.simpleMessage("この端末でのみ使用"),
+        "avatar_upload_success": MessageLookupByLibrary.simpleMessage("アバターをアップロードしました"),
+        "avatar_local_success": MessageLookupByLibrary.simpleMessage("アバターを更新しました"),
+        "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 認証が必要です"),
+        "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("フォーラムは Cloudflare で保護されています。内蔵ブラウザで認証を完了すると、アップロードを自動的に再試行します。"),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("安全を確認してください"),
         "QR_code_block":
             MessageLookupByLibrary.simpleMessage("QRコードを含む画像をブロック"),
