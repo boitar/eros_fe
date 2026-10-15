@@ -2,7 +2,10 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/pages/item/gallery_grid_tags.dart';
 import 'package:eros_fe/pages/item/gallery_item_grid.dart';
+import 'package:eros_fe/pages/item/gallery_item_grid_placeholder.dart'
+    show GalleryItemGridPlaceHolder;
 import 'package:eros_fe/pages/item/item_base.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:flutter/cupertino.dart';
@@ -49,6 +52,7 @@ class _ItemWidthSettingPageState extends State<ItemWidthSettingPage> {
     selectedMode = _ehSettingService.listMode.value;
     if (![
       ListModeEnum.grid,
+      ListModeEnum.gridTags,
       ListModeEnum.waterfall,
       ListModeEnum.waterfallLarge
     ].contains(selectedMode)) {
@@ -60,6 +64,7 @@ class _ItemWidthSettingPageState extends State<ItemWidthSettingPage> {
 
   Map<ListModeEnum, double> defaultWidthMap() => {
         ListModeEnum.grid: EHConst.gridMaxCrossAxisExtent,
+        ListModeEnum.gridTags: EHConst.gridMaxCrossAxisExtent,
         ListModeEnum.waterfall: Get.context!.isPhone
             ? EHConst.waterfallFlowMaxCrossAxisExtent
             : EHConst.waterfallFlowMaxCrossAxisExtentTablet,
@@ -279,6 +284,20 @@ class ExampleView extends StatelessWidget {
     const kItemCount = 100;
 
     switch (selectedMode) {
+      case ListModeEnum.gridTags:
+        return SliverPadding(
+          padding: const EdgeInsets.all(EHConst.gridCrossAxisSpacing),
+          sliver: GalleryGridTagsSliver(
+            maxCrossAxisExtent: customWidth,
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => const GalleryItemGridPlaceHolder(
+                showTags: true,
+                showLoadingIndicator: false,
+              ),
+              childCount: kItemCount,
+            ),
+          ),
+        );
       case ListModeEnum.grid:
         return SliverPadding(
           padding: const EdgeInsets.all(EHConst.gridCrossAxisSpacing),
@@ -483,6 +502,7 @@ Widget _buildListModeItem(
     ListModeEnum.waterfallLarge: L10n.of(context).listmode_waterfall_large,
     ListModeEnum.waterfall: L10n.of(context).listmode_waterfall,
     ListModeEnum.grid: L10n.of(context).listmode_grid,
+    ListModeEnum.gridTags: L10n.of(context).listmode_grid_tags,
   };
   return SelectorCupertinoListTile<ListModeEnum>(
     title: _title,

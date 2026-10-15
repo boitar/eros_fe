@@ -215,7 +215,8 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("ロードに失敗、タップして再ロード"),
         "list_mode": MessageLookupByLibrary.simpleMessage("リストモード"),
         "listmode_grid": MessageLookupByLibrary.simpleMessage("グリッド"),
-        "listmode_medium": MessageLookupByLibrary.simpleMessage("リスト（中）"),
+        "listmode_grid_tags": MessageLookupByLibrary.simpleMessage("グリッド - タグ"),
+    "listmode_medium": MessageLookupByLibrary.simpleMessage("リスト（中）"),
         "listmode_small": MessageLookupByLibrary.simpleMessage("リスト（小）"),
         "listmode_waterfall": MessageLookupByLibrary.simpleMessage("滝"),
         "listmode_waterfall_large":

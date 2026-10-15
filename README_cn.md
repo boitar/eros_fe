@@ -5,6 +5,41 @@
 
 一个 flutter 编写的 e-hentai app
 
+## 独立网格标签模块
+
+本分支 `codex/custom-grid-tags` 直接基于固定 master `2fe86b737`，保留 `1.9.2+566`。
+在设置 → 样式 → 列表样式选择“网格 - 标签”，也可为自定义分组单独选择。
+相同列宽下，卡片为封面、标题、标签和元信息保留一致空间；无标签、长标题和不同封面比例
+不会改变同排卡片高度。标签支持两行横向浏览。原有封面、分类、收藏标记、数量和操作入口保留。
+在“自定义宽度”中选择网格标签模式，单独调整其宽度；设置立即更新预览并持久化，
+与普通网格、瀑布流各自保存。
+
+工具链 Flutter 3.47.1、Xcode 27.0，Bundle ID `cn.honjow.fehv`：
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub --concurrency=1
+bash benchmark/grid_tags_ui_tests/run-native.sh "$DEVICE_UUID" "$OUTPUT_DIRECTORY" grid-tags
+```
+
+23 项全量测试通过，分析 0 error，相对同工具链适配 master 无新增诊断；
+正式 `lib/main.dart` ARM64 Debug-SimulatorUI 有／无离线定义构建通过。
+最高已安装可用的 iOS 27.0（24A434），隔离 iPhone 18 Pro、iPad Pro 11-inch（M5）
+浅色默认字号／深色 accessibility-medium 共 12 项正式入口原生检查通过：等高卡片、横屏、
+实际模式切换、真实宽度滑块改值和精确数值的进程重启恢复。
+
+离线数据仅 Debug 生效，使用隔离空账号。先启动最高 runtime 的空白隔离设备，再运行原生脚本；
+日志、截图和结果输出到仓库外。本模块不依赖玻璃、收藏状态、历史或增强触感模块。
+Debug-SimulatorUI 不注册 MLKit／旧归档下载插件；真机、Release、LiveContainer、OCR、
+旧归档下载和其他未测平台不在验收范围。本次不生成 IPA、不推送。
+master 传统顶栏在 iPad 窄栏 accessibility-medium 下仍有约 22px 溢出；该顶栏未随网格模块修改。
+网格卡片、设置与恢复检查通过。
+
 ## iOS 安装
 1. 下载最新 ipa 文件 [Releases](https://github.com/erosTeam/eros_fe/releases/latest).
 2. 使用 [AltStore](https://altstore.io) 之类的 app 安装到设备上. 或者直接使用 [AltStore.json](https://config-feh.vercel.app/AltStore.json)

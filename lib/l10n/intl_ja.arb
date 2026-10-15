@@ -88,6 +88,7 @@
   "listmode_waterfall": "滝",
   "listmode_waterfall_large": "滝（大）",
   "listmode_grid": "グリッド",
+  "listmode_grid_tags": "グリッド - タグ",
   "favorites_order": "お気に入り並べ替え",
   "favorites_order_Use_posted": "アップロードされた日付順",
   "favorites_order_Use_favorited": "お気に入り日付順",

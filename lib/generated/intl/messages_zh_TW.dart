@@ -203,7 +203,8 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("載入失敗，點擊重試"),
         "list_mode": MessageLookupByLibrary.simpleMessage("列表樣式"),
         "listmode_grid": MessageLookupByLibrary.simpleMessage("網格"),
-        "listmode_medium": MessageLookupByLibrary.simpleMessage("列表 - 中"),
+        "listmode_grid_tags": MessageLookupByLibrary.simpleMessage("網格 - 標籤"),
+    "listmode_medium": MessageLookupByLibrary.simpleMessage("列表 - 中"),
         "listmode_small": MessageLookupByLibrary.simpleMessage("列表 - 小"),
         "listmode_waterfall": MessageLookupByLibrary.simpleMessage("瀑布流"),
         "listmode_waterfall_large":

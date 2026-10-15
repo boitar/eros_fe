@@ -5,6 +5,49 @@ English | [简体中文](https://github.com/erosTeam/eros_fe/blob/master/README_
 
 An Unofficial e-hentai app make on flutter
 
+## Independent grid tags module
+
+`codex/custom-grid-tags` is directly based on fixed master `2fe86b737`, retaining
+`1.9.2+566`. Select Settings > Style > List mode > Grid - Tags, or choose it for a
+custom group. Cards at the same column width reserve consistent cover, title,
+two-row tag and metadata space. Empty tags, long titles and different cover
+ratios do not change their aligned heights. Tags scroll horizontally across two
+rows. Existing cover, category, favorite marker, count and action controls remain.
+In Custom width, select Grid - Tags and adjust its independent width. The preview
+updates immediately and settings persist separately from ordinary grids and
+waterfall layouts.
+
+Use Flutter 3.47.1, Xcode 27.0 and Bundle ID `cn.honjow.fehv`:
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub --concurrency=1
+bash benchmark/grid_tags_ui_tests/run-native.sh "$DEVICE_UUID" "$OUTPUT_DIRECTORY" grid-tags
+```
+
+All 23 tests passed with zero analyzer errors or new diagnostics against adapted
+master. Production `lib/main.dart` ARM64 Debug-SimulatorUI builds passed with and
+without offline definitions. The highest installed available iOS 27.0
+(24A434), isolated iPhone 18 Pro and iPad Pro 11-inch (M5) passed all 12 native
+production-entry checks across light/default and dark/accessibility-medium
+profiles: aligned cards, landscape, actual mode selection, a real width-slider
+change and exact-value restoration after process restart.
+
+Debug-only neutral fixtures require an isolated empty account. Boot a fresh
+isolated device on the highest runtime before running the native script. Keep
+logs, screenshots and results outside the checkout. This module does not depend
+on glass, favorite state, history or enhanced haptics. Debug-SimulatorUI omits
+MLKit and legacy archive-downloader registration. Physical devices, Release,
+LiveContainer, OCR, legacy archive downloads and untested platforms are outside
+acceptance. No IPA or remote publication is produced.
+The unchanged master traditional header still overflows by about 22px in the narrow
+iPad pane at accessibility-medium. Grid cards, settings and restoration passed.
+
 ## 🔍 Translations Wanted 🔍
 Please submit a pull request if you want to help with translation.
 

@@ -242,6 +242,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Load failed, tap to retry"),
         "list_mode": MessageLookupByLibrary.simpleMessage("List Mode"),
         "listmode_grid": MessageLookupByLibrary.simpleMessage("Grid"),
+    "listmode_grid_tags": MessageLookupByLibrary.simpleMessage("Grid - Tags"),
         "listmode_medium":
             MessageLookupByLibrary.simpleMessage("List - Medium"),
         "listmode_small": MessageLookupByLibrary.simpleMessage("List - Small"),

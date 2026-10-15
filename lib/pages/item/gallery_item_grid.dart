@@ -12,6 +12,7 @@ import '../../const/theme_colors.dart';
 import '../../index.dart';
 import '../../widget/rating_bar.dart';
 import 'controller/galleryitem_controller.dart';
+import 'gallery_grid_tags.dart';
 import 'gallery_item.dart';
 import 'item_base.dart';
 
@@ -26,11 +27,16 @@ const double kMaxFixCoverRatio = 2.2;
 final EhSettingService _ehSettingService = Get.find();
 
 class GalleryItemGrid extends StatelessWidget {
-  const GalleryItemGrid({Key? key, this.tabTag, required this.galleryProvider})
-      : super(key: key);
+  const GalleryItemGrid({
+    Key? key,
+    this.tabTag,
+    required this.galleryProvider,
+    this.showTags = false,
+  }) : super(key: key);
 
   final dynamic tabTag;
   final GalleryProvider galleryProvider;
+  final bool showTags;
 
   GalleryItemController get galleryProviderController =>
       Get.find(tag: galleryProvider.gid);
@@ -126,29 +132,40 @@ class GalleryItemGrid extends StatelessWidget {
             ),
 
             /// 画廊信息等
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: _buildTitle()),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    PostTime(
-                      postTime:
-                          galleryProviderController.galleryProvider.postTime ??
-                              '',
-                      expunged:
-                          galleryProviderController.galleryProvider.expunged,
-                    ),
-                  ],
-                ).paddingSymmetric(horizontal: 4, vertical: 2),
+            if (showTags)
+              GalleryGridTagsInfo(
+                title: galleryProviderController.title,
+                simpleTags:
+                    galleryProviderController.galleryProvider.simpleTags,
+                postTime: galleryProviderController.galleryProvider.postTime,
+                expunged: galleryProviderController.galleryProvider.expunged,
+                backgroundColor: ehTheme.itemBackgroundColor ??
+                    CupertinoColors.systemBackground,
+              )
+            else
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: _buildTitle()),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      PostTime(
+                        postTime: galleryProviderController
+                                .galleryProvider.postTime ??
+                            '',
+                        expunged:
+                            galleryProviderController.galleryProvider.expunged,
+                      ),
+                    ],
+                  ).paddingSymmetric(horizontal: 4, vertical: 2),
+                ),
               ),
-            ),
           ],
         ),
       );
@@ -298,14 +315,17 @@ class _CoverImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final GalleryProvider _provider = galleryProviderController.galleryProvider;
 
-    // 图片高宽比
-    final ratio = (_provider.imgHeight ?? 0) / (_provider.imgWidth ?? 1);
+    final containRatio = coverImageHeight / coverImageWidth;
+    // Missing list-thumbnail dimensions must not produce 0/0 or infinite height.
+    final hasDimensions =
+        (_provider.imgWidth ?? 0) > 0 && (_provider.imgHeight ?? 0) > 0;
+    final ratio = hasDimensions
+        ? _provider.imgHeight! / _provider.imgWidth!
+        : containRatio;
 
     logger.t('iRatio:$ratio\n'
         'w:${_provider.imgWidth} h:${_provider.imgHeight}\n'
         'cW:$coverImageWidth  cH:$coverImageHeight');
-
-    final containRatio = coverImageHeight / coverImageWidth;
 
     // 默认为contain裁切
     BoxFit _fit = BoxFit.contain;

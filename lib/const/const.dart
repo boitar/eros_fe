@@ -30,6 +30,7 @@ enum ListModeEnum {
   grid,
   global,
   debugSimple,
+  gridTags,
 }
 
 enum TagTranslateDataUpdateMode {
