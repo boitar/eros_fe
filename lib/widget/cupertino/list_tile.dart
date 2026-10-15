@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:eros_fe/utils/vibrate.dart';
 import 'package:flutter/cupertino.dart';
 
 const double _kLeadingSize = 28.0;
@@ -149,6 +150,7 @@ class _EhCupertinoSwitchListTileState extends State<EhCupertinoSwitchListTile> {
       trailing: CupertinoSwitch(
         value: _value,
         onChanged: (bool value) {
+          vibrateUtil.selection();
           setState(() {
             _value = value;
           });

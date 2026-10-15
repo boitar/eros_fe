@@ -5,6 +5,50 @@ English | [简体中文](https://github.com/erosTeam/eros_fe/blob/master/README_
 
 An Unofficial e-hentai app make on flutter
 
+## Independent haptics module
+
+`codex/custom-haptics` is one complete commit directly on fixed master
+`2fe86b737`, retaining `1.9.2+566`. Settings > Advanced > Vibration controls
+application feedback. Refresh prepares each pull cycle and emits bounded progress
+ticks; buttons, reading actions, download transitions and favorite/rating results
+use feedback. This standalone version keeps the traditional interface.
+
+All six iOS feedback styles plus prepare/tick use the single-purpose
+`eros/haptics` bridge, with a reply for every request. Selection uses Flutter.
+The disabled switch skips enhanced calls and capability queries; unsupported
+desktop platforms and missing/error plugins safely fall back. Android timing and
+capability fallback are preserved, without Android hardware acceptance.
+
+Use Flutter 3.47.1, Xcode 27.0 and Bundle ID `cn.honjow.fehv`:
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub --concurrency=1
+bash benchmark/haptics_ui_tests/run-native.sh "$DEVICE_UUID" "$OUTPUT_DIRECTORY" haptics
+```
+
+All 25 tests passed, with zero analyzer errors or new diagnostics against the
+adapted master baseline. Production `lib/main.dart` ARM64 Debug-SimulatorUI builds
+passed with and without offline definitions. On the highest installed available
+iOS 27.0 (24A434), isolated iPhone 18 Pro and iPad Pro 11-inch (M5) passed 12 native
+checks across light/default and dark/accessibility-medium profiles: actual bridge
+counters, two real pulls, switch disable, disabled restart, re-enable and rotation.
+Counters describe accepted calls, not physical vibration. Flutter's inherited
+refresh armed mediumImpact is separate from the enhanced application switch;
+this module does not claim to control that SDK feedback.
+
+Debug-only neutral offline fixtures require an isolated empty account. Keep logs,
+screenshots and results outside the checkout. Debug-SimulatorUI omits MLKit and
+the legacy archive-downloader registration. Physical haptic strength, Release,
+LiveContainer, OCR, legacy archive downloads and untested platforms are outside
+acceptance. No IPA or remote publication is produced. Master's large-text rail,
+fixed ordinary cards and waterfall tag clipping remain inherited limitations.
+
 ## 🔍 Translations Wanted 🔍
 Please submit a pull request if you want to help with translation.
 

@@ -1,5 +1,6 @@
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
+import 'package:eros_fe/utils/vibrate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -16,7 +17,10 @@ class TabHomeSmall extends GetView<TabHomeController> {
                 ? CupertinoTheme.of(context).barBackgroundColor.withOpacity(1)
                 : null,
             items: controller.listBottomNavigationBarItem,
-            onTap: controller.onTap,
+            onTap: (index) {
+              vibrateUtil.light();
+              controller.onTap(index);
+            },
           ),
           tabBuilder: (BuildContext context, int index) {
             // return controller.viewList[index];

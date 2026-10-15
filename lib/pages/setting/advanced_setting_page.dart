@@ -5,6 +5,7 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/const/locale.dart';
+import 'package:eros_fe/debug/offline_haptics.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:eros_fe/pages/setting/webview/mode.dart';
@@ -125,11 +126,13 @@ class ListViewAdvancedSetting extends StatelessWidget {
             EhCupertinoListTile(
               title: Text(L10n.of(context).vibrate_feedback),
               trailing: Obx(() {
-                return CupertinoSwitch(
+                return offlineHapticsControl(CupertinoSwitch(
                   value: _ehSettingService.vibrate.value,
-                  onChanged: (bool val) =>
-                      _ehSettingService.vibrate.value = val,
-                );
+                  onChanged: (bool val) {
+                    vibrateUtil.selection();
+                    _ehSettingService.vibrate.value = val;
+                  },
+                ));
               }),
             ),
           ],
@@ -165,8 +168,10 @@ class ListViewAdvancedSetting extends StatelessWidget {
                 trailing: Obx(() {
                   return CupertinoSwitch(
                     value: _ehSettingService.nativeHttpClientAdapter,
-                    onChanged: (bool val) =>
-                        _ehSettingService.nativeHttpClientAdapter = val,
+                    onChanged: (bool val) {
+                      vibrateUtil.selection();
+                      _ehSettingService.nativeHttpClientAdapter = val;
+                    },
                   );
                 }),
               ),
@@ -185,7 +190,10 @@ class ListViewAdvancedSetting extends StatelessWidget {
               trailing: Obx(() {
                 return CupertinoSwitch(
                   value: _ehSettingService.debugMode,
-                  onChanged: (bool val) => _ehSettingService.debugMode = val,
+                  onChanged: (bool val) {
+                    vibrateUtil.selection();
+                    _ehSettingService.debugMode = val;
+                  },
                 );
               }),
             ),

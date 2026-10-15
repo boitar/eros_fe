@@ -7,6 +7,8 @@ import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/debug/offline_acceptance.dart';
+import 'package:eros_fe/debug/offline_haptics.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/widget/system_ui_overlay.dart';
 import 'package:flutter/cupertino.dart';
@@ -28,12 +30,15 @@ Future<void> main() async {
   // BindingBase.debugZoneErrorsAreFatal = true;
   // runZonedGuarded<Future<void>>(() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeOfflineAcceptance();
   final dsn = await getSentryDsn();
 
   Get.lazyPut(() => LogService(), fenix: true);
 
   await Global.init();
+  await initializeOfflineHaptics();
   getinit();
+  await probeOfflineHaptics();
   Global.proxyInit();
 
   if (Get.find<EhSettingService>().debugMode || kDebugMode) {
@@ -43,7 +48,9 @@ Future<void> main() async {
     Logger.level = Level.error;
   }
   resetLogLevel();
-  updateTagTranslate();
+  if (!offlineAcceptanceEnabled) {
+    updateTagTranslate();
+  }
 
   if (dsn != null && dsn.isNotEmpty) {
     await SentryFlutter.init(
@@ -238,7 +245,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
 
     return OKToast(
-      child: cupertinoApp(),
+      child: offlineHapticsOverlay(cupertinoApp()),
     );
   }
 }
