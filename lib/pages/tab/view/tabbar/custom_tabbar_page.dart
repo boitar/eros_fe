@@ -2,6 +2,7 @@ import 'package:blur/blur.dart';
 import 'package:english_words/english_words.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/debug/offline_group_index.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_sublist_controller.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
@@ -43,7 +44,10 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
           buildNestedScrollView(context, hideTopBarOnScroll);
 
       return CupertinoPageScaffold(
-        child: SizeCacheWidget(child: scrollView),
+        child: offlineGroupSelection(
+            uuid: controller.currProfileUuid,
+            index: controller.index,
+            child: SizeCacheWidget(child: scrollView)),
       );
 
       // return CupertinoPageScaffold(child: scrollView);
@@ -94,10 +98,12 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
           return PageView(
             // CustomScrollPhysics对于改善滑动问题没有帮助
             // physics: const CustomScrollPhysics(),
-            key: ValueKey(
-                controller.profiles.map((e) => '${e.uuid}${e.name}').join()),
+            // Retain the PageView and UUID-keyed subpages when profiles mutate.
+            // Recreating the viewport can restore a removed numeric page after
+            // selection has already reconciled to its visible neighbor.
+            key: const PageStorageKey('custom-visible-group-pages'),
             controller: controller.pageController,
-            children: controller.profiles.isNotEmpty
+            children: controller.profilesShow.isNotEmpty
                 ? [
                     ...controller.profilesShow
                         .map((e) => SubListView<CustomSubListController>(
@@ -353,13 +359,13 @@ class CustomTabBar extends StatelessWidget {
                 Expanded(
                   child: Obx(() {
                     return LinkScrollBar(
-                      key: ValueKey(controller.profiles
+                      key: ValueKey(controller.profilesShow
                           .map((e) => '${e.uuid}${e.name}')
                           .join()),
                       controller: controller.linkScrollBarController,
                       pageController: controller.pageController,
-                      items: controller.profiles.isNotEmpty
-                          ? controller.profiles
+                      items: controller.profilesShow.isNotEmpty
+                          ? controller.profilesShow
                               .map((e) => LinkTabItem(title: e.name, actinos: [
                                     LinkTabItemAction(
                                       actinoText: '编辑分组',
@@ -384,10 +390,16 @@ class CustomTabBar extends StatelessWidget {
                               .toList()
                           : [LinkTabItem(title: '+++')],
                       initIndex: controller.index,
-                      onItemChange: (index) => controller.pageController
-                          .animateToPage(index,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.ease),
+                      onItemChange: (index) {
+                        if (index < 0 ||
+                            index >= controller.profilesShow.length ||
+                            !controller.pageController.hasClients) {
+                          return;
+                        }
+                        controller.pageController.animateToPage(index,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.ease);
+                      },
                     );
                   }),
                 ),
@@ -406,7 +418,8 @@ class CustomTabBar extends StatelessWidget {
                               padding: const EdgeInsets.all(0),
                               child: isRefresh
                                   ? const CupertinoActivityIndicator(radius: 10)
-                                  : const FaIcon(FontAwesomeIcons.rotateRight,
+                                  : const FaIcon(
+                                      FontAwesomeIcons.rotateRight,
                                       size: 20,
                                     ),
                               onPressed: () async {
@@ -424,14 +437,17 @@ class CustomTabBar extends StatelessWidget {
                             );
                           });
                         }),
-                      CupertinoButton(
-                        minSize: 40,
-                        padding: const EdgeInsets.all(0),
-                        onPressed: controller.pressedBar,
-                        child: const FaIcon(FontAwesomeIcons.bars,
-                          size: 20,
-                        ),
-                      ),
+                      offlineGroupControl(
+                          'manage',
+                          CupertinoButton(
+                            minSize: 40,
+                            padding: const EdgeInsets.all(0),
+                            onPressed: controller.pressedBar,
+                            child: const FaIcon(
+                              FontAwesomeIcons.bars,
+                              size: 20,
+                            ),
+                          )),
                     ],
                   ),
                 ),

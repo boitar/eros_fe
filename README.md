@@ -17,18 +17,21 @@ currently integrates the following independently deliverable modules:
 | Favorites | Traditional forms, confirmed server results, account isolation and protected note edits | `codex/custom-favorites` |
 | Sharing | Native iOS/iPadOS links, images, files and exports with modal/anchor handling | `codex/custom-sharing` |
 | History | Shared initialization, serialized local persistence/clear and awaited sync | `codex/custom-history` |
+| Visible group index | Stable visible UUID/page mapping, reorder/delete and restart restoration | `codex/custom-group-index` |
 
 Each business branch has a single complete commit directly on the same fixed
 master. This integration preserves those commit IDs through explicit merges.
-The remaining six planned business modules are not integrated yet.
+The remaining five planned business modules are not integrated yet.
 
-Current merged-tree validation: 205 tests pass, with zero analyzer errors and
+Current merged-tree validation: 217 tests pass, with zero analyzer errors and
 no new diagnostics against adapted master. Production `lib/main.dart` builds
-with and without offline defines. Eight fresh native checks on iPhone 18 Pro
-and iPad Pro 11-inch (M5), highest available iOS 27.0 (24A434), cover history
-cold start/order, rotation, clearing, and empty-database reads after process
-restart. Earlier share/export and favorite integration results are documented
-on their independent branches; physical devices and cloud accounts remain untested.
+with and without offline defines. Twelve fresh native checks on isolated
+iPhone 18 Pro and iPad Pro 11-inch (M5), highest available iOS 27.0 (24A434),
+cover visible-group selection/rotation, real content after reorder/current
+deletion, selection restoration and all-hidden fallback/restoration. Earlier
+history, share/export and favorite integration checks remain documented on
+their independent branches. These offline checks do not accept cloud accounts
+or physical-device behavior.
 
 ### Build and verify
 
@@ -63,6 +66,8 @@ bash benchmark/sharing_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" sharing
 bash benchmark/history_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" history
+bash benchmark/group_index_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" group-index
 ```
 
 The module branches' bilingual READMEs describe their own checks and boundaries.
@@ -78,6 +83,9 @@ in a narrow iPad pane with OS accessibility-medium text; the favorites form is
 functional in that profile. This reconstruction produces no IPA and does
 not publish branches or tags remotely. The legacy debug download-task metadata
 writer remains unimplemented in master and source; it is not a working export.
+Master's unscaled traditional group rail can also overflow and miss right-side
+label taps at accessibility sizes; default-size taps pass and large-type group
+mapping is checked using the existing PageView gesture.
 The unchanged history card overflows by 29px in the narrow iPad pane with
 accessibility-medium text; history ordering, clear and restart checks still pass.
 

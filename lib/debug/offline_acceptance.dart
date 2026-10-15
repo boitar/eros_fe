@@ -68,8 +68,14 @@ class OfflineAcceptanceAdapter implements HttpClientAdapter {
     if (['/', '/popular', '/watched', '/toplist.php']
         .contains(options.uri.path)) {
       final page = int.tryParse('${options.queryParameters['page'] ?? 0}') ?? 0;
+      final group = const bool.fromEnvironment('EROS_GROUP_INDEX_ACCEPTANCE')
+          ? RegExp(r'offline_group_([abcd])').firstMatch(
+              '${options.queryParameters['f_search'] ?? ''}')?.group(1)
+          : null;
       final html = offlineGalleryList(
         page: page,
+        titlePrefix: group == null ? 'Offline gallery' : 'Offline group ${group.toUpperCase()} gallery',
+        gidBase: group == null ? 9100000 : 9444000 + group.codeUnitAt(0) * 1000,
         invalidCoverSizes:
             const bool.fromEnvironment('EROS_WATERFALL_EDGE_CASES'),
       );
@@ -85,9 +91,10 @@ class OfflineAcceptanceAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-String offlineGalleryList({int page = 0, bool invalidCoverSizes = false}) {
+String offlineGalleryList({int page = 0, bool invalidCoverSizes = false,
+    String titlePrefix = 'Offline gallery', int gidBase = 9100000}) {
   final rows = List.generate(48, (index) {
-    final gid = 9100000 + page * 48 + index;
+    final gid = gidBase + page * 48 + index;
     final dimensions = invalidCoverSizes && index % 3 == 0
         ? 'height:0px;width:0px'
         : 'height:${280 + index % 7 * 20}px;width:200px';
@@ -102,7 +109,7 @@ style="$dimensions"></div></div>
 style="background-position:32px 0px"></div></div>
 </td>
 <td class="gl3c glname"><a href="https://e-hentai.org/g/$gid/0000000000/">
-<div class="glink">Offline gallery $index - neutral layout fixture</div></a>
+<div class="glink">$titlePrefix $index - neutral layout fixture</div></a>
 <div class="gt">offline</div><div class="gt">long-neutral-layout-tag</div></td>
 <td class="gl4c glhide"><div>offline</div><div>20 pages</div></td>
 </tr>''';

@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/controller/webdav_controller.dart';
+import 'package:eros_fe/debug/offline_group_index.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
 import 'package:flutter/cupertino.dart';
@@ -136,32 +137,34 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
                     },
                   ),
                 ),
-                AnimatedCrossFade(
-                  crossFadeState: controller.reorderable
-                      ? CrossFadeState.showFirst
-                      : CrossFadeState.showSecond,
-                  duration: const Duration(milliseconds: 300),
-                  firstChild: CupertinoButton(
-                    padding: const EdgeInsets.all(0),
-                    minSize: 40,
-                    child: const Icon(
-                      CupertinoIcons.sort_down_circle_fill,
-                      size: 28,
-                    ),
-                    onPressed: () =>
-                        controller.reorderable = !controller.reorderable,
-                  ),
-                  secondChild: CupertinoButton(
-                    padding: const EdgeInsets.all(0),
-                    minSize: 40,
-                    child: const Icon(
-                      CupertinoIcons.sort_down_circle,
-                      size: 28,
-                    ),
-                    onPressed: () =>
-                        controller.reorderable = !controller.reorderable,
-                  ),
-                ),
+                offlineGroupControl(
+                    'reorder',
+                    AnimatedCrossFade(
+                      crossFadeState: controller.reorderable
+                          ? CrossFadeState.showFirst
+                          : CrossFadeState.showSecond,
+                      duration: const Duration(milliseconds: 300),
+                      firstChild: CupertinoButton(
+                        padding: const EdgeInsets.all(0),
+                        minSize: 40,
+                        child: const Icon(
+                          CupertinoIcons.sort_down_circle_fill,
+                          size: 28,
+                        ),
+                        onPressed: () =>
+                            controller.reorderable = !controller.reorderable,
+                      ),
+                      secondChild: CupertinoButton(
+                        padding: const EdgeInsets.all(0),
+                        minSize: 40,
+                        child: const Icon(
+                          CupertinoIcons.sort_down_circle,
+                          size: 28,
+                        ),
+                        onPressed: () =>
+                            controller.reorderable = !controller.reorderable,
+                      ),
+                    )),
                 CupertinoButton(
                   padding: const EdgeInsets.all(0),
                   minSize: 40,

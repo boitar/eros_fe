@@ -10,6 +10,7 @@ import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/debug/offline_acceptance.dart';
 import 'package:eros_fe/debug/offline_downloads.dart';
 import 'package:eros_fe/debug/offline_favorites.dart';
+import 'package:eros_fe/debug/offline_group_index.dart';
 import 'package:eros_fe/debug/offline_history.dart';
 import 'package:eros_fe/debug/offline_sharing.dart';
 import 'package:eros_fe/index.dart';
@@ -43,6 +44,7 @@ Future<void> main() async {
   initializeOfflineFavorites();
   await initializeOfflineSharing();
   await initializeOfflineHistory();
+  await initializeOfflineGroupIndex();
   getinit();
   Global.proxyInit();
 
