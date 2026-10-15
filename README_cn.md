@@ -5,6 +5,56 @@
 
 一个 flutter 编写的 e-hentai app
 
+## 独立收藏模块
+
+本地 `codex/custom-favorites` 直接以固定 `master` `2fe86b737` 为基线重建，
+保留 `1.9.2+566`。包含收藏标记解析、列表与详情共享的账号隔离状态、服务器结果确认、
+缓存失效及备注编辑保护，使用传统收藏表单，不要求先合入其他 custom 业务模块。
+
+从画廊卡片或详情页打开修改收藏夹。弹窗先响应，再加载原有服务器备注；用户输入优先于迟到的
+备注读取。保存后以新请求确认分类，再更新彩色心形；确认失败保留之前的状态。切换账号会清除
+原账号收藏信息，新账号确认的状态可同步到已挂载的卡片和详情。本地收藏保留在设备上。
+标题长按沿用原有列表／滚轮表单偏好设置。
+
+### 独立构建与验证
+
+验证工具链为 Flutter 3.47.1、Xcode 27.0，最低 Flutter 3.41。
+iOS 全部配置使用 `cn.honjow.fehv`。分支包含最小 Scene 生命周期、ARM64 Simulator 配置、
+依赖锁文件和测试 SDK。构建前使用上游公开空配置：
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub
+```
+
+当前 121 项单元／组件测试通过；全量分析 0 error，相对同工具链适配后的 master 无新增诊断。
+测试覆盖十种分类、缺失／异常收藏标记、请求竞争、
+账号隔离、确认失败、备注加载与输入冲突、传统列表／滚轮表单，以及切换账号后已挂载卡片和详情的更新。
+
+安装 CocoaPods、XcodeGen，启动隔离模拟器，使用唯一运行名并将输出保留在 checkout 外：
+
+```sh
+bash benchmark/favorites_ui_tests/run-native.sh   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" favorites-light
+xcrun simctl ui "$DEVICE_UUID" appearance dark
+xcrun simctl ui "$DEVICE_UUID" content_size accessibility-medium
+bash benchmark/favorites_ui_tests/run-native.sh   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" favorites-dark-large
+```
+
+iPhone 和 iPad 均执行。脚本以正式 `lib/main.dart` 入口构建，仅 Debug 启用离线夹具与虚构账号，
+阻断所有写操作及未知请求；从真实表单编辑后取消、切换表单样式、通过新进程重启，检查样式持久化及横屏。
+隔离 iPhone 18 Pro、iPad Pro 11-inch（M5），iOS 27.0（24A434）的浅色默认字号、
+深色系统 accessibility-medium 字号四组配置共 8 次原生测试通过，两阶段记录了不同的启动 PID。
+不使用真实账号；关闭离线定义后的普通正式入口构建也通过。
+
+`Debug-SimulatorUI` 排除 MLKit 和旧归档下载插件注册。真机、真实服务器写入、LiveContainer、
+Release、OCR 及其他平台尚未验收。保留 master 的分类栏和固定高度传统卡片布局限制：iPad 窄栏的普通列表卡片在
+accessibility-medium 字号下出现 90 像素底部溢出，收藏表单仍可操作。本功能验收不代表全部大字体布局无缺陷。本次重建不生成 IPA。
+
 ## iOS 安装
 1. 下载最新 ipa 文件 [Releases](https://github.com/erosTeam/eros_fe/releases/latest).
 2. 使用 [AltStore](https://altstore.io) 之类的 app 安装到设备上. 或者直接使用 [AltStore.json](https://config-feh.vercel.app/AltStore.json)

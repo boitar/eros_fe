@@ -1,4 +1,6 @@
 import 'package:eros_fe/common/controller/base_controller.dart';
+import 'package:eros_fe/common/controller/favorite_state_store.dart';
+import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/const/const.dart';
@@ -33,10 +35,12 @@ class UserController extends ProfileController {
   void onInit() {
     super.onInit();
     user(Global.profile.user);
+    _syncFavoriteAccount(user.value);
     // logger.d('${user.toJson()}');
     everProfile<User>(
       user,
       (User value) {
+        _syncFavoriteAccount(value);
         Global.profile = Global.profile.copyWith(user: value);
         if (Get.isRegistered<FavoriteTabBarController>()) {
           logger.d('everProfile User  => update FavoriteTabBarController');
@@ -47,13 +51,22 @@ class UserController extends ProfileController {
     );
   }
 
+  void _syncFavoriteAccount(User value) {
+    final account =
+        (value.passHash?.isNotEmpty ?? false) ? (value.memberId ?? '') : '';
+    if (favoriteStates.setAccount(account) &&
+        Get.isRegistered<GalleryCacheController>()) {
+      Get.find<GalleryCacheController>().clearFavoriteAccountCaches();
+    }
+  }
+
   Future<void> showLogOutDialog(BuildContext context) async {
     return showCupertinoDialog<void>(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
-          title: Text('Logout'),
+          title: const Text('Logout'),
           actions: <Widget>[
             CupertinoDialogAction(
               child: Text(L10n.of(context).cancel),

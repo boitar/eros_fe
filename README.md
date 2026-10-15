@@ -5,6 +5,72 @@ English | [简体中文](https://github.com/erosTeam/eros_fe/blob/master/README_
 
 An Unofficial e-hentai app make on flutter
 
+## Standalone favorites module
+
+This local `codex/custom-favorites` branch is rebuilt directly from fixed
+`master` `2fe86b737`, retaining version `1.9.2+566`. It includes favorite badge
+parsing, account-scoped state shared by lists and details, server confirmation,
+cache invalidation and note-edit protection. It uses the traditional favorite
+forms and does not require another custom business branch.
+
+Open Change Favorites from a gallery card or the detail page. The dialog opens
+while the existing server note loads; typing takes precedence over a late note
+response. Saving updates the colored heart only after a fresh server read
+confirms the category. Failed confirmation retains the previous state. Switching
+accounts clears previous favorite metadata, and fresh current-account state is
+applied to already mounted cards and details. Local favorites remain on device.
+The title long-press retains the existing list/picker form preference.
+
+### Build and verify independently
+
+Verified toolchain: Flutter 3.47.1, Xcode 27.0; minimum Flutter is 3.41.
+All iOS configurations use `cn.honjow.fehv`. This branch includes the minimal
+scene lifecycle and ARM64 Simulator configuration, dependency lockfiles and test
+SDK. Use the public empty template before building:
+
+```sh
+cp lib/config/config.dart.sample lib/config/config.dart
+analysis_before="$(mktemp)"
+cp analysis_options.yaml "$analysis_before"
+flutter pub get --enforce-lockfile
+cp "$analysis_before" analysis_options.yaml
+dart analyze --format=machine
+flutter test --no-pub
+```
+
+Current validation: all 121 unit/widget tests pass. Static analysis reports zero
+errors and no new diagnostics relative to the same adapted master baseline.
+Unit/widget coverage includes
+all ten categories, missing/malformed badges, request races, account isolation,
+confirmation failures, note loading versus typing, traditional list/picker
+forms, and mounted card/detail updates after account changes.
+
+Install CocoaPods and XcodeGen, boot an isolated Simulator, and use a unique run
+name with an output directory outside the checkout:
+
+```sh
+bash benchmark/favorites_ui_tests/run-native.sh   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" favorites-light
+xcrun simctl ui "$DEVICE_UUID" appearance dark
+xcrun simctl ui "$DEVICE_UUID" content_size accessibility-medium
+bash benchmark/favorites_ui_tests/run-native.sh   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" favorites-dark-large
+```
+
+Repeat on iPhone and iPad. The harness builds production `lib/main.dart` with
+debug-only offline fixtures and a synthetic account, blocks all mutations and
+unknown requests, edits and cancels a real form, changes form styles, restarts
+the app in a fresh process and checks persisted style plus landscape layout.
+All eight native tests pass across isolated iPhone 18 Pro and iPad Pro 11-inch
+(M5), iOS 27.0 (24A434): light/default text and dark/accessibility-medium text.
+The two phases have separate launch PIDs. No real account is used. The ordinary
+production-entry build without offline defines also passes.
+
+`Debug-SimulatorUI` omits MLKit and legacy archive-downloader registration.
+Physical devices, real server writes, LiveContainer, Release, OCR and other
+platforms remain unverified. The unchanged category bar and fixed-height traditional card layout retain
+large-text limitations. In the narrow iPad pane, ordinary list cards overflow
+by 90 pixels with accessibility-medium text; the favorite form remains usable.
+These functional checks do not certify all large-text layouts. This reconstruction produces no IPA.
+
 ## 🔍 Translations Wanted 🔍
 Please submit a pull request if you want to help with translation.
 
