@@ -4563,6 +4563,114 @@ class L10n {
       args: [],
     );
   }
+
+  String get upload_avatar {
+    return Intl.message(
+      'Upload Avatar',
+      name: 'upload_avatar',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_source {
+    return Intl.message(
+      'Choose Image Source',
+      name: 'avatar_source',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_from_album {
+    return Intl.message(
+      'Photo Library',
+      name: 'avatar_from_album',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_from_file {
+    return Intl.message(
+      'Files',
+      name: 'avatar_from_file',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_from_url {
+    return Intl.message(
+      'Image URL',
+      name: 'avatar_from_url',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_target {
+    return Intl.message(
+      'Where to use this avatar?',
+      name: 'avatar_target',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_use_forum {
+    return Intl.message(
+      'Upload to EH Forum',
+      name: 'avatar_use_forum',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_use_local {
+    return Intl.message(
+      'Use on This Device Only',
+      name: 'avatar_use_local',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_upload_success {
+    return Intl.message(
+      'Avatar uploaded',
+      name: 'avatar_upload_success',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_local_success {
+    return Intl.message(
+      'Avatar updated',
+      name: 'avatar_local_success',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_cf_verify_title {
+    return Intl.message(
+      'Cloudflare Verification Required',
+      name: 'avatar_cf_verify_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get avatar_cf_verify_message {
+    return Intl.message(
+      'The forum is protected by Cloudflare. Complete the verification in the built-in browser; the upload will retry automatically afterwards.',
+      name: 'avatar_cf_verify_message',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

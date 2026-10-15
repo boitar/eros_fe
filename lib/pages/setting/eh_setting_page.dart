@@ -8,6 +8,8 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/login/controller/login_controller.dart';
+import 'package:eros_fe/pages/setting/avatar_manage.dart';
+import 'package:eros_fe/widget/user_avatar_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:open_by_default/open_by_default.dart';
@@ -206,6 +208,25 @@ class ListViewEhSetting extends StatelessWidget {
                   );
                 });
           }),
+        if (isLogin)
+          EhCupertinoListTile(
+            title: Text(L10n.of(context).upload_avatar),
+            trailing: Obx(() {
+              return ClipOval(
+                child: SizedBox(
+                  width: 29,
+                  height: 29,
+                  child: UserAvatarImage(
+                    url: userController.user.value.avatarUrl,
+                    size: 29,
+                  ),
+                ),
+              );
+            }),
+            onTap: () {
+              showAvatarManageFlow(context);
+            },
+          ),
       ]),
 
       // 云服务

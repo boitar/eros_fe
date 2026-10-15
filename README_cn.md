@@ -19,16 +19,20 @@
 | 可见分组索引 | 可见 UUID／页面对应、重排／删除和重启恢复 | `codex/custom-group-index` |
 | 操作语义 | 传统控件操作标签，排除无效装饰前缀 | `codex/custom-accessibility` |
 | 触感 | 原生桥接、渐进下拉、应用开关及操作反馈 | `codex/custom-haptics` |
+| 头像 | 相册／文件／URL、论坛验证重试、本机预览与安装后路径恢复 | `codex/custom-avatar` |
 
 每个业务分支都是直接基于同一固定 master 的完整单提交，通过显式合并保留原始提交编号。
-其余三个计划业务模块尚未整合。
+其余两个计划业务模块尚未整合。
 
-八模块整合树全量 243 项测试通过，分析 0 error、无新增诊断；正式 `lib/main.dart`
-ARM64 Debug-SimulatorUI 有／无离线定义构建通过。iPhone 18 Pro、iPad Pro 11-inch（M5），
-iOS 27.0（24A434）的浅色默认字号／深色 accessibility-medium 共十二项触感原生检查通过，
-覆盖真实下拉、六类接受调用、prepare/tick、关闭开关、重启保持关闭、重新开启和旋转。
-独立触感模块 25 项测试及十二项原生检查通过。操作语义标签保留来源中文，其此前八项整合
-原生检查不代表真机 VoiceOver 播报／焦点验收。
+九模块整合树全量 278 项测试通过，分析 0 error、无新增诊断；正式 `lib/main.dart`
+ARM64 Debug-SimulatorUI 有／无离线定义构建通过。最高已安装可用 iOS 27.0（24A434），
+隔离 iPhone 18 Pro、iPad Pro 11-inch（M5）浅色默认字号／深色 accessibility-medium 共
+16 项头像原生检查通过，覆盖 URL、相册、实际文件选择、输入失败、取消、本机预览、旋转、
+重启和重复安装后的路径恢复。头像资料更新保留收藏缓存与更新过的分类，账号切换和迟到结果
+由回归测试覆盖。独立头像分支 41 项测试和 16 项原生检查通过。
+
+真实论坛上传和在线 Cloudflare 尚未验收，本地 HTTP 测试覆盖表单、认证、上传错误、403 和验证重试。
+操作语义标签保留来源中文；模拟器语义检查不代表真机 VoiceOver 播报／焦点验收。
 
 ### 构建与验证
 
@@ -68,6 +72,8 @@ bash benchmark/accessibility_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" accessibility
 bash benchmark/haptics_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" haptics
+bash benchmark/avatar_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" avatar
 ```
 
 Flutter 原有下拉刷新 armed mediumImpact 独立于增强反馈开关；原生接受调用计数不代表

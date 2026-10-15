@@ -14,6 +14,9 @@ enum EhErrorType {
   parse,
 
   keyMismatch,
+
+  /// 被 Cloudflare 人机验证拦截，需要 WebView 完成验证后重试
+  cfBlocked,
 }
 
 class EhError implements Exception {

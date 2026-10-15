@@ -20,20 +20,26 @@ currently integrates the following independently deliverable modules:
 | Visible group index | Stable visible UUID/page mapping, reorder/delete and restart restoration | `codex/custom-group-index` |
 | Action accessibility | Labels for existing traditional controls; decorative no-op prefix excluded | `codex/custom-accessibility` |
 | Haptics | Native bridge, progressive pulls, application switch and operation feedback | `codex/custom-haptics` |
+| Avatar | Album/Files/URL, verified upload retry, local preview and container recovery | `codex/custom-avatar` |
 
 Each business branch has a single complete commit directly on the same fixed
 master. This integration preserves those commit IDs through explicit merges.
-The remaining three planned business modules are not integrated yet.
+The remaining two planned business modules are not integrated yet.
 
-All 243 tests passed on the eight-module integration, with no new analyzer
-diagnostics. Production `lib/main.dart` ARM64 Debug-SimulatorUI builds passed with
-and without offline definitions. On iPhone 18 Pro and iPad Pro 11-inch (M5),
-iOS 27.0 (24A434), twelve native haptics checks passed across light/default and
-dark/accessibility-medium profiles, including real pulls, six accepted style
-calls, prepare/tick, switch disable, disabled restart, re-enable and rotation.
-The independent haptics module passed 25 tests and twelve native checks.
-Accessibility labels remain Chinese; its eight integration native checks do not
-establish physical VoiceOver speech/focus acceptance.
+All 278 tests passed on the nine-module integration, with zero analyzer errors
+or new diagnostics. Production `lib/main.dart` ARM64 Debug-SimulatorUI builds
+passed with and without offline definitions. On the highest installed available
+iOS 27.0 (24A434), isolated iPhone 18 Pro and iPad Pro 11-inch (M5) passed 16
+native avatar checks across light/default and dark/accessibility-medium profiles:
+URL, album, actual document selection, invalid input, cancellation, local preview,
+rotation, restart and container recovery after repeated installation. Regressions
+cover account races and preserving favorite caches/newer folder metadata during
+avatar updates. The independent avatar module passed 41 tests and 16 native checks.
+
+Real forum uploads and live Cloudflare remain unverified; local HTTP tests cover
+authentication, multipart requests, errors, 403 responses and verification retries.
+Action labels remain Chinese; simulator semantics do not establish physical
+VoiceOver speech/focus acceptance.
 
 ### Build and verify
 
@@ -74,6 +80,8 @@ bash benchmark/accessibility_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" accessibility
 bash benchmark/haptics_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" haptics
+bash benchmark/avatar_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" avatar
 ```
 
 The inherited Flutter refresh armed mediumImpact is separate from the enhanced
