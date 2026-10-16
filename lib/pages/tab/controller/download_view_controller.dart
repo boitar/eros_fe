@@ -17,6 +17,7 @@ import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/utils/toast.dart';
 import 'package:eros_fe/utils/utility.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -261,7 +262,7 @@ class DownloadViewController extends GetxController {
     await showCupertinoModalPopup<void>(
         context: context,
         builder: (BuildContext context) {
-          return CupertinoActionSheet(
+          return EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
@@ -321,7 +322,7 @@ class DownloadViewController extends GetxController {
     await showCupertinoModalPopup<void>(
         context: Get.overlayContext!,
         builder: (BuildContext context) {
-          return CupertinoActionSheet(
+          return EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
@@ -365,7 +366,7 @@ class DownloadViewController extends GetxController {
       context: Get.overlayContext!,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: Text(L10n.of(context).delete_task),
           actions: [
             CupertinoDialogAction(
@@ -411,7 +412,7 @@ class DownloadViewController extends GetxController {
     await showCupertinoModalPopup<void>(
         context: Get.context!,
         builder: (BuildContext context) {
-          return CupertinoActionSheet(
+          return EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
@@ -760,7 +761,7 @@ Future<String?> _exportGallery(
     return await showCupertinoDialog<String?>(
       context: context,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: Text(L10n.of(context).processing),
           content: GetBuilder<DownloadViewController>(
             initState: (state) async {

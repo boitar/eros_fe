@@ -187,6 +187,8 @@ const EhConfig kDefEhConfig = EhConfig(
   vibrate: true,
   tagIntroImgLv: '',
   toplist: '15',
+  liquidGlass: false,
+  liquidGlassFollowSystemTransparency: true,
 );
 
 const Profile kDefProfile = Profile(

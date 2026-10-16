@@ -6,6 +6,7 @@ import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/comment_controller.dart';
 import 'package:eros_fe/widget/expandable_linkify.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/text_avatar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
@@ -705,7 +706,7 @@ void _showScoreDetail(List<String>? scores, BuildContext context) {
   showCupertinoDialog(
     context: context,
     barrierDismissible: true,
-    builder: (context) => CupertinoAlertDialog(
+    builder: (context) => EhAlertDialog(
       content: Container(
           child: Column(
         children: scores

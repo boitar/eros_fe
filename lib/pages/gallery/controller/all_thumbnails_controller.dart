@@ -4,6 +4,7 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/gallery/view/const.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -254,7 +255,7 @@ class _JumpDialogState extends State<JumpDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoAlertDialog(
+    return EhAlertDialog(
       title: Text('跳到 $toPage'),
       content: Row(
         children: [

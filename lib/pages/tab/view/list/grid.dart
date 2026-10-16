@@ -13,6 +13,7 @@ class EhGridView extends StatelessWidget {
       this.lastComplete,
       this.large = false,
       this.centerKey,
+      this.firstCardKey,
       this.lastTopItemIndex,
       super.key});
 
@@ -22,6 +23,7 @@ class EhGridView extends StatelessWidget {
   final VoidCallback? lastComplete;
   final bool large;
   final Key? centerKey;
+  final Key? firstCardKey;
   final int? lastTopItemIndex;
 
   EhSettingService get _ehSettingService => Get.find();
@@ -57,7 +59,7 @@ class EhGridView extends StatelessWidget {
                 tag: _provider.gid,
                 fenix: true);
 
-            return FrameSeparateWidget(
+            final item = FrameSeparateWidget(
               index: index,
               placeHolder: const GalleryItemGridPlaceHolder(),
               child: GalleryItemGrid(
@@ -68,6 +70,10 @@ class EhGridView extends StatelessWidget {
                 tabTag: tabTag,
               ),
             );
+            if (index == 0 && firstCardKey != null) {
+              return KeyedSubtree(key: firstCardKey, child: item);
+            }
+            return item;
           },
           childCount: galleryProviders.length,
         ),

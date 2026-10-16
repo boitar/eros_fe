@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:sliver_tools/sliver_tools.dart';
@@ -72,7 +73,7 @@ class WebDavSettingView extends GetView<WebdavController> {
                       showCupertinoDialog(
                         context: context,
                         builder: (context) {
-                          return CupertinoAlertDialog(
+                          return EhAlertDialog(
                             title: Text('Logout?'),
                             actions: <Widget>[
                               CupertinoDialogAction(

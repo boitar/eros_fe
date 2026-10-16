@@ -45,6 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("上部カテゴリの配置"),
+        "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("2行（デフォルト）"),
+        "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("操作とカテゴリを別々の行に表示"),
+        "liquid_glass_inline": MessageLookupByLibrary.simpleMessage("コンパクトな1行"),
+        "liquid_glass_inline_detail": MessageLookupByLibrary.simpleMessage("操作とカテゴリを1行に表示"),
+        "favorite_note_hint": MessageLookupByLibrary.simpleMessage("メモ（任意）"),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("安全を確認してください"),
         "QR_code_block":
             MessageLookupByLibrary.simpleMessage("QRコードを含む画像をブロック"),

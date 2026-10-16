@@ -29,12 +29,21 @@ class _HistoryTabState extends State<HistoryTab> {
   void initState() {
     super.initState();
 
+    ehTabController.hasScrollClientsCall = () =>
+        mounted &&
+        (PrimaryScrollController.maybeOf(context)?.hasClients ?? false);
     ehTabController.scrollToTopCall = () => controller.scrollToTop(context);
     ehTabController.scrollToTopRefreshCall =
         () => controller.scrollToTopRefresh(context);
     if (controller.heroTag != null) {
       tabPages.scrollControllerMap[controller.heroTag!] = ehTabController;
     }
+  }
+
+  @override
+  void dispose() {
+    ehTabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -116,7 +125,6 @@ class _HistoryTabState extends State<HistoryTab> {
         SliverSafeArea(
           top: false,
           sliver: GetBuilder<HistoryController>(
-            init: HistoryController(),
             builder: (logic) {
               return getGallerySliverList(
                 logic.histories,

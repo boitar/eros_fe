@@ -373,6 +373,13 @@
   "show_comment_avatar": "アバターを表示",
   "avatar": "アバター",
   "default_avatar_style": "スタイル",
+
+  "liquid_glass_top_layout": "上部カテゴリの配置",
+  "liquid_glass_two_row": "2行（デフォルト）",
+  "liquid_glass_two_row_detail": "操作とカテゴリを別々の行に表示",
+  "liquid_glass_inline": "コンパクトな1行",
+  "liquid_glass_inline_detail": "操作とカテゴリを1行に表示",
+  "favorite_note_hint": "メモ（任意）",
   "auth_signInTitle": "ログインが必要",
   "auth_biometricHint": "本人確認",
   "chapter": "章",

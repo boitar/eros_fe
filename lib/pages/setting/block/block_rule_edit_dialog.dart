@@ -1,4 +1,5 @@
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -25,7 +26,7 @@ class BlockRuleEditDialog extends StatelessWidget {
         ),
       ),
     );
-    return CupertinoAlertDialog(
+    return EhAlertDialog(
       title: Text(title).paddingSymmetric(vertical: 8),
       content: Column(
         children: [

@@ -11,6 +11,7 @@ import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/image_view/controller/view_state.dart';
 import 'package:eros_fe/widget/image/extended_saf_image_privider.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -1783,7 +1784,7 @@ Future<void> showSaveActionSheet(
   return showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) {
-        final CupertinoActionSheet dialog = CupertinoActionSheet(
+        final EhActionSheet dialog = EhActionSheet(
           title: Text(L10n.of(context).save_into_album),
           cancelButton: CupertinoActionSheetAction(
               onPressed: () {
@@ -1895,7 +1896,7 @@ Future<void> showShareActionSheet(
   return showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) {
-        final CupertinoActionSheet dialog = CupertinoActionSheet(
+        final EhActionSheet dialog = EhActionSheet(
           title: Text(L10n.of(context).share_image),
           cancelButton: CupertinoActionSheetAction(
               onPressed: () {
@@ -1988,7 +1989,7 @@ Future<void> showImageSheet(
   return showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) {
-        final CupertinoActionSheet dialog = CupertinoActionSheet(
+        final EhActionSheet dialog = EhActionSheet(
           title: title != null ? Text(title) : null,
           cancelButton: CupertinoActionSheetAction(
               onPressed: () {
@@ -2043,7 +2044,7 @@ Widget _downloadIndicator() => Center(
         data: const CupertinoThemeData(
           brightness: Brightness.dark,
         ),
-        child: CupertinoPopupSurface(
+        child: EhPopupSurface(
           child: Container(
               height: 80,
               width: 80,

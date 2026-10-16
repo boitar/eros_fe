@@ -39,6 +39,7 @@ class EhConfig {
     this.toplist,
     this.tabletLayout,
     this.tabletLayoutValue,
+    this.liquidGlassTopBarLayout,
     this.enableTagTranslateCDN,
     this.autoSelectProfile,
     this.turnPageAnimations,
@@ -66,6 +67,8 @@ class EhConfig {
     this.proxyPassword,
     this.webDAVMaxConnections,
     this.hideTopBarOnScroll,
+    this.liquidGlass,
+    this.liquidGlassFollowSystemTransparency,
     this.readViewCompatibleMode,
     this.translateSearchHistory,
     this.nativeHttpClientAdapter,
@@ -111,6 +114,7 @@ class EhConfig {
   final String? toplist;
   final bool? tabletLayout;
   final String? tabletLayoutValue;
+  final String? liquidGlassTopBarLayout;
   final bool? enableTagTranslateCDN;
   final bool? autoSelectProfile;
   final bool? turnPageAnimations;
@@ -138,6 +142,8 @@ class EhConfig {
   final String? proxyPassword;
   final int? webDAVMaxConnections;
   final bool? hideTopBarOnScroll;
+  final bool? liquidGlass;
+  final bool? liquidGlassFollowSystemTransparency;
   final bool? readViewCompatibleMode;
   final bool? translateSearchHistory;
   final bool? nativeHttpClientAdapter;
@@ -183,6 +189,7 @@ class EhConfig {
     toplist: json['toplist']?.toString(),
     tabletLayout: json['tabletLayout'] != null ? bool.tryParse('${json['tabletLayout']}', caseSensitive: false) ?? false : null,
     tabletLayoutValue: json['tabletLayoutValue']?.toString(),
+    liquidGlassTopBarLayout: json['liquidGlassTopBarLayout']?.toString(),
     enableTagTranslateCDN: json['enableTagTranslateCDN'] != null ? bool.tryParse('${json['enableTagTranslateCDN']}', caseSensitive: false) ?? false : null,
     autoSelectProfile: json['autoSelectProfile'] != null ? bool.tryParse('${json['autoSelectProfile']}', caseSensitive: false) ?? false : null,
     turnPageAnimations: json['turnPageAnimations'] != null ? bool.tryParse('${json['turnPageAnimations']}', caseSensitive: false) ?? false : null,
@@ -210,6 +217,8 @@ class EhConfig {
     proxyPassword: json['proxyPassword']?.toString(),
     webDAVMaxConnections: json['webDAVMaxConnections'] != null ? int.tryParse('${json['webDAVMaxConnections']}') ?? 0 : null,
     hideTopBarOnScroll: json['hideTopBarOnScroll'] != null ? bool.tryParse('${json['hideTopBarOnScroll']}', caseSensitive: false) ?? false : null,
+    liquidGlass: json['liquidGlass'] != null ? bool.tryParse('${json['liquidGlass']}', caseSensitive: false) ?? false : null,
+    liquidGlassFollowSystemTransparency: json['liquidGlassFollowSystemTransparency'] != null ? bool.tryParse('${json['liquidGlassFollowSystemTransparency']}', caseSensitive: false) ?? false : null,
     readViewCompatibleMode: json['readViewCompatibleMode'] != null ? bool.tryParse('${json['readViewCompatibleMode']}', caseSensitive: false) ?? false : null,
     translateSearchHistory: json['translateSearchHistory'] != null ? bool.tryParse('${json['translateSearchHistory']}', caseSensitive: false) ?? false : null,
     nativeHttpClientAdapter: json['nativeHttpClientAdapter'] != null ? bool.tryParse('${json['nativeHttpClientAdapter']}', caseSensitive: false) ?? false : null,
@@ -256,6 +265,7 @@ class EhConfig {
     'toplist': toplist,
     'tabletLayout': tabletLayout,
     'tabletLayoutValue': tabletLayoutValue,
+    'liquidGlassTopBarLayout': liquidGlassTopBarLayout,
     'enableTagTranslateCDN': enableTagTranslateCDN,
     'autoSelectProfile': autoSelectProfile,
     'turnPageAnimations': turnPageAnimations,
@@ -283,6 +293,8 @@ class EhConfig {
     'proxyPassword': proxyPassword,
     'webDAVMaxConnections': webDAVMaxConnections,
     'hideTopBarOnScroll': hideTopBarOnScroll,
+    'liquidGlass': liquidGlass,
+    'liquidGlassFollowSystemTransparency': liquidGlassFollowSystemTransparency,
     'readViewCompatibleMode': readViewCompatibleMode,
     'translateSearchHistory': translateSearchHistory,
     'nativeHttpClientAdapter': nativeHttpClientAdapter,
@@ -329,6 +341,7 @@ class EhConfig {
     toplist: toplist,
     tabletLayout: tabletLayout,
     tabletLayoutValue: tabletLayoutValue,
+    liquidGlassTopBarLayout: liquidGlassTopBarLayout,
     enableTagTranslateCDN: enableTagTranslateCDN,
     autoSelectProfile: autoSelectProfile,
     turnPageAnimations: turnPageAnimations,
@@ -356,6 +369,8 @@ class EhConfig {
     proxyPassword: proxyPassword,
     webDAVMaxConnections: webDAVMaxConnections,
     hideTopBarOnScroll: hideTopBarOnScroll,
+    liquidGlass: liquidGlass,
+    liquidGlassFollowSystemTransparency: liquidGlassFollowSystemTransparency,
     readViewCompatibleMode: readViewCompatibleMode,
     translateSearchHistory: translateSearchHistory,
     nativeHttpClientAdapter: nativeHttpClientAdapter,
@@ -403,6 +418,7 @@ class EhConfig {
     Optional<String?>? toplist,
     Optional<bool?>? tabletLayout,
     Optional<String?>? tabletLayoutValue,
+    Optional<String?>? liquidGlassTopBarLayout,
     Optional<bool?>? enableTagTranslateCDN,
     Optional<bool?>? autoSelectProfile,
     Optional<bool?>? turnPageAnimations,
@@ -430,6 +446,8 @@ class EhConfig {
     Optional<String?>? proxyPassword,
     Optional<int?>? webDAVMaxConnections,
     Optional<bool?>? hideTopBarOnScroll,
+    Optional<bool?>? liquidGlass,
+    Optional<bool?>? liquidGlassFollowSystemTransparency,
     Optional<bool?>? readViewCompatibleMode,
     Optional<bool?>? translateSearchHistory,
     Optional<bool?>? nativeHttpClientAdapter,
@@ -474,6 +492,7 @@ class EhConfig {
     toplist: checkOptional(toplist, () => this.toplist),
     tabletLayout: checkOptional(tabletLayout, () => this.tabletLayout),
     tabletLayoutValue: checkOptional(tabletLayoutValue, () => this.tabletLayoutValue),
+    liquidGlassTopBarLayout: checkOptional(liquidGlassTopBarLayout, () => this.liquidGlassTopBarLayout),
     enableTagTranslateCDN: checkOptional(enableTagTranslateCDN, () => this.enableTagTranslateCDN),
     autoSelectProfile: checkOptional(autoSelectProfile, () => this.autoSelectProfile),
     turnPageAnimations: checkOptional(turnPageAnimations, () => this.turnPageAnimations),
@@ -501,6 +520,8 @@ class EhConfig {
     proxyPassword: checkOptional(proxyPassword, () => this.proxyPassword),
     webDAVMaxConnections: checkOptional(webDAVMaxConnections, () => this.webDAVMaxConnections),
     hideTopBarOnScroll: checkOptional(hideTopBarOnScroll, () => this.hideTopBarOnScroll),
+    liquidGlass: checkOptional(liquidGlass, () => this.liquidGlass),
+    liquidGlassFollowSystemTransparency: checkOptional(liquidGlassFollowSystemTransparency, () => this.liquidGlassFollowSystemTransparency),
     readViewCompatibleMode: checkOptional(readViewCompatibleMode, () => this.readViewCompatibleMode),
     translateSearchHistory: checkOptional(translateSearchHistory, () => this.translateSearchHistory),
     nativeHttpClientAdapter: checkOptional(nativeHttpClientAdapter, () => this.nativeHttpClientAdapter),
@@ -516,8 +537,8 @@ class EhConfig {
 
   @override
   bool operator ==(Object other) => identical(this, other)
-    || other is EhConfig && jpnTitleInGalleryPage == other.jpnTitleInGalleryPage && tagTranslat == other.tagTranslat && tagTranslatVer == other.tagTranslatVer && favoritesOrder == other.favoritesOrder && siteEx == other.siteEx && galleryImgBlur == other.galleryImgBlur && favPicker == other.favPicker && favLongTap == other.favLongTap && lastFavcat == other.lastFavcat && lastShowFavcat == other.lastShowFavcat && lastShowFavTitle == other.lastShowFavTitle && listMode == other.listMode && safeMode == other.safeMode && catFilter == other.catFilter && maxHistory == other.maxHistory && searchBarComp == other.searchBarComp && pureDarkTheme == other.pureDarkTheme && viewModel == other.viewModel && clipboardLink == other.clipboardLink && commentTrans == other.commentTrans && autoLockTimeOut == other.autoLockTimeOut && showPageInterval == other.showPageInterval && orientation == other.orientation && vibrate == other.vibrate && tagIntroImgLv == other.tagIntroImgLv && debugMode == other.debugMode && debugCount == other.debugCount && autoRead == other.autoRead && turnPageInv == other.turnPageInv && toplist == other.toplist && tabletLayout == other.tabletLayout && tabletLayoutValue == other.tabletLayoutValue && enableTagTranslateCDN == other.enableTagTranslateCDN && autoSelectProfile == other.autoSelectProfile && turnPageAnimations == other.turnPageAnimations && selectProfile == other.selectProfile && linkRedirect == other.linkRedirect && viewColumnMode == other.viewColumnMode && fixedHeightOfListItems == other.fixedHeightOfListItems && tagTranslateDataUpdateMode == other.tagTranslateDataUpdateMode && showCommentAvatar == other.showCommentAvatar && avatarType == other.avatarType && boringAvatarsType == other.boringAvatarsType && textAvatarsType == other.textAvatarsType && avatarBorderRadiusType == other.avatarBorderRadiusType && enablePHashCheck == other.enablePHashCheck && enableQRCodeCheck == other.enableQRCodeCheck && viewFullscreen == other.viewFullscreen && blurringOfCoverBackground == other.blurringOfCoverBackground && listViewTagLimit == other.listViewTagLimit && redirectThumbLink == other.redirectThumbLink && volumnTurnPage == other.volumnTurnPage && proxyType == other.proxyType && proxyHost == other.proxyHost && proxyPort == other.proxyPort && proxyUsername == other.proxyUsername && proxyPassword == other.proxyPassword && webDAVMaxConnections == other.webDAVMaxConnections && hideTopBarOnScroll == other.hideTopBarOnScroll && readViewCompatibleMode == other.readViewCompatibleMode && translateSearchHistory == other.translateSearchHistory && nativeHttpClientAdapter == other.nativeHttpClientAdapter && showComments == other.showComments && showOnlyUploaderComment == other.showOnlyUploaderComment && showGalleryTags == other.showGalleryTags && hideGalleryThumbnails == other.hideGalleryThumbnails && horizontalThumbnails == other.horizontalThumbnails && pHashThreshold == other.pHashThreshold && pageViewType == other.pageViewType && enableSlideOutPage == other.enableSlideOutPage;
+    || other is EhConfig && jpnTitleInGalleryPage == other.jpnTitleInGalleryPage && tagTranslat == other.tagTranslat && tagTranslatVer == other.tagTranslatVer && favoritesOrder == other.favoritesOrder && siteEx == other.siteEx && galleryImgBlur == other.galleryImgBlur && favPicker == other.favPicker && favLongTap == other.favLongTap && lastFavcat == other.lastFavcat && lastShowFavcat == other.lastShowFavcat && lastShowFavTitle == other.lastShowFavTitle && listMode == other.listMode && safeMode == other.safeMode && catFilter == other.catFilter && maxHistory == other.maxHistory && searchBarComp == other.searchBarComp && pureDarkTheme == other.pureDarkTheme && viewModel == other.viewModel && clipboardLink == other.clipboardLink && commentTrans == other.commentTrans && autoLockTimeOut == other.autoLockTimeOut && showPageInterval == other.showPageInterval && orientation == other.orientation && vibrate == other.vibrate && tagIntroImgLv == other.tagIntroImgLv && debugMode == other.debugMode && debugCount == other.debugCount && autoRead == other.autoRead && turnPageInv == other.turnPageInv && toplist == other.toplist && tabletLayout == other.tabletLayout && tabletLayoutValue == other.tabletLayoutValue && liquidGlassTopBarLayout == other.liquidGlassTopBarLayout && enableTagTranslateCDN == other.enableTagTranslateCDN && autoSelectProfile == other.autoSelectProfile && turnPageAnimations == other.turnPageAnimations && selectProfile == other.selectProfile && linkRedirect == other.linkRedirect && viewColumnMode == other.viewColumnMode && fixedHeightOfListItems == other.fixedHeightOfListItems && tagTranslateDataUpdateMode == other.tagTranslateDataUpdateMode && showCommentAvatar == other.showCommentAvatar && avatarType == other.avatarType && boringAvatarsType == other.boringAvatarsType && textAvatarsType == other.textAvatarsType && avatarBorderRadiusType == other.avatarBorderRadiusType && enablePHashCheck == other.enablePHashCheck && enableQRCodeCheck == other.enableQRCodeCheck && viewFullscreen == other.viewFullscreen && blurringOfCoverBackground == other.blurringOfCoverBackground && listViewTagLimit == other.listViewTagLimit && redirectThumbLink == other.redirectThumbLink && volumnTurnPage == other.volumnTurnPage && proxyType == other.proxyType && proxyHost == other.proxyHost && proxyPort == other.proxyPort && proxyUsername == other.proxyUsername && proxyPassword == other.proxyPassword && webDAVMaxConnections == other.webDAVMaxConnections && hideTopBarOnScroll == other.hideTopBarOnScroll && liquidGlassFollowSystemTransparency == other.liquidGlassFollowSystemTransparency && liquidGlass == other.liquidGlass && readViewCompatibleMode == other.readViewCompatibleMode && translateSearchHistory == other.translateSearchHistory && nativeHttpClientAdapter == other.nativeHttpClientAdapter && showComments == other.showComments && showOnlyUploaderComment == other.showOnlyUploaderComment && showGalleryTags == other.showGalleryTags && hideGalleryThumbnails == other.hideGalleryThumbnails && horizontalThumbnails == other.horizontalThumbnails && pHashThreshold == other.pHashThreshold && pageViewType == other.pageViewType && enableSlideOutPage == other.enableSlideOutPage;
 
   @override
-  int get hashCode => jpnTitleInGalleryPage.hashCode ^ tagTranslat.hashCode ^ tagTranslatVer.hashCode ^ favoritesOrder.hashCode ^ siteEx.hashCode ^ galleryImgBlur.hashCode ^ favPicker.hashCode ^ favLongTap.hashCode ^ lastFavcat.hashCode ^ lastShowFavcat.hashCode ^ lastShowFavTitle.hashCode ^ listMode.hashCode ^ safeMode.hashCode ^ catFilter.hashCode ^ maxHistory.hashCode ^ searchBarComp.hashCode ^ pureDarkTheme.hashCode ^ viewModel.hashCode ^ clipboardLink.hashCode ^ commentTrans.hashCode ^ autoLockTimeOut.hashCode ^ showPageInterval.hashCode ^ orientation.hashCode ^ vibrate.hashCode ^ tagIntroImgLv.hashCode ^ debugMode.hashCode ^ debugCount.hashCode ^ autoRead.hashCode ^ turnPageInv.hashCode ^ toplist.hashCode ^ tabletLayout.hashCode ^ tabletLayoutValue.hashCode ^ enableTagTranslateCDN.hashCode ^ autoSelectProfile.hashCode ^ turnPageAnimations.hashCode ^ selectProfile.hashCode ^ linkRedirect.hashCode ^ viewColumnMode.hashCode ^ fixedHeightOfListItems.hashCode ^ tagTranslateDataUpdateMode.hashCode ^ showCommentAvatar.hashCode ^ avatarType.hashCode ^ boringAvatarsType.hashCode ^ textAvatarsType.hashCode ^ avatarBorderRadiusType.hashCode ^ enablePHashCheck.hashCode ^ enableQRCodeCheck.hashCode ^ viewFullscreen.hashCode ^ blurringOfCoverBackground.hashCode ^ listViewTagLimit.hashCode ^ redirectThumbLink.hashCode ^ volumnTurnPage.hashCode ^ proxyType.hashCode ^ proxyHost.hashCode ^ proxyPort.hashCode ^ proxyUsername.hashCode ^ proxyPassword.hashCode ^ webDAVMaxConnections.hashCode ^ hideTopBarOnScroll.hashCode ^ readViewCompatibleMode.hashCode ^ translateSearchHistory.hashCode ^ nativeHttpClientAdapter.hashCode ^ showComments.hashCode ^ showOnlyUploaderComment.hashCode ^ showGalleryTags.hashCode ^ hideGalleryThumbnails.hashCode ^ horizontalThumbnails.hashCode ^ pHashThreshold.hashCode ^ pageViewType.hashCode ^ enableSlideOutPage.hashCode;
+  int get hashCode => jpnTitleInGalleryPage.hashCode ^ tagTranslat.hashCode ^ tagTranslatVer.hashCode ^ favoritesOrder.hashCode ^ siteEx.hashCode ^ galleryImgBlur.hashCode ^ favPicker.hashCode ^ favLongTap.hashCode ^ lastFavcat.hashCode ^ lastShowFavcat.hashCode ^ lastShowFavTitle.hashCode ^ listMode.hashCode ^ safeMode.hashCode ^ catFilter.hashCode ^ maxHistory.hashCode ^ searchBarComp.hashCode ^ pureDarkTheme.hashCode ^ viewModel.hashCode ^ clipboardLink.hashCode ^ commentTrans.hashCode ^ autoLockTimeOut.hashCode ^ showPageInterval.hashCode ^ orientation.hashCode ^ vibrate.hashCode ^ tagIntroImgLv.hashCode ^ debugMode.hashCode ^ debugCount.hashCode ^ autoRead.hashCode ^ turnPageInv.hashCode ^ toplist.hashCode ^ tabletLayout.hashCode ^ tabletLayoutValue.hashCode ^ liquidGlassTopBarLayout.hashCode ^ enableTagTranslateCDN.hashCode ^ autoSelectProfile.hashCode ^ turnPageAnimations.hashCode ^ selectProfile.hashCode ^ linkRedirect.hashCode ^ viewColumnMode.hashCode ^ fixedHeightOfListItems.hashCode ^ tagTranslateDataUpdateMode.hashCode ^ showCommentAvatar.hashCode ^ avatarType.hashCode ^ boringAvatarsType.hashCode ^ textAvatarsType.hashCode ^ avatarBorderRadiusType.hashCode ^ enablePHashCheck.hashCode ^ enableQRCodeCheck.hashCode ^ viewFullscreen.hashCode ^ blurringOfCoverBackground.hashCode ^ listViewTagLimit.hashCode ^ redirectThumbLink.hashCode ^ volumnTurnPage.hashCode ^ proxyType.hashCode ^ proxyHost.hashCode ^ proxyPort.hashCode ^ proxyUsername.hashCode ^ proxyPassword.hashCode ^ webDAVMaxConnections.hashCode ^ hideTopBarOnScroll.hashCode ^ liquidGlassFollowSystemTransparency.hashCode ^ liquidGlass.hashCode ^ readViewCompatibleMode.hashCode ^ translateSearchHistory.hashCode ^ nativeHttpClientAdapter.hashCode ^ showComments.hashCode ^ showOnlyUploaderComment.hashCode ^ showGalleryTags.hashCode ^ hideGalleryThumbnails.hashCode ^ horizontalThumbnails.hashCode ^ pHashThreshold.hashCode ^ pageViewType.hashCode ^ enableSlideOutPage.hashCode;
 }

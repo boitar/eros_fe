@@ -340,6 +340,10 @@ class ThemeColors {
     'l': Color.fromARGB(255, 169, 158, 104),
   };
 
+  /// Required by the expanded glass favorite rows, including unknown folders.
+  static Color favColorFor(String? favcat) =>
+      favColor[favcat] ?? CupertinoColors.systemGrey;
+
   static const CupertinoDynamicColor navigationBarBackground =
       CupertinoDynamicColor.withBrightness(
     debugLabel: 'navigationBarBackground',

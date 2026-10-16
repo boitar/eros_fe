@@ -28,6 +28,7 @@ SliverPadding buildDebugSimple(
   VoidCallback? lastComplete,
   Key? key,
   Key? centerKey,
+  Key? firstCardKey,
   int? lastTopItemIndex,
 }) {
   return SliverPadding(
@@ -53,12 +54,13 @@ SliverPadding buildDebugSimple(
               tag: _provider.gid,
               fenix: true);
 
-          return GalleryItemDebugSimple(
+          final item = GalleryItemDebugSimple(
             key:
                 index == lastTopItemIndex ? centerKey : ValueKey(_provider.gid),
             galleryProvider: _provider,
             tabTag: tabTag,
           );
+          return _withFirstCardKey(item, index, firstCardKey);
 
           // return FrameSeparateWidget(
           //   index: index,
@@ -137,6 +139,13 @@ Widget _buildDelSliverAnimatedListItem(
       ),
     ),
   );
+}
+
+Widget _withFirstCardKey(Widget child, int index, Key? firstCardKey) {
+  if (index != 0 || firstCardKey == null) {
+    return child;
+  }
+  return KeyedSubtree(key: firstCardKey, child: child);
 }
 
 Widget buildGallerySliverListItem(
@@ -288,6 +297,7 @@ Widget buildGallerySliverListSimpleView(
   VoidCallback? lastComplete,
   Key? key,
   Key? centerKey,
+  Key? firstCardKey,
   int? lastTopItemIndex,
   bool keepPosition = false,
 }) {
@@ -316,13 +326,17 @@ Widget buildGallerySliverListSimpleView(
           fenix: true,
         );
 
-        return FrameSeparateWidget(
-          index: index,
-          placeHolder: const GalleryItemSimplePlaceHolder(),
-          child: GalleryItemSimpleWidget(
-            galleryProvider: _provider,
-            tabTag: tabTag,
+        return _withFirstCardKey(
+          FrameSeparateWidget(
+            index: index,
+            placeHolder: const GalleryItemSimplePlaceHolder(),
+            child: GalleryItemSimpleWidget(
+              galleryProvider: _provider,
+              tabTag: tabTag,
+            ),
           ),
+          index,
+          firstCardKey,
         );
       },
       onItemKey: (index) => galleryProviders[index].gid ?? '',
@@ -339,12 +353,12 @@ Widget getGallerySliverList(
   VoidCallback? lastComplete,
   Key? key,
   Key? centerKey,
+  Key? firstCardKey,
   int? lastTopItemIndex,
   Rx<ListModeEnum>? listMode,
   bool keepPosition = false,
 }) {
   final EhSettingService ehSettingService = Get.find();
-  final _key = key ?? ValueKey(galleryProviders.hashCode);
 
   final BlockController blockController = Get.find();
 
@@ -379,6 +393,7 @@ Widget getGallerySliverList(
           next: next,
           lastComplete: lastComplete,
           centerKey: centerKey,
+          firstCardKey: firstCardKey,
           lastTopItemIndex: lastTopItemIndex,
           keepPosition: keepPosition,
         );
@@ -389,6 +404,7 @@ Widget getGallerySliverList(
           next: next,
           lastComplete: lastComplete,
           centerKey: centerKey,
+          firstCardKey: firstCardKey,
           lastTopItemIndex: lastTopItemIndex,
         );
       case ListModeEnum.waterfallLarge:
@@ -399,6 +415,7 @@ Widget getGallerySliverList(
           lastComplete: lastComplete,
           large: true,
           centerKey: centerKey,
+          firstCardKey: firstCardKey,
           lastTopItemIndex: lastTopItemIndex,
         );
       case ListModeEnum.simpleList:
@@ -408,6 +425,7 @@ Widget getGallerySliverList(
           next: next,
           lastComplete: lastComplete,
           centerKey: centerKey,
+          firstCardKey: firstCardKey,
           lastTopItemIndex: lastTopItemIndex,
           keepPosition: keepPosition,
         );
@@ -418,6 +436,7 @@ Widget getGallerySliverList(
           next: next,
           lastComplete: lastComplete,
           centerKey: centerKey,
+          firstCardKey: firstCardKey,
           lastTopItemIndex: lastTopItemIndex,
         );
       case ListModeEnum.debugSimple:
@@ -427,6 +446,7 @@ Widget getGallerySliverList(
           next: next,
           lastComplete: lastComplete,
           centerKey: centerKey,
+          firstCardKey: firstCardKey,
           lastTopItemIndex: lastTopItemIndex,
         );
       case ListModeEnum.global:

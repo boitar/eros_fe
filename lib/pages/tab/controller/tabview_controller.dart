@@ -8,6 +8,7 @@ import 'package:eros_fe/network/app_dio/pdio.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/fetch_list.dart';
 import 'package:eros_fe/utils/app_cupertino_localizations_delegate.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -70,6 +71,7 @@ abstract class TabViewController extends GetxController {
   final gidNode = FocusNode();
 
   String? heroTag;
+  EhTabController? tabScrollController;
 
   CancelToken? cancelToken = CancelToken();
 
@@ -408,23 +410,60 @@ abstract class TabViewController extends GetxController {
     required BuildContext context,
     required EhTabController ehTabController,
     String? tabTag,
+    Future<void> Function()? scrollToInitialAnchor,
   }) {
-    ehTabController.scrollToTopCall = () => scrollToTop(context);
+    tabScrollController = ehTabController;
+    ehTabController.hasScrollClientsCall = () =>
+        context.mounted &&
+        (PrimaryScrollController.maybeOf(context)?.hasClients ?? false);
+    ehTabController.scrollToTopCall = () => scrollToInitialAnchor == null
+        ? scrollToTop(context)
+        : scrollToInitialAnchor();
     ehTabController.scrollToTopRefreshCall = () => scrollToTopRefresh(context);
+    ehTabController.scrollToTopAndRefreshCall = () async {
+      if (scrollToInitialAnchor != null) {
+        await scrollToInitialAnchor();
+      } else {
+        final primary = PrimaryScrollController.maybeOf(context);
+        if (!(primary?.hasClients ?? false)) {
+          return;
+        }
+        await primary!.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.ease,
+        );
+      }
+      if (ehTabController.hasScrollClients) {
+        await onRefresh();
+      }
+    };
 
     tabPages.scrollControllerMap[tabTag ?? heroTag ?? ''] = ehTabController;
   }
 
   void scrollToTop(BuildContext context) {
-    PrimaryScrollController.of(context).animateTo(0.0,
+    if (!context.mounted) {
+      return;
+    }
+    final primary = PrimaryScrollController.maybeOf(context);
+    if (!(primary?.hasClients ?? false)) {
+      return;
+    }
+    primary!.animateTo(0.0,
         duration: const Duration(milliseconds: 500), curve: Curves.ease);
   }
 
   void scrollToTopRefresh(BuildContext context) {
-    PrimaryScrollController.of(context).animateTo(
-        -kDefaultRefreshTriggerPullDistance,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.ease);
+    if (!context.mounted) {
+      return;
+    }
+    final primary = PrimaryScrollController.maybeOf(context);
+    if (!(primary?.hasClients ?? false)) {
+      return;
+    }
+    primary!.animateTo(-kDefaultRefreshTriggerPullDistance,
+        duration: const Duration(milliseconds: 500), curve: Curves.ease);
   }
 
   final _showDatePicker = true.obs;
@@ -448,7 +487,7 @@ abstract class TabViewController extends GetxController {
   }
 
   Widget buildPageDialog(BuildContext context) {
-    return CupertinoAlertDialog(
+    return EhAlertDialog(
       title: Text(L10n.of(context).jump_to_page),
       content: Container(
         child: Column(
@@ -506,7 +545,7 @@ abstract class TabViewController extends GetxController {
           lastJump ?? DateFormat('yyyy-MM-dd').format(DateTime.now());
     }
 
-    return CupertinoAlertDialog(
+    return EhAlertDialog(
       title: Text(L10n.of(context).jump_or_seek),
       content: Container(
         child: Column(

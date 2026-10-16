@@ -7,6 +7,7 @@ import 'package:eros_fe/pages/setting/controller/eh_mysettings_controller.dart';
 import 'package:eros_fe/pages/setting/setting_items/excluded_language.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:eros_fe/pages/setting/webview/web_mysetting_in.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -82,7 +83,7 @@ class EhMySettingsPage extends GetView<EhMySettingsController> {
                             ),
                           ],
                         ),
-                        child: CupertinoPopupSurface(
+                        child: EhPopupSurface(
                           child: Container(
                             padding: const EdgeInsets.all(10),
                             child: const CupertinoActivityIndicator(

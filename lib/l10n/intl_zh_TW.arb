@@ -373,6 +373,13 @@
   "show_comment_avatar": "顯示評論大頭貼",
   "avatar": "大頭貼",
   "default_avatar_style": "預設大頭貼樣式",
+
+  "liquid_glass_top_layout": "頂欄分組佈局",
+  "liquid_glass_two_row": "兩行展開（預設）",
+  "liquid_glass_two_row_detail": "操作與分組分行顯示，適合較多分組和長名稱",
+  "liquid_glass_inline": "單行緊湊",
+  "liquid_glass_inline_detail": "操作與分組共用一行，節省頁面高度",
+  "favorite_note_hint": "備註（選填）",
   "auth_signInTitle": "需要進行身份驗證",
   "auth_biometricHint": "驗證身份",
   "chapter": "章節",

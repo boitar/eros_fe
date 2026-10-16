@@ -4,7 +4,9 @@ import 'package:eros_fe/pages/controller/favorite_sel_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
+import '../../comm.dart';
 import '../default_tabview_controller.dart';
+import '../tabhome_controller.dart';
 import 'favorite_sublist_controller.dart';
 
 class FavoriteTabBarController extends DefaultTabViewController {
@@ -29,6 +31,9 @@ class FavoriteTabBarController extends DefaultTabViewController {
       ? subControllerMap[currFavcat]
       : subControllerMap['l'];
 
+  EhTabController? get currentPageScrollController =>
+      _currSubController?.tabScrollController;
+
   final _index = 0.obs;
   int get index => _index.value;
   set index(int val) => _index.value = val;
@@ -46,7 +51,12 @@ class FavoriteTabBarController extends DefaultTabViewController {
     }
 
     // index
-    index = favConfig?.lastIndex ?? 0;
+    final categories = favcatList;
+    final savedIndex = favConfig?.lastIndex ?? 0;
+    index = categories.isEmpty ? 0 : savedIndex.clamp(0, categories.length - 1);
+    currFavcat = categories.isEmpty
+        ? (userController.isLogin ? 'a' : 'l')
+        : categories[index].favId;
     ever<int>(_index, (value) {
       favConfig = favConfig?.copyWith(lastIndex: value.oN) ??
           FavConfig(lastIndex: value);
@@ -88,8 +98,20 @@ class FavoriteTabBarController extends DefaultTabViewController {
     }
   }
 
+  Future<void> reselectCurrentPage() async {
+    await currentPageScrollController?.scrollToTopAndRefresh();
+  }
+
   void onPageChanged(int index) {
-    currFavcat = favoriteSelectorController.favcatList[index].favId;
+    final favcats = favoriteSelectorController.favcatList;
+    if (index < 0 || index >= favcats.length) {
+      return;
+    }
+    if (currFavcat != favcats[index].favId &&
+        Get.isRegistered<TabHomeController>()) {
+      Get.find<TabHomeController>().resetTabTapSequence();
+    }
+    currFavcat = favcats[index].favId;
     this.index = index;
   }
 }

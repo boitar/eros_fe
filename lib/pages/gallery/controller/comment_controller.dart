@@ -6,6 +6,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/utils/openl/translator_helper.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -454,7 +455,7 @@ class CommentController extends GetxController {
     FocusScope.of(Get.context!).requestFocus(FocusNode());
 
     final indicator = Center(
-      child: CupertinoPopupSurface(
+      child: EhPopupSurface(
         child: Container(
             height: 80,
             width: 80,
@@ -558,7 +559,7 @@ Future<void> showLoadingDialog(
       });
 
       return Center(
-        child: CupertinoPopupSurface(
+        child: EhPopupSurface(
           child: Container(
               height: 80,
               width: 80,

@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/controller/mysql_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -78,7 +79,7 @@ class MysqlSettingView extends GetView<MysqlController> {
                           showCupertinoDialog(
                             context: context,
                             builder: (context) {
-                              return CupertinoAlertDialog(
+                              return EhAlertDialog(
                                 title: Text('Logout?'),
                                 actions: <Widget>[
                                   CupertinoDialogAction(

@@ -1,11 +1,15 @@
 import 'package:eros_fe/common/controller/download_controller.dart';
+import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/download_archiver_task_info.dart';
 import 'package:eros_fe/pages/item/download_archiver_item.dart';
 import 'package:eros_fe/pages/item/download_gallery_item.dart';
 import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
+import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -41,6 +45,12 @@ class _DownloadTabState extends State<DownloadTab> {
   }
 
   @override
+  void dispose() {
+    pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final String _title = L10n.of(context).tab_download;
 
@@ -72,38 +82,70 @@ class _DownloadTabState extends State<DownloadTab> {
           )
         : Text(L10n.of(context).download);
 
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        padding: const EdgeInsetsDirectional.only(end: 16),
-        middle: middle,
-        trailing: !kReleaseMode
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  CupertinoButton(
-                    minimumSize: const Size(40, 40),
-                    padding: const EdgeInsets.all(0),
-                    onPressed: _showExportDialog,
-                    child: const Icon(
-                      CupertinoIcons.arrow_up_arrow_down_square_fill,
-                      size: 28,
-                    ),
-                  ),
-                ],
-              )
-            : null,
-      ),
-      child: PageView(
-        controller: pageController,
-        children: viewList,
-        onPageChanged: (index) {
-          setState(() {
-            controller.viewType = controller.pageList[index];
-          });
-        },
-      ),
+    final pages = PageView(
+      key: const PageStorageKey<String>('download-pages'),
+      controller: pageController,
+      children: viewList,
+      onPageChanged: (index) {
+        setState(() {
+          controller.viewType = controller.pageList[index];
+        });
+      },
     );
+
+    return Obx(() {
+      final settings = Get.find<EhSettingService>();
+      if (settings.liquidGlass && LiquidGlassPlatform.isSupported) {
+        final layout = settings.liquidGlassTopBarLayout;
+        final safeTop = MediaQuery.paddingOf(context).top;
+        return DownloadGlassScaffold(
+          header: DownloadGlassHeader(
+            title: _title,
+            galleryLabel: L10n.of(context).tab_gallery,
+            archiverLabel: L10n.of(context).p_Archiver,
+            safeTop: safeTop,
+            layout: layout,
+            selectedIndex: currIndex,
+            pageController: pageController,
+            followSystemTransparency:
+                settings.liquidGlassFollowSystemTransparency,
+            onSelected: (index) => pageController.animateToPage(
+              index,
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+            ),
+            onExport: !kReleaseMode ? _showExportDialog : null,
+          ),
+          child: pages,
+        );
+      }
+      return CupertinoPageScaffold(
+        navigationBar: CupertinoNavigationBar(
+          padding: const EdgeInsetsDirectional.only(end: 16),
+          middle: middle,
+          trailing: !kReleaseMode
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    CupertinoButton(
+                      minimumSize: const Size(40, 40),
+                      padding: const EdgeInsets.all(0),
+                      onPressed: _showExportDialog,
+                      child: const Icon(
+                        CupertinoIcons.arrow_up_arrow_down_square_fill,
+                        size: 28,
+                      ),
+                    ),
+                  ],
+                )
+              : null,
+        ),
+        child: pages,
+      );
+    });
   }
 
   Future<void> _showExportDialog() async {
@@ -111,7 +153,7 @@ class _DownloadTabState extends State<DownloadTab> {
       context: Get.overlayContext!,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: const Text('Import & Export'),
           content: const Text('Import and Export download task'),
           actions: [
@@ -164,6 +206,132 @@ class _DownloadTabState extends State<DownloadTab> {
   }
 }
 
+class DownloadGlassScaffold extends StatelessWidget {
+  const DownloadGlassScaffold({
+    super.key,
+    required this.header,
+    required this.child,
+  });
+
+  final DownloadGlassHeader header;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final headerHeight = header.safeTop +
+        header.layout.expandedHeight(MediaQuery.textScalerOf(context));
+    return CupertinoPageScaffold(
+      // Positioned children do not size a Stack. Keep the list viewport full
+      // height without stretching the intrinsic-height header or scrim.
+      child: SizedBox.expand(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  padding: MediaQuery.paddingOf(context).copyWith(
+                    top: headerHeight + 12,
+                  ),
+                ),
+                child: child,
+              ),
+            ),
+            LiquidGlassTopScrim(safeTop: header.safeTop, layout: header.layout),
+            header,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DownloadGlassHeader extends StatelessWidget {
+  const DownloadGlassHeader({
+    super.key,
+    required this.title,
+    required this.galleryLabel,
+    required this.archiverLabel,
+    required this.safeTop,
+    required this.layout,
+    required this.selectedIndex,
+    required this.onSelected,
+    this.pageController,
+    this.followSystemTransparency = true,
+    this.onExport,
+  });
+
+  final String title;
+  final String galleryLabel;
+  final String archiverLabel;
+  final double safeTop;
+  final LiquidGlassTopBarLayout layout;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+  final PageController? pageController;
+  final bool followSystemTransparency;
+  final VoidCallback? onExport;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        children: [
+          LiquidGlassRail(
+            title: title,
+            safeTop: safeTop,
+            layout: layout,
+            selectedIndex: selectedIndex,
+            compactCategories: true,
+            pageController: pageController,
+            followSystemTransparency: followSystemTransparency,
+            fadeProgress: 0,
+            categories: [
+              LiquidGlassRailCategory(
+                id: 'gallery',
+                title: galleryLabel,
+                onTap: () => onSelected(0),
+              ),
+              LiquidGlassRailCategory(
+                id: 'archiver',
+                title: archiverLabel,
+                onTap: () => onSelected(1),
+              ),
+            ],
+            trailing: [
+              if (onExport != null)
+                LiquidGlassRailAction(
+                  icon: CupertinoIcons.arrow_up_arrow_down,
+                  label: 'Import & Export',
+                  onPressed: onExport!,
+                ),
+            ],
+          ),
+          if (layout == LiquidGlassTopBarLayout.twoRow)
+            Positioned(
+              top: safeTop,
+              left: onExport == null ? 16 : 60,
+              right: onExport == null ? 16 : 60,
+              height: 44,
+              child: Center(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoDynamicColor.resolve(
+                        CupertinoColors.label,
+                        context,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+}
+
 class DownloadArchiverView extends StatefulWidget {
   const DownloadArchiverView({super.key});
 
@@ -179,6 +347,7 @@ class _DownloadArchiverViewState extends State<DownloadArchiverView>
   Widget build(BuildContext context) {
     super.build(context);
     return SafeArea(
+      key: const PageStorageKey<String>('download-archiver-list'),
       top: false,
       bottom: false,
       child: AnimatedList(
@@ -222,6 +391,7 @@ class _DownloadGalleryViewState extends State<DownloadGalleryView>
       // TODO: 会导致任务状态变化时， 列表重新回到顶部
       // controller.animatedGalleryListKey = GlobalKey<AnimatedListState>();
       return SafeArea(
+        key: const PageStorageKey<String>('download-gallery-list'),
         top: false,
         bottom: false,
         child: AnimatedList(

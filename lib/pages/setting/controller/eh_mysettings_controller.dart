@@ -2,6 +2,7 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/request.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -192,7 +193,7 @@ class EhMySettingsController extends GetxController {
     final name = await showCupertinoDialog<String>(
         context: Get.context!,
         builder: (context) {
-          return CupertinoAlertDialog(
+          return EhAlertDialog(
             title: const Text('Profile Name'),
             content: CupertinoTextField(
               controller: textEditingController,
@@ -221,7 +222,7 @@ class EhMySettingsController extends GetxController {
     final result = await showCupertinoDialog<bool>(
             context: Get.context!,
             builder: (context) {
-              return CupertinoAlertDialog(
+              return EhAlertDialog(
                 title: const Text('Delete Profile'),
                 actions: [
                   CupertinoDialogAction(

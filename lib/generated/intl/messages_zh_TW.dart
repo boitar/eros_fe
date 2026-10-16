@@ -45,6 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("頂欄分組佈局"),
+        "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("兩行展開（預設）"),
+        "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("操作與分組分行顯示，適合較多分組和長名稱"),
+        "liquid_glass_inline": MessageLookupByLibrary.simpleMessage("單行緊湊"),
+        "liquid_glass_inline_detail": MessageLookupByLibrary.simpleMessage("操作與分組共用一行，節省頁面高度"),
+        "favorite_note_hint": MessageLookupByLibrary.simpleMessage("備註（選填）"),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("注意資料安全"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage("封鎖含有QR Code的圖片"),
         "about": MessageLookupByLibrary.simpleMessage("關於"),

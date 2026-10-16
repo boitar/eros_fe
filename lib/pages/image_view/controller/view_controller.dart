@@ -16,6 +16,7 @@ import 'package:eros_fe/pages/image_view/view/view_widget.dart';
 import 'package:eros_fe/store/archive_async.dart';
 import 'package:eros_fe/utils/orientation_helper.dart';
 import 'package:eros_fe/utils/saf_helper.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -1087,7 +1088,7 @@ class ViewExtController extends GetxController {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: const Text('Auto page interval'),
           content: Container(
             child: Column(

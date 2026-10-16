@@ -6,6 +6,7 @@ import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/gallery/controller/torrent_controller.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -185,7 +186,7 @@ Future<void> showTorrentDialog() {
       context: Get.overlayContext!,
       barrierDismissible: true,
       builder: (context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: Text(L10n.of(context).p_Torrent),
           content: const TorrentView(),
           actions: <Widget>[

@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/archiver_controller.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -295,7 +296,7 @@ Future<void> showArchiverDialog() {
       context: Get.overlayContext!,
       barrierDismissible: true,
       builder: (_) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: Text(L10n.of(Get.context!).p_Archiver),
           content: Container(
             child: const ArchiverView(),

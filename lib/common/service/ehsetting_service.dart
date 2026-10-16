@@ -12,7 +12,9 @@ import 'package:eros_fe/pages/image_view/controller/view_controller.dart';
 import 'package:eros_fe/pages/image_view/view/view_page.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/controller/toplist_controller.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/storage.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -273,6 +275,29 @@ class EhSettingService extends ProfileService {
   bool get hideTopBarOnScroll => _hideTopBarOnScroll.value;
   set hideTopBarOnScroll(bool val) => _hideTopBarOnScroll.value = val;
 
+  final _liquidGlassTopBarLayout = LiquidGlassTopBarLayout.twoRow.obs;
+  LiquidGlassTopBarLayout get liquidGlassTopBarLayout =>
+      _liquidGlassTopBarLayout.value;
+  set liquidGlassTopBarLayout(LiquidGlassTopBarLayout value) =>
+      _liquidGlassTopBarLayout.value = value;
+
+  // liquidGlass
+  final _liquidGlass = false.obs;
+  bool get liquidGlass => _liquidGlass.value;
+  set liquidGlass(bool val) => _liquidGlass.value = val;
+
+  /// Whether native Liquid Glass should be used so UIKit can apply the
+  /// device's system Liquid Glass appearance and accessibility settings.
+  ///
+  /// The persisted name is retained for profile compatibility. It no longer
+  /// means only Reduce Transparency; the system appearance slider is owned by
+  /// UIKit and is intentionally not read through private preferences.
+  final _liquidGlassFollowSystemTransparency = true.obs;
+  bool get liquidGlassFollowSystemTransparency =>
+      _liquidGlassFollowSystemTransparency.value;
+  set liquidGlassFollowSystemTransparency(bool val) =>
+      _liquidGlassFollowSystemTransparency.value = val;
+
   final _itemConfigList = <ItemConfig>[].obs;
   final _itemConfigMap = <ListModeEnum, ItemConfig>{}.obs;
   Map<ListModeEnum, ItemConfig> get mapItemConfig => _itemConfigMap;
@@ -435,6 +460,27 @@ class EhSettingService extends ProfileService {
     hideTopBarOnScroll = ehConfig.hideTopBarOnScroll ?? hideTopBarOnScroll;
     everProfile<bool>(_hideTopBarOnScroll, (value) {
       ehConfig = ehConfig.copyWith(hideTopBarOnScroll: value.oN);
+    });
+
+    liquidGlassTopBarLayout =
+        LiquidGlassTopBarLayout.parse(ehConfig.liquidGlassTopBarLayout);
+    everProfile<LiquidGlassTopBarLayout>(_liquidGlassTopBarLayout, (value) {
+      ehConfig = ehConfig.copyWith(liquidGlassTopBarLayout: value.name.oN);
+    });
+
+    // liquidGlass
+    liquidGlass = ehConfig.liquidGlass ?? liquidGlass;
+    everProfile<bool>(_liquidGlass, (value) {
+      ehConfig = ehConfig.copyWith(liquidGlass: value.oN);
+    });
+
+    liquidGlassFollowSystemTransparency =
+        ehConfig.liquidGlassFollowSystemTransparency ??
+            liquidGlassFollowSystemTransparency;
+    everProfile<bool>(_liquidGlassFollowSystemTransparency, (value) {
+      ehConfig = ehConfig.copyWith(
+        liquidGlassFollowSystemTransparency: value.oN,
+      );
     });
 
     // webDAVMaxConnections
@@ -969,7 +1015,7 @@ class EhSettingService extends ProfileService {
     final FavoriteOrder? _result = await showCupertinoModalPopup<FavoriteOrder>(
         context: context,
         builder: (BuildContext context) {
-          return CupertinoActionSheet(
+          return EhActionSheet(
             title: Text(L10n.of(context).favorites_order),
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
@@ -1029,7 +1075,7 @@ class EhSettingService extends ProfileService {
     final ToplistType? _result = await showCupertinoModalPopup<ToplistType>(
         context: context,
         builder: (BuildContext context) {
-          return CupertinoActionSheet(
+          return EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
@@ -1140,7 +1186,7 @@ class EhSettingService extends ProfileService {
     showCupertinoDialog(
         context: Get.overlayContext!,
         builder: (BuildContext context) {
-          return CupertinoAlertDialog(
+          return EhAlertDialog(
             title: const Text('画廊跳转'),
             content: const Text('检测到剪贴板中包含画廊链接, 是否打开'),
             actions: [

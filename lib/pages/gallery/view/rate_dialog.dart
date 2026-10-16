@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/gallery/controller/rate_controller.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -59,7 +60,7 @@ Future<void> showRateDialog(BuildContext context) {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: const Text('Rate'),
           content: Container(
             child: const RateView(),

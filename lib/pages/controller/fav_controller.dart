@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:eros_fe/common/controller/localfav_controller.dart';
 import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -7,10 +9,12 @@ import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/favcat.dart';
 import 'package:eros_fe/network/request.dart';
+import 'package:eros_fe/pages/gallery/view/favorite_form_widgets.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_favcat.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/utils/toast.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -18,15 +22,15 @@ import 'package:get/get.dart';
 import 'favorite_sel_controller.dart';
 
 class FavController extends GetxController {
-  final EhSettingService _ehSettingService = Get.find();
-  final LocalFavController _localFavController = Get.find();
+  EhSettingService get _ehSettingService => Get.find();
+  LocalFavController get _localFavController => Get.find();
 
   // 收藏输入框控制器
   final TextEditingController _favnoteController = TextEditingController();
   FixedExtentScrollController _fixedExtentScrollController =
       FixedExtentScrollController();
 
-  final FavoriteSelectorController _favoriteSelectorController = Get.find();
+  FavoriteSelectorController get _favoriteSelectorController => Get.find();
 
   Future<Favcat?> showFavListDialog(
     BuildContext context,
@@ -44,31 +48,48 @@ class FavController extends GetxController {
     final favcats = favAdd.favcats;
     final selectFav = favAdd.selectFavcat;
     final fav = int.tryParse(selectFav ?? '0') ?? 0;
-    _fixedExtentScrollController.animateToItem(
-      fav,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.ease,
-    );
+    if (_fixedExtentScrollController.hasClients) {
+      _fixedExtentScrollController.animateToItem(
+        fav,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.ease,
+      );
+    }
   }
 
   /// 添加收藏 Picker 形式
   Future<Favcat?> _showAddFavPicker(
       BuildContext context, List<Favcat> favList) async {
-    int _favIndex = 2;
+    final choices = favList.where((value) => value.favId != 'a').toList();
+    int _favIndex = _fixedExtentScrollController.initialItem;
 
-    final List<Widget> _favPickerList = List<Widget>.from(
-        favList.where((value) => value.favId != 'a').map((Favcat e) => Row(
+    final List<Widget> _favPickerList =
+        List<Widget>.from(choices.map((Favcat e) => Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 4, bottom: 4),
-                  child: FaIcon(FontAwesomeIcons.solidHeart,
+                  padding: EdgeInsets.only(
+                    right: liquidGlassPopupsEnabled ? 12 : 4,
+                    bottom: liquidGlassPopupsEnabled ? 0 : 4,
+                  ),
+                  child: FaIcon(
+                    FontAwesomeIcons.solidHeart,
                     color: ThemeColors.favColor[e.favId],
                     size: 18,
                   ),
                 ),
-                Text(e.favTitle),
+                if (liquidGlassPopupsEnabled)
+                  Flexible(
+                    child: Text(
+                      e.favTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: EhPopupTextStyles.action(context),
+                    ),
+                  ),
+                if (!liquidGlassPopupsEnabled) Text(e.favTitle),
               ],
             ))).toList();
 
@@ -76,7 +97,8 @@ class FavController extends GetxController {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
+          insetForm: liquidGlassPopupsEnabled,
           title: GestureDetector(
             onLongPress: () {
               _ehSettingService.isFavPicker.value = false;
@@ -87,25 +109,27 @@ class FavController extends GetxController {
           content: Container(
             child: Column(
               children: <Widget>[
-                Container(
-                  height: 250,
-                  child: CupertinoPicker(
-                    scrollController: _fixedExtentScrollController,
-                    itemExtent: 30,
-                    onSelectedItemChanged: (int index) {
-                      _favIndex = index;
-                    },
-                    children: _favPickerList,
+                FavoriteFormGroup(
+                  enabled: liquidGlassPopupsEnabled,
+                  child: Container(
+                    height: liquidGlassPopupsEnabled ? 216 : 250,
+                    child: CupertinoPicker(
+                      scrollController: _fixedExtentScrollController,
+                      itemExtent: liquidGlassPopupsEnabled
+                          ? math.max(
+                              44,
+                              MediaQuery.textScalerOf(context).scale(17) * 2.6 +
+                                  12)
+                          : 30,
+                      onSelectedItemChanged: (int index) {
+                        _favIndex = index;
+                      },
+                      children: _favPickerList,
+                    ),
                   ),
                 ),
-                CupertinoTextField(
-                  controller: _favnoteController,
-                  maxLines: null,
-                  decoration: BoxDecoration(
-                    color: ehTheme.favnoteTextFieldBackgroundColor,
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                  ),
-                )
+                SizedBox(height: liquidGlassPopupsEnabled ? 16 : 0),
+                _favoriteNoteField(context),
               ],
             ),
           ),
@@ -117,11 +141,12 @@ class FavController extends GetxController {
               },
             ),
             CupertinoDialogAction(
+              isDefaultAction: liquidGlassPopupsEnabled,
               child: Text(L10n.of(context).ok),
               onPressed: () {
                 // 返回数据
                 Get.back(
-                    result: favList[_favIndex]
+                    result: choices[_favIndex]
                         .copyWith(note: _favnoteController.text.oN));
               },
             ),
@@ -142,6 +167,7 @@ class FavController extends GetxController {
               text: fav.favTitle,
               favcat: fav.favId,
               totNum: fav.totNum,
+              grouped: liquidGlassPopupsEnabled,
               onTap: () {
                 // 返回数据
                 Get.back(
@@ -155,7 +181,8 @@ class FavController extends GetxController {
       barrierDismissible: true,
       context: context,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
+          insetForm: liquidGlassPopupsEnabled,
           title: GestureDetector(
             onLongPress: () {
               _ehSettingService.isFavPicker.value = true;
@@ -167,16 +194,14 @@ class FavController extends GetxController {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                ..._favcatList,
-                CupertinoTextField(
-                  controller: _favnoteController,
-                  maxLines: null,
-                  decoration: BoxDecoration(
-                    color: ehTheme.favnoteTextFieldBackgroundColor,
-                    borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                  ),
-                  placeholder: 'Favorites note',
-                ).paddingOnly(top: 8.0),
+                if (liquidGlassPopupsEnabled)
+                  FavoriteCategoryList(
+                    children: _favcatList,
+                  )
+                else
+                  ..._favcatList,
+                SizedBox(height: liquidGlassPopupsEnabled ? 12 : 8),
+                _favoriteNoteField(context),
               ],
             ),
           ),
@@ -190,6 +215,38 @@ class FavController extends GetxController {
           ],
         );
       },
+    );
+  }
+
+  Widget _favoriteNoteField(BuildContext context) {
+    final glass = liquidGlassPopupsEnabled;
+    if (glass) {
+      return FavoriteNoteField(
+        controller: _favnoteController,
+      );
+    }
+    return CupertinoTextField(
+      controller: _favnoteController,
+      minLines: glass ? 1 : null,
+      maxLines: glass ? 3 : null,
+      padding: glass ? const EdgeInsets.all(12) : const EdgeInsets.all(6),
+      style: glass ? EhPopupTextStyles.body(context) : null,
+      placeholder: L10n.of(context).favorite_note_hint,
+      placeholderStyle: glass ? EhPopupTextStyles.secondary(context) : null,
+      decoration: BoxDecoration(
+        color: glass
+            ? CupertinoDynamicColor.resolve(
+                CupertinoColors.tertiarySystemFill, context)
+            : ehTheme.favnoteTextFieldBackgroundColor,
+        borderRadius: BorderRadius.all(Radius.circular(glass ? 12 : 8)),
+        border: glass
+            ? Border.all(
+                color: CupertinoDynamicColor.resolve(
+                    CupertinoColors.separator, context),
+                width: .5,
+              )
+            : null,
+      ),
     );
   }
 

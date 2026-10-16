@@ -373,6 +373,13 @@
   "show_comment_avatar": "Show comment avatar",
   "avatar": "Avatar",
   "default_avatar_style": "Default Avatar Style",
+
+  "liquid_glass_top_layout": "Top category layout",
+  "liquid_glass_two_row": "Two rows (default)",
+  "liquid_glass_two_row_detail": "Actions and categories on separate rows",
+  "liquid_glass_inline": "Compact row",
+  "liquid_glass_inline_detail": "Actions and categories share one row",
+  "favorite_note_hint": "Note (optional)",
   "auth_signInTitle": "Authentication Required",
   "auth_biometricHint": "Verify Identity",
   "chapter": "Chapter",

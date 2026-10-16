@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -29,10 +30,12 @@ void showToast(
           ),
         ],
       ),
-      child: CupertinoPopupSurface(
+      child: EhPopupSurface(
         child: Container(
           padding: const EdgeInsets.all(10),
-          color: CupertinoTheme.of(Get.context!).barBackgroundColor,
+          color: liquidGlassPopupsEnabled
+              ? null
+              : CupertinoTheme.of(Get.context!).barBackgroundColor,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -65,7 +68,7 @@ void show509Toast() {
   final Widget widget = ClipRect(
     child: CupertinoTheme(
       data: Get.find<ThemeService>().themeData!,
-      child: CupertinoPopupSurface(
+      child: EhPopupSurface(
         child: Container(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -106,7 +109,7 @@ void show429Toast() {
   final Widget widget = ClipRect(
     child: CupertinoTheme(
       data: Get.find<ThemeService>().themeData!,
-      child: CupertinoPopupSurface(
+      child: EhPopupSurface(
         child: Container(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -165,7 +168,7 @@ void showActionToast(String msg, {IconData? icon, VoidCallback? onPressed}) {
       child: ClipRect(
         child: CupertinoTheme(
           data: Get.find<ThemeService>().themeData!,
-          child: CupertinoPopupSurface(
+          child: EhPopupSurface(
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
               child: Row(

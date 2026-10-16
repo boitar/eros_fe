@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/network/api.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -266,7 +267,7 @@ Future<bool?> jumpToAppSettings(BuildContext context, String content) async {
   return showCupertinoDialog<bool>(
     context: context,
     builder: (BuildContext context) {
-      return CupertinoAlertDialog(
+      return EhAlertDialog(
         content: Container(
           child: Text(content),
         ),

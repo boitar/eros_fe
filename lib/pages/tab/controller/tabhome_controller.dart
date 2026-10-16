@@ -1,12 +1,16 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller.dart';
+import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
 import 'package:eros_fe/pages/tab/view/download_page.dart';
 import 'package:eros_fe/pages/tab/view/history_page.dart';
 import 'package:eros_fe/pages/tab/view/tabbar/custom_tabbar_page.dart';
 import 'package:eros_fe/pages/tab/view/tabbar/favorite_tabbar_page.dart';
 import 'package:eros_fe/pages/tab/view/toplist_page.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -44,6 +48,19 @@ class TabPages {
     EHRoutes.setting: FontAwesomeIcons.cog,
     EHRoutes.customList: FontAwesomeIcons.layerGroup,
     EHRoutes.favoriteTabbar: FontAwesomeIcons.heartBroken,
+  };
+
+  final Map<String, String> liquidGlassFallbackSymbols = <String, String>{
+    EHRoutes.popular: 'flame.fill',
+    EHRoutes.watched: 'eye.fill',
+    EHRoutes.gallery: 'square.grid.2x2.fill',
+    EHRoutes.favorite: 'heart.fill',
+    EHRoutes.toplist: 'list.number',
+    EHRoutes.history: 'clock.arrow.circlepath',
+    EHRoutes.download: 'arrow.down.circle.fill',
+    EHRoutes.setting: 'gearshape.fill',
+    EHRoutes.customList: 'square.grid.2x2.fill',
+    EHRoutes.favoriteTabbar: 'heart.slash.fill',
   };
 
   Map<String, Widget> get tabIcons => iconDatas
@@ -98,7 +115,11 @@ class TabHomeController extends GetxController {
   DateTime? lastPressedAt; //上次点击时间
 
   int currentIndex = 0;
-  bool tapAwait = false;
+
+  Timer? _reselectionTimer;
+  String? _reselectionRoute;
+  EhTabController? _reselectionController;
+  bool? _useLiquidGlass;
 
   final EhSettingService _ehSettingService = Get.find();
 
@@ -218,6 +239,18 @@ class TabHomeController extends GetxController {
           ))
       .toList();
 
+  List<LiquidGlassTabItem> get liquidGlassTabItems => _showTabs.map((route) {
+        final FaIconData icon = tabPages.iconDatas[route]!;
+        return LiquidGlassTabItem(
+          label: tabPages.tabTitles[route] ?? route,
+          codePoint: icon.codePoint,
+          fontFamily: icon.fontFamily,
+          fontPackage: icon.fontPackage,
+          fallbackSymbol:
+              tabPages.liquidGlassFallbackSymbols[route] ?? 'circle.fill',
+        );
+      }).toList();
+
   late BuildContext tContext;
 
   /// 需要初始化获取BuildContext 否则修改语言时 tabitem 的文字不会立即生效
@@ -232,56 +265,110 @@ class TabHomeController extends GetxController {
   List<EhTabController?> get scrollControllerList =>
       _showTabs.map((e) => tabPages.scrollControllerMap[e]).toList();
 
-  Future<void> onTap(int index) async {
-    if (index == currentIndex &&
-        index != listBottomNavigationBarItem.length - 1) {
-      await doubleTapBar(
-        duration: const Duration(milliseconds: 800),
-        awaitComplete: false,
-        onTap: () {
-          scrollControllerList[index]?.scrollToTop();
-        },
-        onDoubleTap: () {
-          scrollControllerList[index]?.scrollToTopRefresh();
-        },
-      );
-    } else {
+  void resetTabTapSequence() {
+    _reselectionTimer?.cancel();
+    _reselectionTimer = null;
+    _reselectionRoute = null;
+    _reselectionController = null;
+  }
+
+  void setNavigationMode({required bool useLiquidGlass}) {
+    if (_useLiquidGlass != useLiquidGlass) {
+      resetTabTapSequence();
+      _useLiquidGlass = useLiquidGlass;
+    }
+  }
+
+  EhTabController? _currentPageScrollController(String route) {
+    switch (route) {
+      case EHRoutes.gallery:
+        return Get.isRegistered<CustomTabbarController>()
+            ? Get.find<CustomTabbarController>().currentPageScrollController
+            : null;
+      case EHRoutes.favorite:
+        return Get.isRegistered<FavoriteTabBarController>()
+            ? Get.find<FavoriteTabBarController>().currentPageScrollController
+            : null;
+      default:
+        return tabPages.scrollControllerMap[route];
+    }
+  }
+
+  Future<void> onTap(int index, {required bool useLiquidGlass}) async {
+    setNavigationMode(useLiquidGlass: useLiquidGlass);
+    final tabs = _showTabs;
+    if (index < 0 || index >= tabs.length) {
+      resetTabTapSequence();
+      return;
+    }
+    if (index != currentIndex) {
+      resetTabTapSequence();
       currentIndex = index;
+      return;
+    }
+
+    final route = tabs[index];
+    if (route == EHRoutes.setting) {
+      resetTabTapSequence();
+      return;
+    }
+
+    if (!useLiquidGlass) {
+      final target = _currentPageScrollController(route);
+      if (target == null || !target.canScrollToTop) {
+        resetTabTapSequence();
+        return;
+      }
+      if ((_reselectionTimer?.isActive ?? false) &&
+          _reselectionRoute == route &&
+          identical(_reselectionController, target)) {
+        resetTabTapSequence();
+        target.scrollToTopRefresh();
+      } else {
+        resetTabTapSequence();
+        _reselectionRoute = route;
+        _reselectionController = target;
+        _reselectionTimer = Timer(
+          const Duration(milliseconds: 800),
+          resetTabTapSequence,
+        );
+        target.scrollToTop();
+      }
+      return;
+    }
+
+    resetTabTapSequence();
+    switch (route) {
+      case EHRoutes.gallery:
+        if (Get.isRegistered<CustomTabbarController>()) {
+          await Get.find<CustomTabbarController>().reselectCurrentPage();
+        }
+        return;
+      case EHRoutes.favorite:
+        if (Get.isRegistered<FavoriteTabBarController>()) {
+          await Get.find<FavoriteTabBarController>().reselectCurrentPage();
+        }
+        return;
+      case EHRoutes.toplist:
+        await scrollControllerList[index]?.scrollToTopAndRefresh();
+        return;
+      default:
+        scrollControllerList[index]?.scrollToTop();
     }
   }
 
   void resetIndex() {
-    final int last = listBottomNavigationBarItem.length;
-    tabController.index = last - 1;
+    resetTabTapSequence();
+    final int last = _showTabs.length;
+    currentIndex = last - 1;
+    tabController.index = currentIndex;
   }
 
-  /// 双击bar的处理
-  Future<void> doubleTapBar({
-    required VoidCallback onTap,
-    required VoidCallback onDoubleTap,
-    required Duration duration,
-    required bool awaitComplete,
-  }) async {
-    final Duration _duration = duration;
-    if (!tapAwait) {
-      tapAwait = true;
-
-      if (awaitComplete) {
-        await Future<void>.delayed(_duration);
-        if (tapAwait) {
-//        loggerNoStack.v('等待结束 执行单击事件');
-          tapAwait = false;
-          onTap();
-        }
-      } else {
-        onTap();
-        await Future<void>.delayed(_duration);
-        tapAwait = false;
-      }
-    } else {
-      tapAwait = false;
-      onDoubleTap();
-    }
+  @override
+  void onClose() {
+    resetTabTapSequence();
+    tabController.dispose();
+    super.onClose();
   }
 
   /// 连按两次返回退出

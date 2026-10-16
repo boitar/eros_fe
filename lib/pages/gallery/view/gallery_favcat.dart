@@ -2,6 +2,7 @@ import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_fav_controller.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -34,12 +35,14 @@ class GalleryFavButton extends StatelessWidget {
               ),
             ),
             if (_favController.isFav)
-              FaIcon(FontAwesomeIcons.solidHeart,
-                color: ThemeColors.favColor[_favController.favcat],
+              FaIcon(
+                FontAwesomeIcons.solidHeart,
+                color: ThemeColors.favColorFor(_favController.favcat),
                 size: iconSize,
               )
             else
-              const FaIcon(FontAwesomeIcons.heart,
+              const FaIcon(
+                FontAwesomeIcons.heart,
                 color: CupertinoColors.systemGrey,
                 size: iconSize,
               ),
@@ -86,6 +89,7 @@ class FavCatAddListItem extends StatefulWidget {
     required this.text,
     this.favcat,
     this.totNum,
+    this.grouped = false,
   })  : _onTap = onTap,
         super(key: key);
 
@@ -93,6 +97,7 @@ class FavCatAddListItem extends StatefulWidget {
   final String text;
   final String? favcat;
   final int? totNum;
+  final bool grouped;
 
   @override
   _FavCatAddListItemState createState() => _FavCatAddListItemState();
@@ -103,6 +108,82 @@ class _FavCatAddListItemState extends State<FavCatAddListItem> {
 
   @override
   Widget build(BuildContext context) {
+    if (liquidGlassPopupsEnabled) {
+      final count = '${widget.totNum ?? 0}';
+      final labelStyle = EhPopupTextStyles.action(context);
+      final countStyle = EhPopupTextStyles.secondary(context).copyWith(
+        fontSize: 13,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+      return Semantics(
+        button: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            setState(() => _color = null);
+            widget._onTap();
+          },
+          onTapDown: (_) => setState(() => _color =
+              CupertinoDynamicColor.resolve(
+                  CupertinoColors.tertiarySystemFill, context)),
+          onTapCancel: () => setState(() => _color = null),
+          child: Container(
+            width: double.infinity,
+            constraints: BoxConstraints(minHeight: widget.grouped ? 44 : 52),
+            padding: EdgeInsets.symmetric(
+                horizontal: widget.grouped ? 16 : 12,
+                vertical: widget.grouped ? 8 : 12),
+            decoration: BoxDecoration(
+              color: _color,
+              borderRadius: widget.grouped
+                  ? BorderRadius.zero
+                  : const BorderRadius.all(Radius.circular(12)),
+            ),
+            child: LayoutBuilder(builder: (context, constraints) {
+              final countBelow =
+                  MediaQuery.textScalerOf(context).scale(17) > 27 ||
+                      constraints.maxWidth < 200 ||
+                      count.length > 6;
+              return Row(
+                children: [
+                  ExcludeSemantics(
+                    child: SizedBox(
+                      width: 20,
+                      child: FaIcon(
+                        FontAwesomeIcons.solidHeart,
+                        color: CupertinoDynamicColor.resolve(
+                            ThemeColors.favColorFor(widget.favcat), context),
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.text,
+                            textAlign: TextAlign.start, style: labelStyle),
+                        if (countBelow) ...[
+                          const SizedBox(height: 4),
+                          Text(count,
+                              textAlign: TextAlign.start, style: countStyle),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (!countBelow) ...[
+                    const SizedBox(width: 16),
+                    Text(count, style: countStyle),
+                  ],
+                ],
+              );
+            }),
+          ),
+        ),
+      );
+    }
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       child: Container(
@@ -115,17 +196,13 @@ class _FavCatAddListItemState extends State<FavCatAddListItem> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(FontAwesomeIcons.solidHeart,
+            FaIcon(
+              FontAwesomeIcons.solidHeart,
               color: CupertinoDynamicColor.resolve(
-                  ThemeColors.favColor[widget.favcat]!, context),
+                  ThemeColors.favColorFor(widget.favcat), context),
               size: 18,
             ).paddingOnly(left: 8, right: 8, bottom: 4),
-            Text(
-              widget.text,
-              style: const TextStyle(
-                fontSize: 18,
-              ),
-            ),
+            Text(widget.text, style: const TextStyle(fontSize: 18)),
             const Spacer(),
             Text(
               '${widget.totNum ?? 0}',
@@ -136,7 +213,9 @@ class _FavCatAddListItemState extends State<FavCatAddListItem> {
           ],
         ),
       ),
-      onTap: widget._onTap,
+      onTap: () {
+        widget._onTap();
+      },
       onTapDown: (_) {
         setState(() {
           _color = CupertinoDynamicColor.resolve(

@@ -373,6 +373,13 @@
   "show_comment_avatar": "Показать аватар комментатора",
   "avatar": "Аватар",
   "default_avatar_style": "Стиль аватара по умолчанию",
+
+  "liquid_glass_top_layout": "Расположение категорий",
+  "liquid_glass_two_row": "Две строки (по умолчанию)",
+  "liquid_glass_two_row_detail": "Действия и категории в отдельных строках",
+  "liquid_glass_inline": "Одна строка",
+  "liquid_glass_inline_detail": "Действия и категории в одной строке",
+  "favorite_note_hint": "Заметка (необязательно)",
   "auth_signInTitle": "Требуется авторизация",
   "auth_biometricHint": "Подтвердите личность",
   "chapter": "Глава",

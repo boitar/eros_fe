@@ -373,6 +373,13 @@
   "show_comment_avatar": "Show comment avatar",
   "avatar": "Avatar",
   "default_avatar_style": "Default avatar style",
+
+  "liquid_glass_top_layout": "상단 카테고리 배치",
+  "liquid_glass_two_row": "두 줄 (기본값)",
+  "liquid_glass_two_row_detail": "작업과 카테고리를 별도 줄에 표시",
+  "liquid_glass_inline": "간결한 한 줄",
+  "liquid_glass_inline_detail": "작업과 카테고리를 한 줄에 표시",
+  "favorite_note_hint": "메모 (선택 사항)",
   "auth_signInTitle": "Authentication required",
   "auth_biometricHint": "Verify identity",
   "chapter": "Chapter",
