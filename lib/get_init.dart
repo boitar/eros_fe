@@ -92,4 +92,8 @@ void getinit() {
   Get.lazyPut(() => TagController(), fenix: true);
   Get.lazyPut(() => SearchImageController(), fenix: true);
   Get.lazyPut(() => BlockController(), fenix: true);
+
+  // Native glass headers can render gallery cards before any user widget.
+  // Establish the account and clear its favorite caches before widgets listen.
+  Get.find<UserController>();
 }

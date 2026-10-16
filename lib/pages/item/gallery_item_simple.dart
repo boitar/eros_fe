@@ -2,12 +2,12 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
+import 'package:eros_fe/pages/item/favorite_icon.dart';
 import 'package:eros_fe/widget/blur_image.dart';
 import 'package:eros_fe/widget/image/eh_network_image.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
 import 'item_base.dart';
@@ -246,15 +246,11 @@ class GalleryItemSimpleWidget extends StatelessWidget {
 
   Widget _buildFavcatIcon() {
     return Container(
-      child: galleryProviderController.galleryProvider.favTitle?.isNotEmpty ??
-              false
+      child: galleryProviderController.hasFavoriteColor
           ? Container(
               padding: const EdgeInsets.only(bottom: 2.5, right: 8),
-              child: FaIcon(FontAwesomeIcons.solidHeart,
-                size: 11,
-                color: ThemeColors
-                    .favColor[galleryProviderController.galleryProvider.favcat],
-              ),
+              child: FavoriteIcon(
+                  category: galleryProviderController.favCat, size: 11),
             )
           : Container(),
     );
