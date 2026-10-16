@@ -8,6 +8,7 @@ final class FavoriteEntryTests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["--eros-test-semantics"]
         app.activate()
+        enableGlassForIntegration(app)
     }
 
     private func element(_ text: String) -> XCUIElement {
@@ -37,7 +38,7 @@ final class FavoriteEntryTests: XCTestCase {
     private func openDialog() {
         let gallery = element("画廊")
         XCTAssertTrue(gallery.waitForExistence(timeout: 60), app.debugDescription)
-        gallery.tap()
+        if !tapNativeTabIfPresent(app, label: "画廊") { gallery.tap() }
         let card = app.descendants(matching: .any).matching(
             NSPredicate(format: "label CONTAINS %@", "Offline gallery 0 -")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 20), app.debugDescription)

@@ -10,6 +10,8 @@ case "$output/" in "$root/"*) echo 'Output must be outside the checkout' >&2; ex
 cd "$root"
 xcodegen generate --spec benchmark/avatar_ui_tests/project.yml --project "$output/avatar-harness" \
   > "$output/$run-project.log" 2>&1
+python3 "$root/benchmark/shared_ui_tests/configure-glass-scheme.py" \
+  "$output/avatar-harness/CustomBranchAcceptance.xcodeproj/xcshareddata/xcschemes/CustomBranchAcceptance.xcscheme"
 for phase in ${4:-LocalUrlAndCancel RestoredLocalAndAlbum FilePickerCancelAndRotation LocalDocumentSelection}; do
   test ! -e "$output/$run-$phase.xcresult"
   # Start outside XCTest so each phase attaches to an already running process.

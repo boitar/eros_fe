@@ -8,13 +8,13 @@ An Unofficial e-hentai app make on flutter
 ## Local custom integration
 
 `custom` starts at fixed master `2fe86b737`, retains version `1.9.2+566`, and
-currently integrates the following independently deliverable modules:
+integrates all eleven independently deliverable modules:
 
 | Module | Use | Independent branch |
 | --- | --- | --- |
 | Waterfall stability | Settings > Layout > Waterfall / Waterfall - Large; stable cover dimensions, return scrolling and pagination/controller reuse | `codex/custom-waterfall` |
 | Downloads | Pause/continue or restore a moved folder, then recheck existing files before missing images are queued | `codex/custom-downloads` |
-| Favorites | Traditional forms, confirmed server results, account isolation and protected note edits | `codex/custom-favorites-verified` |
+| Favorites | Traditional/glass forms, confirmed server results, account isolation and protected note edits | `codex/custom-favorites-verified` |
 | Sharing | Native iOS/iPadOS links, images, files and exports with modal/anchor handling | `codex/custom-sharing` |
 | History | Shared initialization, serialized local persistence/clear and awaited sync | `codex/custom-history` |
 | Visible group index | Stable visible UUID/page mapping, reorder/delete and restart restoration | `codex/custom-group-index` |
@@ -22,36 +22,45 @@ currently integrates the following independently deliverable modules:
 | Haptics | Native bridge, progressive pulls, application switch and operation feedback | `codex/custom-haptics` |
 | Avatar | Album/Files/URL, verified upload retry, local preview and container recovery | `codex/custom-avatar` |
 | Grid tags | Aligned cards, two-row horizontal tags, independent width and restoration | `codex/custom-grid-tags` |
+| Liquid Glass | Settings > Style: native navigation, two-row/inline top bars, popups, safe areas and scroll synchronization; repairs traditional navigation regressions introduced by glass integration | `codex/custom-liquid-glass-verified` |
 
-The verified standalone favorites module establishes the account before widgets
-subscribe to favorite state. Its complete 121 tests, 6 final-source native
-checks and both formal builds passed; the earlier branch and tags remain.
+Each canonical business branch contains one complete commit directly on fixed
+master. The original ten ordered non-fast-forward merges are preserved, followed
+by an explicit favorites repair merge and the final glass merge. All eleven
+canonical independent commit IDs are retained. The former favorites and glass
+branches and tags remain available for traceability; use the verified branches
+listed above for independent delivery.
+The integration keeps account/revision guards for favorites and avatars,
+download recovery protections, visible group UUID mapping and serialized history
+operations while adapting their shared glass surfaces. Account initialization completes
+before widgets subscribe to favorite state, including a cold launch with glass restored.
 
-Each business branch has a single complete commit directly on the same fixed
-master. This integration preserves those commit IDs through explicit merges.
-Liquid Glass remains unintegrated.
+All 486 tests passed on this complete integration; analysis found zero errors and
+zero diagnostics added to the same-toolchain master baseline. Seven production
+`lib/main.dart` ARM64 Debug-SimulatorUI variants built successfully, including
+builds with and without offline definitions. On the highest installed available
+iOS 27.0 (24A434), iPhone 18 Pro and iPad Pro 11-inch (M5) passed 10 navigation/form
+checks, 30 glass combinations with favorites, avatars, visible group indexes,
+haptics and downloads, and two traditional cold-start settings-before-favorites
+checks: 42 native cases in total. Phone uses light/default text and iPad uses
+dark/accessibility-medium text. Every combination proves actual native glass
+activation; restart phases read persisted application state.
 
-All 295 tests passed on the ten-module integration, with zero analyzer errors
-or new diagnostics. Production `lib/main.dart` ARM64 Debug-SimulatorUI builds
-passed with and without offline definitions. On the highest installed available
-iOS 27.0 (24A434), isolated iPhone 18 Pro and iPad Pro 11-inch (M5) passed 12
-native grid-tags checks across light/default and dark/accessibility-medium:
-aligned cards, rotation, actual mode selection and width-slider changes. Four
-pairs of actual UI values matched exactly after process restart. The verifier
-compares observations from both phases instead of storing expectations in the
-XCTest runner. The independent grid-tags branch passed 23 tests and 12 native
-checks. Implementation hashes match the tree used for the full tests and both
-builds; the standalone verifier correction retains its earlier tag for traceability.
-
-Real forum uploads and live Cloudflare remain unverified; local HTTP tests cover
-authentication, multipart requests, errors, 403 responses and verification retries.
-Action labels remain Chinese; simulator semantics do not establish physical
-VoiceOver speech/focus acceptance.
+The complete verified favorites branch passed 121 tests, two formal main builds
+and six cold-start/form/restart native cases. Account initialization belongs to
+this independently usable module and is carried into custom by the repair merge.
+The independent glass module passed 194 tests and 10 native checks on the final
+source, including native category selection immediately after a mode switch.
+The regression tests cover traditional reselection timing,
+cached/current page selection, actual scroll positions, refresh counts, mode
+changes, unsupported-platform fallback and disposal. Ordinary gallery cards now
+expand for scaled text. Module branches document their own earlier acceptance.
 
 ### Build and verify
 
-Use Flutter 3.47.1 and Xcode 27.0 (minimum Flutter 3.41); iOS uses `cn.honjow.fehv`.
-Prepare the upstream public config template, then run:
+Use Flutter 3.47.1 and Xcode 27.0; the minimum Flutter version is 3.47.0 for the
+public native gesture policy. The iOS Bundle ID is `cn.honjow.fehv`. In a new
+checkout, prepare the upstream public configuration template, then run:
 
 ```sh
 cp lib/config/config.dart.sample lib/config/config.dart
@@ -63,9 +72,9 @@ dart analyze --format=machine
 flutter test --no-pub
 ```
 
-Native reproductions use the production `lib/main.dart` with debug-only neutral
-offline data. Boot an isolated iOS 27 Simulator, keep output outside the checkout
-and choose unique run names:
+Native reproductions use production `lib/main.dart` and debug-only neutral offline
+fixtures. Boot an isolated iOS 27 Simulator, keep output outside the checkout and
+choose unique run names. Run the verifiers serially:
 
 ```sh
 mkdir -p "$OUTPUT_DIRECTORY/harness"
@@ -91,30 +100,36 @@ bash benchmark/avatar_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" avatar
 bash benchmark/grid_tags_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" grid-tags
+bash benchmark/glass_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" glass
 ```
 
-The inherited Flutter refresh armed mediumImpact is separate from the enhanced
-application feedback switch. Accepted native counters do not establish physical
-vibration or strength.
+For glass combinations, prefix the favorites, avatar, group-index, haptics or
+downloads runner with `EROS_VERIFY_GLASS=1`. This enables glass through real
+settings and asserts native navigation without mixing glass seed data into the
+business fixture. `EROS_CROSS_GLASS_ACTIVE` in each case log proves activation.
+To repeat the additional cold-start regression on a fresh installed favorites
+fixture, run `benchmark/favorites_ui_tests/verify-installed.sh` with the device,
+external output directory, a unique run name and the fourth argument `bootstrap`;
+leave `EROS_VERIFY_GLASS` unset for this traditional entry path.
 
-The module branches' bilingual READMEs describe their own checks and boundaries.
-Integration tests and native entry checks are rerun on the merged tree; source
-`dev` test counts and packages do not establish this branch's acceptance.
+Real forum uploads and live Cloudflare remain unverified; local HTTP coverage
+includes authentication, multipart requests, errors, 403 and verification retry.
+Action labels remain Chinese. Simulator semantics do not establish physical
+VoiceOver speech/focus. Accepted native haptic calls do not establish physical
+vibration or intensity; inherited Flutter refresh feedback remains separate from
+the enhanced application switch.
 
-`Debug-SimulatorUI` omits MLKit and the legacy archive-downloader registration.
+`Debug-SimulatorUI` omits MLKit and legacy archive-downloader registration.
 Physical devices, Android SAF hardware, OCR, legacy archive downloads,
-LiveContainer, Release and other untested platforms are outside acceptance.
-Master's large-text category-bar overflow and fixed-height waterfall tag clipping
-remain inherited UI limitations. Ordinary fixed-height list cards also overflow
-in a narrow iPad pane with OS accessibility-medium text; the favorites form is
-functional in that profile. This reconstruction produces no IPA and does
-not publish branches or tags remotely. The legacy debug download-task metadata
-writer remains unimplemented in master and source; it is not a working export.
-Master's unscaled traditional group rail can also overflow and miss right-side
-label taps at accessibility sizes; default-size taps pass and large-type group
-mapping is checked using the existing PageView gesture.
-The unchanged history card overflows by 29px in the narrow iPad pane with
-accessibility-medium text; history ordering, clear and restart checks still pass.
+LiveContainer, Release and other untested platforms remain outside acceptance.
+Master's traditional large-text category rail and fixed-height waterfall tags
+retain overflow/clipping limitations; its unscaled group rail can miss right-side
+label taps at accessibility sizes, where mapping was checked by PageView gestures.
+The unchanged history card retains a 29px overflow in the narrow iPad pane at
+accessibility-medium. The legacy debug download-task metadata writer remains
+unimplemented in both master and source. This reconstruction produces no IPA
+and publishes no branches or tags remotely.
 
 ## 🔍 Translations Wanted 🔍
 Please submit a pull request if you want to help with translation.

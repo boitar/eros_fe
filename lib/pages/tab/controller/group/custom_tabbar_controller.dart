@@ -5,12 +5,15 @@ import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:executor/executor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
+import '../../comm.dart';
 import '../../fetch_list.dart';
 import '../default_tabview_controller.dart';
+import '../tabhome_controller.dart';
 import 'custom_sublist_controller.dart';
 
 final CustomProfile profileChinese = CustomProfile(
@@ -65,6 +68,9 @@ class CustomTabbarController extends DefaultTabViewController {
 
   int _selectionEpoch = 0;
   bool _pendingPageSync = false;
+
+  EhTabController? get currentPageScrollController =>
+      _currSubController?.tabScrollController;
 
   final LinkScrollBarController linkScrollBarController =
       LinkScrollBarController();
@@ -139,6 +145,32 @@ class CustomTabbarController extends DefaultTabViewController {
     linkScrollBarController.dispose();
   }
 
+  /// Update the rail immediately and let the PageView animate to the same
+  /// destination. Waiting for PageView.onPageChanged made the page and its
+  /// Liquid Glass selection visibly lag behind one another.
+  Future<void> selectPage(int target) async {
+    final visibleProfiles = profilesShow;
+    if (target < 0 || target >= visibleProfiles.length) {
+      return;
+    }
+
+    linkScrollBarController.scrollToItem(target);
+    onPageChanged(target);
+    if (!pageController.hasClients) {
+      return;
+    }
+
+    final currentPage = pageController.page;
+    if (currentPage != null && (currentPage - target).abs() < 0.001) {
+      return;
+    }
+    await pageController.animateToPage(
+      target,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   void onPageChanged(int index) {
     if (_pendingPageSync) {
       return;
@@ -150,6 +182,10 @@ class CustomTabbarController extends DefaultTabViewController {
     }
     if (index < 0 || index >= visible.length) {
       return;
+    }
+    if (currProfileUuid != visible[index].uuid &&
+        Get.isRegistered<TabHomeController>()) {
+      Get.find<TabHomeController>().resetTabTapSequence();
     }
     currProfileUuid = visible[index].uuid;
     this.index = index;
@@ -210,6 +246,10 @@ class CustomTabbarController extends DefaultTabViewController {
   @override
   Future<void> jumpToTop() async {
     await _currSubController?.jumpToTop();
+  }
+
+  Future<void> reselectCurrentPage() async {
+    await currentPageScrollController?.scrollToTopAndRefresh();
   }
 
   @override
@@ -326,7 +366,7 @@ class CustomTabbarController extends DefaultTabViewController {
     showCupertinoModalPopup(
         context: context,
         builder: (context) {
-          return CupertinoActionSheet(
+          return EhActionSheet(
               actions: [
                 CupertinoActionSheetAction(
                     onPressed: () {

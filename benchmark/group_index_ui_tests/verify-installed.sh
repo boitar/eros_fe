@@ -10,12 +10,16 @@ case "$output/" in "$root/"*) echo 'Output must be outside the checkout' >&2; ex
 cd "$root"
 xcodegen generate --spec benchmark/group_index_ui_tests/project.yml --project "$output/group-index-harness" \
   > "$output/$run-project.log" 2>&1
+python3 "$root/benchmark/shared_ui_tests/configure-glass-scheme.py" \
+  "$output/group-index-harness/CustomBranchAcceptance.xcodeproj/xcshareddata/xcschemes/CustomBranchAcceptance.xcscheme"
 for phase in ${4:-ColdVisibleSelectionAndRotation ReorderAndDeleteCurrent RestoredSelection AllHiddenFallback RestoredAllHiddenFallback}; do
   test ! -e "$output/$run-$phase.xcresult"
   # Start outside XCTest so each phase attaches to an already running process.
   # A new process must read the persisted database for each phase.
   xcrun simctl terminate "$device" cn.honjow.fehv >/dev/null 2>&1 || true
-  xcrun simctl launch "$device" cn.honjow.fehv --eros-test-semantics \
+  xcrun simctl launch "--stdout=$output/$run-$phase-app.stdout.log" \
+    "--stderr=$output/$run-$phase-app.stderr.log" \
+    "$device" cn.honjow.fehv --eros-test-semantics \
     > "$output/$run-$phase-launch.log" 2>&1
   method="testProduction$phase"
   xcodebuild -project "$output/group-index-harness/CustomBranchAcceptance.xcodeproj" \

@@ -13,7 +13,7 @@
 | --- | --- | --- |
 | 瀑布流稳定性 | 设置 → 布局 → 瀑布流／瀑布流大卡片；稳定封面尺寸、回滑及分页列表／控制器复用 | `codex/custom-waterfall` |
 | 下载 | 暂停、继续或移回下载目录后重新检查，先认领已有文件再调度缺失图片 | `codex/custom-downloads` |
-| 收藏 | 传统表单、服务器读回确认、账号隔离及备注编辑保护 | `codex/custom-favorites-verified` |
+| 收藏 | 传统／玻璃表单、服务器读回确认、账号隔离及备注编辑保护 | `codex/custom-favorites-verified` |
 | 分享 | iOS／iPadOS 链接、图片、文件和导出，处理弹层时序及展示锚点 | `codex/custom-sharing` |
 | 历史 | 共享初始化、串行本地写入／清理、等待同步 | `codex/custom-history` |
 | 可见分组索引 | 可见 UUID／页面对应、重排／删除和重启恢复 | `codex/custom-group-index` |
@@ -21,28 +21,33 @@
 | 触感 | 原生桥接、渐进下拉、应用开关及操作反馈 | `codex/custom-haptics` |
 | 头像 | 相册／文件／URL、论坛验证重试、本机预览与安装后路径恢复 | `codex/custom-avatar` |
 | 网格标签 | 等高卡片、两行横滑标签、独立宽度和恢复 | `codex/custom-grid-tags` |
+| 液态玻璃 | 设置 → 样式：原生导航、双行／单行顶栏、弹窗、安全区和滚动同步；修复玻璃接入造成的传统导航回归 | `codex/custom-liquid-glass-verified` |
 
-收藏独立修正版在界面订阅收藏状态前初始化账号，完整 121 项测试、最终源码 6 项原生检查及
-有／无夹具两种正式入口构建通过；原独立分支和 tag 保留。
+表中每个正式交付业务分支都只有一个直接基于固定 master 的完整提交。原有按序的十次非快进
+合并全部保留，随后显式合入收藏修正版，再合入玻璃，保留全部 11 个正式独立提交编号。
+旧收藏、旧玻璃分支及 tag 保留用于追溯，独立投递使用表中的 verified 分支。
+组合接入保留收藏与头像的账号／版本保护、下载恢复保护、
+可见分组 UUID 对应以及历史数据操作的串行时序。共享启动入口在界面订阅收藏状态前完成账号
+初始化，覆盖已保存玻璃模式下的冷启动。
 
-每个业务分支都是直接基于同一固定 master 的完整单提交，通过显式合并保留原始提交编号。
-最后的液态玻璃模块尚未整合。
+完整整合树全量 486 项测试通过；相对同工具链 master 基线，分析 0 error、无新增诊断。
+正式 `lib/main.dart` 的 7 个 ARM64 Debug-SimulatorUI 版本构建通过，包含有／无离线定义构建。
+在最高已安装且可用的 iOS 27.0（24A434）上，iPhone 18 Pro 和 iPad Pro 11-inch（M5）
+通过 10 项导航／表单检查、玻璃与收藏、头像、可见分组索引、触感、下载的 30 项组合检查，
+以及 2 项传统界面冷启动先设置后收藏检查，共 42 项原生用例。
+手机使用浅色默认字号，iPad 使用深色 accessibility-medium 字号；每个组合均验证实际原生
+玻璃导航已启用，重启阶段读取应用持久化状态。
 
-十模块整合树全量 295 项测试通过，分析 0 error、无新增诊断；正式 `lib/main.dart`
-ARM64 Debug-SimulatorUI 有／无离线定义构建通过。最高已安装可用 iOS 27.0（24A434），
-隔离 iPhone 18 Pro、iPad Pro 11-inch（M5）浅色默认字号／深色 accessibility-medium 共
-12 项网格标签原生检查通过：等高卡片、旋转、真实模式切换与宽度滑块改值；四组实际界面数值
-在进程重启后逐一精确读回。脚本比较两阶段实际观测日志，不依赖 XCTest runner 偏好存储。
-独立网格标签分支 23 项测试和 12 项原生检查通过。组合业务源码与全量测试／双构建已验树哈希
-一致，原生验收脚本的独立修正保留了原 tag，并生成新的验收 tag。
-
-真实论坛上传和在线 Cloudflare 尚未验收，本地 HTTP 测试覆盖表单、认证、上传错误、403 和验证重试。
-操作语义标签保留来源中文；模拟器语义检查不代表真机 VoiceOver 播报／焦点验收。
+完整收藏独立修正版通过 121 项测试、2 种正式入口构建及 6 项冷启动／表单／重启原生检查。
+启动账号初始化包含在这个可独立运行的模块内，并通过修复合并进入 custom。
+玻璃独立修正版通过 194 项测试及最终源码的 10 项原生检查，包含模式切换后立即点击原生分类；
+回归覆盖传统重选时序、缓存／当前子页、真实滚动位置、刷新次数、
+模式切换、不支持平台回退与销毁；普通画廊卡片支持随大字体增高。各业务分支记录自身早期验收。
 
 ### 构建与验证
 
-工具链为 Flutter 3.47.1、Xcode 27.0（最低 Flutter 3.41），iOS 标识统一为 `cn.honjow.fehv`。
-先准备上游公开空配置模板，再执行：
+工具链为 Flutter 3.47.1、Xcode 27.0；原生公开手势策略要求最低 Flutter 3.47.0。
+iOS Bundle ID 统一为 `cn.honjow.fehv`。新 checkout 先准备上游公开空配置模板，再执行：
 
 ```sh
 cp lib/config/config.dart.sample lib/config/config.dart
@@ -54,8 +59,8 @@ dart analyze --format=machine
 flutter test --no-pub
 ```
 
-原生复现使用正式 `lib/main.dart` 和仅 Debug 生效的中性离线数据。先启动隔离的 iOS 27 Simulator，
-证据输出位于 checkout 外，运行名保持唯一：
+原生复现使用正式 `lib/main.dart` 和仅 Debug 生效的中性离线夹具。先启动隔离的 iOS 27
+Simulator，证据输出位于 checkout 外，运行名保持唯一，各验收串行执行：
 
 ```sh
 mkdir -p "$OUTPUT_DIRECTORY/harness"
@@ -81,26 +86,27 @@ bash benchmark/avatar_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" avatar
 bash benchmark/grid_tags_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" grid-tags
+bash benchmark/glass_ui_tests/run-native.sh \
+  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" glass
 ```
 
-Flutter 原有下拉刷新 armed mediumImpact 独立于增强反馈开关；原生接受调用计数不代表
-实际震动或强度。
+玻璃组合复现时，在收藏、头像、分组索引、触感或下载的原生命令前添加 `EROS_VERIFY_GLASS=1`。
+该模式通过真实设置启用玻璃并断言原生导航，不向业务夹具混入玻璃种子数据；每个用例日志中的
+`EROS_CROSS_GLASS_ACTIVE` 证明已启用。
+额外冷启动回归使用新安装的收藏夹具，执行
+`benchmark/favorites_ui_tests/verify-installed.sh`，依次传入设备、仓库外输出目录、唯一运行名和
+第四个参数 `bootstrap`；该传统入口检查不设置 `EROS_VERIFY_GLASS`。
 
-各独立分支的中英文 README 记录本模块的实际检查和边界。整合树另跑测试及原生入口，
-不能以来源 dev 的测试总数或安装包代替本分支验收。
+真实论坛上传和在线 Cloudflare 尚未验收；本地 HTTP 覆盖认证、上传、错误、403 及验证重试。
+操作语义标签保留来源中文，模拟器检查不代表真机 VoiceOver 播报／焦点验收。原生触感接受调用
+计数不代表真实震动或强度；Flutter 原有下拉刷新反馈仍独立于增强触感开关。
 
 `Debug-SimulatorUI` 排除 MLKit 和旧归档下载插件注册。真机、Android 实机 SAF、OCR、旧归档下载、
-LiveContainer、Release 及其他未测平台不在验收范围。master 原有的大字体分类栏溢出及固定高度
-瀑布流标签行裁切仍是继承限制。iPad 窄栏的固定高度普通列表卡片在系统
-accessibility-medium 字号下也会溢出，收藏表单仍可操作。本次重建不生成 IPA，也不向远端发布分支或 tag。
-旧 Debug 下载任务信息生成器在 master／来源中均未实现，不声明为可用导出。
-
-master 传统分组栏仍按未缩放文字测宽，无障碍大字号下可能溢出并使右侧标签点击无效；
-默认字号点击通过，大字号映射通过既有 PageView 手势验证。
-历史页保留 master 固定卡片布局，iPad 窄栏 accessibility-medium 字号下仍有 29px 溢出；
-历史顺序、清理及重启检查通过。
-本轮网格原生截图中，未修改的 master 传统顶栏在 iPad 窄栏大字号下仍有约 22px 溢出；
-网格卡片、实际设置和恢复通过。
+LiveContainer、Release 及其他未测平台不在验收范围。master 传统大字体分类栏与固定高度瀑布流
+标签仍有溢出／裁切；未缩放测宽的传统分组栏在无障碍字号下可能使右侧标签点击无效，映射使用
+既有 PageView 手势验证。未改动的历史卡片在 iPad 窄栏 accessibility-medium 下保留 29px 溢出。
+旧 Debug 下载任务信息生成器在 master／来源中均未实现。本次重建不生成 IPA，也不向远端发布
+分支或 tag。
 
 ## iOS 安装
 1. 下载最新 ipa 文件 [Releases](https://github.com/erosTeam/eros_fe/releases/latest).

@@ -12,6 +12,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/controller/toplist_controller.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -335,6 +336,12 @@ class DefaultTabViewController extends TabViewController {
         // arrowColor: _color,
         showArrow: false,
         menuBuilder: () {
+          if (liquidGlassPopupsEnabled) {
+            return LiquidGlassPopupSurface(
+              borderRadius: BorderRadius.circular(22),
+              child: IntrinsicWidth(child: popupMenu),
+            );
+          }
           return ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: BackdropFilter(

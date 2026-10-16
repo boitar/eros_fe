@@ -2,6 +2,7 @@ import 'package:eros_fe/common/controller/image_block_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -186,7 +187,7 @@ class _ThumbBoxState extends State<ThumbBox> {
         showCupertinoModalPopup(
             context: context,
             builder: (context) {
-              return CupertinoActionSheet(
+              return EhActionSheet(
                 message: Column(
                   children: [
                     // Text(galleryImage.thumbUrl ?? ''),

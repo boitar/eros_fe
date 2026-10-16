@@ -16,10 +16,12 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		A75F47A70F20CE09F24B900B /* LiquidGlassPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3301E49B3D264BF110A738CE /* LiquidGlassPlugin.swift */; };
 		BA373B2925D2A11600C042FA /* SecurityBlurEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA373B2825D2A11600C042FA /* SecurityBlurEffect.swift */; };
 		BAABB8182AF59F36009C2DA3 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BA1D4D5225B3FC6E00264936 /* libsqlite3.tbd */; };
 		BAABB81B2AF5A144009C2DA3 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = BAABB81D2AF5A144009C2DA3 /* InfoPlist.strings */; };
 		BFED4257903270F2E29ACBB6 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 76AED4914C4C6C44220F53A2 /* GoogleService-Info.plist */; };
+		E949856F3923E96AFA508C2F /* LiquidGlassViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 448D1F32CE0B739E2D09223F /* LiquidGlassViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -52,7 +54,9 @@
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		1E6826EFC96EC029C5283C49 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		2E484F12FF97E4360040832A /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		3301E49B3D264BF110A738CE /* LiquidGlassPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiquidGlassPlugin.swift; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		448D1F32CE0B739E2D09223F /* LiquidGlassViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiquidGlassViews.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		76AED4914C4C6C44220F53A2 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -158,6 +162,8 @@
 				BAABB81D2AF5A144009C2DA3 /* InfoPlist.strings */,
 				0304BC467603E942949DC27D /* SharePlugin.swift */,
 				D54F227E16543C455729F0B3 /* HapticsPlugin.swift */,
+				448D1F32CE0B739E2D09223F /* LiquidGlassViews.swift */,
+				3301E49B3D264BF110A738CE /* LiquidGlassPlugin.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -385,6 +391,8 @@
 				BA373B2925D2A11600C042FA /* SecurityBlurEffect.swift in Sources */,
 				5F1C56E3DEC66AFE6B4D0376 /* SharePlugin.swift in Sources */,
 				36BD69AF93B43BC825A96022 /* HapticsPlugin.swift in Sources */,
+				E949856F3923E96AFA508C2F /* LiquidGlassViews.swift in Sources */,
+				A75F47A70F20CE09F24B900B /* LiquidGlassPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

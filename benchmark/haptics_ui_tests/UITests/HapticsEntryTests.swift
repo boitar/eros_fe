@@ -7,6 +7,7 @@ final class HapticsEntryTests: XCTestCase {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
         app.activate()
+        enableGlassForIntegration(app)
     }
     private func element(_ label: String) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
@@ -34,7 +35,7 @@ final class HapticsEntryTests: XCTestCase {
     private func openToggle() -> XCUIElement {
         let settings = element("设置")
         XCTAssertTrue(settings.waitForExistence(timeout: 20), app.debugDescription)
-        settings.tap()
+        if !tapNativeTabIfPresent(app, label: "设置") { settings.tap() }
         let advanced = element("高级")
         for _ in 0..<6 {
             if advanced.exists && advanced.isHittable { break }

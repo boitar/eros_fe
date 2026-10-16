@@ -15,6 +15,9 @@ import 'package:get/get.dart';
 
 class _Settings extends GetxService implements EhSettingService {
   @override
+  bool get liquidGlass => _glass.value;
+  final _glass = false.obs;
+  @override
   bool get isPureDarkTheme => false;
   @override
   dynamic noSuchMethod(Invocation invocation) =>

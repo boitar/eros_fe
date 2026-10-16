@@ -8,6 +8,7 @@ import 'package:eros_fe/pages/image_view/common.dart';
 import 'package:eros_fe/pages/image_view/controller/view_controller.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:eros_fe/utils/orientation_helper.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -228,7 +229,7 @@ Widget _buildViewModeItem(BuildContext context) {
     return showCupertinoModalPopup<ViewMode>(
         context: context,
         builder: (BuildContext context) {
-          final CupertinoActionSheet dialog = CupertinoActionSheet(
+          final EhActionSheet dialog = EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
@@ -293,7 +294,7 @@ class ReadOrientationItem extends StatelessWidget {
     return showCupertinoModalPopup<ReadOrientation>(
         context: context,
         builder: (BuildContext context) {
-          final CupertinoActionSheet dialog = CupertinoActionSheet(
+          final EhActionSheet dialog = EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();

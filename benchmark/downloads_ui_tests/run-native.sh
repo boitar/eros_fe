@@ -25,6 +25,8 @@ xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
 xcrun simctl install "$device" \
   "$output/app-build/Build/Products/Debug-SimulatorUI-iphonesimulator/fehviewer.app"
 xcodegen generate --spec benchmark/downloads_ui_tests/project.yml --project "$output/harness"
+python3 "$root/benchmark/shared_ui_tests/configure-glass-scheme.py" \
+  "$output/harness/CustomBranchAcceptance.xcodeproj/xcshareddata/xcschemes/CustomBranchAcceptance.xcscheme"
 xcodebuild -project "$output/harness/CustomBranchAcceptance.xcodeproj" \
   -scheme CustomBranchAcceptance -destination "platform=iOS Simulator,id=$device" \
   -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \

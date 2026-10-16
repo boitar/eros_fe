@@ -12,6 +12,7 @@ import 'package:eros_fe/debug/offline_accessibility.dart';
 import 'package:eros_fe/debug/offline_avatar.dart';
 import 'package:eros_fe/debug/offline_downloads.dart';
 import 'package:eros_fe/debug/offline_favorites.dart';
+import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/debug/offline_grid_tags.dart';
 import 'package:eros_fe/debug/offline_group_index.dart';
 import 'package:eros_fe/debug/offline_haptics.dart';
@@ -53,6 +54,7 @@ Future<void> main() async {
   await initializeOfflineHaptics();
   await initializeOfflineAvatar();
   await initializeOfflineGridTags();
+  await initializeOfflineGlass();
   getinit();
   await probeOfflineHaptics();
   Global.proxyInit();
@@ -189,6 +191,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangePlatformBrightness() {
     themeService.platformBrightness.value =
         View.of(context).platformDispatcher.platformBrightness;
+    themeService.syncNativeAppearance();
   }
 
   @override

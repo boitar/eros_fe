@@ -13,6 +13,7 @@ import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller.dart';
 import 'package:eros_fe/utils/avatar_store.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:get/get.dart';
@@ -131,8 +132,8 @@ class UserController extends ProfileController {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: const Text('Logout'),
+        return EhAlertDialog(
+          title: Text('Logout'),
           actions: <Widget>[
             CupertinoDialogAction(
               child: Text(L10n.of(context).cancel),

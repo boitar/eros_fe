@@ -15,6 +15,7 @@ import 'package:eros_fe/network/app_dio/pdio.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/gallery/gallery_repository.dart';
 import 'package:eros_fe/pages/gallery/view/const.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:synchronized/synchronized.dart';
@@ -372,7 +373,7 @@ class GalleryPageController extends GetxController
       context: Get.overlayContext!,
       barrierDismissible: true,
       builder: (context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           // title: Text(L10n.of(context).jump_to_page),
           title: Text('${L10n.of(context).jump_to_page} $ser?'),
           // title: Text('Start reading on page $ser ?'),
@@ -463,7 +464,7 @@ class GalleryPageController extends GetxController
             .whenComplete(() => Get.back());
 
         return Center(
-          child: CupertinoPopupSurface(
+          child: EhPopupSurface(
             child: Container(
                 height: 80,
                 width: 80,
@@ -654,7 +655,7 @@ class GalleryPageController extends GetxController
             context: context,
             barrierDismissible: true,
             builder: (context) {
-              return CupertinoAlertDialog(
+              return EhAlertDialog(
                 title: Text(L10n.of(context).image_download_type),
                 // content: Text(L10n.of(context).download_ori_image_summary),
                 actions: [

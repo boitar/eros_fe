@@ -1,4 +1,5 @@
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -70,7 +71,7 @@ class _SelectorItemState<T> extends State<SelectorItem<T>> {
       return showCupertinoModalPopup<T>(
           context: context,
           builder: (BuildContext context) {
-            final CupertinoActionSheet dialog = CupertinoActionSheet(
+            final EhActionSheet dialog = EhActionSheet(
               title: Text(widget.actionTitle ?? widget.title),
               cancelButton: CupertinoActionSheetAction(
                   onPressed: () {
@@ -169,7 +170,7 @@ class _SelectorCupertinoListTileState<T>
       return showCupertinoModalPopup<T>(
           context: context,
           builder: (BuildContext context) {
-            final CupertinoActionSheet dialog = CupertinoActionSheet(
+            final EhActionSheet dialog = EhActionSheet(
               title: Text(widget.actionTitle ?? widget.title),
               cancelButton: CupertinoActionSheetAction(
                   onPressed: () {

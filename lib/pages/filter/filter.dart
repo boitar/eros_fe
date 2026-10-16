@@ -7,6 +7,7 @@ import 'package:eros_fe/pages/filter/gallery_filter_view.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/utils/utility.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -275,7 +276,7 @@ Future<void> showFilterSetting() async {
     context: Get.overlayContext!,
     barrierDismissible: true,
     builder: (BuildContext context) {
-      return CupertinoAlertDialog(
+      return EhAlertDialog(
         title: Text(L10n.of(context).search),
         content: GalleryFilterView(
           catNum: _ehSettingService.catFilter.value,

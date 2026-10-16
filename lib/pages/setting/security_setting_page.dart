@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/controller/auto_lock_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -98,7 +99,7 @@ Widget _buildAutoLockItem(BuildContext context) {
     return showCupertinoModalPopup<int>(
         context: context,
         builder: (BuildContext context) {
-          final CupertinoActionSheet dialog = CupertinoActionSheet(
+          final EhActionSheet dialog = EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();

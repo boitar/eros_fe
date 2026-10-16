@@ -16,6 +16,7 @@ class EhGridView extends StatelessWidget {
       this.large = false,
       this.mode = ListModeEnum.grid,
       this.centerKey,
+      this.firstCardKey,
       this.lastTopItemIndex,
       super.key})
       : assert(mode == ListModeEnum.grid || mode == ListModeEnum.gridTags);
@@ -27,6 +28,7 @@ class EhGridView extends StatelessWidget {
   final bool large;
   final ListModeEnum mode;
   final Key? centerKey;
+  final Key? firstCardKey;
   final int? lastTopItemIndex;
 
   EhSettingService get _ehSettingService => Get.find();
@@ -69,7 +71,10 @@ class EhGridView extends StatelessWidget {
                 placeHolder: const GalleryItemGridPlaceHolder(),
                 child: card,
               );
-        return offlineGallerySemantics(_provider.gid, item);
+        final keyed = index == 0 && firstCardKey != null
+            ? KeyedSubtree(key: firstCardKey, child: item)
+            : item;
+        return offlineGallerySemantics(_provider.gid, keyed);
       },
       childCount: galleryProviders.length,
     );

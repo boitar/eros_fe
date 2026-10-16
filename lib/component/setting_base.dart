@@ -5,6 +5,7 @@ import 'package:eros_fe/common/service/dns_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 // import 'package:extended_text/extended_text.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -837,7 +838,7 @@ Future<void> showCustomHostEditer(BuildContext context, {int? index}) async {
         addrController.text = dnsConfigController.hosts[index].addr ?? '';
       }
 
-      return CupertinoAlertDialog(
+      return EhAlertDialog(
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -917,7 +918,7 @@ Future<void> showUserCookie() async {
     context: Get.context!,
     barrierDismissible: true,
     builder: (BuildContext context) {
-      return CupertinoAlertDialog(
+      return EhAlertDialog(
         title: const Text('Cookie'),
         content: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),

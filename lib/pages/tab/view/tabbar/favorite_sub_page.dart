@@ -1,20 +1,26 @@
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/favorite/favorite_sublist_controller.dart';
 import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller.dart';
+import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
 import '../../comm.dart';
-import '../constants.dart';
 import '../gallery_base.dart';
 import '../list/tab_base.dart';
 
 class FavoriteSubPage extends StatefulWidget {
-  const FavoriteSubPage({super.key, required this.favcat, this.pinned = true});
+  const FavoriteSubPage({
+    super.key,
+    required this.favcat,
+    this.scrollToInitialAnchor,
+    this.firstCardKey,
+  });
 
   final String favcat;
-  final bool pinned;
+  final Future<void> Function()? scrollToInitialAnchor;
+  final GlobalKey? firstCardKey;
 
   @override
   State<FavoriteSubPage> createState() => _FavoriteSubPageState();
@@ -42,8 +48,15 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
       context: context,
       ehTabController: ehTabController,
       tabTag: EHRoutes.favorite,
+      scrollToInitialAnchor: widget.scrollToInitialAnchor,
     );
     // subController.initStateAddPostFrameCallback(context);
+  }
+
+  @override
+  void dispose() {
+    ehTabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -51,11 +64,23 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
     super.build(context);
     return CustomScrollView(
       // cacheExtent: context.height * 2,
+      physics:
+          const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
+        // 刷新控件必须在 SliverOverlapInjector 之前：injector 会把吸顶头栏
+        // 高度转成实际布局空间，吞掉顶部下拉越界时 viewport 给出的负 overlap，
+        // 而 CupertinoSliverRefreshControl 只有在 overlap < 0 时才会激活。
         SliverSafeArea(
-          top: widget.pinned,
+          top: false,
           bottom: false,
-          sliver: _buildRefresh(context),
+          sliver: EhCupertinoSliverRefreshControl(
+            onRefresh: _favoriteSubListController.onRefresh,
+          ),
+        ),
+        SliverOverlapInjector(
+          handle: ExtendedNestedScrollView.sliverOverlapAbsorberHandleFor(
+            context,
+          ),
         ),
         _buildListView(),
         Obx(() {
@@ -66,17 +91,6 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
         }),
       ],
     );
-  }
-
-  Widget _buildRefresh(BuildContext context) {
-    return SliverPadding(
-        padding: widget.pinned
-            ? const EdgeInsets.only(top: kHeaderMaxHeight)
-            : EdgeInsets.only(
-                top: context.mediaQueryPadding.top + kTopTabbarHeight),
-        sliver: EhCupertinoSliverRefreshControl(
-          onRefresh: _favoriteSubListController.onRefresh,
-        ));
   }
 
   Widget _buildListView() {
@@ -120,6 +134,7 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
               _favoriteSubListController.heroTag,
               next: logic.next,
               lastComplete: _favoriteSubListController.lastComplete,
+              firstCardKey: widget.firstCardKey,
               // key: _favoriteSubListController.sliverAnimatedListKey,
               keepPosition: _favoriteSubListController.keepPosition,
             );
@@ -131,7 +146,8 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  FaIcon(FontAwesomeIcons.hippo,
+                  FaIcon(
+                    FontAwesomeIcons.hippo,
                     size: 100,
                     color: CupertinoDynamicColor.resolve(
                         CupertinoColors.systemGrey, context),

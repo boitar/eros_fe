@@ -57,6 +57,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("Avatar updated"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare Verification Required"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("The forum is protected by Cloudflare. Complete the verification in the built-in browser; the upload will retry automatically afterwards."),
+        "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("Top category layout"),
+        "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("Two rows (default)"),
+        "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("Actions and categories on separate rows"),
+        "liquid_glass_inline": MessageLookupByLibrary.simpleMessage("Compact row"),
+        "liquid_glass_inline_detail": MessageLookupByLibrary.simpleMessage("Actions and categories share one row"),
+        "favorite_note_hint": MessageLookupByLibrary.simpleMessage("Note (optional)"),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("KEEP IT SAFE"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage(
             "Block images containing QR codes"),

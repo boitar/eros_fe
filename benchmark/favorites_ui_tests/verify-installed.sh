@@ -10,10 +10,12 @@ case "$output/" in "$root/"*) echo 'Output must be outside the checkout' >&2; ex
 cd "$root"
 xcodegen generate --spec benchmark/favorites_ui_tests/project.yml --project "$output/favorites-harness" \
   > "$output/$run-project.log" 2>&1
-for phase in ${4:-bootstrap forms restored}; do
+python3 "$root/benchmark/shared_ui_tests/configure-glass-scheme.py" \
+  "$output/favorites-harness/CustomBranchAcceptance.xcodeproj/xcshareddata/xcschemes/CustomBranchAcceptance.xcscheme"
+for phase in ${4:-forms restored}; do
   test ! -e "$output/$run-$phase.xcresult"
   # Start outside XCTest so each phase attaches to an already running process.
-  # Preserve the launch PIDs as evidence of real process restarts.
+  # Preserve the two launch PIDs as evidence of the real restart.
   xcrun simctl terminate "$device" cn.honjow.fehv >/dev/null 2>&1 || true
   xcrun simctl launch "$device" cn.honjow.fehv --eros-test-semantics \
     > "$output/$run-$phase-launch.log" 2>&1

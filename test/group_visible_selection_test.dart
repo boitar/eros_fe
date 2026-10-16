@@ -17,7 +17,12 @@ import 'package:hive/hive.dart' as hive;
 
 class _Settings extends GetxService implements EhSettingService {
   @override
+  bool get liquidGlass => _glass.value;
+  final _glass = false.obs;
+  @override
   bool get isPureDarkTheme => false;
+  @override
+  bool get liquidGlassFollowSystemTransparency => true;
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw StateError('Unexpected group setting');
@@ -30,6 +35,8 @@ class _Tags extends GetxController implements TagController {
 }
 
 class _Tabs extends GetxController implements TabHomeController {
+  @override
+  void resetTabTapSequence() {}
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw StateError('Unexpected main tab access');
@@ -130,6 +137,29 @@ void main() {
     expect(find.text('d'), findsOneWidget);
   });
 
+  testWidgets(
+      'selecting after the traditional rail is removed keeps the actual page',
+      (tester) async {
+    final controller = await mount(tester, useBar: true);
+    await tester.pumpWidget(CupertinoApp(
+      home: Obx(() => PageView(
+            controller: controller.pageController,
+            onPageChanged: controller.onPageChanged,
+            children: controller.profilesShow
+                .map((profile) => Center(child: Text(profile.uuid)))
+                .toList(),
+          )),
+    ));
+    await tester.pumpAndSettle();
+    final selection = controller.selectPage(2);
+    await tester.pumpAndSettle();
+    await selection;
+    expect(controller.currProfileUuid, 'd');
+    expect(controller.index, 2);
+    expect(controller.pageController.page, 2);
+    expect(find.text('d'), findsOneWidget);
+  });
+
   testWidgets('a visible page index skips a hidden middle group',
       (tester) async {
     final controller = await mount(tester);
@@ -211,7 +241,9 @@ void main() {
     expect(controller.currProfileUuid, 'd');
   });
 
-  testWidgets('deleting the selected final page after reorder reveals its real neighbor', (tester) async {
+  testWidgets(
+      'deleting the selected final page after reorder reveals its real neighbor',
+      (tester) async {
     final controller = await mount(tester, savedIndex: 1);
     await controller.onReorder(3, 0);
     await tester.pumpAndSettle();

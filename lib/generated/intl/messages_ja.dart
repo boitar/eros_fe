@@ -57,6 +57,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("アバターを更新しました"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 認証が必要です"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("フォーラムは Cloudflare で保護されています。内蔵ブラウザで認証を完了すると、アップロードを自動的に再試行します。"),
+        "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("上部カテゴリの配置"),
+        "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("2行（デフォルト）"),
+        "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("操作とカテゴリを別々の行に表示"),
+        "liquid_glass_inline": MessageLookupByLibrary.simpleMessage("コンパクトな1行"),
+        "liquid_glass_inline_detail": MessageLookupByLibrary.simpleMessage("操作とカテゴリを1行に表示"),
+        "favorite_note_hint": MessageLookupByLibrary.simpleMessage("メモ（任意）"),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("安全を確認してください"),
         "QR_code_block":
             MessageLookupByLibrary.simpleMessage("QRコードを含む画像をブロック"),

@@ -25,6 +25,12 @@ import flutter_downloader
         if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosSharePlugin") {
             ErosSharePlugin.register(with: registrar)
         }
+        if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosAppearance") {
+            ErosAppearancePlugin.register(with: registrar)
+        }
+        if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosLiquidGlass") {
+            ErosLiquidGlassPlugin.register(with: registrar)
+        }
     }
 
     @objc func step(displaylink: CADisplayLink) {
@@ -44,11 +50,13 @@ import flutter_downloader
     override func applicationDidBecomeActive(_ application: UIApplication) {
         print("applicationDidBecomeActive")
         SecurityBlurEffect.removeBlurEffect()
+        ErosAppearancePlugin.applyCurrentStyle()
     }
     
     override func applicationWillEnterForeground(_ application: UIApplication) {
         print("applicationWillEnterForeground")
         SecurityBlurEffect.removeBlurEffect()
+        ErosAppearancePlugin.applyCurrentStyle()
     }
 
     func addBlurEffect() {
@@ -81,6 +89,7 @@ private func registerPlugins(registry: FlutterPluginRegistry) {
     override func sceneDidBecomeActive(_ scene: UIScene) {
         super.sceneDidBecomeActive(scene)
         SecurityBlurEffect.removeBlurEffect()
+        ErosAppearancePlugin.applyCurrentStyle()
         #if EROS_SIMULATOR_UI_TEST
         if ProcessInfo.processInfo.arguments.contains("--eros-test-semantics") {
             (window?.rootViewController as? FlutterViewController)?
@@ -92,5 +101,6 @@ private func registerPlugins(registry: FlutterPluginRegistry) {
     override func sceneWillEnterForeground(_ scene: UIScene) {
         super.sceneWillEnterForeground(scene)
         SecurityBlurEffect.removeBlurEffect()
+        ErosAppearancePlugin.applyCurrentStyle()
     }
 }

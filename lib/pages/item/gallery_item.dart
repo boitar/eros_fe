@@ -45,7 +45,7 @@ class GalleryItemWidget extends StatelessWidget {
       child: Center(
         child: Stack(
           children: [
-            _buildCardItem(),
+            _buildCardItem(context),
             if (Get.find<EhSettingService>().debugMode)
               Positioned(
                 left: 4,
@@ -68,12 +68,12 @@ class GalleryItemWidget extends StatelessWidget {
     ).autoCompressKeyboard(context);
   }
 
-  Widget _buildCardItem() {
+  Widget _buildCardItem(BuildContext context) {
     return Obx(
       () {
+        final bool useFixedHeight = _useFixedHeight(context);
         return Container(
-          height:
-              _ehSettingService.fixedHeightOfListItems ? kFixedHeight : null,
+          height: useFixedHeight ? kFixedHeight : null,
           decoration: BoxDecoration(
             boxShadow: ehTheme.isDarkMode
                 ? null
@@ -101,6 +101,7 @@ class GalleryItemWidget extends StatelessWidget {
                     Expanded(
                       child: _CoverImage(
                         galleryProviderController: itemController,
+                        fixedHeight: useFixedHeight,
                         tabTag: tabTag,
                         cardType: true,
                       ),
@@ -120,6 +121,7 @@ class GalleryItemWidget extends StatelessWidget {
                         // 标题 provider
                         _Title(
                           galleryItemController: itemController,
+                          fixedHeight: useFixedHeight,
                         ),
                         const SizedBox(height: 6),
                         // 上传者 或 收藏备注
@@ -135,7 +137,7 @@ class GalleryItemWidget extends StatelessWidget {
                         const Spacer(),
                         const SizedBox(height: 6),
                         // 标签
-                        if (_ehSettingService.fixedHeightOfListItems)
+                        if (useFixedHeight)
                           TagWaterfallFlowViewBox(
                             simpleTags: galleryProvider.simpleTags,
                             crossAxisCount: itemController.tagLine,
@@ -208,17 +210,27 @@ class GalleryItemWidget extends StatelessWidget {
       },
     );
   }
+
+  bool _useFixedHeight(BuildContext context) {
+    final TextScaler textScaler = MediaQuery.textScalerOf(context);
+    // Preserve normal fixed cards, while allowing accessibility text to size
+    // the content without clipping it.
+    return _ehSettingService.fixedHeightOfListItems &&
+        textScaler.scale(14.5) <= 17;
+  }
 }
 
 class _CoverImage extends StatelessWidget {
   const _CoverImage({
     super.key,
     required this.galleryProviderController,
+    required this.fixedHeight,
     this.tabTag,
     this.cardType = false,
   });
 
   final GalleryItemController galleryProviderController;
+  final bool fixedHeight;
   final dynamic tabTag;
   final bool cardType;
 
@@ -238,7 +250,7 @@ class _CoverImage extends StatelessWidget {
     // 计算图片容器高度
     late double? coverImageHeight;
 
-    if (_ehSettingService.fixedHeightOfListItems) {
+    if (fixedHeight) {
       coverImageHeight = kFixedHeight;
     } else {
       if ((_item.imgWidth ?? 0) >= coverImageWidth) {
@@ -259,7 +271,7 @@ class _CoverImage extends StatelessWidget {
 
     BoxFit _fit = BoxFit.cover;
 
-    if (!_ehSettingService.fixedHeightOfListItems) {
+    if (!fixedHeight) {
       if (imageRatio > 1 || imageRatio < 3 / 5) {
         _fit = BoxFit.contain;
       }
@@ -380,16 +392,21 @@ class _CoverImage extends StatelessWidget {
 }
 
 class _Title extends StatelessWidget {
-  const _Title({super.key, required this.galleryItemController});
+  const _Title({
+    super.key,
+    required this.galleryItemController,
+    required this.fixedHeight,
+  });
   final GalleryItemController galleryItemController;
+  final bool fixedHeight;
 
   @override
   Widget build(BuildContext context) {
     final maxLine = 5 - galleryItemController.tagLine;
 
-    return Obx(() => Text(
+    return Text(
           galleryItemController.title,
-          maxLines: _ehSettingService.fixedHeightOfListItems ? maxLine : 4,
+          maxLines: fixedHeight ? maxLine : 4,
           textAlign: TextAlign.left, // 对齐方式
           overflow: TextOverflow.ellipsis, // 超出部分省略号
           style: const TextStyle(
@@ -397,7 +414,7 @@ class _Title extends StatelessWidget {
             // fontWeight: FontWeight.normal,
             // color: CupertinoColors.label,
           ),
-        ));
+        );
   }
 }
 

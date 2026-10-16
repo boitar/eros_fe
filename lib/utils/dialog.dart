@@ -1,4 +1,5 @@
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:shared_storage/shared_storage.dart' as ss;
@@ -15,7 +16,7 @@ Future<T?> showSimpleEhDiglog<T>({
   return await showCupertinoDialog<T>(
       context: context,
       builder: (context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: title != null ? Text(title) : null,
           content: content ??
               Text(

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:eros_fe/debug/offline_favorites.dart';
+import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
@@ -42,10 +43,18 @@ class OfflineAcceptanceAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    if (offlineGlassAcceptanceEnabled) {
+      final response = await offlineGlassResponse(options);
+      if (response != null) {
+        return response;
+      }
+    }
     if (offlineFavoriteAcceptanceEnabled) {
       final page = int.tryParse('${options.queryParameters['page'] ?? 0}') ?? 0;
       final response = await offlineFavoriteResponse(
-          options, offlineGalleryList(page: page,
+          options,
+          offlineGalleryList(
+              page: page,
               invalidCoverSizes:
                   const bool.fromEnvironment('EROS_WATERFALL_EDGE_CASES')));
       if (response != null) {
@@ -69,12 +78,15 @@ class OfflineAcceptanceAdapter implements HttpClientAdapter {
         .contains(options.uri.path)) {
       final page = int.tryParse('${options.queryParameters['page'] ?? 0}') ?? 0;
       final group = const bool.fromEnvironment('EROS_GROUP_INDEX_ACCEPTANCE')
-          ? RegExp(r'offline_group_([abcd])').firstMatch(
-              '${options.queryParameters['f_search'] ?? ''}')?.group(1)
+          ? RegExp(r'offline_group_([abcd])')
+              .firstMatch('${options.queryParameters['f_search'] ?? ''}')
+              ?.group(1)
           : null;
       final html = offlineGalleryList(
         page: page,
-        titlePrefix: group == null ? 'Offline gallery' : 'Offline group ${group.toUpperCase()} gallery',
+        titlePrefix: group == null
+            ? 'Offline gallery'
+            : 'Offline group ${group.toUpperCase()} gallery',
         gidBase: group == null ? 9100000 : 9444000 + group.codeUnitAt(0) * 1000,
         invalidCoverSizes:
             const bool.fromEnvironment('EROS_WATERFALL_EDGE_CASES'),
@@ -91,8 +103,11 @@ class OfflineAcceptanceAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-String offlineGalleryList({int page = 0, bool invalidCoverSizes = false,
-    String titlePrefix = 'Offline gallery', int gidBase = 9100000}) {
+String offlineGalleryList(
+    {int page = 0,
+    bool invalidCoverSizes = false,
+    String titlePrefix = 'Offline gallery',
+    int gidBase = 9100000}) {
   final rows = List.generate(48, (index) {
     final gid = gidBase + page * 48 + index;
     const gridTags = bool.fromEnvironment('EROS_GRID_TAGS_ACCEPTANCE');

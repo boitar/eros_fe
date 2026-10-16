@@ -374,7 +374,6 @@
   "show_comment_avatar": "顯示評論大頭貼",
   "avatar": "大頭貼",
   "default_avatar_style": "預設大頭貼樣式",
-
   "upload_avatar": "上傳頭像",
   "avatar_source": "選擇圖片來源",
   "avatar_from_album": "相簿",
@@ -462,5 +461,11 @@
   "high_resolution_images_limited": "高解析度圖片限制",
   "refresh_igneous": "重新整理Igneous",
   "download_files_unavailable": "檔案暫時無法使用",
-  "check_download_files_and_continue": "核對檔案並繼續"
+  "check_download_files_and_continue": "核對檔案並繼續",
+  "liquid_glass_top_layout": "頂欄分組佈局",
+  "liquid_glass_two_row": "兩行展開（預設）",
+  "liquid_glass_two_row_detail": "操作與分組分行顯示，適合較多分組和長名稱",
+  "liquid_glass_inline": "單行緊湊",
+  "liquid_glass_inline_detail": "操作與分組共用一行，節省頁面高度",
+  "favorite_note_hint": "備註（選填）"
 }

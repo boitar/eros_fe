@@ -146,7 +146,7 @@ class ListViewAdvancedSetting extends StatelessWidget {
               trailing: const CupertinoListTileChevron(),
               onTap: () async {
                 // exportAppDataToFile(base64: !kDebugMode);
-                exportAppDataToFile();
+                await exportAppDataToFile(context: context);
               },
             ),
             EhCupertinoListTile(

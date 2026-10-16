@@ -374,7 +374,6 @@
   "show_comment_avatar": "アバターを表示",
   "avatar": "アバター",
   "default_avatar_style": "スタイル",
-
   "upload_avatar": "アバターをアップロード",
   "avatar_source": "画像の取得元を選択",
   "avatar_from_album": "フォトライブラリ",
@@ -462,5 +461,11 @@
   "high_resolution_images_limited": "High Resolution Images Limited",
   "refresh_igneous": "Refresh Igneous",
   "download_files_unavailable": "ファイルは一時的に利用できません",
-  "check_download_files_and_continue": "ファイルを確認して続行"
+  "check_download_files_and_continue": "ファイルを確認して続行",
+  "liquid_glass_top_layout": "上部カテゴリの配置",
+  "liquid_glass_two_row": "2行（デフォルト）",
+  "liquid_glass_two_row_detail": "操作とカテゴリを別々の行に表示",
+  "liquid_glass_inline": "コンパクトな1行",
+  "liquid_glass_inline_detail": "操作とカテゴリを1行に表示",
+  "favorite_note_hint": "メモ（任意）"
 }

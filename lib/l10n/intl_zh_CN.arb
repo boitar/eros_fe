@@ -374,7 +374,6 @@
   "show_comment_avatar": "显示评论头像",
   "avatar": "头像",
   "default_avatar_style": "默认头像样式",
-
   "upload_avatar": "上传头像",
   "avatar_source": "选择图片来源",
   "avatar_from_album": "相册",
@@ -462,5 +461,11 @@
   "high_resolution_images_limited": "高分辨率图片限制",
   "refresh_igneous": "刷新Igneous",
   "download_files_unavailable": "文件暂不可用",
-  "check_download_files_and_continue": "核对文件并继续"
+  "check_download_files_and_continue": "核对文件并继续",
+  "liquid_glass_top_layout": "顶栏分组布局",
+  "liquid_glass_two_row": "两行展开（默认）",
+  "liquid_glass_two_row_detail": "操作与分组分行显示，适合较多分组和长名称",
+  "liquid_glass_inline": "单行紧凑",
+  "liquid_glass_inline_detail": "操作与分组共用一行，节省页面高度",
+  "favorite_note_hint": "备注（可选）"
 }

@@ -5,9 +5,12 @@ import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/theme_colors.dart';
+import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/login/controller/login_controller.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -190,6 +193,89 @@ class LayoutSettingList extends StatelessWidget {
         ],
       ),
       SliverCupertinoListSection.listInsetGrouped(children: [
+        if (LiquidGlassPlatform.isSupported)
+          EhCupertinoListTile(
+            title: const Text('iOS 液态玻璃'),
+            subtitle: const Text(
+              'iOS 26+ 使用原生 Liquid Glass；与“滚动隐藏顶栏”独立，支持灵动岛或刘海安全区收束',
+            ),
+            trailing: Obx(() {
+              return offlineGlassControl(
+                  'enabled',
+                  CupertinoSwitch(
+                    value: _ehSettingService.liquidGlass,
+                    onChanged: (bool val) {
+                      _ehSettingService.liquidGlass = val;
+                    },
+                  ));
+            }),
+          ),
+        if (LiquidGlassPlatform.isSupported)
+          Obx(() {
+            if (!_ehSettingService.liquidGlass) {
+              return const SizedBox.shrink();
+            }
+            return EhCupertinoListTile(
+              title: const Text('使用系统 Liquid Glass 外观'),
+              subtitle: const Text(
+                '开启时使用系统原生 Liquid Glass；关闭时使用传统材质，并遵循辅助功能中的降低透明度',
+              ),
+              trailing: CupertinoSwitch(
+                value: _ehSettingService.liquidGlassFollowSystemTransparency,
+                onChanged: (bool val) {
+                  _ehSettingService.liquidGlassFollowSystemTransparency = val;
+                },
+              ),
+            );
+          }),
+        if (LiquidGlassPlatform.isSupported)
+          Obx(() {
+            if (!_ehSettingService.liquidGlass) {
+              return const SizedBox.shrink();
+            }
+            final l10n = L10n.of(context);
+            final value = _ehSettingService.liquidGlassTopBarLayout;
+            return EhCupertinoListTile(
+              title: Text(l10n.liquid_glass_top_layout),
+              additionalInfo: Text(value == LiquidGlassTopBarLayout.twoRow
+                  ? l10n.liquid_glass_two_row
+                  : l10n.liquid_glass_inline),
+              onTap: () async {
+                final selected =
+                    await showCupertinoModalPopup<LiquidGlassTopBarLayout>(
+                  context: context,
+                  builder: (context) => EhActionSheet(
+                    title: Text(l10n.liquid_glass_top_layout),
+                    actions: [
+                      for (final layout in LiquidGlassTopBarLayout.values)
+                        CupertinoActionSheetAction(
+                          isDefaultAction: value == layout,
+                          onPressed: () => Navigator.of(context).pop(layout),
+                          child: Column(children: [
+                            Text(layout == LiquidGlassTopBarLayout.twoRow
+                                ? l10n.liquid_glass_two_row
+                                : l10n.liquid_glass_inline),
+                            Text(
+                                layout == LiquidGlassTopBarLayout.twoRow
+                                    ? l10n.liquid_glass_two_row_detail
+                                    : l10n.liquid_glass_inline_detail,
+                                style: const TextStyle(fontSize: 13)),
+                          ]),
+                        ),
+                    ],
+                    cancelButton: CupertinoActionSheetAction(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(l10n.cancel),
+                    ),
+                  ),
+                );
+                if (selected != null) {
+                  _ehSettingService.liquidGlassTopBarLayout = selected;
+                }
+              },
+            );
+          }),
+
         // hide_top_bar_on_scroll switch
         EhCupertinoListTile(
           title: Text(L10n.of(context).hide_top_bar_on_scroll),

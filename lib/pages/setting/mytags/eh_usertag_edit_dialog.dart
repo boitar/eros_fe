@@ -1,3 +1,4 @@
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -148,7 +149,7 @@ class _EhUserTagEditDialogState extends State<EhUserTagEditDialog> {
       ],
     );
 
-    return CupertinoAlertDialog(
+    return EhAlertDialog(
       title: Text(widget.usertag.title),
       content: Column(
         children: [

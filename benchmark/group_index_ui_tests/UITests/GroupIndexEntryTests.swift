@@ -8,13 +8,22 @@ final class GroupIndexEntryTests: XCTestCase {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
         app.activate()
+        enableGlassForIntegration(app)
     }
     private func element(_ text: String) -> XCUIElement {
         app.descendants(matching: .any).matching(
             NSPredicate(format: "label == %@", text)).firstMatch
     }
     private func control(_ name: String) -> XCUIElement {
-        app.descendants(matching: .any)["offline-group-control-\(name)"]
+        if name == "manage" {
+            // The native bar can still be reappearing during the route pop.
+            // Keep a dynamic query for the actual management action instead
+            // of choosing a permanent locator from that transition frame.
+            return app.descendants(matching: .any).matching(NSPredicate(
+                format: "identifier == %@ OR label == %@",
+                "offline-group-control-manage", "分组管理")).firstMatch
+        }
+        return app.descendants(matching: .any)["offline-group-control-\(name)"]
     }
     private func selected(_ uuid: String, _ index: Int) {
         XCTAssertTrue(app.descendants(matching: .any)[
@@ -33,6 +42,35 @@ final class GroupIndexEntryTests: XCTestCase {
         let start = row.coordinate(withNormalizedOffset: CGVector(dx: left ? 0.9 : 0.1, dy: 0.12))
         let end = row.coordinate(withNormalizedOffset: CGVector(dx: left ? 0.1 : 0.9, dy: 0.12))
         start.press(forDuration: 0.05, thenDragTo: end)
+    }
+    private func tapGroup(_ group: String) {
+        guard app.buttons["liquid-glass-tab-0"].exists else {
+            element("Group \(group)").tap()
+            return
+        }
+        let category = app.buttons.matching(NSPredicate(
+            format: "identifier BEGINSWITH %@ AND label == %@",
+            "liquid-glass-category-", "Group \(group)")).firstMatch
+        let rail = app.scrollViews["liquid-glass-category-scroll"]
+        XCTAssertTrue(category.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(rail.exists, app.debugDescription)
+        // Native buttons keep their full accessibility frame while clipped.
+        // Reveal the physical center before sending the category tap.
+        for _ in 0..<6 {
+            let point = CGPoint(x: category.frame.midX, y: category.frame.midY)
+            if rail.frame.insetBy(dx: 2, dy: 2).contains(point) { break }
+            let earlier = point.x < rail.frame.minX
+            rail.coordinate(withNormalizedOffset: CGVector(
+                dx: earlier ? 0.2 : 0.8, dy: 0.5)).press(forDuration: 0.05,
+                thenDragTo: rail.coordinate(withNormalizedOffset: CGVector(
+                    dx: earlier ? 0.8 : 0.2, dy: 0.5)))
+        }
+        let point = CGPoint(x: category.frame.midX, y: category.frame.midY)
+        XCTAssertTrue(rail.frame.insetBy(dx: 2, dy: 2).contains(point),
+                      "Category center must be inside its actual native viewport")
+        print("EROS_GROUP_NATIVE_CATEGORY_CENTER=\(point);viewport=\(rail.frame)")
+        app.coordinate(withNormalizedOffset: .zero).withOffset(
+            CGVector(dx: point.x, dy: point.y)).press(forDuration: 0.15)
     }
     private func record(_ name: String) {
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -66,17 +104,18 @@ final class GroupIndexEntryTests: XCTestCase {
         // Master's LinkScrollBar measures unscaled text and clips the right
         // hit region at accessibility sizes. Record that inherited limitation;
         // verify visible-index mapping with the existing PageView gesture there.
-        let largeType = UIFont.preferredFont(forTextStyle: .body).pointSize > 25
+        let largeType = !app.buttons["liquid-glass-tab-0"].exists &&
+            UIFont.preferredFont(forTextStyle: .body).pointSize > 25
         if largeType { swipePage("C", left: true) }
-        else { element("Group D").tap() }
+        else { tapGroup("D") }
         selected("offline-d", 2); gallery("D")
         if largeType {
             swipePage("D", left: false); selected("offline-c", 1); gallery("C")
             swipePage("C", left: false)
-        } else { element("Group A").tap() }
+        } else { tapGroup("A") }
         selected("offline-a", 0); gallery("A")
         if largeType { swipePage("A", left: true) }
-        else { element("Group C").tap() }
+        else { tapGroup("C") }
         selected("offline-c", 1); gallery("C")
         record("group-hidden-middle-selects-real-page")
         XCUIDevice.shared.orientation = .landscapeLeft

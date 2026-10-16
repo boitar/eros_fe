@@ -1,5 +1,6 @@
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 
 Future<String?> showExportProgress(
@@ -48,7 +49,7 @@ Future<String?> showExportProgress(
           }
         });
       }
-      return CupertinoAlertDialog(
+      return EhAlertDialog(
         title: Text(L10n.of(dialogContext).processing),
         content: const Padding(
           padding: EdgeInsets.only(top: 10),

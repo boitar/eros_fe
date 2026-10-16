@@ -1,12 +1,12 @@
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_sublist_controller.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
+import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
 import '../../comm.dart';
-import '../constants.dart';
 import '../gallery_base.dart';
 import '../list/tab_base.dart';
 
@@ -14,11 +14,13 @@ class SubListView<T extends CustomSubListController> extends StatefulWidget {
   const SubListView({
     super.key,
     required this.profileUuid,
-    this.pinned = true,
+    this.scrollToInitialAnchor,
+    this.firstCardKey,
   });
 
   final String profileUuid;
-  final bool pinned;
+  final Future<void> Function()? scrollToInitialAnchor;
+  final GlobalKey? firstCardKey;
 
   @override
   State<SubListView> createState() => _SubListViewState<T>();
@@ -47,7 +49,14 @@ class _SubListViewState<T extends CustomSubListController>
       context: context,
       ehTabController: ehTabController,
       tabTag: EHRoutes.gallery,
+      scrollToInitialAnchor: widget.scrollToInitialAnchor,
     );
+  }
+
+  @override
+  void dispose() {
+    ehTabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -61,10 +70,20 @@ class _SubListViewState<T extends CustomSubListController>
       physics:
           const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
+        // 刷新控件必须在 SliverOverlapInjector 之前：injector 会把吸顶头栏
+        // 高度转成实际布局空间，吞掉顶部下拉越界时 viewport 给出的负 overlap，
+        // 而 CupertinoSliverRefreshControl 只有在 overlap < 0 时才会激活。
         SliverSafeArea(
-          top: widget.pinned,
+          top: false,
           bottom: false,
-          sliver: _buildRefresh(context),
+          sliver: EhCupertinoSliverRefreshControl(
+            onRefresh: subController.onRefresh,
+          ),
+        ),
+        SliverOverlapInjector(
+          handle: ExtendedNestedScrollView.sliverOverlapAbsorberHandleFor(
+            context,
+          ),
         ),
         SliverSafeArea(
           top: false,
@@ -81,17 +100,6 @@ class _SubListViewState<T extends CustomSubListController>
         }),
       ],
     );
-  }
-
-  Widget _buildRefresh(BuildContext context) {
-    return SliverPadding(
-        padding: widget.pinned
-            ? const EdgeInsets.only(top: kHeaderMaxHeight)
-            : EdgeInsets.only(
-                top: context.mediaQueryPadding.top + kTopTabbarHeight),
-        sliver: EhCupertinoSliverRefreshControl(
-          onRefresh: subController.onRefresh,
-        ));
   }
 
   Widget _buildListView() {
@@ -132,6 +140,7 @@ class _SubListViewState<T extends CustomSubListController>
             subController.heroTag,
             next: logic.next,
             lastComplete: subController.lastComplete,
+            firstCardKey: widget.firstCardKey,
             // key: subController.sliverAnimatedListKey,
             listMode: subController.listModeObs,
             // centerKey: subController.galleryGroupKey,
@@ -145,7 +154,8 @@ class _SubListViewState<T extends CustomSubListController>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FaIcon(FontAwesomeIcons.hippo,
+                FaIcon(
+                  FontAwesomeIcons.hippo,
                   size: 100,
                   color: CupertinoDynamicColor.resolve(
                       CupertinoColors.systemGrey, context),

@@ -57,6 +57,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("아바타가 업데이트되었습니다"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 인증 필요"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("포럼이 Cloudflare로 보호되어 있습니다. 내장 브라우저에서 인증을 완료하면 업로드가 자동으로 재시도됩니다."),
+        "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("상단 카테고리 배치"),
+        "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("두 줄 (기본값)"),
+        "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("작업과 카테고리를 별도 줄에 표시"),
+        "liquid_glass_inline": MessageLookupByLibrary.simpleMessage("간결한 한 줄"),
+        "liquid_glass_inline_detail": MessageLookupByLibrary.simpleMessage("작업과 카테고리를 한 줄에 표시"),
+        "favorite_note_hint": MessageLookupByLibrary.simpleMessage("메모 (선택 사항)"),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("안전하게 보관하세요!"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage(
             "Block images containing QR codes"),

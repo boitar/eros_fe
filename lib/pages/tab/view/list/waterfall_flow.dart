@@ -16,6 +16,7 @@ class EhWaterfallFlow extends StatelessWidget {
     this.lastComplete,
     this.large = false,
     this.centerKey,
+    this.firstCardKey,
     this.lastTopItemIndex,
     super.key,
   });
@@ -26,6 +27,7 @@ class EhWaterfallFlow extends StatelessWidget {
   final VoidCallback? lastComplete;
   final bool large;
   final Key? centerKey;
+  final Key? firstCardKey;
   final int? lastTopItemIndex;
 
   EhSettingService get _ehSettingService => Get.find();
@@ -102,7 +104,10 @@ class EhWaterfallFlow extends StatelessWidget {
                 galleryProvider: _provider,
                 tabTag: tabTag,
               );
-              return offlineGallerySemantics(_provider.gid, item);
+              final keyed = index == 0 && firstCardKey != null
+                  ? KeyedSubtree(key: firstCardKey, child: item)
+                  : item;
+              return offlineGallerySemantics(_provider.gid, keyed);
             } else {
               final item = GalleryItemFlow(
                 key: index == lastTopItemIndex
@@ -111,7 +116,10 @@ class EhWaterfallFlow extends StatelessWidget {
                 galleryProvider: _provider,
                 tabTag: tabTag,
               );
-              return offlineGallerySemantics(_provider.gid, item);
+              final keyed = index == 0 && firstCardKey != null
+                  ? KeyedSubtree(key: firstCardKey, child: item)
+                  : item;
+              return offlineGallerySemantics(_provider.gid, keyed);
             }
           },
           childCount: galleryProviders.length,

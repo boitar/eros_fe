@@ -4681,6 +4681,60 @@ class L10n {
       args: [],
     );
   }
+  String get liquid_glass_top_layout {
+    return Intl.message(
+      'Top category layout',
+      name: 'liquid_glass_top_layout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get liquid_glass_two_row {
+    return Intl.message(
+      'Two rows (default)',
+      name: 'liquid_glass_two_row',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get liquid_glass_two_row_detail {
+    return Intl.message(
+      'Actions and categories on separate rows',
+      name: 'liquid_glass_two_row_detail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get liquid_glass_inline {
+    return Intl.message(
+      'Compact row',
+      name: 'liquid_glass_inline',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get liquid_glass_inline_detail {
+    return Intl.message(
+      'Actions and categories share one row',
+      name: 'liquid_glass_inline_detail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get favorite_note_hint {
+    return Intl.message(
+      'Note (optional)',
+      name: 'favorite_note_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {
@@ -4712,4 +4766,10 @@ class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {
     }
     return false;
   }
+
+
+
+
+
+
 }

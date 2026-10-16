@@ -14,6 +14,7 @@ import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
 import 'package:eros_fe/store/db/entity/gallery_image_task.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
 import 'package:eros_fe/widget/image/extended_saf_image_privider.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -46,7 +47,7 @@ Future<int?> syncReadProgress(
       context: context,
       // barrierDismissible: true,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: Text('${L10n.of(context).sync_read_progress}...'),
           content: GetBuilder<DownloadViewController>(
             initState: (state) async {

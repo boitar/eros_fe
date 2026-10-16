@@ -374,7 +374,6 @@
   "show_comment_avatar": "Показать аватар комментатора",
   "avatar": "Аватар",
   "default_avatar_style": "Стиль аватара по умолчанию",
-
   "upload_avatar": "Загрузить аватар",
   "avatar_source": "Выберите источник изображения",
   "avatar_from_album": "Медиатека",
@@ -462,5 +461,11 @@
   "high_resolution_images_limited": "High Resolution Images Limited",
   "refresh_igneous": "Refresh Igneous",
   "download_files_unavailable": "Файлы временно недоступны",
-  "check_download_files_and_continue": "Проверить файлы и продолжить"
+  "check_download_files_and_continue": "Проверить файлы и продолжить",
+  "liquid_glass_top_layout": "Расположение категорий",
+  "liquid_glass_two_row": "Две строки (по умолчанию)",
+  "liquid_glass_two_row_detail": "Действия и категории в отдельных строках",
+  "liquid_glass_inline": "Одна строка",
+  "liquid_glass_inline_detail": "Действия и категории в одной строке",
+  "favorite_note_hint": "Заметка (необязательно)"
 }

@@ -10,6 +10,7 @@ import 'package:eros_fe/pages/gallery/view/gallery_widget.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/view/gallery_base.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:extended_sliver/extended_sliver.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -451,7 +452,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
           context: Get.overlayContext!,
           barrierDismissible: true,
           builder: (_) {
-            return CupertinoAlertDialog(
+            return EhAlertDialog(
               content: Column(
                 children: [
                   Text(text),
@@ -507,7 +508,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                 context: Get.overlayContext!,
                 barrierDismissible: true,
                 builder: (_) {
-                  return CupertinoAlertDialog(
+                  return EhAlertDialog(
                     content: Column(
                       children: [
                         Text(text),

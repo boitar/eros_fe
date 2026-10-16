@@ -6,7 +6,11 @@ import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/favcat.dart';
 import 'package:eros_fe/pages/controller/fav_controller.dart';
 import 'package:eros_fe/pages/controller/favorite_sel_controller.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -32,14 +36,40 @@ class DelayedNoteController extends FavController {
   }
 }
 
+class _GlassSettings extends PickerSettings {
+  @override
+  bool get liquidGlass => true;
+}
+
 void main() {
-  tearDown(() => Get.reset());
-  for (final picker in [true, false]) {
-    testWidgets('dialog opens before note response, picker=$picker',
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('eros/accessibility-settings'),
+            (_) async => null);
+  });
+  tearDown(() async {
+    debugDefaultTargetPlatformOverride = null;
+    await LiquidGlassAccessibilitySettings.stopWatching();
+    Get.reset();
+  });
+  for (final scenario in [
+    (false, true),
+    (false, false),
+    (true, true),
+    (true, false)
+  ]) {
+    final (glass, picker) = scenario;
+    testWidgets(
+        'dialog opens before note response, picker=$picker glass=$glass',
         (tester) async {
-      favoriteStates.setAccount('latency-$picker');
+      if (glass) {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      }
+      favoriteStates.setAccount('latency-$picker-$glass');
       favoriteStates.commit('42', '6', 'blue');
-      final settings = PickerSettings()..isFavPicker.value = picker;
+      final settings = (glass ? _GlassSettings() : PickerSettings())
+        ..isFavPicker.value = picker;
       Get.put<EhSettingService>(settings);
       Get.put<ThemeService>(PickerTheme());
       Get.put<FavoriteSelectorController>(Categories());
@@ -60,7 +90,12 @@ void main() {
         loading = true;
       });
       await tester.pumpAndSettle();
-      expect(find.byType(CupertinoAlertDialog), findsOneWidget);
+      expect(find.byType(EhAlertDialog), findsOneWidget);
+      if (glass) {
+        expect(find.byType(LiquidGlassPopupSurface), findsOneWidget);
+      } else {
+        expect(find.byType(CupertinoAlertDialog), findsOneWidget);
+      }
       expect(controller.note.isCompleted, false);
       expect(controller.reads, 1);
       expect(loading, false);
@@ -87,9 +122,10 @@ void main() {
                 .selectedItem,
             8);
       }
-      await tester.tap(find.widgetWithText(CupertinoDialogAction, 'Cancel'));
+      await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(await dialog, isNull);
+      debugDefaultTargetPlatformOverride = null;
     });
   }
 }

@@ -11,6 +11,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/controller/fav_controller.dart';
 import 'package:eros_fe/pages/item/item_base.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -173,7 +174,7 @@ class GalleryItemController extends GetxController {
     await showCupertinoModalPopup<void>(
         context: context,
         builder: (BuildContext context) {
-          return CupertinoActionSheet(
+          return EhActionSheet(
             title: Text(title),
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
@@ -183,7 +184,9 @@ class GalleryItemController extends GetxController {
             actions: <Widget>[
               if (galleryProvider.favcat == null ||
                   (galleryProvider.favcat?.isEmpty ?? false))
-                CupertinoActionSheetAction(
+                EhActionSheetAction(
+                  icon: CupertinoIcons.heart,
+                  systemIcon: 'heart',
                   onPressed: () async {
                     if (galleryProvider.gid == null ||
                         galleryProvider.token == null) {
@@ -208,7 +211,9 @@ class GalleryItemController extends GetxController {
                 ),
               if (galleryProvider.favcat != null &&
                   (galleryProvider.favcat?.isNotEmpty ?? false))
-                CupertinoActionSheetAction(
+                EhActionSheetAction(
+                  icon: CupertinoIcons.heart_slash,
+                  systemIcon: 'heart.slash',
                   onPressed: () async {
                     if (galleryProvider.gid == null ||
                         galleryProvider.token == null) {
@@ -230,7 +235,9 @@ class GalleryItemController extends GetxController {
                 ),
               if (galleryProvider.favcat != null &&
                   (galleryProvider.favcat?.isNotEmpty ?? false))
-                CupertinoActionSheetAction(
+                EhActionSheetAction(
+                  icon: CupertinoIcons.folder,
+                  systemIcon: 'folder',
                   onPressed: () async {
                     if (galleryProvider.gid == null ||
                         galleryProvider.token == null) {
@@ -255,7 +262,10 @@ class GalleryItemController extends GetxController {
                   child: Text(L10n.of(context).change_to_favorites),
                 ),
               if (isHistoryItem)
-                CupertinoActionSheetAction(
+                EhActionSheetAction(
+                  icon: CupertinoIcons.trash,
+                  systemIcon: 'trash',
+                  isDestructiveAction: true,
                   onPressed: () {
                     if (galleryProvider.gid == null) {
                       return;
@@ -264,13 +274,7 @@ class GalleryItemController extends GetxController {
 
                     Get.back();
                   },
-                  child: Text(
-                    L10n.of(context).delete,
-                    style: TextStyle(
-                      color: CupertinoDynamicColor.resolve(
-                          CupertinoColors.destructiveRed, context),
-                    ),
-                  ),
+                  child: Text(L10n.of(context).delete),
                 ),
             ],
           );

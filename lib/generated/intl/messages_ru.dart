@@ -57,6 +57,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("Аватар обновлён"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Требуется проверка Cloudflare"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("Форум защищён Cloudflare. Пройдите проверку во встроенном браузере, после чего загрузка будет повторена автоматически."),
+        "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("Расположение категорий"),
+        "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("Две строки (по умолчанию)"),
+        "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("Действия и категории в отдельных строках"),
+        "liquid_glass_inline": MessageLookupByLibrary.simpleMessage("Одна строка"),
+        "liquid_glass_inline_detail": MessageLookupByLibrary.simpleMessage("Действия и категории в одной строке"),
+        "favorite_note_hint": MessageLookupByLibrary.simpleMessage("Заметка (необязательно)"),
         "KEEP_IT_SAFE":
             MessageLookupByLibrary.simpleMessage("Никому не показывайте"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage(

@@ -8,6 +8,7 @@ final class DownloadEntryTests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["--eros-test-semantics"]
         app.launch()
+        enableGlassForIntegration(app)
     }
 
     private func fixture(_ prefix: String) -> XCUIElement {
@@ -28,7 +29,7 @@ final class DownloadEntryTests: XCTestCase {
         // Cold iPad scene startup under concurrent compilation may publish
         // Flutter semantics after the native app becomes idle.
         XCTAssertTrue(tab.waitForExistence(timeout: 60), app.debugDescription)
-        tab.tap()
+        if !tapNativeTabIfPresent(app, label: "下载") { tab.tap() }
         let first = fixture("Offline v2 paused fixture 3")
         XCTAssertTrue(first.waitForExistence(timeout: 15), app.debugDescription)
     }

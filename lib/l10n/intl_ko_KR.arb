@@ -374,7 +374,6 @@
   "show_comment_avatar": "Show comment avatar",
   "avatar": "Avatar",
   "default_avatar_style": "Default avatar style",
-
   "upload_avatar": "아바타 업로드",
   "avatar_source": "이미지 소스 선택",
   "avatar_from_album": "사진 보관함",
@@ -462,5 +461,11 @@
   "high_resolution_images_limited": "High Resolution Images Limited",
   "refresh_igneous": "Refresh Igneous",
   "download_files_unavailable": "파일을 일시적으로 사용할 수 없습니다",
-  "check_download_files_and_continue": "파일 확인 후 계속"
+  "check_download_files_and_continue": "파일 확인 후 계속",
+  "liquid_glass_top_layout": "상단 카테고리 배치",
+  "liquid_glass_two_row": "두 줄 (기본값)",
+  "liquid_glass_two_row_detail": "작업과 카테고리를 별도 줄에 표시",
+  "liquid_glass_inline": "간결한 한 줄",
+  "liquid_glass_inline_detail": "작업과 카테고리를 한 줄에 표시",
+  "favorite_note_hint": "메모 (선택 사항)"
 }

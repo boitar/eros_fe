@@ -7,6 +7,7 @@ import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/setting/mytags/eh_usertag_edit_dialog.dart';
 import 'package:eros_fe/store/db/entity/tag_translat.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -269,7 +270,7 @@ class EhMyTagsController extends GetxController
         context: context,
         barrierDismissible: true,
         builder: (context) {
-          return CupertinoAlertDialog(
+          return EhAlertDialog(
             title: const Text('Tag Set'),
             content: Container(
               child: obx(
@@ -339,7 +340,7 @@ class EhMyTagsController extends GetxController
                 return EhUserTagEditDialog(usertag: userTag);
               }
             },
-            onLoading: CupertinoAlertDialog(
+            onLoading: EhAlertDialog(
               content: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: const CupertinoActivityIndicator(),

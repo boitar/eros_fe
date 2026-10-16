@@ -2,6 +2,7 @@ import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -176,7 +177,7 @@ Widget _buildPreloadImageItem(BuildContext context) {
     return showCupertinoModalPopup<int>(
         context: context,
         builder: (BuildContext context) {
-          final CupertinoActionSheet dialog = CupertinoActionSheet(
+          final EhActionSheet dialog = EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
@@ -222,7 +223,7 @@ Widget _buildMultiDownloadItem(BuildContext context) {
     return showCupertinoModalPopup<int>(
         context: context,
         builder: (BuildContext context) {
-          final CupertinoActionSheet dialog = CupertinoActionSheet(
+          final EhActionSheet dialog = EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
@@ -271,7 +272,7 @@ Widget _buildConcurrentGalleriesItem(BuildContext context) {
     return showCupertinoModalPopup<int>(
         context: context,
         builder: (BuildContext context) {
-          final CupertinoActionSheet dialog = CupertinoActionSheet(
+          final EhActionSheet dialog = EhActionSheet(
             cancelButton: CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();

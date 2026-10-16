@@ -6,6 +6,7 @@ import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
 import 'package:eros_fe/utils/avatar_store.dart';
 import 'package:eros_fe/utils/avatar_upload_retry.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -37,7 +38,7 @@ Future<void> _manageAvatar(BuildContext context, UserController userController,
   // 1. 选择来源
   final AvatarSource? source = await showCupertinoModalPopup<AvatarSource>(
     context: context,
-    builder: (_) => CupertinoActionSheet(
+    builder: (_) => EhActionSheet(
       title: Text(l10n.avatar_source),
       actions: <CupertinoActionSheetAction>[
         CupertinoActionSheetAction(
@@ -108,7 +109,7 @@ Future<void> _manageAvatar(BuildContext context, UserController userController,
   // 3. 选择用途
   final AvatarTarget? target = await showCupertinoModalPopup<AvatarTarget>(
     context: context,
-    builder: (_) => CupertinoActionSheet(
+    builder: (_) => EhActionSheet(
       title: Text(l10n.avatar_target),
       actions: <CupertinoActionSheetAction>[
         CupertinoActionSheetAction(
@@ -199,7 +200,7 @@ Future<void> _uploadForumWithCfFallback(
       final confirmed = await showCupertinoDialog<bool>(
         context: context,
         barrierDismissible: true,
-        builder: (dialogContext) => CupertinoAlertDialog(
+        builder: (dialogContext) => EhAlertDialog(
           title: Text(l10n.avatar_cf_verify_title),
           content: Text(l10n.avatar_cf_verify_message),
           actions: <CupertinoDialogAction>[
@@ -271,7 +272,7 @@ class _AvatarUrlDialogState extends State<_AvatarUrlDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = L10n.of(context);
-    return CupertinoAlertDialog(
+    return EhAlertDialog(
       title: Text(l10n.avatar_from_url),
       content: Padding(
         padding: const EdgeInsets.only(top: 14),

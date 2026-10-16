@@ -8,11 +8,13 @@ final class AvatarEntryTests: XCTestCase {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
         app.activate()
+        enableGlassForIntegration(app)
     }
     private func element(_ label: String) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
     }
     private func tap(_ label: String) {
+        if tapNativeTabIfPresent(app, label: label) { return }
         let target = element(label)
         XCTAssertTrue(target.waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(target.isHittable, app.debugDescription)

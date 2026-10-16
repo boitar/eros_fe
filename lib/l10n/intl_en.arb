@@ -374,7 +374,6 @@
   "show_comment_avatar": "Show comment avatar",
   "avatar": "Avatar",
   "default_avatar_style": "Default Avatar Style",
-
   "upload_avatar": "Upload Avatar",
   "avatar_source": "Choose Image Source",
   "avatar_from_album": "Photo Library",
@@ -462,5 +461,11 @@
   "high_resolution_images_limited": "High Resolution Images Limited",
   "refresh_igneous": "Refresh Igneous",
   "download_files_unavailable": "Files temporarily unavailable",
-  "check_download_files_and_continue": "Check files and continue"
+  "check_download_files_and_continue": "Check files and continue",
+  "liquid_glass_top_layout": "Top category layout",
+  "liquid_glass_two_row": "Two rows (default)",
+  "liquid_glass_two_row_detail": "Actions and categories on separate rows",
+  "liquid_glass_inline": "Compact row",
+  "liquid_glass_inline_detail": "Actions and categories share one row",
+  "favorite_note_hint": "Note (optional)"
 }

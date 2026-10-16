@@ -1,14 +1,20 @@
+import 'dart:async';
+
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:eros_fe/common/colors.dart';
 import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/base_service.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'ehsetting_service.dart';
 
 class ThemeService extends ProfileService {
+  static const MethodChannel _appearanceChannel =
+      MethodChannel('eros/appearance');
+
   final EhSettingService _ehSettingService = Get.find();
   final Rx<ThemesModeEnum> _themeModel = ThemesModeEnum.system.obs;
   Rx<Brightness?> platformBrightness =
@@ -16,10 +22,34 @@ class ThemeService extends ProfileService {
 
   set themeModel(ThemesModeEnum value) {
     _themeModel.value = value;
+    syncNativeAppearance();
   }
 
   ThemesModeEnum get themeModel {
     return _themeModel.value;
+  }
+
+  /// Keeps native UIKit's trait collection aligned with the app-level theme.
+  ///
+  /// Flutter's CupertinoThemeData does not change UIWindow's
+  /// userInterfaceStyle. Native Liquid Glass therefore needs this explicit
+  /// public-API bridge when the user selects Light or Dark instead of System.
+  void syncNativeAppearance() {
+    final String style;
+    switch (themeModel) {
+      case ThemesModeEnum.system:
+        style = 'system';
+      case ThemesModeEnum.lightMode:
+        style = 'light';
+      case ThemesModeEnum.darkMode:
+        style = 'dark';
+    }
+
+    unawaited(
+      _appearanceChannel.invokeMethod<void>('setStyle', style).catchError(
+            (_) {},
+          ),
+    );
   }
 
   CupertinoThemeData get _getDarkTheme => _ehSettingService.isPureDarkTheme
@@ -45,6 +75,7 @@ class ThemeService extends ProfileService {
     _themeModel.value =
         EnumToString.fromString(ThemesModeEnum.values, Global.profile.theme) ??
             ThemesModeEnum.system;
+    syncNativeAppearance();
     everFromEnum(_themeModel, (String value) {
       Global.profile = Global.profile.copyWith(theme: value);
     });

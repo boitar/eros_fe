@@ -1,5 +1,6 @@
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/group/profile_edit_controller.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -129,7 +130,7 @@ Future<String?> showSearchTextDialog(BuildContext context) {
       context: context,
       barrierDismissible: true,
       builder: (_) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           // title: Text(L10n.of(Get.context!).p_Archiver),
           content: Container(
             child: const ProfileSearchTextDialog(),

@@ -4,6 +4,7 @@ import 'package:eros_fe/models/index.dart';
 import 'package:eros_fe/pages/tab/controller/default_tabview_controller.dart';
 import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -42,7 +43,7 @@ class HistoryViewController extends DefaultTabViewController {
     return showCupertinoDialog<void>(
       context: Get.context!,
       builder: (BuildContext context) {
-        return CupertinoAlertDialog(
+        return EhAlertDialog(
           title: Text(L10n.of(context).t_Clear_all_history),
           actions: <Widget>[
             CupertinoDialogAction(

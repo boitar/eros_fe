@@ -16,6 +16,7 @@ targets:
     platform: iOS
     sources:
       - UITests
+      - ../shared_ui_tests/GlassIntegrationSupport.swift
     dependencies:
       - target: CustomBranchAcceptance
     settings:
