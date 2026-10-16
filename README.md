@@ -14,7 +14,7 @@ currently integrates the following independently deliverable modules:
 | --- | --- | --- |
 | Waterfall stability | Settings > Layout > Waterfall / Waterfall - Large; stable cover dimensions, return scrolling and pagination/controller reuse | `codex/custom-waterfall` |
 | Downloads | Pause/continue or restore a moved folder, then recheck existing files before missing images are queued | `codex/custom-downloads` |
-| Favorites | Traditional forms, confirmed server results, account isolation and protected note edits | `codex/custom-favorites` |
+| Favorites | Traditional forms, confirmed server results, account isolation and protected note edits | `codex/custom-favorites-verified` |
 | Sharing | Native iOS/iPadOS links, images, files and exports with modal/anchor handling | `codex/custom-sharing` |
 | History | Shared initialization, serialized local persistence/clear and awaited sync | `codex/custom-history` |
 | Visible group index | Stable visible UUID/page mapping, reorder/delete and restart restoration | `codex/custom-group-index` |
@@ -22,6 +22,10 @@ currently integrates the following independently deliverable modules:
 | Haptics | Native bridge, progressive pulls, application switch and operation feedback | `codex/custom-haptics` |
 | Avatar | Album/Files/URL, verified upload retry, local preview and container recovery | `codex/custom-avatar` |
 | Grid tags | Aligned cards, two-row horizontal tags, independent width and restoration | `codex/custom-grid-tags` |
+
+The verified standalone favorites module establishes the account before widgets
+subscribe to favorite state. Its complete 121 tests, 6 final-source native
+checks and both formal builds passed; the earlier branch and tags remain.
 
 Each business branch has a single complete commit directly on the same fixed
 master. This integration preserves those commit IDs through explicit merges.

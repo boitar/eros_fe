@@ -10,21 +10,25 @@ case "$output/" in "$root/"*) echo 'Output must be outside the checkout' >&2; ex
 cd "$root"
 xcodegen generate --spec benchmark/favorites_ui_tests/project.yml --project "$output/favorites-harness" \
   > "$output/$run-project.log" 2>&1
-for phase in forms restored; do
+for phase in ${4:-bootstrap forms restored}; do
   test ! -e "$output/$run-$phase.xcresult"
   # Start outside XCTest so each phase attaches to an already running process.
-  # Preserve the two launch PIDs as evidence of the real restart.
+  # Preserve the launch PIDs as evidence of real process restarts.
   xcrun simctl terminate "$device" cn.honjow.fehv >/dev/null 2>&1 || true
   xcrun simctl launch "$device" cn.honjow.fehv --eros-test-semantics \
     > "$output/$run-$phase-launch.log" 2>&1
-  if [ "$phase" = forms ]; then
+  test_class=FavoriteEntryTests
+  if [ "$phase" = bootstrap ]; then
+    test_class=FavoriteBootstrapEntryTests
+    method=testProductionColdSettingsBeforeFavorite
+  elif [ "$phase" = forms ]; then
     method=testProductionFavoriteForms
   else
     method=testProductionFavoriteStyleRestored
   fi
   xcodebuild -project "$output/favorites-harness/CustomBranchAcceptance.xcodeproj" \
     -scheme CustomBranchAcceptance -destination "platform=iOS Simulator,id=$device" \
-    -only-testing:"CustomBranchAcceptanceUITests/FavoriteEntryTests/$method" \
+    -only-testing:"CustomBranchAcceptanceUITests/$test_class/$method" \
     -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \
     -test-timeouts-enabled YES -maximum-test-execution-time-allowance 240 \
     -collect-test-diagnostics never -derivedDataPath "$output/favorites-ui-tests" \
