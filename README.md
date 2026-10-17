@@ -1,11 +1,15 @@
 # Eros-FE
-English | [简体中文](https://github.com/erosTeam/eros_fe/blob/master/README_cn.md)
+English | [简体中文](./README_cn.md)
 
 ## Introduction
 
-An Unofficial e-hentai app make on flutter
+An unofficial E-Hentai app built with Flutter.
 
-## Local custom integration
+## Fork enhancements over master
+
+This fork builds on Eros-FE master and focuses on iOS/iPadOS: native Liquid Glass
+navigation, grid tags, and improvements to download recovery, favorites, sharing,
+history, avatars, haptics and action accessibility.
 
 `custom` starts at fixed master `2fe86b737`, retains version `1.9.2+566`, and
 integrates all eleven independently deliverable modules:
@@ -27,17 +31,22 @@ integrates all eleven independently deliverable modules:
 Each canonical business branch contains one complete commit directly on fixed
 master. The original ten ordered non-fast-forward merges are preserved, followed
 by an explicit favorites repair merge and the final glass merge. All eleven
-canonical independent commit IDs are retained. The former favorites and glass
-branches and tags remain available for traceability; use the verified branches
-listed above for independent delivery.
+canonical independent commit IDs are retained. The canonical module branches,
+the integrated `custom` branch and their annotated tags are published in
+`boitar/eros_fe`. The former favorites and glass branches and tags are preserved
+locally for traceability, not published as current delivery branches; use the
+verified branches listed above. For grid tags, the current independent tag is
+`2026-10-15-custom-grid-tags-independent-verifier`, not the older
+`2026-10-15-custom-grid-tags-independent`.
+
 The integration keeps account/revision guards for favorites and avatars,
 download recovery protections, visible group UUID mapping and serialized history
 operations while adapting their shared glass surfaces. Account initialization completes
 before widgets subscribe to favorite state, including a cold launch with glass restored.
 
-All 486 tests passed on this complete integration; analysis found zero errors and
-zero diagnostics added to the same-toolchain master baseline. Seven production
-`lib/main.dart` ARM64 Debug-SimulatorUI variants built successfully, including
+The complete integration passed all 486 tests on 2026-10-16; analysis found zero
+errors and zero diagnostics added to the same-toolchain master baseline. Seven
+production `lib/main.dart` ARM64 Debug-SimulatorUI variants built successfully, including
 builds with and without offline definitions. On the highest installed available
 iOS 27.0 (24A434), iPhone 18 Pro and iPad Pro 11-inch (M5) passed 10 navigation/form
 checks, 30 glass combinations with favorites, avatars, visible group indexes,
@@ -45,6 +54,12 @@ haptics and downloads, and two traditional cold-start settings-before-favorites
 checks: 42 native cases in total. Phone uses light/default text and iPad uses
 dark/accessibility-medium text. Every combination proves actual native glass
 activation; restart phases read persisted application state.
+
+Before publication on 2026-10-17, four additional native smoke checks passed on
+iPhone 18 Pro and iPad Pro 11-inch (M5), using the same iOS 27.0 runtime and
+source-matched formal builds. They cover a cold launch opening settings before
+favorites and native category selection after switching navigation modes on
+both devices; they are not a new run of the full 486-test suite.
 
 The complete verified favorites branch passed 121 tests, two formal main builds
 and six cold-start/form/restart native cases. Account initialization belongs to
@@ -123,13 +138,13 @@ the enhanced application switch.
 `Debug-SimulatorUI` omits MLKit and legacy archive-downloader registration.
 Physical devices, Android SAF hardware, OCR, legacy archive downloads,
 LiveContainer, Release and other untested platforms remain outside acceptance.
-Master's traditional large-text category rail and fixed-height waterfall tags
-retain overflow/clipping limitations; its unscaled group rail can miss right-side
+Master's traditional category header still overflows by about 22px in the narrow
+iPad pane at accessibility-medium, and fixed-height waterfall tags retain
+clipping limitations. Its unscaled group rail can miss right-side
 label taps at accessibility sizes, where mapping was checked by PageView gestures.
 The unchanged history card retains a 29px overflow in the narrow iPad pane at
 accessibility-medium. The legacy debug download-task metadata writer remains
-unimplemented in both master and source. This reconstruction produces no IPA
-and publishes no branches or tags remotely.
+unimplemented in both master and source.
 
 ## 🔍 Translations Wanted 🔍
 Please submit a pull request if you want to help with translation.
@@ -137,6 +152,10 @@ Please submit a pull request if you want to help with translation.
 App Strings: `lib/l10n/{lang}.arb`
 
 ## Installation for iOS
+
+This fork publication contains source code, not a fork IPA. The Releases link
+below points to upstream builds and does not provide these custom enhancements.
+
 1. Get the ipa file from [Releases](https://github.com/erosTeam/eros_fe/releases/latest).
 2. Use some software like [AltStore](https://altstore.io) to install the ipa file on your device. Or [AltStore.json](https://config-feh.vercel.app/AltStore.json)
 
@@ -221,8 +240,5 @@ Translation
 
 ## About compiling
 
-flutter version is the latest release version \
-rename `lib/config/config.dart.sample` to `lib/config/config.dart` \
-rename `lib/firebase_options_sample.dart` to `lib/firebase_options.dart`
-
-The unchanged master traditional header still overflows by about 22px in the narrow iPad pane at accessibility-medium; grid cards, actual settings and restoration passed.
+Use the validated Flutter/Xcode versions and configuration steps in
+[Build and verify](#build-and-verify), rather than an unspecified latest SDK.

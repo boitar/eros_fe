@@ -1,13 +1,16 @@
 # Eros-FE
-[English](https://github.com/erosTeam/eros_fe/blob/master/README.md) | 简体中文
+[English](./README.md) | 简体中文
 
 ## 应用简介
 
-一个 flutter 编写的 e-hentai app
+一个使用 Flutter 编写的非官方 E-Hentai 客户端。
 
-## 本地 custom 整合
+## 相比 master 的 fork 增强
 
-`custom` 从固定 master `2fe86b737` 起步，保留 `1.9.2+566`，当前已整合：
+本 fork 基于 Eros-FE 上游 master，重点增强 iOS／iPadOS 体验：整合原生液态玻璃导航、
+网格标签，并改进下载恢复、收藏、分享、历史、头像、触感与操作无障碍语义。
+
+`custom` 从固定 master `2fe86b737` 起步，保留 `1.9.2+566`，整合以下 11 个可独立交付的模块：
 
 | 模块 | 使用方式 | 独立分支 |
 | --- | --- | --- |
@@ -25,18 +28,28 @@
 
 表中每个正式交付业务分支都只有一个直接基于固定 master 的完整提交。原有按序的十次非快进
 合并全部保留，随后显式合入收藏修正版，再合入玻璃，保留全部 11 个正式独立提交编号。
-旧收藏、旧玻璃分支及 tag 保留用于追溯，独立投递使用表中的 verified 分支。
+正式模块分支、整合分支 `custom` 及对应的带说明 tag 已发布到 `boitar/eros_fe`。
+旧收藏、旧玻璃分支及 tag 仅在本地保留用于追溯，不作为当前交付分支发布；独立投递使用
+表中的 verified 修正版。网格标签的当前独立 tag 为
+`2026-10-15-custom-grid-tags-independent-verifier`，不是旧的
+`2026-10-15-custom-grid-tags-independent`。
+
 组合接入保留收藏与头像的账号／版本保护、下载恢复保护、
 可见分组 UUID 对应以及历史数据操作的串行时序。共享启动入口在界面订阅收藏状态前完成账号
 初始化，覆盖已保存玻璃模式下的冷启动。
 
-完整整合树全量 486 项测试通过；相对同工具链 master 基线，分析 0 error、无新增诊断。
+完整整合树于 2026-10-16 通过全量 486 项测试；相对同工具链 master 基线，静态分析零错误、
+无新增诊断。
 正式 `lib/main.dart` 的 7 个 ARM64 Debug-SimulatorUI 版本构建通过，包含有／无离线定义构建。
 在最高已安装且可用的 iOS 27.0（24A434）上，iPhone 18 Pro 和 iPad Pro 11-inch（M5）
 通过 10 项导航／表单检查、玻璃与收藏、头像、可见分组索引、触感、下载的 30 项组合检查，
 以及 2 项传统界面冷启动先设置后收藏检查，共 42 项原生用例。
 手机使用浅色默认字号，iPad 使用深色 accessibility-medium 字号；每个组合均验证实际原生
 玻璃导航已启用，重启阶段读取应用持久化状态。
+
+2026-10-17 发布前，另在 iPhone 18 Pro 和 iPad Pro 11-inch（M5）上补跑 4 项原生冒烟检查，
+均使用相同的 iOS 27.0 运行时及源码一致的正式入口构建。两个设备均通过冷启动先进入设置再
+进入收藏、导航模式切换后点击原生分类的检查；这不代表重新执行了一次完整的 486 项测试。
 
 完整收藏独立修正版通过 121 项测试、2 种正式入口构建及 6 项冷启动／表单／重启原生检查。
 启动账号初始化包含在这个可独立运行的模块内，并通过修复合并进入 custom。
@@ -47,7 +60,7 @@
 ### 构建与验证
 
 工具链为 Flutter 3.47.1、Xcode 27.0；原生公开手势策略要求最低 Flutter 3.47.0。
-iOS Bundle ID 统一为 `cn.honjow.fehv`。新 checkout 先准备上游公开空配置模板，再执行：
+iOS Bundle ID 统一为 `cn.honjow.fehv`。首次检出代码后，先根据上游公开示例准备本机配置，再执行：
 
 ```sh
 cp lib/config/config.dart.sample lib/config/config.dart
@@ -60,7 +73,7 @@ flutter test --no-pub
 ```
 
 原生复现使用正式 `lib/main.dart` 和仅 Debug 生效的中性离线夹具。先启动隔离的 iOS 27
-Simulator，证据输出位于 checkout 外，运行名保持唯一，各验收串行执行：
+模拟器，将验证结果输出到代码目录之外，运行名保持唯一，各验收串行执行：
 
 ```sh
 mkdir -p "$OUTPUT_DIRECTORY/harness"
@@ -97,18 +110,23 @@ bash benchmark/glass_ui_tests/run-native.sh \
 `benchmark/favorites_ui_tests/verify-installed.sh`，依次传入设备、仓库外输出目录、唯一运行名和
 第四个参数 `bootstrap`；该传统入口检查不设置 `EROS_VERIFY_GLASS`。
 
-真实论坛上传和在线 Cloudflare 尚未验收；本地 HTTP 覆盖认证、上传、错误、403 及验证重试。
+真实论坛上传和在线 Cloudflare 尚未验收；本地 HTTP 覆盖认证、多部分表单上传请求、错误、
+403 及验证重试。
 操作语义标签保留来源中文，模拟器检查不代表真机 VoiceOver 播报／焦点验收。原生触感接受调用
 计数不代表真实震动或强度；Flutter 原有下拉刷新反馈仍独立于增强触感开关。
 
 `Debug-SimulatorUI` 排除 MLKit 和旧归档下载插件注册。真机、Android 实机 SAF、OCR、旧归档下载、
-LiveContainer、Release 及其他未测平台不在验收范围。master 传统大字体分类栏与固定高度瀑布流
-标签仍有溢出／裁切；未缩放测宽的传统分组栏在无障碍字号下可能使右侧标签点击无效，映射使用
+LiveContainer、Release 及其他未测平台不在验收范围。master 的传统分类顶栏在 iPad 窄栏、
+accessibility-medium 字号下仍有约 22px 溢出，固定高度瀑布流标签仍可能裁切；
+未缩放测宽的传统分组栏在无障碍字号下可能使右侧标签点击无效，映射使用
 既有 PageView 手势验证。未改动的历史卡片在 iPad 窄栏 accessibility-medium 下保留 29px 溢出。
-旧 Debug 下载任务信息生成器在 master／来源中均未实现。本次重建不生成 IPA，也不向远端发布
-分支或 tag。
+旧 Debug 下载任务信息生成器在 master／来源中均未实现。
 
 ## iOS 安装
+
+本次 fork 发布仅包含源码，不提供本 fork 的 IPA。下方 Releases 链接指向上游构建，
+不包含这里列出的 custom 增强功能。
+
 1. 下载最新 ipa 文件 [Releases](https://github.com/erosTeam/eros_fe/releases/latest).
 2. 使用 [AltStore](https://altstore.io) 之类的 app 安装到设备上. 或者直接使用 [AltStore.json](https://config-feh.vercel.app/AltStore.json)
 
@@ -201,6 +219,5 @@ ehentai译文数据库
 
 ## 编译相关
 
-如果需要自行编译的话 \
-复制 `lib/config.dart.sample` 为 `lib/config/config.dart` \
-复制 `lib/firebase_options_sample.dart` 为 `lib/firebase_options.dart`
+请使用前文[构建与验证](#构建与验证)中已验证的 Flutter／Xcode 版本和配置步骤，
+不要直接使用版本未指定的最新 SDK。
