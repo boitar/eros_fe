@@ -361,13 +361,16 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
               logger.d('_currentImage ${currentImage?.toJson()}');
 
-              // TODO(3003h): 对于已下载的图片，保存到相册时，从已下载读取.
               showImageSheet(
                 context,
                 () =>
                     controller.reloadImage(widget.imageSer, changeSource: true),
                 imageUrl: currentImage?.imageUrl ?? '',
-                filePath: currentImage?.filePath ?? currentImage?.tempPath,
+                filePath: currentImage?.filePath,
+                tempPath: currentImage?.tempPath,
+                cacheKey: currentImage?.cacheKey,
+                originalCacheKey: currentImage
+                    ?.getCacheKey(currentImage.originImageUrl ?? ''),
                 origImageUrl: currentImage?.originImageUrl,
                 title: '${vState.pageState?.mainTitle} [${widget.imageSer}]',
                 ser: widget.imageSer,

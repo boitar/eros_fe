@@ -66,6 +66,24 @@ class MessageLookup extends MessageLookupByLibrary {
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("安全を確認してください"),
         "QR_code_block":
             MessageLookupByLibrary.simpleMessage("QRコードを含む画像をブロック"),
+    "image_save_busy": MessageLookupByLibrary.simpleMessage("画像を保存中です。"),
+    "image_save_download": MessageLookupByLibrary.simpleMessage(
+      "画像をダウンロードできませんでした。もう一度お試しください。",
+    ),
+    "image_save_invalid": MessageLookupByLibrary.simpleMessage(
+      "画像ファイルが存在しないか、不完全または無効です。",
+    ),
+    "image_save_permission": MessageLookupByLibrary.simpleMessage(
+      "写真の追加が許可されていません。システム設定で許可してください。LiveContainer を使用している場合は、その写真へのアクセス権を確認してください。",
+    ),
+    "image_save_unsupported": MessageLookupByLibrary.simpleMessage(
+      "写真ライブラリはこの画像形式に対応していません。",
+    ),
+    "image_save_write": MessageLookupByLibrary.simpleMessage(
+      "写真ライブラリに保存できませんでした。もう一度お試しください。",
+    ),
+    "save_current_image": MessageLookupByLibrary.simpleMessage("表示中の画像を保存"),
+    "save_original_image": MessageLookupByLibrary.simpleMessage("元の画像を保存"),
         "about": MessageLookupByLibrary.simpleMessage("アプリについて"),
         "add_quick_search": MessageLookupByLibrary.simpleMessage("クイック検索に追加"),
         "add_tag_placeholder": MessageLookupByLibrary.simpleMessage(

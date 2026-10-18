@@ -467,5 +467,13 @@
   "liquid_glass_two_row_detail": "操作與分組分行顯示，適合較多分組和長名稱",
   "liquid_glass_inline": "單行緊湊",
   "liquid_glass_inline_detail": "操作與分組共用一行，節省頁面高度",
-  "favorite_note_hint": "備註（選填）"
+  "favorite_note_hint": "備註（選填）",
+  "save_current_image": "儲存目前圖片",
+  "save_original_image": "儲存原圖",
+  "image_save_permission": "未獲准加入照片，請在系統設定中允許。使用 LiveContainer 時請檢查宿主的照片權限。",
+  "image_save_invalid": "圖片檔案不存在、不完整或無效。",
+  "image_save_download": "圖片下載失敗，請重試。",
+  "image_save_unsupported": "系統相簿不支援此圖片格式。",
+  "image_save_write": "寫入相簿失敗，請重試。",
+  "image_save_busy": "圖片正在儲存，請稍候。"
 }

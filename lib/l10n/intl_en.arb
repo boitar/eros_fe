@@ -467,5 +467,13 @@
   "liquid_glass_two_row_detail": "Actions and categories on separate rows",
   "liquid_glass_inline": "Compact row",
   "liquid_glass_inline_detail": "Actions and categories share one row",
-  "favorite_note_hint": "Note (optional)"
+  "favorite_note_hint": "Note (optional)",
+  "save_current_image": "Save current image",
+  "save_original_image": "Save original image",
+  "image_save_permission": "Photo access was denied. Allow adding photos in system settings. If using LiveContainer, check its photo permission.",
+  "image_save_invalid": "The image file is missing, incomplete or invalid.",
+  "image_save_download": "Could not download the image. Please try again.",
+  "image_save_unsupported": "Photos does not support this image format.",
+  "image_save_write": "Could not write the image to Photos. Please try again.",
+  "image_save_busy": "An image is already being saved."
 }

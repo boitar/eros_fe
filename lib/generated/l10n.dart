@@ -4735,6 +4735,85 @@ class L10n {
     );
   }
 
+  /// `Save current image`
+  String get save_current_image {
+    return Intl.message(
+      'Save current image',
+      name: 'save_current_image',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save original image`
+  String get save_original_image {
+    return Intl.message(
+      'Save original image',
+      name: 'save_original_image',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Photo access was denied. Allow adding photos in system settings. If using LiveContainer, check its photo permission.`
+  String get image_save_permission {
+    return Intl.message(
+      'Photo access was denied. Allow adding photos in system settings. If using LiveContainer, check its photo permission.',
+      name: 'image_save_permission',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The image file is missing, incomplete or invalid.`
+  String get image_save_invalid {
+    return Intl.message(
+      'The image file is missing, incomplete or invalid.',
+      name: 'image_save_invalid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not download the image. Please try again.`
+  String get image_save_download {
+    return Intl.message(
+      'Could not download the image. Please try again.',
+      name: 'image_save_download',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Photos does not support this image format.`
+  String get image_save_unsupported {
+    return Intl.message(
+      'Photos does not support this image format.',
+      name: 'image_save_unsupported',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not write the image to Photos. Please try again.`
+  String get image_save_write {
+    return Intl.message(
+      'Could not write the image to Photos. Please try again.',
+      name: 'image_save_write',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `An image is already being saved.`
+  String get image_save_busy {
+    return Intl.message(
+      'An image is already being saved.',
+      name: 'image_save_busy',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

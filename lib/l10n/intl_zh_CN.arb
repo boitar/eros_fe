@@ -467,5 +467,13 @@
   "liquid_glass_two_row_detail": "操作与分组分行显示，适合较多分组和长名称",
   "liquid_glass_inline": "单行紧凑",
   "liquid_glass_inline_detail": "操作与分组共用一行，节省页面高度",
-  "favorite_note_hint": "备注（可选）"
+  "favorite_note_hint": "备注（可选）",
+  "save_current_image": "保存当前图片",
+  "save_original_image": "保存原图",
+  "image_save_permission": "未获准添加照片，请在系统设置中允许。使用 LiveContainer 时请检查宿主的照片权限。",
+  "image_save_invalid": "图片文件不存在、不完整或无效。",
+  "image_save_download": "图片下载失败，请重试。",
+  "image_save_unsupported": "系统相册不支持此图片格式。",
+  "image_save_write": "写入相册失败，请重试。",
+  "image_save_busy": "图片正在保存，请稍候。"
 }

@@ -66,6 +66,30 @@ class MessageLookup extends MessageLookupByLibrary {
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("KEEP IT SAFE"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage(
             "Block images containing QR codes"),
+    "image_save_busy": MessageLookupByLibrary.simpleMessage(
+      "An image is already being saved.",
+    ),
+    "image_save_download": MessageLookupByLibrary.simpleMessage(
+      "Could not download the image. Please try again.",
+    ),
+    "image_save_invalid": MessageLookupByLibrary.simpleMessage(
+      "The image file is missing, incomplete or invalid.",
+    ),
+    "image_save_permission": MessageLookupByLibrary.simpleMessage(
+      "Photo access was denied. Allow adding photos in system settings. If using LiveContainer, check its photo permission.",
+    ),
+    "image_save_unsupported": MessageLookupByLibrary.simpleMessage(
+      "Photos does not support this image format.",
+    ),
+    "image_save_write": MessageLookupByLibrary.simpleMessage(
+      "Could not write the image to Photos. Please try again.",
+    ),
+    "save_current_image": MessageLookupByLibrary.simpleMessage(
+      "Save current image",
+    ),
+    "save_original_image": MessageLookupByLibrary.simpleMessage(
+      "Save original image",
+    ),
         "about": MessageLookupByLibrary.simpleMessage("About"),
         "add_quick_search":
             MessageLookupByLibrary.simpleMessage("Add to search"),
