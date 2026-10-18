@@ -67,6 +67,30 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Никому не показывайте"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage(
             "Block images containing QR codes"),
+    "image_save_busy": MessageLookupByLibrary.simpleMessage(
+      "Изображение уже сохраняется.",
+    ),
+    "image_save_download": MessageLookupByLibrary.simpleMessage(
+      "Не удалось загрузить изображение. Повторите попытку.",
+    ),
+    "image_save_invalid": MessageLookupByLibrary.simpleMessage(
+      "Файл изображения отсутствует, повреждён или загружен не полностью.",
+    ),
+    "image_save_permission": MessageLookupByLibrary.simpleMessage(
+      "Нет разрешения на добавление фотографий. Разрешите его в настройках системы. При использовании LiveContainer проверьте его доступ к фотографиям.",
+    ),
+    "image_save_unsupported": MessageLookupByLibrary.simpleMessage(
+      "Фотоальбом не поддерживает этот формат изображения.",
+    ),
+    "image_save_write": MessageLookupByLibrary.simpleMessage(
+      "Не удалось записать изображение в фотоальбом. Повторите попытку.",
+    ),
+    "save_current_image": MessageLookupByLibrary.simpleMessage(
+      "Сохранить текущее изображение",
+    ),
+    "save_original_image": MessageLookupByLibrary.simpleMessage(
+      "Сохранить оригинал",
+    ),
         "about": MessageLookupByLibrary.simpleMessage("О приложении"),
         "add_quick_search":
             MessageLookupByLibrary.simpleMessage("Добавить в БП"),

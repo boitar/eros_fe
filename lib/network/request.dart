@@ -799,6 +799,7 @@ Future<void> ehDownload({
   CancelToken? cancelToken,
   bool? errToast,
   bool deleteOnError = true,
+  bool requireCompleteResponse = false,
   FutureOr<void> Function()? onDownloadComplete,
   ProgressCallback? progressCallback,
 }) async {
@@ -822,7 +823,7 @@ Future<void> ehDownload({
     throw ArgumentError('savePath and savePathBuild is null');
   }
 
-  await dioHttpClient.download(
+  final response = await dioHttpClient.download(
     downloadUrl,
     dioSavePath,
     deleteOnError: deleteOnError,
@@ -832,6 +833,12 @@ Future<void> ehDownload({
     cancelToken: cancelToken,
     options: getCacheOptions(refresh: false, forceCache: false),
   );
+  if (requireCompleteResponse) {
+    final status = response.statusCode ?? 0;
+    if (status != 200) {
+      throw HttpException('Image download returned HTTP $status');
+    }
+  }
   await onDownloadComplete?.call();
 }
 

@@ -19,6 +19,9 @@ import flutter_downloader
     
     func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
         GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+        if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosPhotoLibrary") {
+            ErosPhotoLibraryPlugin.register(with: registrar)
+        }
         if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosHaptics") {
             ErosHapticsPlugin.register(with: registrar)
         }

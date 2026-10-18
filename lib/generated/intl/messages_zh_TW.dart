@@ -65,6 +65,20 @@ class MessageLookup extends MessageLookupByLibrary {
         "favorite_note_hint": MessageLookupByLibrary.simpleMessage("備註（選填）"),
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("注意資料安全"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage("封鎖含有QR Code的圖片"),
+    "image_save_busy": MessageLookupByLibrary.simpleMessage("圖片正在儲存，請稍候。"),
+    "image_save_download": MessageLookupByLibrary.simpleMessage("圖片下載失敗，請重試。"),
+    "image_save_invalid": MessageLookupByLibrary.simpleMessage(
+      "圖片檔案不存在、不完整或無效。",
+    ),
+    "image_save_permission": MessageLookupByLibrary.simpleMessage(
+      "未獲准加入照片，請在系統設定中允許。使用 LiveContainer 時請檢查宿主的照片權限。",
+    ),
+    "image_save_unsupported": MessageLookupByLibrary.simpleMessage(
+      "系統相簿不支援此圖片格式。",
+    ),
+    "image_save_write": MessageLookupByLibrary.simpleMessage("寫入相簿失敗，請重試。"),
+    "save_current_image": MessageLookupByLibrary.simpleMessage("儲存目前圖片"),
+    "save_original_image": MessageLookupByLibrary.simpleMessage("儲存原圖"),
         "about": MessageLookupByLibrary.simpleMessage("關於"),
         "add_quick_search": MessageLookupByLibrary.simpleMessage("添加搜尋"),
         "add_tag_placeholder":

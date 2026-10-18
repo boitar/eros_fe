@@ -66,6 +66,24 @@ class MessageLookup extends MessageLookupByLibrary {
         "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("안전하게 보관하세요!"),
         "QR_code_block": MessageLookupByLibrary.simpleMessage(
             "Block images containing QR codes"),
+    "image_save_busy": MessageLookupByLibrary.simpleMessage("이미지를 저장하고 있습니다."),
+    "image_save_download": MessageLookupByLibrary.simpleMessage(
+      "이미지를 다운로드하지 못했습니다. 다시 시도해 주세요.",
+    ),
+    "image_save_invalid": MessageLookupByLibrary.simpleMessage(
+      "이미지 파일이 없거나 불완전하거나 유효하지 않습니다.",
+    ),
+    "image_save_permission": MessageLookupByLibrary.simpleMessage(
+      "사진 추가 권한이 없습니다. 시스템 설정에서 허용해 주세요. LiveContainer를 사용하는 경우 해당 앱의 사진 권한을 확인해 주세요.",
+    ),
+    "image_save_unsupported": MessageLookupByLibrary.simpleMessage(
+      "사진 보관함에서 지원하지 않는 이미지 형식입니다.",
+    ),
+    "image_save_write": MessageLookupByLibrary.simpleMessage(
+      "사진 보관함에 저장하지 못했습니다. 다시 시도해 주세요.",
+    ),
+    "save_current_image": MessageLookupByLibrary.simpleMessage("현재 이미지 저장"),
+    "save_original_image": MessageLookupByLibrary.simpleMessage("원본 이미지 저장"),
         "about": MessageLookupByLibrary.simpleMessage("정보"),
         "add_quick_search": MessageLookupByLibrary.simpleMessage("빠른 검색 추가"),
         "add_tag_placeholder":

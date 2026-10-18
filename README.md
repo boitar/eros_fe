@@ -71,6 +71,34 @@ cached/current page selection, actual scroll positions, refresh counts, mode
 changes, unsupported-platform fallback and disposal. Ordinary gallery cards now
 expand for scaled text. Module branches document their own earlier acceptance.
 
+### 2026-10-18: save gallery images to Photos
+
+Version remains `1.9.2+566`. The fix tag is `2026-10-18-gallery-save-cache`;
+the `custom` integration tag is `2026-10-18-custom-gallery-save-cache`.
+
+- Long-press and toolbar menus offer "Save current image" and "Save original image".
+  Current-image saves reuse local files, temporary files or the viewer's exact cache key,
+  requiring no network when cached. Original saves reuse only a confirmed original or
+  download through the original-image endpoint; the image preference alone is not proof of quality.
+- Menu selection captures the image source before navigation. Duplicate original options
+  are omitted when the endpoint is missing or both sources are confirmed identical.
+  Downloads isolate image identity and quality, checking status, length and image contents
+  before publishing a completed file instead of selecting arbitrary shared temporary files.
+- iOS imports encoded files through PhotoKit with add-only authorization, preserving
+  supported formats, transparency and animation. Permission, invalid-file, download,
+  unsupported-format and write failures remain distinct. Success follows the completed
+  import, and concurrent saves are blocked.
+- All 511 tests and the final 38 focused tests passed, with no added analysis diagnostics
+  against the same-source baseline. On the highest installed available iOS 27.0 (24A434),
+  iPhone 18 Pro verified zero-download cached saves, original downloads and reuse,
+  denied add-only permission without library writes, and HTML/HTTP error classification.
+  Imported PNG, JPEG and GIF files match their source SHA-256 hashes.
+- Production `lib/main.dart` Simulator and unsigned Release arm64 builds passed, including
+  local IPA package 67 integrity checks. That IPA was delivered locally, not uploaded to
+  the repository or GitHub Releases; the version number is unchanged. LiveContainer host
+  permissions and in-container saves, plus physical Android devices, still require
+  acceptance testing; Simulator results do not substitute for those checks.
+
 ### Build and verify
 
 Use Flutter 3.47.1 and Xcode 27.0; the minimum Flutter version is 3.47.0 for the

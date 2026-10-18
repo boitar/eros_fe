@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FC2026101800000000000001 /* PhotoLibraryPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2026101800000000000002 /* PhotoLibraryPlugin.swift */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		252CCB6AC4FF211C0D125EEA /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E484F12FF97E4360040832A /* Pods_Runner.framework */; };
 		36BD69AF93B43BC825A96022 /* HapticsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D54F227E16543C455729F0B3 /* HapticsPlugin.swift */; };
@@ -48,6 +49,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FC2026101800000000000002 /* PhotoLibraryPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryPlugin.swift; sourceTree = "<group>"; };
 		0304BC467603E942949DC27D /* SharePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharePlugin.swift; sourceTree = "<group>"; };
 		1119A10ACEC1E0F8ECE47BE0 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
@@ -161,6 +163,7 @@
 				BA373B2825D2A11600C042FA /* SecurityBlurEffect.swift */,
 				BAABB81D2AF5A144009C2DA3 /* InfoPlist.strings */,
 				0304BC467603E942949DC27D /* SharePlugin.swift */,
+				FC2026101800000000000002 /* PhotoLibraryPlugin.swift */,
 				D54F227E16543C455729F0B3 /* HapticsPlugin.swift */,
 				448D1F32CE0B739E2D09223F /* LiquidGlassViews.swift */,
 				3301E49B3D264BF110A738CE /* LiquidGlassPlugin.swift */,
@@ -390,6 +393,7 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				BA373B2925D2A11600C042FA /* SecurityBlurEffect.swift in Sources */,
 				5F1C56E3DEC66AFE6B4D0376 /* SharePlugin.swift in Sources */,
+				FC2026101800000000000001 /* PhotoLibraryPlugin.swift in Sources */,
 				36BD69AF93B43BC825A96022 /* HapticsPlugin.swift in Sources */,
 				E949856F3923E96AFA508C2F /* LiquidGlassViews.swift in Sources */,
 				A75F47A70F20CE09F24B900B /* LiquidGlassPlugin.swift in Sources */,

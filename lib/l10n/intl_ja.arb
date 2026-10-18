@@ -467,5 +467,13 @@
   "liquid_glass_two_row_detail": "操作とカテゴリを別々の行に表示",
   "liquid_glass_inline": "コンパクトな1行",
   "liquid_glass_inline_detail": "操作とカテゴリを1行に表示",
-  "favorite_note_hint": "メモ（任意）"
+  "favorite_note_hint": "メモ（任意）",
+  "save_current_image": "表示中の画像を保存",
+  "save_original_image": "元の画像を保存",
+  "image_save_permission": "写真の追加が許可されていません。システム設定で許可してください。LiveContainer を使用している場合は、その写真へのアクセス権を確認してください。",
+  "image_save_invalid": "画像ファイルが存在しないか、不完全または無効です。",
+  "image_save_download": "画像をダウンロードできませんでした。もう一度お試しください。",
+  "image_save_unsupported": "写真ライブラリはこの画像形式に対応していません。",
+  "image_save_write": "写真ライブラリに保存できませんでした。もう一度お試しください。",
+  "image_save_busy": "画像を保存中です。"
 }

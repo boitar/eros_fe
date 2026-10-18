@@ -10,6 +10,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/image_view/controller/view_state.dart';
+import 'package:eros_fe/utils/gallery_image_export.dart';
 import 'package:eros_fe/utils/share_service.dart';
 import 'package:eros_fe/widget/image/extended_saf_image_privider.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
@@ -1794,111 +1795,89 @@ Future<void> showSaveActionSheet(
   String? imageUrl,
   String? origImageUrl,
   String? filePath,
+  String? tempPath,
+  String? cacheKey,
+  String? originalCacheKey,
   LoadFrom loadType = LoadFrom.gallery,
   required String? gid,
   required int? ser,
   String? filename,
   bool isLocal = false,
-}) {
-  return showCupertinoModalPopup<void>(
-      context: context,
-      builder: (BuildContext context) {
-        final EhActionSheet dialog = EhActionSheet(
-          title: Text(L10n.of(context).save_into_album),
-          cancelButton: CupertinoActionSheetAction(
-              onPressed: () {
-                Get.back();
-              },
-              child: Text(L10n.of(context).cancel)),
-          actions: <Widget>[
+  Future<void> Function(GalleryImageSource source, bool original)? saveImage,
+}) async {
+  final source = GalleryImageSource(
+    url: imageUrl,
+    originalUrl: origImageUrl,
+    filePath: filePath,
+    tempPath: tempPath,
+    cacheKey: cacheKey,
+    originalCacheKey: originalCacheKey,
+    gid: gid,
+    ser: ser,
+    filename: filename,
+    isLocal: isLocal,
+  );
+  // Capture localized strings while the reader context is still mounted.
+  final l10n = L10n.of(context);
+  final original = await showCupertinoModalPopup<bool>(
+    context: context,
+    builder: (sheetContext) => EhDarkCupertinoTheme(
+      child: EhActionSheet(
+        title: Text(l10n.save_into_album),
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(sheetContext).pop(),
+          child: Text(l10n.cancel),
+        ),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(sheetContext).pop(false),
+            child: Text(l10n.save_current_image),
+          ),
+          if (source.hasSeparateOriginal)
             CupertinoActionSheetAction(
-              onPressed: () async {
-                logger.d('重采样图片');
-                Get.back();
-                if (filePath != null && filePath.isNotEmpty) {
-                  logger.d('重采样图片 filePath: $filePath');
-                  try {
-                    await Api.saveLocalImageToPhoto(
-                      filePath,
-                      context: context,
-                      gid: gid,
-                    );
-                    showToast(L10n.of(context).saved_successfully);
-                  } on EhError catch (e) {
-                    logger.e('保存失败', error: e);
-                    showToast(e.message);
-                  } catch (e) {
-                    logger.e('保存失败', error: e);
-                    showToast(e.toString());
-                  }
-                } else if (imageUrl != null && imageUrl.isNotEmpty) {
-                  logger.d('重采样图片 imageUrl: $imageUrl');
-                  try {
-                    await Api.saveNetworkImageToPhoto(
-                      imageUrl,
-                      context: context,
-                      gid: gid,
-                      ser: ser,
-                      filename: filename,
-                    );
-                    showToast(L10n.of(context).saved_successfully);
-                  } on EhError catch (e) {
-                    logger.e('保存失败', error: e);
-                    showToast(e.message);
-                  } catch (e) {
-                    logger.e('保存失败', error: e);
-                    showToast(e.toString());
-                  }
-                } else {
-                  showToast('imageUrl is null or file is null');
-                }
-              },
-              child: Text(L10n.of(context).resample_image),
+              onPressed: () => Navigator.of(sheetContext).pop(true),
+              child: Text(l10n.save_original_image),
             ),
-            if (!isLocal && origImageUrl != null && origImageUrl.isNotEmpty)
-              CupertinoActionSheetAction(
-                onPressed: () async {
-                  logger.d('原图');
-                  Get.back();
-
-                  if (origImageUrl.isEmpty) {
-                    showToast('origImageUrl is null');
-                    return;
-                  }
-
-                  SmartDialog.showLoading(
-                    builder: (_) => _downloadIndicator(),
-                    backDismiss: true,
-                  );
-                  try {
-                    await Api.saveNetworkImageToPhoto(
-                      origImageUrl,
-                      context: context,
-                      gid: gid,
-                      ser: ser,
-                      filename: filename,
-                      progressCallback: (int count, int total) {
-                        // logger.d('$count $total');
-                      },
-                    );
-                    logger.d('下载完成');
-                    showToast(L10n.current.saved_successfully);
-                  } on EhError catch (e, stack) {
-                    logger.e('下载失败', error: e, stackTrace: stack);
-                    showToast(e.message);
-                  } catch (e, stack) {
-                    logger.e('下载失败', error: e, stackTrace: stack);
-                    showToast(e.toString());
-                  } finally {
-                    SmartDialog.dismiss();
-                  }
-                },
-                child: Text(L10n.of(context).original_image),
-              ),
-          ],
-        );
-        return EhDarkCupertinoTheme(child: dialog);
-      });
+        ],
+      ),
+    ),
+  );
+  if (original == null) {
+    return;
+  }
+  // Test callers can exercise the same immutable menu selection without an
+  // application-wide loading overlay. Production always uses the guarded API.
+  if (saveImage != null) {
+    await saveImage(source, original);
+    return;
+  }
+  if (Api.isSavingPhoto) {
+    showToast(l10n.image_save_busy);
+    return;
+  }
+  try {
+    SmartDialog.showLoading(
+        builder: (_) => _downloadIndicator(), backType: SmartBackType.block);
+    await Api.saveGalleryImageToPhoto(source, original: original);
+    showToast(l10n.saved_successfully);
+  } on ImageExportException catch (error, stack) {
+    logger.e('Save image failed: ${error.failure}',
+        error: error.cause, stackTrace: stack);
+    final message = switch (error.failure) {
+      ImageExportFailure.permission => l10n.image_save_permission,
+      ImageExportFailure.invalidFile => l10n.image_save_invalid,
+      ImageExportFailure.download => l10n.image_save_download,
+      ImageExportFailure.unsupported => l10n.image_save_unsupported,
+      ImageExportFailure.write => l10n.image_save_write,
+      ImageExportFailure.busy => l10n.image_save_busy,
+    };
+    showToast(message);
+  } catch (error, stack) {
+    logger.e('Save image failed', error: error, stackTrace: stack);
+    showToast(l10n.image_save_write);
+  } finally {
+    SmartDialog.dismiss(status: SmartStatus.loading);
+  }
 }
 
 Future<void> showShareActionSheet(
@@ -2014,6 +1993,9 @@ Future<void> showImageSheet(
   String? imageUrl,
   String? origImageUrl,
   String? filePath,
+  String? tempPath,
+  String? cacheKey,
+  String? originalCacheKey,
   required String? gid,
   required int? ser,
   String? filename,
@@ -2043,6 +2025,9 @@ Future<void> showImageSheet(
                     context,
                     imageUrl: imageUrl,
                     filePath: filePath,
+                    tempPath: tempPath,
+                    cacheKey: cacheKey,
+                    originalCacheKey: originalCacheKey,
                     origImageUrl: origImageUrl,
                     gid: gid,
                     ser: ser,
@@ -2059,7 +2044,8 @@ Future<void> showImageSheet(
                     await showShareActionSheet(
                       context,
                       imageUrl: imageUrl,
-                      filePath: filePath,
+                      filePath:
+                          filePath?.isNotEmpty == true ? filePath : tempPath,
                       origImageUrl: origImageUrl,
                       gid: gid,
                       ser: ser,
