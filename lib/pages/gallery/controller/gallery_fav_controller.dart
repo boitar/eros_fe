@@ -5,6 +5,7 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/network/api.dart';
+import 'package:eros_fe/network/favorite_mutation.dart';
 import 'package:eros_fe/pages/controller/fav_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
@@ -122,7 +123,7 @@ class GalleryFavController extends GetxController {
       await vibrateUtil.success();
       return true;
     } catch (e) {
-      showToast('$e');
+      showToast(favoriteMutationMessage(e));
       await vibrateUtil.error();
       return false;
     } finally {
@@ -185,8 +186,8 @@ class GalleryFavController extends GetxController {
         await _removeGalleryCache();
       await vibrateUtil.success();
       }
-    } catch (e, stack) {
-      showToast('$e\n$stack');
+    } catch (e) {
+      showToast(favoriteMutationMessage(e));
       await vibrateUtil.error();
     } finally {
       isLoading = false;
@@ -216,8 +217,8 @@ class GalleryFavController extends GetxController {
       setFav(favcat, favTitle);
       await _removeGalleryCache();
       await vibrateUtil.success();
-    } catch (e, stack) {
-      showToast('$e\n$stack');
+    } catch (e) {
+      showToast(favoriteMutationMessage(e));
       await vibrateUtil.error();
     } finally {
       isLoading = false;
