@@ -8,6 +8,7 @@ import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/network/favorite_mutation.dart';
 import 'package:eros_fe/pages/controller/fav_controller.dart';
 import 'package:eros_fe/pages/item/item_base.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
@@ -204,7 +205,7 @@ class GalleryItemController extends GetxController {
                           favTitle: value.favTitle, favcat: value.favId);
                       showToast('successfully add');
                     } catch (e) {
-                      rethrow;
+                      showToast(favoriteMutationMessage(e));
                     }
                   },
                   child: Text(L10n.of(context).add_to_favorites),
@@ -224,7 +225,8 @@ class GalleryItemController extends GetxController {
                       await _favDialogController.delFav(galleryProvider.favcat!,
                           galleryProvider.gid!, galleryProvider.token!);
                     } catch (e) {
-                      rethrow;
+                      showToast(favoriteMutationMessage(e));
+                      return;
                     }
                     setFavTitleAndFavcat(favTitle: '', favcat: '');
                     showToast('successfully deleted');
@@ -256,7 +258,7 @@ class GalleryItemController extends GetxController {
                         showToast('successfully changed');
                       }
                     } catch (e) {
-                      rethrow;
+                      showToast(favoriteMutationMessage(e));
                     }
                   },
                   child: Text(L10n.of(context).change_to_favorites),

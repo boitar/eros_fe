@@ -7,6 +7,7 @@ import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:eros_fe/common/controller/advance_search_controller.dart';
 import 'package:eros_fe/common/controller/favorite_state_store.dart';
 import 'package:eros_fe/common/controller/gallerycache_controller.dart';
+import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/parser/eh_parser.dart';
 import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/index.dart';
@@ -22,6 +23,7 @@ import 'package:http_parser/http_parser.dart' as http_parser;
 import 'api.dart';
 import 'app_dio/pdio.dart';
 import 'favorite_mutation.dart';
+import 'text_form.dart';
 
 Options getCacheOptions({
   bool refresh = false,
@@ -448,15 +450,15 @@ Future<String> postArchiverRemoteDownload(
 ) async {
   DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
 
-  final formData = FormData.fromMap({
+  final formData = {
     'hathdl_xres': resolution.trim(),
-  });
+  };
 
   DioHttpResponse httpResponse = await dioHttpClient.post(
     url,
     data: formData,
     httpTransformer: GalleryArchiverRemoteDownloadResponseTransformer(),
-    options: getCacheOptions(refresh: true),
+    options: textFormOptions(getCacheOptions(refresh: true)),
   );
 
   if (httpResponse.ok && httpResponse.data is String) {
@@ -471,17 +473,17 @@ Future<String> postArchiverLocalDownload(
   String? dltype,
   String? dlcheck,
 }) async {
-  final formData = FormData.fromMap({
+  final formData = {
     if (dltype != null) 'dltype': dltype.trim(),
     if (dlcheck != null) 'dlcheck': dlcheck.trim(),
-  });
+  };
   DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
 
   DioHttpResponse httpResponse = await dioHttpClient.post(
     url,
     data: formData,
     httpTransformer: GalleryArchiverLocalDownloadResponseTransformer(),
-    options: getCacheOptions(refresh: true),
+    options: textFormOptions(getCacheOptions(refresh: true)),
   );
 
   if (httpResponse.ok && httpResponse.data is String) {
@@ -642,7 +644,7 @@ Future<bool> actionMytags({
 }) async {
   const url = '/mytags';
 
-  final formData = FormData.fromMap(dataMap);
+  final formData = dataMap;
 
   DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
 
@@ -651,7 +653,7 @@ Future<bool> actionMytags({
     queryParameters: queryParameters,
     data: formData,
     httpTransformer: TagActionTransformer(),
-    options: getCacheOptions(refresh: true)
+    options: textFormOptions(getCacheOptions(refresh: true))
       ..followRedirects = false
       ..validateStatus = (status) => (status ?? 0) < 500,
   );
@@ -676,7 +678,7 @@ Future<EhSettings?> postEhProfile({
     if (profileSet != null) 'profile_set': profileSet.trim(),
   };
 
-  final formData = FormData.fromMap(paramMap ?? dataMap);
+  final formData = paramMap ?? dataMap;
   DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
   const String url = '/uconfig.php';
 
@@ -685,7 +687,7 @@ Future<EhSettings?> postEhProfile({
     data: formData,
     // data: _dataString,
     httpTransformer: UconfigHttpTransformer(),
-    options: getCacheOptions(refresh: refresh),
+    options: textFormOptions(getCacheOptions(refresh: refresh)),
   );
 
   if (httpResponse.ok && httpResponse.data is EhSettings) {
@@ -995,10 +997,10 @@ Future<bool?> postComment({
   final String url = '/g/$gid/$token';
   DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
 
-  final data = FormData.fromMap({
+  final data = {
     isEdit ? 'commenttext_edit' : 'commenttext_new': comment,
     if (isEdit && commentId != null) 'edit_comment': int.parse(commentId),
-  });
+  };
 
   DioHttpResponse httpResponse = await dioHttpClient.post(
     url,
@@ -1011,7 +1013,7 @@ Future<bool?> postComment({
             response.statusCode == 303);
       },
     ),
-    options: getCacheOptions(refresh: true)
+    options: textFormOptions(getCacheOptions(refresh: true))
       ..followRedirects = true
       ..validateStatus = (status) => (status ?? 0) < 500,
   );
@@ -1023,78 +1025,109 @@ Future<bool?> postComment({
   }
 }
 
+Options _favoriteRequestOptions({bool form = false}) =>
+    favoriteNetworkCacheOptions(Api.cacheOption, transient: true).toOptions()
+      ..contentType = form ? Headers.formUrlEncodedContentType : null
+      ..responseType = ResponseType.plain
+      ..followRedirects = false
+      ..validateStatus =
+          ((status) => status != null && status >= 200 && status < 600)
+      ..sendTimeout = const Duration(seconds: 20)
+      ..receiveTimeout = const Duration(seconds: 20);
+
+void _checkFavoriteResult(
+    DioHttpResponse response, FavoriteMutationPhase phase) {
+  if (response.ok) {
+    return;
+  }
+  final code = response.error?.code;
+  final status = code != null && code > 0 ? code : null;
+  final failure = status == 401
+      ? FavoriteMutationFailure.authentication
+      : status != null && status >= 400 && status < 500 && status != 408
+          ? FavoriteMutationFailure.rejected
+          : FavoriteMutationFailure.unconfirmed;
+  final error = FavoriteMutationException(failure,
+      statusCode: status, phase: phase);
+  logger.w(error.diagnostic);
+  throw error;
+}
+
 Future<void> galleryAddFavorite(
   String gid,
   String token, {
   String favcat = 'favdel',
   String favnote = '',
 }) async {
+  if (!Get.find<UserController>().isLogin) {
+    throw const FavoriteMutationException(
+        FavoriteMutationFailure.authentication);
+  }
   await favoriteStates.mutate(gid, () async {
     final epoch = favoriteStates.epoch;
     final baseUrl = Api.getBaseUrl();
     final client = DioHttpClient(dioConfig: globalDioConfig);
+    void checkAccount() {
+      if (epoch != favoriteStates.epoch) {
+        throw const FavoriteMutationException(
+            FavoriteMutationFailure.accountChanged);
+      }
+    }
+
     final confirmed = await confirmFavoriteMutation(
       category: favcat,
+      note: favnote,
+      checkAccount: checkAccount,
       submit: () async {
         final response = await client.post(
           '$baseUrl/gallerypopups.php',
           queryParameters: {'gid': gid, 't': token, 'act': 'addfav'},
-          data: FormData.fromMap({
+          data: {
             'favcat': favcat,
             'update': '1',
             'favnote': favnote,
+            'apply': favcat == 'favdel' ? 'Apply Changes' : 'Add to Favorites',
+          },
+          options: _favoriteRequestOptions(form: true),
+          httpTransformer: HttpTransformerBuilder((response) {
+            checkFavoriteResponse(response, FavoriteMutationPhase.submit);
+            return DioHttpResponse<void>.success(null);
           }),
-          options: favoriteNetworkCacheOptions(Api.cacheOption, transient: true)
-              .toOptions(),
         );
-        if (!response.ok) {
-          throw StateError('收藏请求未成功');
-        }
+        _checkFavoriteResult(response, FavoriteMutationPhase.submit);
       },
-      readRemoval: () async {
-        if (epoch != favoriteStates.epoch) {
-          throw StateError('账号已切换');
-        }
+      readBack: () async {
+        checkAccount();
         // Do not use getGalleryDetail: its overlay/cache contains the previous
         // favorite while this mutation is still pending.
         final response = await client.get(
           '$baseUrl/g/$gid/$token/',
-          options: favoriteNetworkCacheOptions(Api.cacheOption, transient: true)
-              .toOptions(),
+          options: _favoriteRequestOptions(),
           httpTransformer: HttpTransformerBuilder((response) {
-            return DioHttpResponse<String?>.success(
-                parseDetailFavorite(parse(response.data as String)).$1);
+            checkFavoriteResponse(response, FavoriteMutationPhase.confirmation);
+            final favorite =
+                parseDetailFavorite(parse(response.data as String));
+            return DioHttpResponse<FavoriteServerSnapshot>.success(
+                FavoriteServerSnapshot(
+                    category: favorite.$1, title: favorite.$2 ?? ''));
           }),
         );
-        if (!response.ok) {
-          throw StateError('取消收藏确认请求失败');
+        checkAccount();
+        _checkFavoriteResult(response, FavoriteMutationPhase.confirmation);
+        final snapshot = response.data as FavoriteServerSnapshot;
+        if (favcat == 'favdel' || snapshot.category != favcat) {
+          return snapshot;
         }
-        final category = response.data;
-        if (category == '') {
-          return true;
-        }
-        if (category is String && isNetworkFavoriteCategory(category)) {
-          return false;
-        }
-        return null;
-      },
-      readBack: () {
-        if (epoch != favoriteStates.epoch) {
-          throw StateError('账号已切换');
-        }
-        return galleryGetFavorite(gid, token, baseUrl: baseUrl);
+        final popup = await galleryGetFavorite(gid, token, baseUrl: baseUrl);
+        checkAccount();
+        return FavoriteServerSnapshot(
+            category: snapshot.category,
+            title: snapshot.title,
+            note: popup.favNote);
       },
     );
-    if (epoch != favoriteStates.epoch) {
-      throw StateError('账号已切换');
-    }
-    final category = confirmed.selectFavcat ?? '';
-    final title = category.isEmpty
-        ? ''
-        : confirmed.favcats
-            .firstWhere((value) => value.favId == category)
-            .favTitle;
-    favoriteStates.commit(gid, category, title);
+    checkAccount();
+    favoriteStates.commit(gid, confirmed.category!, confirmed.title);
     if (Get.isRegistered<GalleryCacheController>()) {
       Get.find<GalleryCacheController>().syncFavorite(gid);
     }
@@ -1127,10 +1160,10 @@ Future<FavAdd> galleryGetFavorite(
   DioHttpResponse httpResponse = await dioHttpClient.get(
     url,
     queryParameters: _params,
-    options: favoriteNetworkCacheOptions(Api.cacheOption, transient: true)
-        .toOptions(),
+    options: _favoriteRequestOptions(),
     httpTransformer: HttpTransformerBuilder(
       (response) async {
+        checkFavoriteResponse(response, FavoriteMutationPhase.confirmation);
         final favAdd = await compute(parserAddFavPage, response.data as String);
         return DioHttpResponse<FavAdd>.success(favAdd);
       },
@@ -1140,7 +1173,9 @@ Future<FavAdd> galleryGetFavorite(
   if (httpResponse.ok && httpResponse.data is FavAdd) {
     return httpResponse.data as FavAdd;
   } else {
-    throw httpResponse.error ?? HttpException('get fav add error');
+    _checkFavoriteResult(httpResponse, FavoriteMutationPhase.confirmation);
+    throw const FavoriteMutationException(FavoriteMutationFailure.unconfirmed,
+        phase: FavoriteMutationPhase.confirmation);
   }
 }
 
