@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:eros_fe/common/parser/gallery_detail_parser.dart';
 import 'package:eros_fe/common/parser/gallery_fav_parser.dart';
@@ -56,19 +59,20 @@ void main() {
             .$1,
         '');
   });
-  test('successful submission requires server readback', () async {
+  test('successful submission requires server category and note', () async {
     var posts = 0;
     var reads = 0;
     final result = await confirmFavoriteMutation(
         category: '7',
+        note: 'note',
         submit: () async {
           posts++;
         },
         readBack: () async {
           reads++;
-          return parserAddFavPage(popup('7'));
+          return const FavoriteServerSnapshot(category: '7', note: 'note');
         });
-    expect(result.selectFavcat, '7');
+    expect(result.category, '7');
     expect([posts, reads], [1, 1]);
   });
   test('timeout after server saved is resolved without repeating POST',
@@ -78,10 +82,11 @@ void main() {
         category: '7',
         submit: () async {
           posts++;
-          throw StateError('timeout');
+          throw TimeoutException('Synthetic timeout');
         },
-        readBack: () async => parserAddFavPage(popup('7')));
-    expect(result.selectFavcat, '7');
+        readBack: () async =>
+            const FavoriteServerSnapshot(category: '7', note: ''));
+    expect(result.category, '7');
     expect(posts, 1);
   });
   test('HTTP success with unchanged selection is not business success',
@@ -90,67 +95,80 @@ void main() {
         confirmFavoriteMutation(
             category: '7',
             submit: () async {},
-            readBack: () async => parserAddFavPage(popup(null))),
-        throwsStateError);
+            wait: (_) async {},
+            readBack: () async => const FavoriteServerSnapshot(category: '')),
+        throwsA(isA<FavoriteMutationException>()));
   });
   test('unreadable response does not claim cancellation succeeded', () async {
     await expectLater(
         confirmFavoriteMutation(
             category: 'favdel',
             submit: () async {},
-            readBack: () async => parserAddFavPage('<p>Log in</p>')),
-        throwsStateError);
+            wait: (_) async {},
+            readBack: () async => const FavoriteServerSnapshot(category: null)),
+        throwsA(isA<FavoriteMutationException>()));
   });
   test('cancel succeeds only with an unselected valid popup', () async {
     final result = await confirmFavoriteMutation(
         category: 'favdel',
         submit: () async {},
-        readBack: () async => parserAddFavPage(popup(null)));
-    expect(result.selectFavcat, isNull);
+        readBack: () async => const FavoriteServerSnapshot(category: ''));
+    expect(result.category, '');
   });
   test('removal uses detail, not default popup category zero', () async {
     var posts = 0;
     var reads = 0;
     final result = await confirmFavoriteMutation(
       category: 'favdel',
-      submit: () async { posts++; },
-      readBack: () async => throw StateError('popup must not be used'),
-      readRemoval: () async {
+      submit: () async {
+        posts++;
+      },
+      readBack: () async {
         reads++;
         final category = parseDetailFavorite(parse(
-            '<div id="fav"></div><a id="favoritelink">Add to Favorites</a>')).$1;
-        return category == '';
+                '<div id="fav"></div><a id="favoritelink">Add to Favorites</a>'))
+            .$1;
+        return FavoriteServerSnapshot(category: category);
       },
     );
-    expect(result.selectFavcat, isNull);
+    expect(result.category, '');
     expect([posts, reads], [1, 1]);
   });
-  test('removal does not commit on still-favorited or unknown detail', () async {
-    for (final state in <bool?>[false, null]) {
-      await expectLater(confirmFavoriteMutation(
-        category: 'favdel', submit: () async {},
-        readBack: () async => parserAddFavPage(popup(null)),
-        readRemoval: () async => state,
-      ), throwsStateError);
+  test('removal does not commit on still-favorited or unknown detail',
+      () async {
+    for (final state in <String?>['0', null]) {
+      await expectLater(
+          confirmFavoriteMutation(
+            category: 'favdel',
+            submit: () async {},
+            wait: (_) async {},
+            readBack: () async => FavoriteServerSnapshot(category: state),
+          ),
+          throwsA(isA<FavoriteMutationException>()));
     }
   });
   test('uncertain delete is confirmed once without repeating POST', () async {
     var posts = 0;
     final result = await confirmFavoriteMutation(
       category: 'favdel',
-      submit: () async { posts++; throw StateError('timeout'); },
-      readBack: () async => parserAddFavPage(popup('0')),
-      readRemoval: () async => true,
+      submit: () async {
+        posts++;
+        throw TimeoutException('Synthetic timeout');
+      },
+      readBack: () async => const FavoriteServerSnapshot(category: ''),
     );
-    expect(result.selectFavcat, isNull);
+    expect(result.category, '');
     expect(posts, 1);
   });
   test('failed removal verification does not report success', () async {
-    await expectLater(confirmFavoriteMutation(
-      category: 'favdel', submit: () async {},
-      readBack: () async => parserAddFavPage(popup(null)),
-      readRemoval: () async => throw StateError('offline'),
-    ), throwsStateError);
+    await expectLater(
+        confirmFavoriteMutation(
+          category: 'favdel',
+          submit: () async {},
+          wait: (_) async {},
+          readBack: () async => throw Exception('Synthetic offline'),
+        ),
+        throwsA(isA<FavoriteMutationException>()));
   });
   test('all/local/invalid categories never reach POST', () async {
     for (final category in ['a', 'l', '10', '']) {
@@ -161,9 +179,186 @@ void main() {
               submit: () async {
                 posted = true;
               },
-              readBack: () async => parserAddFavPage(popup(null))),
+              readBack: () async => const FavoriteServerSnapshot(category: '')),
           throwsArgumentError);
       expect(posted, isFalse);
     }
+  });
+
+  for (var category = 0; category < 10; category++) {
+    test('server category $category and literal note are confirmed', () async {
+      final result = await confirmFavoriteMutation(
+        category: '$category',
+        note: ' note &+=\r\n保留空白 ',
+        submit: () async {},
+        readBack: () async => FavoriteServerSnapshot(
+            category: '$category', note: ' note &+=\n保留空白 '),
+      );
+      expect(result.category, '$category');
+    });
+  }
+
+  test('default popup zero cannot establish a server favorite', () async {
+    expect(parserAddFavPage(popup('0')).selectFavcat, '0');
+    await expectLater(
+      confirmFavoriteMutation(
+        category: '0',
+        submit: () async {},
+        wait: (_) async {},
+        readBack: () async => const FavoriteServerSnapshot(category: ''),
+      ),
+      throwsA(isA<FavoriteMutationException>()),
+    );
+  });
+
+  for (final code in [401, 403, 404, 429]) {
+    test('explicit rejection $code never reads or claims success', () async {
+      var reads = 0;
+      await expectLater(
+          confirmFavoriteMutation(
+            category: '0',
+            submit: () async => throw FavoriteMutationException(
+                FavoriteMutationFailure.rejected,
+                statusCode: code),
+            readBack: () async {
+              reads++;
+              return const FavoriteServerSnapshot(category: '0', note: '');
+            },
+          ),
+          throwsA(isA<FavoriteMutationException>()
+              .having((e) => e.statusCode, 'status', code)));
+      expect(reads, 0);
+    });
+  }
+
+  test('note mismatch and missing note cannot become success', () async {
+    for (final note in <String?>['different', null, ' trimmed']) {
+      await expectLater(
+          confirmFavoriteMutation(
+            category: '7',
+            note: ' trimmed ',
+            submit: () async {},
+            wait: (_) async {},
+            readBack: () async =>
+                FavoriteServerSnapshot(category: '7', note: note),
+          ),
+          throwsA(isA<FavoriteMutationException>()));
+    }
+  });
+
+  test('only readback retries, with a fixed three-read bound', () async {
+    var posts = 0;
+    var reads = 0;
+    final delays = <Duration>[];
+    await expectLater(
+        confirmFavoriteMutation(
+          category: '7',
+          submit: () async {
+            posts++;
+          },
+          wait: (d) async {
+            delays.add(d);
+          },
+          readBack: () async {
+            reads++;
+            return const FavoriteServerSnapshot(category: null);
+          },
+        ),
+        throwsA(isA<FavoriteMutationException>()));
+    expect(posts, 1);
+    expect(reads, 3);
+    expect(delays,
+        [const Duration(milliseconds: 400), const Duration(seconds: 1)]);
+  });
+
+  test('a late server save resolves on the second read without another POST',
+      () async {
+    var reads = 0;
+    var posts = 0;
+    final result = await confirmFavoriteMutation(
+      category: '7',
+      submit: () async {
+        posts++;
+        throw const FavoriteMutationException(
+            FavoriteMutationFailure.unconfirmed,
+            statusCode: 503);
+      },
+      wait: (_) async {},
+      readBack: () async =>
+          FavoriteServerSnapshot(category: ++reads == 1 ? '' : '7', note: ''),
+    );
+    expect(result.category, '7');
+    expect([posts, reads], [1, 2]);
+  });
+
+  test('account switch after readback prevents success', () async {
+    var changed = false;
+    await expectLater(
+        confirmFavoriteMutation(
+          category: '7',
+          submit: () async {},
+          checkAccount: () {
+            if (changed) {
+              throw const FavoriteMutationException(
+                  FavoriteMutationFailure.accountChanged);
+            }
+          },
+          readBack: () async {
+            changed = true;
+            return const FavoriteServerSnapshot(category: '7', note: '');
+          },
+        ),
+        throwsA(isA<FavoriteMutationException>().having(
+            (e) => e.failure, 'kind', FavoriteMutationFailure.accountChanged)));
+  });
+
+  test('login and challenge responses are not successful mutation responses',
+      () {
+    for (final data in [
+      'Failed login redirect setup',
+      '<form id="loginform">Sign in</form>',
+      '<title>Just a moment...</title><div class="cf-chl-test"></div>',
+      'Request forbidden by administrative rules',
+    ]) {
+      expect(
+          () => checkFavoriteResponse(
+              Response<String>(
+                  requestOptions: RequestOptions(path: '/'),
+                  data: data,
+                  statusCode: 200),
+              FavoriteMutationPhase.submit),
+          throwsA(isA<FavoriteMutationException>()));
+    }
+    expect(
+        () => checkFavoriteResponse(
+            Response<String>(
+                requestOptions: RequestOptions(path: '/'),
+                statusCode: 302,
+                headers: Headers.fromMap({
+                  'location': [
+                    'https://forums.e-hentai.org/remoteapi.php?secret=not-for-toast'
+                  ]
+                })),
+            FavoriteMutationPhase.submit),
+        throwsA(isA<FavoriteMutationException>()));
+  });
+
+  test('popup notes retain leading/trailing whitespace', () {
+    expect(
+        parserAddFavPage(popup('7').replaceFirst(
+                '>note</textarea>', '> note &amp;+=\n保留空白 </textarea>'))
+            .favNote,
+        ' note &+=\n保留空白 ');
+  });
+
+  test('user-visible errors never include arbitrary exception payloads', () {
+    expect(
+        favoriteMutationMessage(
+            Exception('Cookie: secret-token response <html> password')),
+        isNot(contains('secret')));
+    const error = FavoriteMutationException(FavoriteMutationFailure.rejected,
+        statusCode: 403);
+    expect(favoriteMutationMessage(error), contains('403'));
+    expect(favoriteMutationMessage(error), isNot(contains('Bad state')));
   });
 }

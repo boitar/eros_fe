@@ -99,6 +99,34 @@ the `custom` integration tag is `2026-10-18-custom-gallery-save-cache`.
   permissions and in-container saves, plus physical Android devices, still require
   acceptance testing; Simulator results do not substitute for those checks.
 
+### 2026-10-26: favorite form compatibility and confirmed saves
+
+Version remains `1.9.2+566`. The fix tag is `2026-10-26-favorite-form-fix`;
+the `custom` integration and release tag is `2026-10-26-custom-favorite-form-fix`.
+
+- Favorite submissions use URL-encoded text forms after anonymous EH/EX controls
+  identified administrative HTTP 403 responses to multipart text forms. Archive
+  downloads (local and H@H), My Tags, site settings/profile and comments use the
+  same verified encoding correction; forum login and file uploads retain their encoding.
+- A save updates shared state only after fresh server reads confirm the requested
+  category and exact note. Deletion requires an explicit not-favorited result;
+  the popup's default category 0 is never accepted as proof of success.
+- Each operation sends one POST. Uncertain outcomes use bounded readbacks without
+  repeating the write. Login redirects, challenges and HTTP rejections show short
+  errors, while account/revision guards prevent stale state updates.
+- All 554 Flutter tests passed, with zero analysis errors or warnings. Eight
+  traditional/Liquid Glass native cases passed on iPhone 18 Pro and iPad Pro
+  11-inch (M5), iOS 27.0 (24A434), covering categories 0/7, note editing/clearing,
+  list refresh, process restart, removal and HTTP 403 rejection. Normal-entry
+  clean installation, startup and process-survival checks also passed. Before
+  publication, four additional cases passed on the highest installed available
+  iOS 27.1 (24A94425) / iPhone Duo, covering both styles and restart/rejection.
+  The UI driver presses the visible upper card area to avoid the native tab bar.
+- The release reuses verified unsigned arm64 IPA package 68, built on 2026-10-23
+  from the same application source with the public configuration template and no
+  acceptance definitions. Real-account LiveContainer acceptance remains pending;
+  anonymous protocol controls and synthetic UI tests do not establish that result.
+
 ### Build and verify
 
 Use Flutter 3.47.1 and Xcode 27.0; the minimum Flutter version is 3.47.0 for the

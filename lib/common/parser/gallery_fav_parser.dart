@@ -35,7 +35,7 @@ FavAdd parserAddFavPage(String? response) {
     favcats: categories,
     usedNoteSlots: '1',
     maxNoteSlots: '100',
-    favNote: root.querySelector('textarea')?.text.trim(),
+    favNote: root.querySelector('textarea')?.text,
     selectFavcat: selected,
   );
 }

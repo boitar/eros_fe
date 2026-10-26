@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:eros_fe/debug/offline_favorite_mutations.dart';
 import 'package:eros_fe/debug/offline_favorites.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:flutter/foundation.dart';
@@ -43,6 +44,13 @@ class OfflineAcceptanceAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    if (offlineFavoriteMutationsEnabled) {
+      final response = await offlineFavoriteMutationResponse(
+          options, requestStream, offlineGalleryList());
+      if (response != null) {
+        return response;
+      }
+    }
     if (offlineGlassAcceptanceEnabled) {
       final response = await offlineGlassResponse(options);
       if (response != null) {
