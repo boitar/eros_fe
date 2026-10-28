@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/index.dart';
@@ -7,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'home_page_large.dart';
-import 'home_page_small.dart';
 
 class HomePage extends GetView<TabHomeController> {
   const HomePage({super.key});
@@ -21,20 +21,12 @@ class HomePage extends GetView<TabHomeController> {
     final child = Obx(
       () {
         final tabletLayoutType = ehSettingService.tabletLayoutType;
-        final half = layoutServices.half;
-        final vOffset = layoutServices.sideProportion;
 
         logger.t(' ${context.width} ${context.height}');
 
         layoutServices.layoutMode = getLayoutMode(context, tabletLayoutType);
 
-        if (isLayoutLarge) {
-          return TabHomeLarge(
-            sideProportion: vOffset,
-          );
-        } else {
-          return const TabHomeSmall();
-        }
+        return TabHomeLarge(split: isLayoutLarge);
       },
     );
 
@@ -52,19 +44,19 @@ class HomePage extends GetView<TabHomeController> {
 
   LayoutMode getLayoutMode(
       BuildContext context, TabletLayout tabletLayoutType) {
-    // 非平板
-    if (!context.isTablet) {
+    final adaptive = AdaptiveEnvironment.maybeOf(context) ??
+        AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
+
+    // The split shell is based on usable space, not on an iPad/device
+    // predicate. This keeps Duo inner portrait and narrow Split View single
+    // column while allowing the inner landscape to use list/detail panes.
+    if (tabletLayoutType == TabletLayout.never || !adaptive.isSplit) {
       return LayoutMode.small;
-    } else {
-      // 平板
-      if (tabletLayoutType == TabletLayout.never) {
-        return LayoutMode.small;
-      } else if (tabletLayoutType == TabletLayout.landscape &&
-          !context.isLandscape) {
-        return LayoutMode.small;
-      } else {
-        return LayoutMode.large;
-      }
     }
+    if (tabletLayoutType == TabletLayout.landscape &&
+        adaptive.size.width <= adaptive.size.height) {
+      return LayoutMode.small;
+    }
+    return LayoutMode.large;
   }
 }

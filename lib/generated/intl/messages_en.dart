@@ -43,6 +43,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(version) => "Update to ${version}";
 
+  static String m5(seconds) => "${seconds} s";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
@@ -738,6 +740,24 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("WebDAV Account"),
         "webdav_max_connections":
             MessageLookupByLibrary.simpleMessage("WebDAV Max Connections"),
-        "welcome_text": MessageLookupByLibrary.simpleMessage("~oh~ oh~ oh~~~")
+        "welcome_text": MessageLookupByLibrary.simpleMessage("~oh~ oh~ oh~~~"),
+        "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("Fill screen in landscape"),
+        "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("Fill screen in portrait"),
+        "reader_fill_footer": MessageLookupByLibrary.simpleMessage("Hides the status bar and system symbols while reading in that orientation, and lets images ignore the safe area"),
+        "reader_page_layout": MessageLookupByLibrary.simpleMessage("Page Layout"),
+        "reader_surface_tabletop": MessageLookupByLibrary.simpleMessage("Tabletop"),
+        "reader_surface_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+        "reader_single_page": MessageLookupByLibrary.simpleMessage("Single Page"),
+        "reader_double_odd_left": MessageLookupByLibrary.simpleMessage("Two Pages (Odd on Left)"),
+        "reader_double_even_left": MessageLookupByLibrary.simpleMessage("Two Pages (Even on Left)"),
+        "reader_auto_read": MessageLookupByLibrary.simpleMessage("Auto Page Turn"),
+        "reader_auto_read_interval": MessageLookupByLibrary.simpleMessage("Page Interval"),
+        "reader_interval_seconds": m5,
+        "reader_custom_interval": MessageLookupByLibrary.simpleMessage("Custom…"),
+        "full_title": MessageLookupByLibrary.simpleMessage("Full Title"),
+        "group_management": MessageLookupByLibrary.simpleMessage("Manage Groups"),
+        "choose_favcat": MessageLookupByLibrary.simpleMessage("Choose Favorites Folder"),
+        "back_to_top": MessageLookupByLibrary.simpleMessage("Back to Top"),
+        "ranking_period": MessageLookupByLibrary.simpleMessage("Ranking Period")
       };
 }

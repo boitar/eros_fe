@@ -132,7 +132,7 @@ class ListViewEhSetting extends StatelessWidget {
             onTap: () {
               Get.toNamed(
                 EHRoutes.mySettings,
-                id: isLayoutLarge ? 2 : null,
+                id: detailNavigatorId,
               );
             },
           ),
@@ -144,7 +144,7 @@ class ListViewEhSetting extends StatelessWidget {
             onTap: () {
               Get.toNamed(
                 EHRoutes.myTags,
-                id: isLayoutLarge ? 2 : null,
+                id: detailNavigatorId,
               );
             },
           ),
@@ -237,7 +237,7 @@ class ListViewEhSetting extends StatelessWidget {
           onTap: () {
             Get.toNamed(
               EHRoutes.webDavSetting,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             );
           },
         ),
@@ -247,7 +247,7 @@ class ListViewEhSetting extends StatelessWidget {
           onTap: () {
             Get.toNamed(
               EHRoutes.mysqlSync,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             );
           },
         ),

@@ -179,6 +179,7 @@ private final class LiquidGlassPopupPlatformView: NSObject, FlutterPlatformView 
         let main = surface()
         outer.addArrangedSubview(main)
         let scroll = UIScrollView()
+        scroll.hideEdgeEffects()
         scroll.alwaysBounceVertical = false
         scroll.translatesAutoresizingMaskIntoConstraints = false
         main.contentView.addSubview(scroll)
@@ -463,7 +464,7 @@ final class LiquidGlassCategoryViewFactory: NSObject, FlutterPlatformViewFactory
 
 private final class ErosCategoryButton: UIButton {
     override func contentRect(forBounds bounds: CGRect) -> CGRect {
-        bounds.insetBy(dx: 14, dy: 0)
+        bounds.insetBy(dx: 10, dy: 0)
     }
 }
 
@@ -493,6 +494,9 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
     private var effectsConfigured = false
     private var fontSize: CGFloat = 15
     private var opacity: CGFloat = 1
+    /// Segment widths laid out by Dart, which owns the shared rail geometry.
+    private var segmentWidths: [CGFloat] = []
+    private let lensInset: CGFloat = 3
 
     init(frame: CGRect, viewId: Int64, arguments: Any?, messenger: FlutterBinaryMessenger) {
         root = ErosLiquidGlassRootView(frame: frame)
@@ -508,6 +512,7 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
             root.addSubview(effect)
         }
         controls.accessibilityIdentifier = "liquid-glass-category-scroll"
+        controls.hideEdgeEffects()
         controls.showsHorizontalScrollIndicator = false
         controls.alwaysBounceHorizontal = false
         controls.delaysContentTouches = true
@@ -558,6 +563,9 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         titles = nextTitles
         longPressEnabled = arguments["longPressEnabled"] as? [Bool] ?? longPressEnabled
         fontSize = CGFloat((arguments["fontSize"] as? NSNumber)?.doubleValue ?? 15)
+        if let widths = arguments["segmentWidths"] as? [NSNumber] {
+            segmentWidths = widths.map { CGFloat($0.doubleValue) }
+        }
         opacity = min(1, max(0, CGFloat((arguments["opacity"] as? NSNumber)?.doubleValue ?? 1)))
         root.alpha = opacity
         let interactive = arguments["interactive"] as? Bool ?? true
@@ -625,17 +633,19 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         root.clipsToBounds = true
         let sizeChanged = restoredOffset && controls.bounds.size != root.bounds.size
         controls.frame = root.bounds
-        let widths = buttons.enumerated().map { index, _ -> CGFloat in
+        let provided = segmentWidths.count == buttons.count && !buttons.isEmpty
+        let widths = provided ? segmentWidths : buttons.enumerated().map { index, _ -> CGFloat in
             let regular = (titles[index] as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: fontSize)]).width
             let bold = (titles[index] as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: fontSize, weight: .semibold)]).width
             return max(44, max(regular, bold) + 28)
         }
         let naturalWidth = widths.reduce(0, +)
-        let fits = naturalWidth <= root.bounds.width
-        let gap = fits && buttons.count > 1
+        // Dart-provided widths already fill the track; never add gaps to them.
+        let fits = naturalWidth <= root.bounds.width + 0.5
+        let gap = !provided && fits && buttons.count > 1
             ? (root.bounds.width - naturalWidth) / CGFloat(buttons.count - 1)
             : 0
-        var x = fits && buttons.count == 1
+        var x = !provided && fits && buttons.count == 1
             ? (root.bounds.width - naturalWidth) / 2
             : 0
         for (index, button) in buttons.enumerated() {
@@ -644,7 +654,7 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
             x += width + (index < buttons.count - 1 ? gap : 0)
         }
         controls.contentSize = CGSize(
-            width: fits ? root.bounds.width : naturalWidth,
+            width: fits ? max(root.bounds.width, naturalWidth) : naturalWidth,
             height: root.bounds.height
         )
         if !restoredOffset && root.bounds.width > 0 {
@@ -654,7 +664,7 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
             if initialOffset > 0 { needsReveal = false }
         }
         lens.frame = selectionFrame(previewIndex)
-        lens.layer.cornerRadius = max(0, root.bounds.height / 2 - 4)
+        lens.layer.cornerRadius = max(0, root.bounds.height / 2 - lensInset)
         lens.isHidden = !titles.indices.contains(previewIndex)
         if let _ = pageProgress { updateProgress() }
         if (needsReveal || sizeChanged), buttons.indices.contains(selectedIndex), root.bounds.width > 0 {
@@ -681,7 +691,7 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
 
     private func selectionFrame(_ index: Int) -> CGRect {
         guard buttons.indices.contains(index) else { return .zero }
-        return buttons[index].frame.insetBy(dx: 4, dy: 4)
+        return buttons[index].frame.insetBy(dx: lensInset, dy: lensInset)
     }
 
     private func updateLabels() {

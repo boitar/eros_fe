@@ -1,3 +1,5 @@
+import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/generated/l10n.dart';
@@ -5,12 +7,16 @@ import 'package:eros_fe/models/download_archiver_task_info.dart';
 import 'package:eros_fe/pages/item/download_archiver_item.dart';
 import 'package:eros_fe/pages/item/download_gallery_item.dart';
 import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
+import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
+import 'package:eros_fe/pages/tab/view/constants.dart';
+import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/utils/share_service.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
+import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -94,8 +100,56 @@ class _DownloadTabState extends State<DownloadTab> {
       },
     );
 
+    final native = NativeNavigationScope.isEnabled(context);
     return Obx(() {
       final settings = Get.find<EhSettingService>();
+      void select(int index) => pageController.animateToPage(
+            index,
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+          );
+      if (native) {
+        return NativeNavigationPage(
+          tabId: EHRoutes.download,
+          chrome: NativePageChrome(
+            title: _title,
+            actions: [
+              ...Get.find<TabHomeController>().nativeHiddenTabActions,
+              if (!kReleaseMode)
+                NativeNavigationAction(
+                  id: 'export',
+                  title: 'Import & Export',
+                  symbol: 'arrow.up.arrow.down',
+                  onPressed: _showExportDialog,
+                ),
+            ],
+          ),
+          child: DownloadNativeScaffold(
+            rail: SegmentedRail(
+              compact: true,
+              selectedIndex: currIndex,
+              pageController: pageController,
+              followSystemTransparency:
+                  settings.liquidGlassFollowSystemTransparency,
+              items: [
+                LiquidGlassRailCategory(
+                  id: 'gallery',
+                  title: L10n.of(context).tab_gallery,
+                  onTap: () => select(0),
+                ),
+                LiquidGlassRailCategory(
+                  id: 'archiver',
+                  title: L10n.of(context).p_Archiver,
+                  onTap: () => select(1),
+                ),
+              ],
+            ),
+            child: pages,
+          ),
+        );
+      }
       if (settings.liquidGlass && LiquidGlassPlatform.isSupported) {
         final layout = settings.liquidGlassTopBarLayout;
         final safeTop = MediaQuery.paddingOf(context).top;
@@ -110,13 +164,7 @@ class _DownloadTabState extends State<DownloadTab> {
             pageController: pageController,
             followSystemTransparency:
                 settings.liquidGlassFollowSystemTransparency,
-            onSelected: (index) => pageController.animateToPage(
-              index,
-              duration: MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-            ),
+            onSelected: select,
             onExport: !kReleaseMode ? _showExportDialog : null,
           ),
           child: pages,
@@ -209,6 +257,60 @@ class _DownloadTabState extends State<DownloadTab> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Download under the native shell: the system navigation bar, then the same
+/// segmented rail and soft edge as the other root tabs.
+class DownloadNativeScaffold extends StatelessWidget {
+  const DownloadNativeScaffold({
+    super.key,
+    required this.rail,
+    required this.child,
+  });
+
+  final Widget rail;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final topInset = MediaQuery.viewPaddingOf(context).top;
+    final railHeight = topTabbarHeightFor(context);
+    return CupertinoPageScaffold(
+      child: SizedBox.expand(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  padding: MediaQuery.paddingOf(context).copyWith(
+                    top: topInset + railHeight + 8,
+                  ),
+                ),
+                child: child,
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: topInset + railHeight,
+              child: NativeTopTabHeader(
+                topInset: topInset,
+                railHeight: railHeight,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: MediaQuery.paddingOf(context).left,
+                    right: MediaQuery.paddingOf(context).right,
+                  ),
+                  child: rail,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

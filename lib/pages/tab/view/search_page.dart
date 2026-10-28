@@ -1,10 +1,13 @@
 import 'dart:math';
 
 import 'package:blur/blur.dart';
+import 'package:eros_fe/adaptive/browse_layout.dart';
+import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/pages/filter/filter.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_widget.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
@@ -47,14 +50,16 @@ class GallerySearchPage extends StatefulWidget {
 }
 
 class _GallerySearchPageState extends State<GallerySearchPage> {
-  final String _tag = searchPageCtrlTag;
+  late final String _tag;
   late SearchPageController controller;
+  final Map<int, double> _keyboardFreeHeights = <int, double>{};
 
   GlobalKey centerKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    _tag = searchPageCtrlTagOf(context);
 
     if (Get.isRegistered<SearchPageController>(tag: _tag)) {
       logger.d('find SearchPageController $_tag');
@@ -62,7 +67,8 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     } else {
       logger.d('put SearchPageController $_tag');
       controller = Get.put(
-        SearchPageController(),
+        SearchPageController(
+            controllerTag: _tag, repository: SearchRepository()),
         tag: _tag,
       );
     }
@@ -76,7 +82,8 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     Get.delete<SearchPageController>(tag: _tag);
   }
 
-  CupertinoNavigationBar getNavigationBar(BuildContext context) {
+  CupertinoNavigationBar getNavigationBar(BuildContext context,
+      {bool keyboardVisible = false}) {
     return CupertinoNavigationBar(
       padding: const EdgeInsetsDirectional.only(end: 10),
       border: null,
@@ -84,49 +91,129 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         return Text(controller.placeholderText);
       }),
       transitionBetweenRoutes: false,
-      trailing: _buildTrailing(context),
+      trailing: _buildTrailing(context, keyboardVisible: keyboardVisible),
     );
+  }
+
+  bool _softwareKeyboardVisible(
+      BuildContext context, bool reportedKeyboardVisible) {
+    final mediaQuery = MediaQuery.of(context);
+    final size = mediaQuery.size;
+    final widthKey = size.width.round();
+
+    // The plugin can retain a stale value while Duo changes panes. Remember
+    // each pane's keyboard-free height and require a real viewport reduction.
+    if (!reportedKeyboardVisible) {
+      final previous = _keyboardFreeHeights[widthKey];
+      if (previous == null || size.height > previous) {
+        _keyboardFreeHeights[widthKey] = size.height;
+      }
+      return false;
+    }
+    if (mediaQuery.viewInsets.bottom > 0) return true;
+
+    final keyboardFreeHeight = _keyboardFreeHeights[widthKey];
+    return keyboardFreeHeight != null && size.height < keyboardFreeHeight - 40;
   }
 
   @override
   Widget build(BuildContext context) {
-    final Widget cpf = CupertinoPageScaffold(
-      // navigationBar: GetPlatform.isAndroid || GetPlatform.isDesktop
-      //     ? getNavigationBar(context)
-      //     : null,
-      navigationBar: getNavigationBar(context),
-      child: Column(
-        children: [
-          // if (GetPlatform.isAndroid || GetPlatform.isDesktop)
-          //   SafeArea(
-          //     bottom: false,
-          //     child: Container(
-          //       decoration: BoxDecoration(
-          //         border: _kDefaultNavBarBorder,
-          //         color: CupertinoTheme.of(context).barBackgroundColor,
-          //       ),
-          //       child:
-          //           const SearchTextFieldIn(iconOpacity: 1.0, multiline: true)
-          //               .paddingSymmetric(horizontal: 12, vertical: 4),
-          //     ),
-          //   ),
-          SafeArea(
-            bottom: false,
-            child: Container(
-              decoration: BoxDecoration(
-                border: _kDefaultNavBarBorder,
-                color: CupertinoTheme.of(context).barBackgroundColor,
-              ),
-              child: const SearchTextFieldIn(iconOpacity: 1.0, multiline: true)
-                  .paddingSymmetric(horizontal: 12, vertical: 4),
+    final native = NativeNavigationScope.isEnabled(context) &&
+        !BrowsePaneScope.isSplit(context);
+    final Widget body = Column(
+      children: [
+        // if (GetPlatform.isAndroid || GetPlatform.isDesktop)
+        //   SafeArea(
+        //     bottom: false,
+        //     child: Container(
+        //       decoration: BoxDecoration(
+        //         border: _kDefaultNavBarBorder,
+        //         color: CupertinoTheme.of(context).barBackgroundColor,
+        //       ),
+        //       child:
+        //           const SearchTextFieldIn(iconOpacity: 1.0, multiline: true)
+        //               .paddingSymmetric(horizontal: 12, vertical: 4),
+        //     ),
+        //   ),
+        SafeArea(
+          bottom: false,
+          child: Container(
+            decoration: BoxDecoration(
+              border: _kDefaultNavBarBorder,
+              color: CupertinoTheme.of(context).barBackgroundColor,
             ),
+            child: const SearchTextFieldIn(iconOpacity: 1.0, multiline: true)
+                .paddingSymmetric(horizontal: 12, vertical: 4),
           ),
-          Expanded(child: _buildSearchResult(context)),
-        ],
-      ),
+        ),
+        Expanded(child: _buildSearchResult(context)),
+      ],
     );
 
-    return cpf;
+    return KeyboardVisibilityBuilder(builder: (context, keyboardVisible) {
+      final softwareKeyboardVisible =
+          _softwareKeyboardVisible(context, keyboardVisible);
+      return RetainedDraft(
+        controller: controller.searchTextController,
+        child: Obx(() => NativeNavigationPage(
+              chrome: NativePageChrome(
+                title: controller.placeholderText,
+                navigationBarVisible: native,
+                actions: [
+                  if (controller.afterJump)
+                    NativeNavigationAction(
+                      id: 'top',
+                      title: '回到顶部',
+                      symbol: 'arrow.up.circle',
+                      onPressed: controller.jumpToTop,
+                    ),
+                  if (controller.next.isNotEmpty)
+                    NativeNavigationAction(
+                      id: 'jump',
+                      title: '跳转/搜寻',
+                      symbol: 'arrow.uturn.down.circle',
+                      onPressed: () => controller.showJumpDialog(context),
+                    ),
+                  NativeNavigationAction(
+                    id: 'imageSearch',
+                    title: '以图搜图',
+                    symbol: 'photo',
+                    onPressed: () async {
+                      await Get.toNamed<void>(EHRoutes.searchImage);
+                    },
+                  ),
+                  NativeNavigationAction(
+                    id: 'filter',
+                    title: '筛选',
+                    symbol: 'line.3.horizontal.decrease',
+                    onPressed: showFilterSetting,
+                  ),
+                  if (softwareKeyboardVisible)
+                    NativeNavigationAction(
+                      id: 'dismissKeyboard',
+                      title: '收起键盘',
+                      symbol: 'keyboard.chevron.compact.down',
+                      onPressed: controller.searchFocusNode.unfocus,
+                    ),
+                ],
+              ),
+              child: offlineDuoRouteProbe(
+                id: 'search',
+                listenable: controller.searchTextController,
+                label: () => 'native=$native;'
+                    'split=${BrowsePaneScope.isSplit(context)};tag=$_tag;'
+                    'draft=${controller.searchTextController.text}',
+                child: CupertinoPageScaffold(
+                  navigationBar: native
+                      ? null
+                      : getNavigationBar(context,
+                          keyboardVisible: softwareKeyboardVisible),
+                  child: body,
+                ),
+              ),
+            )),
+      );
+    });
   }
 
   Widget _buildSearchResult(BuildContext context) {
@@ -561,7 +648,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
 
   Widget _getInitView() {
     return GetBuilder<SearchPageController>(
-      tag: searchPageCtrlTag,
+      tag: _tag,
       id: GetIds.SEARCH_INIT_VIEW,
       builder: (SearchPageController sPageController) {
         final List<Widget> searchHistoryButtonList =
@@ -694,6 +781,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
             // centerKey: centerKey,
             key: controller.sliverAnimatedListKey,
             lastTopItemIndex: controller.lastTopitemIndex,
+            anchorController: logic.galleryAnchor,
             keepPosition: controller.keepPosition,
           );
         }
@@ -719,13 +807,24 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     );
   }
 
-  Widget _buildTrailing(BuildContext context) {
+  Widget _buildTrailing(BuildContext context, {bool keyboardVisible = false}) {
     Widget buildListButtons() {
       return GestureDetector(
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
+            if (keyboardVisible)
+              CupertinoButton(
+                minimumSize: const Size(44, 44),
+                padding: EdgeInsets.zero,
+                onPressed: controller.searchFocusNode.unfocus,
+                child: Semantics(
+                  label: '收起键盘',
+                  child:
+                      const Icon(CupertinoIcons.keyboard_chevron_compact_down),
+                ),
+              ),
             // 页码
             // Obx(() {
             //   if (controller.curPage > -1) {
@@ -881,19 +980,20 @@ class SearchTextFieldIn extends StatelessWidget {
     this.iconOpacity = 0.0,
   });
 
-  // SearchPageController get controller => Get.find(tag: searchPageCtrlTag);
+  // SearchPageController get controller => Get.find(tag: tag);
   final bool multiline;
   final double iconOpacity;
 
   @override
   Widget build(BuildContext context) {
+    final tag = searchPageCtrlTagOf(context);
     SearchPageController controller;
-    if (Get.isRegistered(tag: searchPageCtrlTag)) {
-      controller = Get.find(tag: searchPageCtrlTag);
+    if (Get.isRegistered(tag: tag)) {
+      controller = Get.find(tag: tag);
     } else {
       controller = Get.put(
         SearchPageController(),
-        tag: searchPageCtrlTag,
+        tag: tag,
       );
     }
 
@@ -929,7 +1029,7 @@ class SearchTextFieldIn extends StatelessWidget {
           ),
           suffix: GetBuilder<SearchPageController>(
             id: GetIds.SEARCH_CLEAR_BTN,
-            tag: searchPageCtrlTag,
+            tag: tag,
             builder: (SearchPageController controller) {
               return Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1025,6 +1125,7 @@ class SearchTextFieldIn extends StatelessWidget {
           autofocus: controller.autofocus,
           onEditingComplete: controller.onEditingComplete,
           focusNode: controller.searchFocusNode,
+          onTapOutside: (_) => controller.searchFocusNode.unfocus(),
           maxLines: (isKeyboardVisible && multiline) ? null : 1,
           textInputAction: TextInputAction.search,
         );

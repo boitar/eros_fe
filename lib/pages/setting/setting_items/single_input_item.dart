@@ -55,7 +55,7 @@ class SingleInputItem extends StatelessWidget {
               onChanged?.call(val);
             },
           ),
-          id: isLayoutLarge ? 2 : null,
+          id: detailNavigatorId,
         );
       },
     );

@@ -6,12 +6,13 @@ import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
-import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
 import 'package:eros_fe/pages/gallery/view/comment_item.dart';
 import 'package:eros_fe/pages/gallery/view/taginfo_dialog.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
@@ -146,12 +147,55 @@ class GalleryTitle extends StatelessWidget {
   const GalleryTitle({
     Key? key,
     required this.title,
+    this.alternateTitle,
   }) : super(key: key);
 
   // final GalleryPageController _pageController = Get.find(tag: pageCtrlTag);
   // GalleryPageState get _pageState => _pageController.gState;
 
   final String title;
+
+  /// The title in the other language, offered in the full-title sheet.
+  final String? alternateTitle;
+
+  /// The navigation bar no longer repeats the title, so the header is where
+  /// people read and copy it in full.
+  void _showFullTitle(BuildContext context) {
+    final titles = <String>{
+      title,
+      if (alternateTitle?.trim().isNotEmpty ?? false) alternateTitle!,
+    }.toList();
+    void copy(BuildContext sheetContext, String text) {
+      Navigator.of(sheetContext).pop();
+      Clipboard.setData(ClipboardData(text: text));
+      showToast(L10n.of(context).copied_to_clipboard);
+    }
+
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (sheetContext) => EhActionSheet(
+        title: Text(L10n.of(context).full_title),
+        message: Text(titles.join('\n\n')),
+        actions: [
+          for (final text in titles)
+            CupertinoActionSheetAction(
+              onPressed: () => copy(sheetContext, text),
+              child: Text(
+                titles.length == 1
+                    ? L10n.of(context).copy
+                    : '${L10n.of(context).copy} · ${text.characters.take(18)}…',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(sheetContext).pop(),
+          child: Text(L10n.of(context).cancel),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,22 +211,26 @@ class GalleryTitle extends StatelessWidget {
     /// 20210107 改用SelectableText测试
 
     return SelectionArea(
-      child: Text(
-        title,
-        maxLines: 6,
-        // minLines: 1,
-        textAlign: TextAlign.left,
-        // 对齐方式
-        // overflow: TextOverflow.ellipsis, // 超出部分省略号
-        style: const TextStyle(
-          textBaseline: TextBaseline.alphabetic,
-          // height: 1.2,
-          fontSize: 16,
-          // fontWeight: FontWeight.w500,
-        ),
-        strutStyle: const StrutStyle(
-          height: 1.2,
-          forceStrutHeight: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _showFullTitle(context),
+        child: Text(
+          title,
+          maxLines: 6,
+          // minLines: 1,
+          textAlign: TextAlign.left,
+          // 对齐方式
+          overflow: TextOverflow.ellipsis, // 超出部分省略号
+          style: const TextStyle(
+            textBaseline: TextBaseline.alphabetic,
+            // height: 1.2,
+            fontSize: 16,
+            // fontWeight: FontWeight.w500,
+          ),
+          strutStyle: const StrutStyle(
+            height: 1.2,
+            forceStrutHeight: true,
+          ),
         ),
       ),
     );
@@ -232,11 +280,11 @@ class ReadButton extends StatelessWidget {
   });
   final String gid;
 
-  final GalleryPageController _pageController = Get.find(tag: pageCtrlTag);
-  GalleryPageState get _pageState => _pageController.gState;
-
   @override
   Widget build(BuildContext context) {
+    final _pageController =
+        Get.find<GalleryPageController>(tag: pageCtrlTagOf(context));
+    final _pageState = _pageController.gState;
     return Obx(
       () => MouseRegionClick(
         child: CupertinoButton.filled(
@@ -245,7 +293,9 @@ class ReadButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             // color: CupertinoColors.activeBlue,
             onPressed: _pageState.enableRead
-                ? () => _toViewPage(_pageState.galleryProvider?.gid ?? '0',
+                ? () => _toViewPage(
+                    context,
+                    _pageState.galleryProvider?.gid ?? '0',
                     _pageState.lastIndex)
                 : null,
             child: Text(
@@ -257,9 +307,11 @@ class ReadButton extends StatelessWidget {
     );
   }
 
-  Future<void> _toViewPage(String? gid, int _index) async {
+  Future<void> _toViewPage(
+      BuildContext context, String? gid, int _index) async {
     // logger.d('_toViewPage lastIndex $_index');
-    NavigatorUtil.goGalleryViewPage(_index, gid ?? '');
+    NavigatorUtil.goGalleryViewPage(_index, gid ?? '',
+        galleryTag: pageCtrlTagOf(context));
   }
 }
 
@@ -455,7 +507,7 @@ class MorePreviewButton extends StatelessWidget {
       onPressed: () {
         Get.toNamed(
           EHRoutes.galleryAllThumbnails,
-          id: isLayoutLarge ? 2 : null,
+          id: detailNavigatorId,
         );
       },
     );

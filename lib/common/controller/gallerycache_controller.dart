@@ -101,11 +101,15 @@ class GalleryCacheController extends GetxController {
     }
 
     if (mysqlController.syncReadProgress) {
-      final remoteMysql = await mysqlController.downloadRead(gid);
-      remotes.add(remoteMysql);
+      try {
+        final remoteMysql = await mysqlController.downloadRead(gid);
+        remotes.add(remoteMysql);
+      } catch (error) {
+        logger.e('$error');
+      }
     }
 
-    return remotes.reduce((value, element) {
+    return remotes.fold<GalleryCache?>(null, (value, element) {
       if (value == null) {
         return element;
       } else if (element == null) {

@@ -43,6 +43,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(version) => "アップデート利用可能！【${version}】";
 
+  static String m5(seconds) => "${seconds} 秒";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
@@ -635,6 +637,24 @@ class MessageLookup extends MessageLookupByLibrary {
         "webdav_Account": MessageLookupByLibrary.simpleMessage("WebDAVアカウント"),
         "webdav_max_connections":
             MessageLookupByLibrary.simpleMessage("WebDAV Max Connections"),
-        "welcome_text": MessageLookupByLibrary.simpleMessage("いらっしゃいませ！")
+        "welcome_text": MessageLookupByLibrary.simpleMessage("いらっしゃいませ！"),
+        "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("横向きで全画面表示"),
+        "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("縦向きで全画面表示"),
+        "reader_fill_footer": MessageLookupByLibrary.simpleMessage("その向きで閲覧中はステータスバーなどを隠し、画像をセーフエリアを無視して画面いっぱいに表示します"),
+        "reader_page_layout": MessageLookupByLibrary.simpleMessage("ページレイアウト"),
+        "reader_surface_tabletop": MessageLookupByLibrary.simpleMessage("テーブルトップ"),
+        "reader_surface_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "reader_single_page": MessageLookupByLibrary.simpleMessage("単ページ"),
+        "reader_double_odd_left": MessageLookupByLibrary.simpleMessage("見開き（奇数ページ左）"),
+        "reader_double_even_left": MessageLookupByLibrary.simpleMessage("見開き（偶数ページ左）"),
+        "reader_auto_read": MessageLookupByLibrary.simpleMessage("自動ページめくり"),
+        "reader_auto_read_interval": MessageLookupByLibrary.simpleMessage("めくり間隔"),
+        "reader_interval_seconds": m5,
+        "reader_custom_interval": MessageLookupByLibrary.simpleMessage("カスタム…"),
+        "full_title": MessageLookupByLibrary.simpleMessage("完全なタイトル"),
+        "group_management": MessageLookupByLibrary.simpleMessage("グループ管理"),
+        "choose_favcat": MessageLookupByLibrary.simpleMessage("お気に入りフォルダを選択"),
+        "back_to_top": MessageLookupByLibrary.simpleMessage("トップへ戻る"),
+        "ranking_period": MessageLookupByLibrary.simpleMessage("ランキング期間")
       };
 }

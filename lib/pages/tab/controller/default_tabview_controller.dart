@@ -259,7 +259,7 @@ class DefaultTabViewController extends TabViewController {
               customPopupMenuController.hideMenu();
               Get.toNamed(
                 elem.key,
-                id: isLayoutLarge ? 1 : null,
+                id: primaryNavigatorId,
               );
             },
             child: Container(
@@ -317,7 +317,7 @@ class DefaultTabViewController extends TabViewController {
         onPressed: () {
           Get.toNamed(
             tabFlag,
-            id: isLayoutLarge ? 1 : null,
+            id: primaryNavigatorId,
           );
         });
   }

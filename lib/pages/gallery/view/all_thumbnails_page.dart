@@ -1,3 +1,4 @@
+import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/all_thumbnails_controller.dart';
 import 'package:eros_fe/pages/gallery/view/thumb_box.dart';
@@ -17,20 +18,27 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
   final Map<String, bool> _loadCompletes = {};
 
   GlobalKey centerKey = GlobalKey();
+  late final String _tag;
+  late final AllThumbnailsPageController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _tag = pageCtrlTagOf(context);
+    controller =
+        Get.put(AllThumbnailsPageController(galleryTag: _tag), tag: _tag);
+  }
 
   @override
   void dispose() {
     super.dispose();
-    if (Get.isRegistered<AllThumbnailsPageController>()) {
-      Get.delete<AllThumbnailsPageController>();
+    if (Get.isRegistered<AllThumbnailsPageController>(tag: _tag)) {
+      Get.delete<AllThumbnailsPageController>(tag: _tag);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final AllThumbnailsPageController controller =
-        Get.put(AllThumbnailsPageController());
-
     final int _count = int.parse(controller.fileCount);
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -41,6 +49,7 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
         previousPageTitle: L10n.of(context).back,
         trailing: controller.canShowJumpDialog
             ? GetBuilder<AllThumbnailsPageController>(
+                tag: _tag,
                 id: 'trailing',
                 builder: (logic) {
                   return Row(

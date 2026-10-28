@@ -179,7 +179,7 @@ class _MysqlLoginState extends State<MysqlLogin> {
                                     ),
                                   );
                                   if (result != null && result) {
-                                    Get.back(id: isLayoutLarge ? 2 : null);
+                                    Get.back(id: detailNavigatorId);
                                   }
                                 } finally {
                                   setState(() {

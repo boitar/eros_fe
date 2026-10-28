@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:archive_async/archive_async.dart';
-import 'package:blur/blur.dart';
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/common/controller/image_block_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/component/exception/error.dart';
@@ -752,21 +752,16 @@ class _ViewLoadingLine extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: Text(
-                      label ?? '',
-                      style: const TextStyle(
-                        color: CupertinoColors.systemGrey6,
-                        height: 1,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
+              child: Text(
+                label ?? '',
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: CupertinoColors.systemGrey6,
+                  height: 1,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -916,136 +911,118 @@ class _ViewLoadingOld extends StatelessWidget {
 class ViewTopBar extends GetView<ViewExtController> {
   const ViewTopBar({super.key});
 
+  /// Every control shares one 44pt hit box so the row stays on one baseline.
+  Widget _button({
+    required Widget icon,
+    required VoidCallback onTap,
+  }) {
+    return MouseRegionClick(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox.square(
+          dimension: kTopBarButtonHeight,
+          child: Center(child: icon),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final adaptive = AdaptiveEnvironment.maybeOf(context);
+    final showInlineControls =
+        adaptive?.isWide ?? MediaQuery.sizeOf(context).width >= 600;
+    final padding = MediaQuery.paddingOf(context);
     return SizedBox(
-      height: context.mediaQueryPadding.top + kTopBarHeight,
-      width: context.mediaQuery.size.width,
+      height: padding.top + kTopBarHeight,
+      width: MediaQuery.sizeOf(context).width,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: context.mediaQueryPadding.horizontal / 2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
+        padding: EdgeInsets.fromLTRB(
+            padding.left + 12, padding.top, padding.right + 12, 0),
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Stack(
-              alignment: Alignment.center,
+            Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    MouseRegionClick(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          Get.back();
-                        },
-                        child: SizedBox(
-                          width: 40,
-                          height: kTopBarButtonHeight,
-                          child: const FaIcon(
-                            FontAwesomeIcons.chevronLeft,
-                            color: CupertinoColors.systemGrey6,
-                            // size: 24,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // GetBuilder<ViewExtController>(
-                    //   id: idViewTopBar,
-                    //   builder: (logic) {
-                    //     return Container(
-                    //       alignment: Alignment.center,
-                    //       height: kTopBarButtonHeight,
-                    //       child: Text(
-                    //         '${logic.vState.currentItemIndex + 1}/${logic.vState.filecount}',
-                    //         style: const TextStyle(
-                    //           color: CupertinoColors.systemGrey6,
-                    //         ),
-                    //       ),
-                    //     );
-                    //   },
-                    // ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (context.isTablet)
-                          ControllerButtonBar(
-                            controller: controller,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            showLable: false,
-                            // showLable: false,
-                          ),
-                        // 分享按钮
-                        MouseRegionClick(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              vibrateUtil.light();
-                              controller.tapShare(context);
-                            },
-                            child: const SizedBox(
-                              width: 40,
-                              height: kBottomBarButtonHeight,
-                              child: FaIcon(
-                                FontAwesomeIcons.share,
-                                color: CupertinoColors.systemGrey6,
-                                size: 22,
-                              ),
-                            ),
-                          ),
-                        ),
-                        // 菜单页面入口
-                        MouseRegionClick(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () async {
-                              vibrateUtil.light();
-                              controller.cancelVolumeKeydownListen();
-                              await Get.toNamed(EHRoutes.readSetting);
-                              controller.addVolumeKeydownListen();
-                            },
-                            child: Container(
-                              width: 40,
-                              margin: const EdgeInsets.only(right: 8.0),
-                              height: kTopBarButtonHeight,
-                              child: const FaIcon(
-                                FontAwesomeIcons.ellipsis,
-                                color: CupertinoColors.systemGrey6,
-                                // size: 24,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                _button(
+                  onTap: Get.back,
+                  icon: FaIcon(
+                    FontAwesomeIcons.chevronLeft,
+                    semanticLabel: L10n.of(context).back,
+                    color: CupertinoColors.systemGrey6,
+                    size: 20,
+                  ),
                 ),
-                GetBuilder<ViewExtController>(
-                  id: idViewTopBar,
-                  builder: (logic) {
-                    return Container(
-                      alignment: Alignment.center,
-                      height: kTopBarButtonHeight,
-                      child: Text(
-                        '${logic.vState.currentItemIndex + 1}/${logic.vState.fileCount}',
-                        style: const TextStyle(
-                          color: CupertinoColors.systemGrey6,
-                        ),
-                      ),
-                    );
+                const Spacer(),
+                if (showInlineControls)
+                  ControllerButtonBar(
+                    controller: controller,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    showLable: false,
+                    buttonHeight: kTopBarButtonHeight,
+                  ),
+                _button(
+                  onTap: controller.cycleSurfacePreference,
+                  icon: Icon(
+                    CupertinoIcons.square_split_1x2,
+                    color: CupertinoColors.systemGrey6,
+                    size: 22,
+                    semanticLabel:
+                        'Reading layout: ${controller.vState.surfacePreference.name}',
+                  ),
+                ),
+                // 分享按钮
+                _button(
+                  onTap: () {
+                    vibrateUtil.light();
+                    controller.tapShare(context);
                   },
+                  icon: FaIcon(
+                    FontAwesomeIcons.share,
+                    semanticLabel: L10n.of(context).share,
+                    color: CupertinoColors.systemGrey6,
+                    size: 20,
+                  ),
+                ),
+                // 菜单页面入口
+                _button(
+                  onTap: () async {
+                    vibrateUtil.light();
+                    controller.cancelVolumeKeydownListen();
+                    await Get.toNamed(EHRoutes.readSetting);
+                    controller.addVolumeKeydownListen();
+                  },
+                  icon: FaIcon(
+                    FontAwesomeIcons.ellipsis,
+                    semanticLabel: L10n.of(context).read_setting,
+                    color: CupertinoColors.systemGrey6,
+                    size: 22,
+                  ),
                 ),
               ],
             ),
+            GetBuilder<ViewExtController>(
+              id: idViewTopBar,
+              builder: (logic) {
+                // The counter shares the row with fixed 44pt buttons.
+                return IgnorePointer(
+                  child: MediaQuery.withClampedTextScaling(
+                    maxScaleFactor: 1.4,
+                    child: Text(
+                      '${logic.vState.currentItemIndex + 1}/${logic.vState.fileCount}',
+                      style: const TextStyle(
+                        color: CupertinoColors.systemGrey6,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
-      ).frosted(
-        height: context.mediaQueryPadding.top + kTopBarHeight,
-        width: context.mediaQuery.size.width,
-        blur: 20,
-        frostColor: Colors.black,
       ),
     );
   }
@@ -1061,37 +1038,32 @@ class ViewBottomBar extends GetView<ViewExtController> {
     return GetBuilder<ViewExtController>(
       id: idViewBottomBar,
       builder: (logic) {
-        logic.vState.bottomBarHeight = context.mediaQueryPadding.bottom +
-            (!context.isTablet ? kBottomBarHeight : 0) +
-            kSliderBarHeight +
-            (logic.vState.showThumbList ? kThumbListViewHeight : 0);
-
-        return AnimatedContainer(
-          height: controller.vState.bottomBarHeight,
-          width: context.mediaQuery.size.width,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+        final adaptive = AdaptiveEnvironment.maybeOf(context);
+        final showInlineControls =
+            adaptive?.isWide ?? MediaQuery.sizeOf(context).width >= 600;
+        // The pane can resize before its controls migrate to the header. An
+        // intrinsic height lets ReaderSurfaceLayout scroll transitional content
+        // instead of clipping it into an independently animated fixed height.
+        return SizedBox(
+          width: MediaQuery.sizeOf(context).width,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // 缩略图栏
               AnimatedContainer(
                 height: logic.vState.showThumbList ? kThumbListViewHeight : 0,
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOut,
                 child: const ThumbnailListView(),
               ),
-              // 控制栏
-              const BottomBarControlWidget(),
+              Padding(
+                padding: EdgeInsets.only(
+                  bottom: showInlineControls
+                      ? 0
+                      : kBottomBarHeight - kBottomBarButtonHeight,
+                ),
+                child: const BottomBarControlWidget(),
+              ),
             ],
-          ).frosted(
-            height: context.mediaQueryPadding.bottom +
-                kBottomBarHeight +
-                kSliderBarHeight +
-                kThumbListViewHeight,
-            width: context.mediaQuery.size.width,
-            blur: 20,
-            // frostColor: Colors.grey[700]!,
-            frostColor: Colors.black,
           ),
         );
       },
@@ -1109,9 +1081,15 @@ class BottomBarControlWidget extends GetView<ViewExtController> {
     return GetBuilder<ViewExtController>(
       id: idIconBar,
       builder: (logic) {
+        final adaptive = AdaptiveEnvironment.maybeOf(context);
+        final showInlineControls =
+            adaptive?.isWide ?? MediaQuery.sizeOf(context).width >= 600;
+        final padding = MediaQuery.paddingOf(context);
         return Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: context.mediaQueryPadding.horizontal / 2 + 10),
+          padding: EdgeInsets.only(
+            left: padding.left + 10,
+            right: padding.right + 10,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1142,7 +1120,7 @@ class BottomBarControlWidget extends GetView<ViewExtController> {
                 },
               ),
               // 按钮栏
-              if (!context.isTablet)
+              if (!showInlineControls)
                 ControllerButtonBar(
                   controller: logic,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1164,12 +1142,14 @@ class ControllerButtonBar extends StatelessWidget {
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.mainAxisSize = MainAxisSize.max,
     this.showLable = false,
+    this.buttonHeight = kBottomBarButtonHeight,
   });
 
   final ViewExtController controller;
   final MainAxisAlignment mainAxisAlignment;
   final MainAxisSize mainAxisSize;
   final bool showLable;
+  final double buttonHeight;
 
   static const buttonWidth = 44.0;
 
@@ -1189,12 +1169,13 @@ class ControllerButtonBar extends StatelessWidget {
             },
             child: SizedBox(
               width: buttonWidth,
-              height: kBottomBarButtonHeight,
+              height: buttonHeight,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const FaIcon(
+                  FaIcon(
                     FontAwesomeIcons.solidFloppyDisk,
+                    semanticLabel: L10n.of(context).save_current_image,
                     color: CupertinoColors.systemGrey6,
                     size: 22,
                   ),
@@ -1226,7 +1207,7 @@ class ControllerButtonBar extends StatelessWidget {
             },
             child: SizedBox(
               width: buttonWidth,
-              height: kBottomBarButtonHeight,
+              height: buttonHeight,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -1235,6 +1216,8 @@ class ControllerButtonBar extends StatelessWidget {
                     builder: (logic) {
                       return FaIcon(
                         FontAwesomeIcons.bookOpen,
+                        semanticLabel: '${L10n.of(context).double_page_model}: '
+                            '${logic.vState.columnMode.name}',
                         size: 22,
                         color: () {
                           if (logic.vState.viewMode == ViewMode.topToBottom) {
@@ -1289,12 +1272,13 @@ class ControllerButtonBar extends StatelessWidget {
               builder: (logic) {
                 return SizedBox(
                   width: buttonWidth,
-                  height: kBottomBarButtonHeight,
+                  height: buttonHeight,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       FaIcon(
                         FontAwesomeIcons.hourglassHalf,
+                        semanticLabel: 'Auto read',
                         size: 22,
                         color: () {
                           // if (logic.vState.viewMode ==
@@ -1341,7 +1325,7 @@ class ControllerButtonBar extends StatelessWidget {
               },
               child: SizedBox(
                 width: buttonWidth,
-                height: kBottomBarButtonHeight,
+                height: buttonHeight,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -1350,6 +1334,7 @@ class ControllerButtonBar extends StatelessWidget {
                       builder: (logic) {
                         return FaIcon(
                           FontAwesomeIcons.solidImages,
+                          semanticLabel: L10n.of(context).thumbnails,
                           size: 22,
                           color: logic.vState.showThumbList
                               ? CupertinoColors.activeBlue

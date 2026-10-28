@@ -86,7 +86,7 @@ class ListViewFavorite extends StatelessWidget {
           onTap: () {
             Get.back(
               result: _favcat,
-              id: isLayoutLarge ? 1 : null,
+              id: primaryNavigatorId,
             );
           },
         );

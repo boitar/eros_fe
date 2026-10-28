@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
@@ -303,47 +304,57 @@ Widget buildGallerySliverListSimpleView(
 }) {
   logger.t('buildGallerySliverListSimpleView');
 
-  return FlutterSliverList(
-    delegate: FlutterListViewDelegate(
-      (context, index) {
-        if (galleryProviders.length - 1 < index) {
-          return const SizedBox.shrink();
-        }
+  return Builder(builder: (context) {
+    final restoration = GalleryAnchorScope.maybeOf(context)?.restoration;
+    return FlutterSliverList(
+      delegate: FlutterListViewDelegate(
+        (context, index) {
+          if (galleryProviders.length - 1 < index) {
+            return const SizedBox.shrink();
+          }
 
-        if (index == galleryProviders.length - 1 &&
-            (next?.isNotEmpty ?? false)) {
-          // 加载完成最后一项的回调
-          SchedulerBinding.instance
-              .addPostFrameCallback((_) => lastComplete?.call());
-        }
+          if (index == galleryProviders.length - 1 &&
+              (next?.isNotEmpty ?? false)) {
+            // 加载完成最后一项的回调
+            SchedulerBinding.instance
+                .addPostFrameCallback((_) => lastComplete?.call());
+          }
 
-        final GalleryProvider _provider = galleryProviders[index];
-        Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
-        Get.lazyReplace(
-          () => GalleryItemController(
-              galleryProvider: Get.find(tag: _provider.gid)),
-          tag: _provider.gid,
-          fenix: true,
-        );
+          final GalleryProvider _provider = galleryProviders[index];
+          Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
+          Get.lazyReplace(
+            () => GalleryItemController(
+                galleryProvider: Get.find(tag: _provider.gid)),
+            tag: _provider.gid,
+            fenix: true,
+          );
 
-        return _withFirstCardKey(
-          FrameSeparateWidget(
+          return GalleryAnchorItem(
+            id: _provider.gid ?? '$index',
             index: index,
-            placeHolder: const GalleryItemSimplePlaceHolder(),
-            child: GalleryItemSimpleWidget(
-              galleryProvider: _provider,
-              tabTag: tabTag,
+            child: _withFirstCardKey(
+              FrameSeparateWidget(
+                index: index,
+                placeHolder: const GalleryItemSimplePlaceHolder(),
+                child: GalleryItemSimpleWidget(
+                  galleryProvider: _provider,
+                  tabTag: tabTag,
+                ),
+              ),
+              index,
+              firstCardKey,
             ),
-          ),
-          index,
-          firstCardKey,
-        );
-      },
-      onItemKey: (index) => galleryProviders[index].gid ?? '',
-      childCount: galleryProviders.length,
-      keepPosition: keepPosition,
-    ),
-  );
+          );
+        },
+        onItemKey: (index) => galleryProviders[index].gid ?? '',
+        childCount: galleryProviders.length,
+        keepPosition: keepPosition,
+        initIndex: restoration?.anchor.index ?? 0,
+        initOffset: 0,
+        forceToExecuteInitIndex: restoration?.generation,
+      ),
+    );
+  });
 }
 
 Widget getGallerySliverList(
@@ -357,6 +368,7 @@ Widget getGallerySliverList(
   int? lastTopItemIndex,
   Rx<ListModeEnum>? listMode,
   bool keepPosition = false,
+  GalleryAnchorController? anchorController,
 }) {
   final EhSettingService ehSettingService = Get.find();
 
@@ -379,84 +391,113 @@ Widget getGallerySliverList(
 
   // logger.d('next $next');
 
-  return Obx(() {
-    final mod = listMode?.value != ListModeEnum.global
-        ? listMode?.value ?? ehSettingService.listMode.value
-        : ehSettingService.listMode.value;
-    logger.t('mod $mod');
+  return Builder(
+    builder: (context) => Obx(() {
+      final configuredMode = listMode?.value != ListModeEnum.global
+          ? listMode?.value ?? ehSettingService.listMode.value
+          : ehSettingService.listMode.value;
+      final adaptive = AdaptiveEnvironment.maybeOf(context);
+      // A portrait expanded window gets the existing tagged grid without
+      // changing the user's single-column preference on compact or split panes.
+      final mod = adaptive?.isExpandedGrid == true &&
+              configuredMode == ListModeEnum.list
+          ? ListModeEnum.gridTags
+          : configuredMode;
+      logger.t('mod $mod');
 
-    switch (mod) {
-      case ListModeEnum.list:
-        return EhSliverList(
-          galleryProviders ?? [],
-          tabTag,
-          next: next,
-          lastComplete: lastComplete,
-          centerKey: centerKey,
-          firstCardKey: firstCardKey,
-          lastTopItemIndex: lastTopItemIndex,
-          keepPosition: keepPosition,
-        );
-      case ListModeEnum.waterfall:
-        return EhWaterfallFlow(
-          galleryProviders ?? [],
-          tabTag,
-          next: next,
-          lastComplete: lastComplete,
-          centerKey: centerKey,
-          firstCardKey: firstCardKey,
-          lastTopItemIndex: lastTopItemIndex,
-        );
-      case ListModeEnum.waterfallLarge:
-        return EhWaterfallFlow(
-          galleryProviders ?? [],
-          tabTag,
-          next: next,
-          lastComplete: lastComplete,
-          large: true,
-          centerKey: centerKey,
-          firstCardKey: firstCardKey,
-          lastTopItemIndex: lastTopItemIndex,
-        );
-      case ListModeEnum.simpleList:
-        return buildGallerySliverListSimpleView(
-          galleryProviders ?? [],
-          tabTag,
-          next: next,
-          lastComplete: lastComplete,
-          centerKey: centerKey,
-          firstCardKey: firstCardKey,
-          lastTopItemIndex: lastTopItemIndex,
-          keepPosition: keepPosition,
-        );
-      case ListModeEnum.grid:
-      case ListModeEnum.gridTags:
-        return EhGridView(
-          galleryProviders ?? [],
-          tabTag,
-          mode: mod,
-          next: next,
-          lastComplete: lastComplete,
-          centerKey: centerKey,
-          firstCardKey: firstCardKey,
-          lastTopItemIndex: lastTopItemIndex,
-        );
-      case ListModeEnum.debugSimple:
-        return buildDebugSimple(
-          galleryProviders ?? [],
-          tabTag,
-          next: next,
-          lastComplete: lastComplete,
-          centerKey: centerKey,
-          firstCardKey: firstCardKey,
-          lastTopItemIndex: lastTopItemIndex,
-        );
-      case ListModeEnum.global:
-        return const SliverFillRemaining(
-          child: SizedBox(),
-        );
-    }
-  });
+      Widget buildSliver() {
+        switch (mod) {
+          case ListModeEnum.list:
+            return EhSliverList(
+              galleryProviders ?? [],
+              tabTag,
+              next: next,
+              lastComplete: lastComplete,
+              centerKey: centerKey,
+              firstCardKey: firstCardKey,
+              lastTopItemIndex: lastTopItemIndex,
+              keepPosition: keepPosition,
+            );
+          case ListModeEnum.waterfall:
+            return EhWaterfallFlow(
+              galleryProviders ?? [],
+              tabTag,
+              next: next,
+              lastComplete: lastComplete,
+              centerKey: centerKey,
+              firstCardKey: firstCardKey,
+              lastTopItemIndex: lastTopItemIndex,
+            );
+          case ListModeEnum.waterfallLarge:
+            return EhWaterfallFlow(
+              galleryProviders ?? [],
+              tabTag,
+              next: next,
+              lastComplete: lastComplete,
+              large: true,
+              centerKey: centerKey,
+              firstCardKey: firstCardKey,
+              lastTopItemIndex: lastTopItemIndex,
+            );
+          case ListModeEnum.simpleList:
+            return buildGallerySliverListSimpleView(
+              galleryProviders ?? [],
+              tabTag,
+              next: next,
+              lastComplete: lastComplete,
+              centerKey: centerKey,
+              firstCardKey: firstCardKey,
+              lastTopItemIndex: lastTopItemIndex,
+              keepPosition: keepPosition,
+            );
+          case ListModeEnum.grid:
+          case ListModeEnum.gridTags:
+            return EhGridView(
+              galleryProviders ?? [],
+              tabTag,
+              mode: mod,
+              next: next,
+              lastComplete: lastComplete,
+              centerKey: centerKey,
+              firstCardKey: firstCardKey,
+              lastTopItemIndex: lastTopItemIndex,
+            );
+          case ListModeEnum.debugSimple:
+            return buildDebugSimple(
+              galleryProviders ?? [],
+              tabTag,
+              next: next,
+              lastComplete: lastComplete,
+              centerKey: centerKey,
+              firstCardKey: firstCardKey,
+              lastTopItemIndex: lastTopItemIndex,
+            );
+          case ListModeEnum.global:
+            return const SliverFillRemaining(
+              child: SizedBox(),
+            );
+        }
+      }
+
+      final sliver = buildSliver();
+      if (mod != ListModeEnum.list &&
+          mod != ListModeEnum.simpleList &&
+          mod != ListModeEnum.grid &&
+          mod != ListModeEnum.gridTags) {
+        return sliver;
+      }
+      final itemConfig = ehSettingService.getItemConfig(mod);
+      return AnchoredGallerySliver(
+        controller: anchorController,
+        itemIds: [
+          for (var index = 0; index < (galleryProviders?.length ?? 0); index++)
+            galleryProviders![index].gid ?? '$index',
+        ],
+        layout: (mod, itemConfig?.enableCustomWidth, itemConfig?.customWidth),
+        sliver: sliver,
+      );
+    }),
+  );
 }
 
 class SearchRepository {

@@ -10,7 +10,10 @@ import 'gallery_page_state.dart';
 
 class ArchiverController extends GetxController
     with StateMixin<ArchiverProvider> {
-  ArchiverController();
+  ArchiverController({String? galleryTag})
+      : galleryTag = galleryTag ?? pageCtrlTag;
+
+  final String galleryTag;
 
   late GalleryPageController pageController;
   GalleryPageState get _pageState => pageController.gState;
@@ -20,7 +23,7 @@ class ArchiverController extends GetxController
   @override
   void onInit() {
     super.onInit();
-    pageController = Get.find(tag: pageCtrlTag);
+    pageController = Get.find(tag: galleryTag);
 
     if (GetPlatform.isMobile) {
       _downloadController = Get.find();

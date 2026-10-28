@@ -268,7 +268,7 @@ class CustomTabbarController extends DefaultTabViewController {
   Future<void> pressedBar() async {
     await Get.toNamed(
       EHRoutes.customProfiles,
-      id: isLayoutLarge ? 1 : null,
+      id: primaryNavigatorId,
     );
   }
 
@@ -289,14 +289,14 @@ class CustomTabbarController extends DefaultTabViewController {
     if (isLayoutLarge && topRoute == EHRoutes.customProfileSetting) {
       _result = await Get.offNamed(
         EHRoutes.customProfileSetting,
-        id: isLayoutLarge ? 2 : null,
+        id: detailNavigatorId,
         preventDuplicates: false,
         // arguments: profileMap[uuid],
       );
     } else {
       _result = await Get.toNamed(
         EHRoutes.customProfileSetting,
-        id: isLayoutLarge ? 2 : null,
+        id: detailNavigatorId,
         preventDuplicates: false,
         // arguments: profileMap[uuid],
       );

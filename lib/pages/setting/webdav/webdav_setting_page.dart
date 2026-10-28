@@ -41,7 +41,7 @@ class WebDavSetting extends GetView<WebdavController> {
                 onPressed: () async {
                   final result = await Get.toNamed(
                     EHRoutes.loginWebDAV,
-                    id: isLayoutLarge ? 2 : null,
+                    id: detailNavigatorId,
                   );
                   if (result != null && result is bool && result) {
                     Get.back();

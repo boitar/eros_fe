@@ -36,10 +36,15 @@ enum ListType {
 }
 
 class SearchPageController extends DefaultTabViewController {
-  SearchPageController();
+  SearchPageController({SearchRepository? repository, String? controllerTag})
+      : repository = repository,
+        controllerTag = controllerTag ?? searchPageCtrlTag;
+
+  final SearchRepository? repository;
+  final String controllerTag;
 
   late bool _autoComplete = false;
-  final String tabIndex = 'search_$searchPageCtrlTag';
+  late final String tabIndex = 'search_$controllerTag';
 
   bool textIsGalleryUrl = false;
   String? _jumpToUrl;
@@ -163,6 +168,7 @@ class SearchPageController extends DefaultTabViewController {
     const Duration _duration = Duration(milliseconds: 500);
     _lastInputCompleteAt = DateTime.now();
     await Future<void>.delayed(_duration);
+    if (isClosed) return;
 
     if (lastSearchText.trim() != searchTextController.text.trim() &&
         DateTime.now().difference(_lastInputCompleteAt) >= _duration) {
@@ -283,7 +289,7 @@ class SearchPageController extends DefaultTabViewController {
 
   @override
   void onReady() {
-    SearchRepository searchRepository = Get.find();
+    final searchRepository = repository ?? Get.find<SearchRepository>();
     initSearchText = searchRepository.searchText;
     searchType = searchRepository.searchType;
     _autoComplete = initSearchText?.trim().isNotEmpty ?? false;
@@ -306,6 +312,9 @@ class SearchPageController extends DefaultTabViewController {
 
   @override
   void onClose() {
+    searchTextController.removeListener(_delayedSearch);
+    searchTextController.dispose();
+    searchFocusNode.dispose();
     super.onClose();
   }
 
@@ -321,7 +330,7 @@ class SearchPageController extends DefaultTabViewController {
   Future<void> quickSearchList() async {
     final text = await Get.toNamed(
       EHRoutes.quickSearch,
-      id: isLayoutLarge ? 2 : null,
+      id: detailNavigatorId,
     );
 
     if (text == null) {

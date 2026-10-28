@@ -1,116 +1,187 @@
 import 'dart:math';
 
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/adaptive/browse_layout.dart';
+import 'package:eros_fe/adaptive/tab_navigation.dart';
+import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
-import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/route/app_pages.dart';
-import 'package:eros_fe/route/first_observer.dart';
-import 'package:eros_fe/route/main_observer.dart';
 import 'package:eros_fe/route/routes.dart';
-import 'package:eros_fe/route/second_observer.dart';
-import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/pages/gallery/controller/taginfo_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-
 import 'home_page_small.dart';
 
 const kMinWidth = 320.0;
 
-class TabHomeLarge extends GetView<TabHomeController> {
+class TabHomeLarge extends StatefulWidget {
   const TabHomeLarge({
-    Key? key,
-    this.sideProportion = 0.0,
-  }) : super(key: key);
-  final double sideProportion;
+    super.key,
+    required this.split,
+    this.primaryRoot,
+    this.destinationBuilder,
+  });
 
-  double getSideWidth(BuildContext context) {
-    double _width = kMinWidth;
+  final bool split;
+  final Widget? primaryRoot;
+  final TabDestinationBuilder? destinationBuilder;
 
-    if (context.width >= 1366) {
-      _width = 420;
-    }
-    if (context.width >= 1024) {
-      _width = 390;
-    }
+  @override
+  State<TabHomeLarge> createState() => _TabHomeLargeState();
+}
 
-    _width = kMinWidth + (context.width - 2 * kMinWidth) * sideProportion;
-    logger.t('width:${context.width} $_width}');
-    return min(max(_width, kMinWidth), context.width - kMinWidth);
+class _TabHomeLargeState extends State<TabHomeLarge> {
+  final LayoutServices _layout = Get.find();
+  late final TabNavigationRegistry _navigation;
+
+  @override
+  void initState() {
+    super.initState();
+    _navigation = _layout.mountNavigation(this);
   }
 
   @override
   Widget build(BuildContext context) {
-    // logger.d('width:${context.width} ${getSideWidth(context)}');
-    final mainNavigatorObserver = MainNavigatorObserver();
-    return Row(
-      children: [
-        AnimatedContainer(
-          width: getSideWidth(context),
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.ease,
-          // Isolate each navigator's modal barrier from its sibling pane.
-          child: Semantics(
-            container: true,
-            explicitChildNodes: true,
-            child: ClipRect(
-              child: Navigator(
-                  key: Get.nestedKey(1),
-                  observers: [
-                    FirstNavigatorObserver(),
-                    if (mainNavigatorObserver.navigator == null)
-                      mainNavigatorObserver
-                  ],
-                  onGenerateRoute: (settings) {
-                    final GetPage? _route = AppPages.routes.firstWhereOrNull(
-                        (GetPage e) => e.name == settings.name);
-                    if (_route != null &&
-                        _route.name != EHRoutes.root &&
-                        _route.name != EHRoutes.home) {
-                      return GetPageRoute(
-                        settings: settings,
-                        showCupertinoParallax: false,
-                        page: _route.page,
-                      );
-                    } else {
-                      return GetPageRoute(
-                        settings: settings,
-                        page: () => const TabHomeSmall(),
-                        showCupertinoParallax: false,
-                      );
-                    }
-                  }),
-            ),
-          ),
-        ),
-        Expanded(
-          child: SideControllerbar(
-            child: Row(
-              children: [
-                Container(
-                  color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.systemGrey4, context),
-                  width: 0.6,
-                ),
-                Expanded(
-                  child: Semantics(
-                    container: true,
-                    explicitChildNodes: true,
-                    child: ClipRect(
-                      child: Navigator(
-                        key: Get.nestedKey(2),
-                        observers: [SecondNavigatorObserver()],
-                        // observers: [MainNavigatorObserver()],
-                        initialRoute: EHRoutes.empty,
-                        onGenerateRoute: AppPages.onGenerateRoute,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    final root = widget.primaryRoot;
+    if (root == null) {
+      return TabHomeSmall(
+          split: widget.split, destinationBuilder: widget.destinationBuilder);
+    }
+    return AdaptiveTabNavigator(
+      stack: _navigation.select(EHRoutes.gallery),
+      split: widget.split,
+      primaryRoot: root,
     );
+  }
+
+  @override
+  void dispose() {
+    _layout.unmountNavigation(this, _navigation);
+    super.dispose();
+  }
+}
+
+/// Each retained destination keeps its own list/search and detail/editor trees.
+class AdaptiveTabNavigator extends StatefulWidget {
+  const AdaptiveTabNavigator({
+    super.key,
+    required this.stack,
+    required this.split,
+    required this.primaryRoot,
+  });
+
+  final TabNavigationStack stack;
+  final bool split;
+  final Widget primaryRoot;
+
+  @override
+  State<AdaptiveTabNavigator> createState() => _AdaptiveTabNavigatorState();
+}
+
+class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
+  final LayoutServices _layout = Get.find();
+  TabNavigationStack get _stack => widget.stack;
+  late final HeroController _primaryHero;
+  late final HeroController _detailHero;
+  late final Widget _primary;
+  late final Widget _detail;
+
+  @override
+  void initState() {
+    super.initState();
+    _primaryHero = HeroController();
+    _detailHero = HeroController();
+    _primary = HeroControllerScope(
+      controller: _primaryHero,
+      child: Navigator(
+        key: Get.nestedKey(_stack.primaryId),
+        observers: [_stack.primaryObserver],
+        initialRoute: EHRoutes.home,
+        onGenerateInitialRoutes: (_, __) => [_primaryRootRoute()],
+        onGenerateRoute: (settings) {
+          if (settings.name == EHRoutes.home ||
+              settings.name == EHRoutes.root) {
+            return _primaryRootRoute();
+          }
+          return _generateRoute(settings);
+        },
+      ),
+    );
+    _detail = HeroControllerScope(
+      controller: _detailHero,
+      child: Navigator(
+        key: Get.nestedKey(_stack.detailId),
+        observers: [_stack.detailObserver],
+        initialRoute: EHRoutes.empty,
+        onGenerateInitialRoutes: (_, __) => [
+          _generateRoute(const RouteSettings(name: EHRoutes.empty)),
+        ],
+        onGenerateRoute: _generateRoute,
+      ),
+    );
+  }
+
+  Route<dynamic> _primaryRootRoute() => GetPageRoute(
+        settings: const RouteSettings(name: EHRoutes.home),
+        page: () => widget.primaryRoot,
+        showCupertinoParallax: false,
+      );
+
+  Route<dynamic> _generateRoute(RouteSettings settings) {
+    final tags = Get.isRegistered<ControllerTagService>()
+        ? Get.find<ControllerTagService>().snapshotFor(_stack.id)
+        : const ControllerTagSnapshot();
+    final route =
+        AppPages.routes.firstWhereOrNull((e) => e.name == settings.name);
+    if (route == null) return AppPages.onGenerateRoute(settings)!;
+    return GetPageRoute(
+      settings: settings,
+      page: () => ControllerTagScope(snapshot: tags, child: route.page()),
+      binding: settings.name == EHRoutes.addTag
+          ? BindingsBuilder(() => Get.lazyPut(
+              () => TagInfoController(galleryTag: tags.galleryTag),
+              tag: tags.galleryTag))
+          : route.binding,
+      bindings: route.bindings,
+      transition: route.transition,
+      showCupertinoParallax: false,
+      popGesture: settings.name != EHRoutes.empty,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final environment = AdaptiveEnvironment.maybeOf(context) ??
+        AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
+    return Obx(() {
+      final proportion = _layout.sideProportion;
+      return AnimatedBuilder(
+        animation: Listenable.merge(
+            [_stack.primaryObserver.revision, _stack.detailObserver.revision]),
+        builder: (context, _) {
+          return TabNavigationScope(
+            stack: _stack,
+            child: AdaptiveBrowseLayout(
+              environment: environment,
+              split: widget.split && environment.isSplit,
+              sideProportion: proportion,
+              detailActive: _stack.detailOnTop,
+              primary: _primary,
+              detail: _detail,
+              divider: const SideControllerbar(child: SizedBox(width: 28)),
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _stack.reset();
+    _primaryHero.dispose();
+    _detailHero.dispose();
+    super.dispose();
   }
 }
 
@@ -172,8 +243,10 @@ class _SideControllerbarState extends State<SideControllerbar> {
             });
           },
           onPanUpdate: (details) {
-            final proportion = layoutServices.sideProportion +
-                details.delta.dx / (context.width - 2 * kMinWidth);
+            final available =
+                max(1.0, MediaQuery.sizeOf(context).width - 2 * kMinWidth);
+            final proportion =
+                layoutServices.sideProportion + details.delta.dx / available;
 
             layoutServices.sideProportion = max(min(1.0, proportion), 0.0);
           },

@@ -10,7 +10,10 @@ import 'gallery_page_state.dart';
 
 class TorrentController extends GetxController
     with StateMixin<TorrentProvider> {
-  TorrentController();
+  TorrentController({String? galleryTag})
+      : galleryTag = galleryTag ?? pageCtrlTag;
+
+  final String galleryTag;
 
   late GalleryPageController pageController;
   GalleryPageState get _pageState => pageController.gState;
@@ -20,7 +23,7 @@ class TorrentController extends GetxController
   @override
   void onInit() {
     super.onInit();
-    pageController = Get.find(tag: pageCtrlTag);
+    pageController = Get.find(tag: galleryTag);
     _loadData();
   }
 

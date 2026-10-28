@@ -106,7 +106,7 @@ class BlockersPage extends GetView<BlockController> {
                     onTap: () {
                       Get.toNamed(
                         EHRoutes.blockRules,
-                        id: isLayoutLarge ? 2 : null,
+                        id: detailNavigatorId,
                       );
                     },
                   ),

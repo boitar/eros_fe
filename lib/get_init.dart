@@ -4,6 +4,7 @@ import 'package:eros_fe/common/controller/mysql_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
+import 'adaptive/adaptive_environment.dart';
 import 'common/controller/advance_search_controller.dart';
 import 'common/controller/archiver_download_controller.dart';
 import 'common/controller/auto_lock_controller.dart';
@@ -48,6 +49,7 @@ void getinit() {
   Get.put(ControllerTagService());
 
   Get.lazyPut(() => LayoutServices(), fenix: true);
+  Get.put(AdaptiveEnvironmentService(), permanent: true);
 
   /// 一些全局设置或者控制
   Get.lazyPut(() => WebdavController(), fenix: true);

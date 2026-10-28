@@ -42,7 +42,7 @@ class ImagePhotoView extends GetView<ViewExtController> {
                     const BoxDecoration(color: Colors.transparent),
                 pageController: logic.preloadPageController,
                 itemCount: logic.vState.pageCount,
-                onPageChanged: controller.handOnPageChanged,
+                onPageChanged: logic.pageChangedCallback,
                 scrollDirection: Axis.horizontal,
                 customSize: context.mediaQuery.size,
                 // scrollPhysics: const CustomScrollPhysics(),

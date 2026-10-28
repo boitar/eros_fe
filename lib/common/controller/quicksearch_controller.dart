@@ -33,6 +33,18 @@ class QuickSearchController extends ProfileController {
   }
 
   Future<void> syncQuickSearch() async {
+    if (!webdavController.syncQuickSearch ||
+        webdavController.webdavProfile.url.trim().isEmpty) {
+      return;
+    }
+    try {
+      await _syncQuickSearch();
+    } catch (error, stack) {
+      logger.e('Quick search sync failed: $error\n$stack');
+    }
+  }
+
+  Future<void> _syncQuickSearch() async {
     final _remoteTimes = await webdavController.getQuickList();
     if (_remoteTimes.isEmpty) {
       await webdavController.uploadQuickSearch(searchTextList, lastEditTime);

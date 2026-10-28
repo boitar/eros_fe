@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:archive_async/archive_async.dart';
 import 'package:collection/collection.dart';
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:dio/dio.dart';
 import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
@@ -11,18 +12,25 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
 import 'package:eros_fe/store/db/entity/gallery_image_task.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../common.dart';
+import '../reader_pagination.dart';
 import '../view/view_page.dart';
 import 'view_controller.dart';
 
 class ViewExtState {
   /// 初始化操作
-  ViewExtState() {
+  ViewExtState({ViewRepository? repository}) {
     // 设置加载类型
-    if (Get.arguments is ViewRepository) {
-      final ViewRepository vr = Get.arguments as ViewRepository;
+    // 优先使用显式注入的仓库；退出动画期间全局 Get.arguments 会被清空，
+    // 依赖它会让复活的控制器拿到空状态。
+    final ViewRepository? vr = repository ??
+        (Get.arguments is ViewRepository
+            ? Get.arguments as ViewRepository
+            : null);
+    if (vr != null) {
       logger.t('vr.loadType ${vr.loadType}, index: ${vr.index}');
       loadFrom = vr.loadType;
 
@@ -34,8 +42,8 @@ class ViewExtState {
           }
           break;
         case LoadFrom.gallery:
-          galleryPageController =
-              Get.find<GalleryPageController>(tag: pageCtrlTag);
+          galleryPageController = Get.find<GalleryPageController>(
+              tag: vr.galleryControllerTag ?? pageCtrlTag);
           gid = galleryPageController?.gState.gid;
           break;
         case LoadFrom.archiver:
@@ -47,9 +55,18 @@ class ViewExtState {
       currentItemIndex = vr.index;
     }
 
-    ever(_currentItemIndex, (val) => saveLastIndex());
-    debounce(_currentItemIndex, (callback) => saveLastIndex(saveToStore: true),
-        time: 3.seconds);
+    _positionWorkers.add(ever(_currentItemIndex, (val) => saveLastIndex()));
+    _positionWorkers.add(debounce(
+        _currentItemIndex, (callback) => saveLastIndex(saveToStore: true),
+        time: 3.seconds));
+  }
+
+  final List<Worker> _positionWorkers = [];
+
+  void dispose() {
+    for (final worker in _positionWorkers) {
+      worker.dispose();
+    }
   }
 
   GalleryPageController? galleryPageController;
@@ -96,40 +113,52 @@ class ViewExtState {
   }
 
   /// 单页双页模式
-  ViewColumnMode get columnMode => ehSettingService.viewColumnMode;
+  ViewColumnMode get columnMode => viewMode == ViewMode.topToBottom
+      ? ViewColumnMode.single
+      : ehSettingService.resolveReaderColumnMode(
+          canUseDoublePage: canUseDoublePage,
+        );
 
   set columnMode(ViewColumnMode val) {
-    ehSettingService.viewColumnMode = val;
+    ehSettingService.setManualReaderColumnMode(val);
+  }
+
+  Size? viewportSize;
+  bool? viewportAllowsDoublePage;
+  bool bookFolded = false;
+  ReaderSurfacePreference surfacePreference = ReaderSurfacePreference.automatic;
+
+  bool get canUseDoublePage {
+    if (viewportAllowsDoublePage != null) {
+      return viewportAllowsDoublePage!;
+    }
+    final size = viewportSize;
+    if (size != null) {
+      return size.width >= AdaptiveEnvironmentSnapshot.minimumPaneWidth * 2 &&
+          size.width >= size.height * 0.9;
+    }
+    final context = Get.context;
+    if (context != null) {
+      final adaptive = AdaptiveEnvironment.maybeOf(context);
+      if (adaptive != null) {
+        return adaptive.canUseReaderDoublePage;
+      }
+      final mediaSize = MediaQuery.sizeOf(context);
+      return mediaSize.width >=
+              AdaptiveEnvironmentSnapshot.minimumPaneWidth * 2 &&
+          mediaSize.width >= mediaSize.height * 0.9;
+    }
+    return false;
   }
 
   /// pageView下实际的index
-  int get pageIndex {
-    switch (columnMode) {
-      case ViewColumnMode.single:
-        return currentItemIndex;
-      case ViewColumnMode.oddLeft:
-        return currentItemIndex ~/ 2;
-      case ViewColumnMode.evenLeft:
-        return (currentItemIndex + 1) ~/ 2;
-      default:
-        return currentItemIndex;
-    }
-  }
+  ReaderPagination get pagination =>
+      ReaderPagination(mode: columnMode, imageCount: fileCount);
+
+  int get pageIndex => pagination.pageForImage(currentItemIndex);
 
   /// pageView下实际能翻页的总数
-  int get pageCount {
-    final int imageCount = fileCount;
-    switch (columnMode) {
-      case ViewColumnMode.single:
-        return imageCount;
-      case ViewColumnMode.oddLeft:
-        return (imageCount / 2).round();
-      case ViewColumnMode.evenLeft:
-        return (imageCount / 2).round() + ((imageCount + 1) % 2);
-      default:
-        return imageCount;
-    }
-  }
+  int get pageCount => pagination.pageCount;
 
   double sliderValue = 0.0;
 
@@ -153,6 +182,11 @@ class ViewExtState {
   int retryCount = 3;
 
   List<double> doubleTapScales = <double>[1.0, 2.0, 3.0];
+
+  /// Per-image zoom relative to the fitted scale. The map belongs to this
+  /// reader session, so pagination remaps can recreate image widgets without
+  /// losing the user's zoom choice.
+  final Map<int, double> readerZoomRatios = <int, double>{};
 
   /// 显示页面间隔
   RxBool get _showPageInterval => ehSettingService.showPageInterval;

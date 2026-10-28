@@ -13,7 +13,10 @@ import 'gallery_page_state.dart';
 
 class AllThumbnailsPageController extends GetxController
     with StateMixin<(List<GalleryImage>, List<GalleryImage>)> {
-  AllThumbnailsPageController();
+  AllThumbnailsPageController({String? galleryTag})
+      : galleryTag = galleryTag ?? pageCtrlTag;
+
+  final String galleryTag;
   late GalleryPageController _pageController;
   GalleryPageState get _pageState => _pageController.gState;
 
@@ -48,7 +51,7 @@ class AllThumbnailsPageController extends GetxController
   void onInit() {
     super.onInit();
 
-    _pageController = Get.find(tag: pageCtrlTag);
+    _pageController = Get.find(tag: galleryTag);
 
     _pageState.currentImagePage = 0;
 

@@ -17,6 +17,27 @@ const double kDefIndicatorHeight = 4;
 final LinkScrollBarController _defaultLinkScrollBarController =
     LinkScrollBarController();
 
+double _linkItemWidth(
+    BuildContext context, LinkTabItem item, EdgeInsetsGeometry padding) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: item.title,
+      style: DefaultTextStyle.of(context)
+          .style
+          .merge(const TextStyle(fontSize: 14)),
+    ),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    locale: Localizations.maybeLocaleOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width.ceilToDouble() +
+      padding.horizontal +
+      (item.icon == null ? 0 : 20);
+  painter.dispose();
+  return width;
+}
+
 class LinkTabItem {
   LinkTabItem({
     required this.title,
@@ -71,7 +92,7 @@ class LinkScrollBar extends StatefulWidget {
 class _LinkScrollBarState extends State<LinkScrollBar> {
   int selectIndex = 0;
   List<ItemFrame> channelFrameList = [];
-  double _maxScrollViewWidth = 10;
+  double _maxScrollViewWidth = 0;
   double _indicatorPositionedLeft = 0;
   double _indicatorWidth = 0.0;
   final ScrollController _scrollController = ScrollController();
@@ -86,28 +107,13 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
     _maxScrollViewWidth = 0;
 
     for (int i = 0; i < widget.items.length; i++) {
-      final barItem = NotificationListener<WSLGetWidgetWithNotification>(
-        onNotification: (notification) {
-          // logger.d('${notification.index}  ${notification.width}');
-          if (channelFrameList.length == widget.items.length) {
-            return true;
-          }
-
-          //这里接受item创建时发起的冒泡消息，目的是：此时，导航item的宽度已计算完毕，创建导航栏布局记录类，记录当前item距离左侧距离及宽度。
-          ItemFrame itemFrame = ItemFrame(
-            left: _maxScrollViewWidth,
-            width: notification.width,
-            index: notification.index,
-          );
-
-          //保存所有ChannelFrame值，以便当外部修改viewPage的index值时或者点击item时进行修改scrollview偏移量
-          channelFrameList.add(itemFrame);
-
-          _maxScrollViewWidth += notification.width;
-
-          //返回 true 消息到此结束，不再继续往外传递
-          return true;
-        },
+      final width =
+          _linkItemWidth(context, widget.items[i], widget.itemPadding);
+      channelFrameList
+          .add(ItemFrame(left: _maxScrollViewWidth, width: width, index: i));
+      _maxScrollViewWidth += width;
+      final barItem = SizedBox(
+        width: width,
         child: Builder(builder: (context) {
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -186,6 +192,13 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
       );
 
       barItems.add(barItem);
+    }
+    if (channelFrameList.isNotEmpty) {
+      final selected =
+          channelFrameList[selectIndex.clamp(0, channelFrameList.length - 1)];
+      _indicatorPositionedLeft =
+          selected.left + widget.itemPadding.horizontal / 2;
+      _indicatorWidth = max(0, selected.width - widget.itemPadding.horizontal);
     }
     return barItems;
   }
@@ -283,18 +296,9 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
     selectIndex = widget.initIndex;
     // _indicatorPositionedLeft = widget.itemPadding.horizontal / 2;
 
-    // 初始计算
+    // Item extents are known on the first layout, including text scaling.
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 0)).then((value) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {});
-      });
-
-      Future.delayed(const Duration(milliseconds: 100)).then((value) {
-        scrollToItem(widget.initIndex);
-      });
+      scrollToItem(widget.initIndex);
     });
   }
 
@@ -305,7 +309,6 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
 
   @override
   Widget build(BuildContext context) {
-    final scrollViewWidth = _maxScrollViewWidth;
     final bool useLiquidGlass = Get.isRegistered<EhSettingService>() &&
         Get.find<EhSettingService>().liquidGlass &&
         LiquidGlassPlatform.isSupported;
@@ -325,6 +328,8 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
     );
 
     return LayoutBuilder(builder: (context, c) {
+      final items = _getBarItems(context, c.maxWidth);
+      final scrollViewWidth = _maxScrollViewWidth;
       return SingleChildScrollView(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
@@ -335,7 +340,7 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
               Expanded(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: _getBarItems(context, c.maxWidth),
+                  children: items,
                 ),
               ),
               if (!useLiquidGlass && widget.pageController == null)
@@ -351,7 +356,9 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
                     ),
                   ],
                 ),
-              if (!useLiquidGlass && widget.pageController != null)
+              if (!useLiquidGlass &&
+                  widget.pageController != null &&
+                  channelFrameList.isNotEmpty)
                 TitleIndicator(
                   height: widget.indicatorHeight,
                   pageController: widget.pageController,
@@ -399,53 +406,54 @@ class _TitleIndicatorState extends State<TitleIndicator> {
   void initState() {
     super.initState();
     logger.t('_TitleIndicatorState initState index:${widget.index}');
+    _updateGeometry();
+    widget.pageController?.addListener(_listen);
+  }
 
-    positionedLeft = widget
-            .channelFrameList[min(max(widget.index, 0),
-                max(widget.channelFrameList.length - 1, 0))]
-            .left +
-        (widget.itemPadding?.horizontal ?? 0) / 2;
-    _indicatorWidth = widget
-            .channelFrameList[min(max(widget.index, 0),
-                max(widget.channelFrameList.length - 1, 0))]
-            .width -
-        (widget.itemPadding?.horizontal ?? 0);
-
-    // pageController监听
-    // widget.pageController?.addListener(_listen);
+  void _updateGeometry() {
+    final frames = widget.channelFrameList;
+    if (frames.isEmpty) {
+      positionedLeft = 0;
+      _indicatorWidth = 0;
+      return;
+    }
+    final controller = widget.pageController;
+    final page = (controller != null && controller.positions.length == 1
+            ? controller.page ?? widget.index.toDouble()
+            : widget.index.toDouble())
+        .clamp(0.0, frames.length - 1.0);
+    final index = page.floor();
+    final next = min(index + 1, frames.length - 1);
+    final fraction = page - index;
+    final padding = widget.itemPadding?.horizontal ?? 0;
+    positionedLeft = frames[index].left +
+        fraction * (frames[next].left - frames[index].left) +
+        padding / 2;
+    _indicatorWidth = max(
+        0,
+        frames[index].width +
+            fraction * (frames[next].width - frames[index].width) -
+            padding);
   }
 
   void _listen() {
-    final page = widget.pageController?.page ?? 0.0;
-    final index = page ~/ 1;
-    if (index < widget.channelFrameList.length - 1) {
-      final offset = widget.channelFrameList[index].left +
-          page %
-              1 *
-              (widget.channelFrameList[index + 1].left -
-                  widget.channelFrameList[index].left);
-      _indicatorWidth = widget.channelFrameList[index].width +
-          page %
-              1 *
-              (widget.channelFrameList[index + 1].width -
-                  widget.channelFrameList[index].width);
-      _indicatorWidth = _indicatorWidth - (widget.itemPadding?.horizontal ?? 0);
-
-      if (mounted) {
-        setState(() {
-          positionedLeft = offset + ((widget.itemPadding?.horizontal ?? 0) / 2);
-        });
-      }
-    }
+    if (mounted) setState(_updateGeometry);
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (widget.pageController?.hasListeners ?? false) {
-      widget.pageController?.removeListener(_listen);
+  void didUpdateWidget(TitleIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.pageController, widget.pageController)) {
+      oldWidget.pageController?.removeListener(_listen);
+      widget.pageController?.addListener(_listen);
     }
-    widget.pageController?.addListener(_listen);
+    _updateGeometry();
+  }
+
+  @override
+  void dispose() {
+    widget.pageController?.removeListener(_listen);
+    super.dispose();
   }
 
   @override

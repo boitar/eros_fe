@@ -40,7 +40,7 @@ class MysqlSyncPage extends StatelessWidget {
 //               onPressed: () async {
 //                 final result = await Get.toNamed(
 //                   EHRoutes.loginWebDAV,
-//                   id: isLayoutLarge ? 2 : null,
+//                   id: detailNavigatorId,
 //                 );
 //                 if (result != null && result is bool && result) {
 //                   Get.back();
@@ -104,7 +104,7 @@ class MysqlSettingView extends GetView<MysqlController> {
                           // 登录
                           await Get.to(
                             () => const MysqlLogin(),
-                            id: isLayoutLarge ? 2 : null,
+                            id: detailNavigatorId,
                           );
                         }
                       },

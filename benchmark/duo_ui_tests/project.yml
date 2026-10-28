@@ -1,0 +1,32 @@
+name: DuoAcceptance
+options:
+  deploymentTarget:
+    iOS: "27.0"
+targets:
+  DuoAcceptance:
+    type: application
+    platform: iOS
+    sources:
+      - ../glass_ui_tests/App
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.codex.eros-duo-acceptance
+      GENERATE_INFOPLIST_FILE: YES
+  DuoAcceptanceUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - UITests
+    dependencies:
+      - target: DuoAcceptance
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.codex.eros-duo-acceptance.uitests
+      TEST_TARGET_NAME: DuoAcceptance
+      GENERATE_INFOPLIST_FILE: YES
+schemes:
+  DuoAcceptance:
+    build:
+      targets:
+        DuoAcceptance: all
+    test:
+      targets:
+        - DuoAcceptanceUITests

@@ -34,6 +34,9 @@ import flutter_downloader
         if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosLiquidGlass") {
             ErosLiquidGlassPlugin.register(with: registrar)
         }
+        ErosAdaptiveEnvironmentPlugin.register(with: engineBridge.pluginRegistry.registrar(
+            forPlugin: "ErosAdaptiveEnvironment"
+        )!)
     }
 
     @objc func step(displaylink: CADisplayLink) {
@@ -84,6 +87,22 @@ private func registerPlugins(registry: FlutterPluginRegistry) {
 
 
 @objc class SceneDelegate: FlutterSceneDelegate {
+    override func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions
+    ) {
+        window?.rootViewController?.loadViewIfNeeded()
+        if let flutter = findFlutterViewController(from: window?.rootViewController) {
+            registerSceneLifeCycle(with: flutter.engine)
+        }
+        super.scene(
+            scene,
+            willConnectTo: session,
+            options: connectionOptions
+        )
+    }
+
     override func sceneDidEnterBackground(_ scene: UIScene) {
         super.sceneDidEnterBackground(scene)
         (UIApplication.shared.delegate as? AppDelegate)?.addBlurEffect()
@@ -95,7 +114,7 @@ private func registerPlugins(registry: FlutterPluginRegistry) {
         ErosAppearancePlugin.applyCurrentStyle()
         #if EROS_SIMULATOR_UI_TEST
         if ProcessInfo.processInfo.arguments.contains("--eros-test-semantics") {
-            (window?.rootViewController as? FlutterViewController)?
+            findFlutterViewController(from: window?.rootViewController)?
                 .engine.ensureSemanticsEnabled()
         }
         #endif
@@ -105,5 +124,36 @@ private func registerPlugins(registry: FlutterPluginRegistry) {
         super.sceneWillEnterForeground(scene)
         SecurityBlurEffect.removeBlurEffect()
         ErosAppearancePlugin.applyCurrentStyle()
+    }
+
+    private func findFlutterViewController(
+        from controller: UIViewController?
+    ) -> FlutterViewController? {
+        guard let controller else { return nil }
+        if let flutter = controller as? FlutterViewController {
+            return flutter
+        }
+        if let presented = controller.presentedViewController,
+           let flutter = findFlutterViewController(from: presented) {
+            return flutter
+        }
+        if let navigation = controller as? UINavigationController,
+           let flutter = findFlutterViewController(
+               from: navigation.visibleViewController
+           ) {
+            return flutter
+        }
+        if let tab = controller as? UITabBarController,
+           let flutter = findFlutterViewController(
+               from: tab.selectedViewController
+           ) {
+            return flutter
+        }
+        for child in controller.children.reversed() {
+            if let flutter = findFlutterViewController(from: child) {
+                return flutter
+            }
+        }
+        return nil
     }
 }

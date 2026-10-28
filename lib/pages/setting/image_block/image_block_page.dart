@@ -67,7 +67,7 @@ class ImageBlockPage extends StatelessWidget {
                     onTap: () {
                       Get.toNamed(
                         EHRoutes.mangaHidedImage,
-                        id: isLayoutLarge ? 2 : null,
+                        id: detailNavigatorId,
                       );
                     },
                   ),

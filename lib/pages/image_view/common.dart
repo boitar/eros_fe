@@ -21,6 +21,21 @@ enum ViewColumnMode {
   single,
 }
 
+/// User intent for paged reading. Automatic is resolved from the current
+/// usable width; all other values are explicit and survive a resize.
+enum ReaderColumnPreference {
+  automatic,
+  single,
+  oddLeft,
+  evenLeft,
+}
+
+enum ReaderSurfacePreference {
+  automatic,
+  tabletop,
+  standard,
+}
+
 enum LoadFrom {
   gallery,
   download,
@@ -101,8 +116,13 @@ class GalleryPara {
         _processingSerSet.add(ser);
         final String href = imageMap[ser]?.href ?? '';
 
-        // paraImageLageInfoFromHtml
-        final GalleryImage? imageFetch = await fetchImageInfoByHtml(href);
+        GalleryImage? imageFetch;
+        try {
+          // paraImageLageInfoFromHtml
+          imageFetch = await fetchImageInfoByHtml(href);
+        } finally {
+          _processingSerSet.remove(ser);
+        }
         // final GalleryImage? imageFetch =
         //     await fetchImageInfoByApi(href, showKey: showKey);
 
@@ -116,8 +136,6 @@ class GalleryPara {
           filename: imageFetch?.filename.oN,
           showKey: imageFetch?.showKey.oN,
         );
-
-        _processingSerSet.remove(ser);
       }
 
       url = image.imageUrl ?? '';

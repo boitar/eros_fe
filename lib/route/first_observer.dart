@@ -1,20 +1,14 @@
+import 'package:eros_fe/common/service/layout_service.dart';
+
 import 'eh_observer.dart';
 
 class FirstNavigatorObserver extends EhNavigatorObserver {
-  // 单例公开访问点
-  factory FirstNavigatorObserver() => _sharedInstance();
+  factory FirstNavigatorObserver() =>
+      FirstNavigatorObserver.forId(primaryNavigatorId ?? 1);
 
-  // 私有构造函数
-  FirstNavigatorObserver._() {
-    // 具体初始化代码
-  }
+  factory FirstNavigatorObserver.forId(int id) =>
+      _instances.putIfAbsent(id, FirstNavigatorObserver._);
 
-  // 静态、同步、私有访问点
-  static FirstNavigatorObserver _sharedInstance() {
-    _instance ??= FirstNavigatorObserver._();
-    return _instance!;
-  }
-
-  // 静态私有成员，没有初始化
-  static FirstNavigatorObserver? _instance;
+  FirstNavigatorObserver._();
+  static final Map<int, FirstNavigatorObserver> _instances = {};
 }

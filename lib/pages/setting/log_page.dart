@@ -69,7 +69,7 @@ class LogListView extends GetView<LogService> {
                   title: fileName,
                   index: index,
                 ),
-                id: isLayoutLarge ? 2 : null,
+                id: detailNavigatorId,
                 transition: isLayoutLarge ? Transition.rightToLeft : null,
               );
             },

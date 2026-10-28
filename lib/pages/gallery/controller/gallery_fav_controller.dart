@@ -17,6 +17,11 @@ import 'package:get/get.dart';
 import 'gallery_page_state.dart';
 
 class GalleryFavController extends GetxController {
+  GalleryFavController({String? galleryTag})
+      : galleryTag = galleryTag ?? pageCtrlTag;
+
+  final String galleryTag;
+
   final RxBool _isLoading = false.obs;
 
   bool get isLoading => _isLoading.value;
@@ -42,7 +47,7 @@ class GalleryFavController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _pageController = Get.find(tag: pageCtrlTag);
+    _pageController = Get.find(tag: galleryTag);
 
     _localFav.value = _pageState.localFav;
 
@@ -75,13 +80,15 @@ class GalleryFavController extends GetxController {
       return L10n.of(Get.context!).local_favorite;
     }
     return favoriteStates[_pageState.gid]?.title ??
-        _pageState.galleryProvider?.favTitle ?? _favTitle.value;
+        _pageState.galleryProvider?.favTitle ??
+        _favTitle.value;
   }
 
   final RxString _favcat = ''.obs;
   String get favcat {
     final category = favoriteStates[_pageState.gid]?.category ??
-        _pageState.galleryProvider?.favcat ?? _favcat.value;
+        _pageState.galleryProvider?.favcat ??
+        _favcat.value;
     return category.isEmpty && localFav ? 'l' : category;
   }
 
@@ -184,7 +191,7 @@ class GalleryFavController extends GetxController {
             .d('after _showAddFavDialog ${_pageState.galleryProvider?.favcat}');
         setFav(favcat, favTitle);
         await _removeGalleryCache();
-      await vibrateUtil.success();
+        await vibrateUtil.success();
       }
     } catch (e) {
       showToast(favoriteMutationMessage(e));

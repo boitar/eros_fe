@@ -30,10 +30,11 @@ class CommentItem extends StatelessWidget {
   final GalleryComment galleryComment;
   final bool simple;
 
-  CommentController get controller => Get.find(tag: pageCtrlTag);
-
   @override
   Widget build(BuildContext context) {
+    final tag = pageCtrlTagOf(context);
+    final controller = Get.find<CommentController>(tag: tag);
+
     /// 解析回复的评论
     final reptyComment = controller.parserCommentRepty(galleryComment);
     final reptyComments = controller.parserAllCommentRepty(galleryComment);
@@ -47,8 +48,8 @@ class CommentItem extends StatelessWidget {
     Widget commentItem;
 
     commentItem = GetBuilder<CommentController>(
-      init: CommentController(),
-      tag: pageCtrlTag,
+      init: CommentController(galleryTag: tag),
+      tag: tag,
       id: galleryComment.id ?? 'None',
       builder: (_commentController) {
         return Container(

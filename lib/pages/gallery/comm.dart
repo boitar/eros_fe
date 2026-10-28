@@ -12,23 +12,26 @@ import 'controller/taginfo_controller.dart';
 import 'controller/torrent_controller.dart';
 
 void initPageController({String? tag}) {
-  Get.lazyPut(() => CommentController(), tag: tag ?? pageCtrlTag);
+  final owner = tag ?? pageCtrlTag;
+  Get.lazyPut(() => CommentController(galleryTag: owner), tag: owner);
 
-  Get.lazyPut(() => RateController(), tag: tag ?? pageCtrlTag);
+  Get.lazyPut(() => RateController(galleryTag: owner), tag: owner);
 
-  Get.lazyPut(() => TorrentController(), tag: tag ?? pageCtrlTag);
+  Get.lazyPut(() => TorrentController(galleryTag: owner), tag: owner);
 
-  Get.lazyPut(() => ArchiverController(), tag: tag ?? pageCtrlTag);
+  Get.lazyPut(() => ArchiverController(galleryTag: owner), tag: owner);
 
-  Get.lazyPut(() => GalleryFavController(), tag: tag ?? pageCtrlTag);
+  Get.lazyPut(() => GalleryFavController(galleryTag: owner), tag: owner);
 
-  Get.lazyPut(() => TagInfoController(), tag: tag ?? pageCtrlTag);
+  Get.lazyPut(() => TagInfoController(galleryTag: owner), tag: owner);
 }
 
 void deletePageController({String? tag}) {
-  return;
   logger.t('deletePageController ${tag ?? pageCtrlTag}');
 
+  if (Get.isRegistered<GalleryFavController>(tag: tag ?? pageCtrlTag)) {
+    Get.delete<GalleryFavController>(tag: tag ?? pageCtrlTag);
+  }
   // GalleryPageController
   if (Get.isRegistered<GalleryPageController>(tag: tag ?? pageCtrlTag))
     Get.delete<GalleryPageController>(tag: tag ?? pageCtrlTag);
@@ -45,8 +48,8 @@ void deletePageController({String? tag}) {
   if (Get.isRegistered<TagInfoController>(tag: tag ?? pageCtrlTag))
     Get.delete<TagInfoController>(tag: tag ?? pageCtrlTag);
 
-  if (Get.isRegistered<GalleryRepository>()) {
-    Get.delete<GalleryRepository>();
+  if (Get.isRegistered<GalleryRepository>(tag: tag ?? pageCtrlTag)) {
+    Get.delete<GalleryRepository>(tag: tag ?? pageCtrlTag);
   }
 
   // Get.find<DepthService>().popPageCtrl();

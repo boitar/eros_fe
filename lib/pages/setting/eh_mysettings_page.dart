@@ -247,7 +247,7 @@ class _ListViewEhMySettingsState extends State<ListViewEhMySettings> {
             onTap: () {
               Get.to(
                 () => const ExcludedLanguagePage(),
-                id: isLayoutLarge ? 2 : null,
+                id: detailNavigatorId,
               );
             },
           ),

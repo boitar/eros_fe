@@ -24,11 +24,14 @@ enum EditState {
 }
 
 class CommentController extends GetxController {
-  CommentController();
+  CommentController({String? galleryTag})
+      : galleryTag = galleryTag ?? pageCtrlTag;
+
+  final String galleryTag;
 
   GalleryPageController get pageController {
-    logger.t('CommentController -> pageCtrlDepth: $pageCtrlTag');
-    return Get.find(tag: pageCtrlTag);
+    logger.t('CommentController -> pageCtrlDepth: $galleryTag');
+    return Get.find(tag: galleryTag);
   }
 
   UserController get userController => Get.find();

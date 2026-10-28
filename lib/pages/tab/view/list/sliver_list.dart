@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/item/gallery_item.dart';
@@ -31,6 +32,7 @@ class EhSliverList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final restoration = GalleryAnchorScope.maybeOf(context)?.restoration;
     return FlutterSliverList(
       delegate: FlutterListViewDelegate(
         (BuildContext context, int index) {
@@ -68,14 +70,20 @@ class EhSliverList extends StatelessWidget {
               tabTag: tabTag,
             ),
           );
-          if (index == 0 && firstCardKey != null) {
-            return KeyedSubtree(key: firstCardKey, child: item);
-          }
-          return item;
+          return GalleryAnchorItem(
+            id: _provider.gid ?? '$index',
+            index: index,
+            child: index == 0 && firstCardKey != null
+                ? KeyedSubtree(key: firstCardKey, child: item)
+                : item,
+          );
         },
         onItemKey: (index) => galleryProviders[index].gid ?? '',
         childCount: galleryProviders.length,
         keepPosition: keepPosition,
+        initIndex: restoration?.anchor.index ?? 0,
+        initOffset: 0,
+        forceToExecuteInitIndex: restoration?.generation,
       ),
     );
   }

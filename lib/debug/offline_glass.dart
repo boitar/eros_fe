@@ -3,7 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/controller/gallerycache_controller.dart';
+import 'package:eros_fe/common/service/controller_tag_service.dart';
+import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/debug/offline_acceptance.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/comm.dart';
@@ -160,6 +164,89 @@ Widget offlineGlassControl(String name, Widget child) =>
         ? child
         : Semantics(identifier: 'offline-glass-control-$name', child: child);
 
+List<NativeNavigationAction> offlineDuoRootNavigationActions() {
+  if (!offlineGlassAcceptanceEnabled ||
+      !const bool.fromEnvironment('EROS_DUO_ACCEPTANCE')) return const [];
+  return [
+    NativeNavigationAction(
+      id: 'offline-root-gallery',
+      title: '离线根路由测试',
+      symbol: 'arrow.up.forward.app',
+      onPressed: () => NavigatorUtil.goGalleryPage(
+        forceReplace: true,
+        galleryProvider: _offlineRootGallery(),
+      ),
+    ),
+  ];
+}
+
+GalleryProvider _offlineRootGallery() {
+  const fixture = GalleryProvider(
+    gid: '9500001',
+    token: '0000000000',
+    url: 'https://e-hentai.org/g/9500001/0000000000/',
+    englishTitle: 'Offline root replacement fixture',
+    filecount: '20',
+    category: 'Non-H',
+  );
+  Get.find<GalleryCacheController>()
+      .setGalleryProviderCache(fixture.gid, fixture);
+  return fixture;
+}
+
+Widget offlineDuoRouteProbe({
+  required String id,
+  required String Function() label,
+  Listenable? listenable,
+  required Widget child,
+}) {
+  if (!offlineGlassAcceptanceEnabled ||
+      !const bool.fromEnvironment('EROS_DUO_ACCEPTANCE')) return child;
+  Widget probe(Widget? child) => LayoutBuilder(builder: (_, constraints) {
+        return Semantics(
+          container: true,
+          explicitChildNodes: true,
+          identifier: 'offline-duo-$id-probe',
+          label: '${label()};'
+              'width=${constraints.maxWidth};height=${constraints.maxHeight}',
+          child: child,
+        );
+      });
+  return listenable == null
+      ? probe(child)
+      : AnimatedBuilder(
+          animation: listenable,
+          builder: (_, child) => probe(child),
+          child: child);
+}
+
+Widget offlineDuoNavigationProbe({required Widget child}) {
+  if (!offlineAcceptanceEnabled ||
+      !const bool.fromEnvironment('EROS_DUO_ACCEPTANCE')) {
+    return child;
+  }
+  final layout = Get.find<LayoutServices>();
+  return AnimatedBuilder(
+    animation: layout.tabNavigation,
+    child: child,
+    builder: (_, child) {
+      final stack = layout.tabNavigation.selected;
+      final tags = Get.find<ControllerTagService>();
+      return Semantics(
+        identifier: 'offline-duo-navigation-probe',
+        label: 'tab=${stack?.id};'
+            'primary=${stack?.primaryObserver.history.lastOrNull?.settings.name};'
+            'primaryDepth=${stack?.primaryObserver.history.length};'
+            'detail=${stack?.detailObserver.history.lastOrNull?.settings.name};'
+            'detailDepth=${stack?.detailObserver.history.length};'
+            'gallery=${tags.currGid};search=${tags.snapshot.searchTag};'
+            'viewport=${layout.isLayoutLarge ? 'split' : 'single'}',
+        child: child,
+      );
+    },
+  );
+}
+
 Widget offlineGlassPageProbe(
     {required String route,
     required String Function() page,
@@ -274,14 +361,23 @@ class _OfflineGlassProbeState extends State<OfflineGlassProbe> {
         LiquidGlassPlatform.isSupported;
     final requests = _requestsByPage['${widget.route}-$page'] ?? 0;
     EhTabController? target;
+    GalleryScrollAnchor? anchor;
     var ownership = '';
     if (widget.route == 'gallery' &&
         Get.isRegistered<CustomTabbarController>()) {
-      target = Get.find<CustomTabbarController>().currentPageScrollController;
+      final registered = Get.find<CustomTabbarController>();
+      target = registered.currentPageScrollController;
+      anchor = registered
+          .subControllerMap[registered.currProfileUuid]?.galleryAnchor.anchor;
     } else if (widget.route == 'favorite' &&
         Get.isRegistered<FavoriteTabBarController>()) {
       final registered = Get.find<FavoriteTabBarController>();
       target = registered.currentPageScrollController;
+      anchor = registered
+          .subControllerMap[
+              registered.userController.isLogin ? registered.currFavcat : 'l']
+          ?.galleryAnchor
+          .anchor;
       final owner = widget.controllerOwner;
       ownership =
           ';ownerMatches=${identical(owner, registered)};registeredPages=${registered.subControllerMap.keys.join(",")};loggedIn=${registered.userController.isLogin}'
@@ -292,7 +388,10 @@ class _OfflineGlassProbeState extends State<OfflineGlassProbe> {
     return 'route=${widget.route};page=$page;glass=$glass;requests=$requests;'
         'first=${top?.toStringAsFixed(1) ?? "offscreen"};outer=$pixels;inner=$inner;'
         'targetLive=${target?.hasScrollClients};targetCallback=${target?.scrollToTopAndRefreshCall != null};'
-        'systemTop=${media.viewPadding.top.toStringAsFixed(1)};orientation=${media.orientation.name}$ownership';
+        'systemTop=${media.viewPadding.top.toStringAsFixed(1)};orientation=${media.orientation.name};'
+        'size=${media.size.width}x${media.size.height};'
+        'anchor=${anchor?.id ?? "none"};'
+        'anchorFraction=${anchor == null ? "none" : (anchor.leading / anchor.extent).toStringAsFixed(3)}$ownership';
   }
 
   @override

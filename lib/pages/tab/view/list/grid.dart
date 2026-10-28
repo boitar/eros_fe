@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/debug/offline_acceptance.dart';
 import 'package:eros_fe/index.dart';
@@ -74,7 +75,11 @@ class EhGridView extends StatelessWidget {
         final keyed = index == 0 && firstCardKey != null
             ? KeyedSubtree(key: firstCardKey, child: item)
             : item;
-        return offlineGallerySemantics(_provider.gid, keyed);
+        return GalleryAnchorItem(
+          id: _provider.gid ?? '$index',
+          index: index,
+          child: offlineGallerySemantics(_provider.gid, keyed),
+        );
       },
       childCount: galleryProviders.length,
     );

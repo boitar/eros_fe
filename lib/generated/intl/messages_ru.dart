@@ -43,6 +43,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(version) => "Обновиться до ${version}";
 
+  static String m5(seconds) => "${seconds} с";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Загрузить аватар"),
@@ -773,6 +775,24 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Аккаунт WebDAV"),
         "webdav_max_connections":
             MessageLookupByLibrary.simpleMessage("WebDAV Max Connections"),
-        "welcome_text": MessageLookupByLibrary.simpleMessage("~ах~ ах~ ах~~~")
+        "welcome_text": MessageLookupByLibrary.simpleMessage("~ах~ ах~ ах~~~"),
+        "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("Весь экран в альбомной ориентации"),
+        "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("Весь экран в портретной ориентации"),
+        "reader_fill_footer": MessageLookupByLibrary.simpleMessage("Скрывает строку состояния при чтении в этой ориентации, изображения занимают весь экран без безопасной зоны"),
+        "reader_page_layout": MessageLookupByLibrary.simpleMessage("Макет страницы"),
+        "reader_surface_tabletop": MessageLookupByLibrary.simpleMessage("Настольный режим"),
+        "reader_surface_standard": MessageLookupByLibrary.simpleMessage("Стандартный"),
+        "reader_single_page": MessageLookupByLibrary.simpleMessage("Одна страница"),
+        "reader_double_odd_left": MessageLookupByLibrary.simpleMessage("Две страницы (нечётная слева)"),
+        "reader_double_even_left": MessageLookupByLibrary.simpleMessage("Две страницы (чётная слева)"),
+        "reader_auto_read": MessageLookupByLibrary.simpleMessage("Автолистание"),
+        "reader_auto_read_interval": MessageLookupByLibrary.simpleMessage("Интервал"),
+        "reader_interval_seconds": m5,
+        "reader_custom_interval": MessageLookupByLibrary.simpleMessage("Другой…"),
+        "full_title": MessageLookupByLibrary.simpleMessage("Полное название"),
+        "group_management": MessageLookupByLibrary.simpleMessage("Управление группами"),
+        "choose_favcat": MessageLookupByLibrary.simpleMessage("Выбрать папку избранного"),
+        "back_to_top": MessageLookupByLibrary.simpleMessage("Наверх"),
+        "ranking_period": MessageLookupByLibrary.simpleMessage("Период рейтинга")
       };
 }

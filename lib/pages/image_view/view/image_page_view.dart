@@ -13,6 +13,7 @@ import 'package:preload_page_view/preload_page_view.dart';
 
 import '../common.dart';
 import '../controller/view_controller.dart';
+import 'reader_gesture_page_view.dart';
 import 'view_image.dart';
 
 class ImagePageView extends GetView<ViewExtController> {
@@ -26,11 +27,12 @@ class ImagePageView extends GetView<ViewExtController> {
       builder: (logic) {
         logger.d('logic.pageViewType ${logic.pageViewType}');
 
-        if (logic.vState.columnMode != ViewColumnMode.single) {
-          return _buildDoubleView(logic, context);
-        } else {
-          return _buildSingleView(logic, context);
-        }
+        return KeyedSubtree(
+          key: ValueKey(logic.paginationGeneration),
+          child: logic.vState.columnMode != ViewColumnMode.single
+              ? _buildDoubleView(logic, context)
+              : _buildSingleView(logic, context),
+        );
       },
     );
 
@@ -75,8 +77,7 @@ class ImagePageView extends GetView<ViewExtController> {
                 const BoxDecoration(color: Colors.transparent),
             pageController: logic.pageController,
             itemCount: logic.vState.pageCount,
-            onPageChanged: (pageIndex) =>
-                controller.handOnPageChanged(pageIndex),
+            onPageChanged: logic.pageChangedCallback,
             scrollDirection: Axis.horizontal,
             customSize: context.mediaQuery.size,
             scrollPhysics: const CustomScrollPhysics(),
@@ -100,8 +101,7 @@ class ImagePageView extends GetView<ViewExtController> {
                 const BoxDecoration(color: Colors.transparent),
             pageController: logic.preloadPageController,
             itemCount: logic.vState.pageCount,
-            onPageChanged: (pageIndex) =>
-                controller.handOnPageChanged(pageIndex),
+            onPageChanged: logic.pageChangedCallback,
             scrollDirection: Axis.horizontal,
             customSize: context.mediaQuery.size,
             scrollPhysics: const CustomScrollPhysics(),
@@ -136,7 +136,7 @@ class ImagePageView extends GetView<ViewExtController> {
           scrollDirection: Axis.horizontal,
           preloadPagesCount:
               max(0, logic.vState.ehSettingService.preloadImage.value),
-          onPageChanged: (pageIndex) => controller.handOnPageChanged(pageIndex),
+          onPageChanged: logic.pageChangedCallback,
           itemBuilder: (BuildContext context, int index) {
             logger.t('pageIndex $index ser ${index + 1}');
 
@@ -161,11 +161,11 @@ class ImagePageView extends GetView<ViewExtController> {
 
         /// ExtendedImageGesturePageView 的看图功能
         /// 20241031 测试
-        return ExtendedImageGesturePageView.builder(
+        return ReaderGesturePageView(
           controller: logic.extendedPageController,
+          pageSpacing: logic.vState.showPageInterval ? 20 : 0,
           itemCount: logic.vState.pageCount,
-          onPageChanged: (pageIndex) => controller.handOnPageChanged(pageIndex),
-          scrollDirection: Axis.horizontal,
+          onPageChanged: logic.pageChangedCallback,
           physics: const CustomScrollPhysics(),
           reverse: reverse,
           itemBuilder: (BuildContext context, int index) {
@@ -189,6 +189,21 @@ class ImagePageView extends GetView<ViewExtController> {
 
   /// 双页模式
   Widget _buildDoubleView(ViewExtController logic, BuildContext context) {
+    if (logic.vState.bookFolded) {
+      return PreloadPageView.builder(
+        controller: logic.preloadPageController,
+        physics: const CustomScrollPhysics(),
+        reverse: reverse,
+        itemCount: logic.vState.pageCount,
+        onPageChanged: logic.pageChangedCallback,
+        preloadPagesCount:
+            max(0, logic.vState.ehSettingService.preloadImage.value ~/ 2),
+        itemBuilder: (context, index) => DoublePageView(
+          pageIndex: index,
+          key: ValueKey('${logic.vState.columnMode}-$index'),
+        ),
+      );
+    }
     switch (logic.pageViewType) {
       /// ExtendedImageGesturePageView 目前实现的双页模式问题较多，手势功能难搞
       /// 所以不使用 ExtendedImageGesturePageView
@@ -200,7 +215,7 @@ class ImagePageView extends GetView<ViewExtController> {
       // return ExtendedImageGesturePageView.builder(
       //   controller: logic.extendedPageController,
       //   itemCount: logic.vState.pageCount,
-      //   onPageChanged: (pageIndex) => controller.handOnPageChanged(pageIndex),
+      //   onPageChanged: logic.pageChangedCallback,
       //   scrollDirection: Axis.horizontal,
       //   physics: const CustomScrollPhysics(),
       //   reverse: reverse,
@@ -245,7 +260,7 @@ class ImagePageView extends GetView<ViewExtController> {
           scrollDirection: Axis.horizontal,
           preloadPagesCount:
               max(0, logic.vState.ehSettingService.preloadImage.value ~/ 2),
-          onPageChanged: (pageIndex) => controller.handOnPageChanged(pageIndex),
+          onPageChanged: logic.pageChangedCallback,
           itemBuilder: (BuildContext context, int pageIndex) {
             return Obx(() {
               logic.vState.showPageInterval;
@@ -265,7 +280,7 @@ class ImagePageView extends GetView<ViewExtController> {
           backgroundDecoration: const BoxDecoration(color: Colors.transparent),
           pageController: logic.pageController,
           itemCount: logic.vState.pageCount,
-          onPageChanged: (pageIndex) => controller.handOnPageChanged(pageIndex),
+          onPageChanged: logic.pageChangedCallback,
           scrollDirection: Axis.horizontal,
           customSize: context.mediaQuery.size,
           scrollPhysics: const CustomScrollPhysics(),
@@ -292,7 +307,7 @@ class ImagePageView extends GetView<ViewExtController> {
           backgroundDecoration: const BoxDecoration(color: Colors.transparent),
           pageController: logic.pageController,
           itemCount: logic.vState.pageCount,
-          onPageChanged: (pageIndex) => controller.handOnPageChanged(pageIndex),
+          onPageChanged: logic.pageChangedCallback,
           scrollDirection: Axis.horizontal,
           customSize: context.mediaQuery.size,
           scrollPhysics: const CustomScrollPhysics(),
