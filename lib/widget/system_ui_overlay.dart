@@ -1,5 +1,11 @@
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/debug/offline_duo_health.dart';
+import 'package:eros_fe/route/main_observer.dart';
+import 'package:eros_fe/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 class SystemUIOverlay extends StatelessWidget {
   const SystemUIOverlay({super.key, this.child});
@@ -18,7 +24,13 @@ class SystemUIOverlay extends StatelessWidget {
         systemNavigationBarIconBrightness:
             brightnessLight ? Brightness.dark : Brightness.light,
       ),
-      child: child ?? Container(),
+      child: offlineDuoHealth(
+          child: NativeNavigationHost(
+        observer: MainNavigatorObserver(),
+        navigatorKey: Get.key,
+        backTitle: L10n.of(context).back,
+        child: AdaptiveEnvironmentHost(child: child ?? Container()),
+      )),
     );
   }
 

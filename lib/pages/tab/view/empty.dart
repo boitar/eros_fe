@@ -31,10 +31,32 @@ class EmptyPage extends StatelessWidget {
               : null,
           child: SafeArea(
             child: Container(
-              child: const Center(
-                child: FaIcon(FontAwesomeIcons.layerGroup,
-                  size: 100,
-                  color: CupertinoColors.inactiveGray,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const ExcludeSemantics(
+                        child: FaIcon(
+                          FontAwesomeIcons.layerGroup,
+                          size: 100,
+                          color: CupertinoColors.inactiveGray,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        Localizations.localeOf(context).languageCode == 'zh'
+                            ? '选择画廊以查看详情'
+                            : 'Select a gallery to view its details',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: CupertinoDynamicColor.resolve(
+                              CupertinoColors.secondaryLabel, context),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

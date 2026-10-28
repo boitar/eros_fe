@@ -60,6 +60,72 @@ class EhSettingService extends ProfileService {
   ViewColumnMode get viewColumnMode => _viewColumnMode.value;
   set viewColumnMode(ViewColumnMode val) => _viewColumnMode.value = val;
 
+  /// Reader ignores the safe area and hides the system bars per orientation.
+  final _readerFillLandscape = false.obs;
+  bool get readerFillLandscape => _readerFillLandscape.value;
+  set readerFillLandscape(bool val) => _readerFillLandscape.value = val;
+
+  final _readerFillPortrait = false.obs;
+  bool get readerFillPortrait => _readerFillPortrait.value;
+  set readerFillPortrait(bool val) => _readerFillPortrait.value = val;
+
+  bool readerFillsScreen(Size size) =>
+      size.width > size.height ? readerFillLandscape : readerFillPortrait;
+
+  final _readerColumnPreference = ReaderColumnPreference.automatic.obs;
+  ReaderColumnPreference get readerColumnPreference =>
+      _readerColumnPreference.value;
+
+  /// Explicit choices are never replaced by a later resize. Automatic is
+  /// resolved by the reader from its current usable viewport.
+  void setReaderColumnPreference(ReaderColumnPreference value) {
+    _readerColumnPreference.value = value;
+    final manual = _viewModeForPreference(value);
+    if (manual != null) {
+      _viewColumnMode.value = manual;
+    }
+  }
+
+  void setManualReaderColumnMode(ViewColumnMode value) {
+    _viewColumnMode.value = value;
+    _readerColumnPreference.value = switch (value) {
+      ViewColumnMode.single => ReaderColumnPreference.single,
+      ViewColumnMode.oddLeft => ReaderColumnPreference.oddLeft,
+      ViewColumnMode.evenLeft => ReaderColumnPreference.evenLeft,
+    };
+  }
+
+  ViewColumnMode resolveReaderColumnMode({required bool canUseDoublePage}) {
+    switch (_readerColumnPreference.value) {
+      case ReaderColumnPreference.automatic:
+        if (!canUseDoublePage) {
+          return ViewColumnMode.single;
+        }
+        return _viewColumnMode.value == ViewColumnMode.evenLeft
+            ? ViewColumnMode.evenLeft
+            : ViewColumnMode.oddLeft;
+      case ReaderColumnPreference.single:
+        return ViewColumnMode.single;
+      case ReaderColumnPreference.oddLeft:
+        return ViewColumnMode.oddLeft;
+      case ReaderColumnPreference.evenLeft:
+        return ViewColumnMode.evenLeft;
+    }
+  }
+
+  ViewColumnMode? _viewModeForPreference(ReaderColumnPreference value) {
+    switch (value) {
+      case ReaderColumnPreference.automatic:
+        return null;
+      case ReaderColumnPreference.single:
+        return ViewColumnMode.single;
+      case ReaderColumnPreference.oddLeft:
+        return ViewColumnMode.oddLeft;
+      case ReaderColumnPreference.evenLeft:
+        return ViewColumnMode.evenLeft;
+    }
+  }
+
   final _lastFavcat = '0'.obs;
   String get lastFavcat => _lastFavcat.value;
   set lastFavcat(String val) => _lastFavcat.value = val;
@@ -685,6 +751,15 @@ class EhSettingService extends ProfileService {
     everProfile<bool>(commentTrans,
         (bool value) => ehConfig = ehConfig.copyWith(commentTrans: value.oN));
 
+    readerFillLandscape =
+        storageUtil.getBool(READER_FILL_LANDSCAPE) ?? readerFillLandscape;
+    everProfile<bool>(_readerFillLandscape,
+        (bool value) => storageUtil.setBool(READER_FILL_LANDSCAPE, value));
+    readerFillPortrait =
+        storageUtil.getBool(READER_FILL_PORTRAIT) ?? readerFillPortrait;
+    everProfile<bool>(_readerFillPortrait,
+        (bool value) => storageUtil.setBool(READER_FILL_PORTRAIT, value));
+
     // blurredInRecentTasks
     blurredInRecentTasks =
         storageUtil.getBool(BLURRED_IN_RECENT_TASK) ?? blurredInRecentTasks;
@@ -730,10 +805,27 @@ class EhSettingService extends ProfileService {
     viewColumnMode = EnumToString.fromString(
             ViewColumnMode.values, ehConfig.viewColumnMode ?? '') ??
         viewColumnMode;
+    final storedReaderPreference = EnumToString.fromString(
+      ReaderColumnPreference.values,
+      storageUtil.getString(READER_COLUMN_PREFERENCE) ?? '',
+    );
+    if (storedReaderPreference != null) {
+      _readerColumnPreference.value = storedReaderPreference;
+    } else if (ehConfig.viewColumnMode != null) {
+      _readerColumnPreference.value = switch (viewColumnMode) {
+        ViewColumnMode.single => ReaderColumnPreference.single,
+        ViewColumnMode.oddLeft => ReaderColumnPreference.oddLeft,
+        ViewColumnMode.evenLeft => ReaderColumnPreference.evenLeft,
+      };
+    }
     everFromEnum(
         _viewColumnMode,
         (String value) =>
             ehConfig = ehConfig.copyWith(viewColumnMode: value.oN));
+    everFromEnum(
+      _readerColumnPreference,
+      (String value) => storageUtil.setString(READER_COLUMN_PREFERENCE, value),
+    );
 
     debugCount = ehConfig.debugCount ?? debugCount;
     if (!kDebugMode) {
@@ -1141,7 +1233,7 @@ class EhSettingService extends ProfileService {
       return;
     }
 
-    if (pageCtrlTag == gid) {
+    if (Get.find<ControllerTagService>().currGid == gid) {
       logger.d('剪贴板链接为当前展示的画廊 返回');
       return;
     }

@@ -141,6 +141,7 @@ class _SubListViewState<T extends CustomSubListController>
             next: logic.next,
             lastComplete: subController.lastComplete,
             firstCardKey: widget.firstCardKey,
+            anchorController: logic.galleryAnchor,
             // key: subController.sliverAnimatedListKey,
             listMode: subController.listModeObs,
             // centerKey: subController.galleryGroupKey,

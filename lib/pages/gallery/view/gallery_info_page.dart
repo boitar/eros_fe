@@ -28,7 +28,7 @@ class GalleryInfoPage extends StatelessWidget {
           child: SingleChildScrollView(
             child: GetBuilder<GalleryPageController>(
               // init: GalleryPageController(),
-              tag: pageCtrlTag,
+              tag: pageCtrlTagOf(context),
               id: GetIds.PAGE_VIEW_HEADER,
               builder: (GalleryPageController controller) {
                 final pageState = controller.gState;

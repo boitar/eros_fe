@@ -5,7 +5,6 @@ import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
-import 'package:eros_fe/pages/gallery/comm.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/gallery_repository.dart';
 import 'package:eros_fe/pages/image_view/common.dart';
@@ -13,6 +12,7 @@ import 'package:eros_fe/pages/image_view/view/view_page.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/route/first_observer.dart';
+import 'package:eros_fe/route/second_observer.dart';
 import 'package:get/get.dart';
 
 import '../pages/image_view/controller/view_controller.dart';
@@ -36,10 +36,10 @@ class NavigatorUtil {
       _search = '${searArr[0]}:"${searArr[1]}$_end"';
     }
 
-    Get.find<ControllerTagService>().pushSearchPageCtrl(searchText: _search);
-    Get.replace(
-      SearchRepository(searchText: _search, advanceSearch: advanceSearch),
-    );
+    final tags = Get.find<ControllerTagService>();
+    final tag = tags.pushSearchPageCtrl(searchText: _search);
+    final repository =
+        SearchRepository(searchText: _search, advanceSearch: advanceSearch);
 
     // Get.put(
     //   SearchPageController(),
@@ -48,28 +48,29 @@ class NavigatorUtil {
     // );
 
     Get.lazyPut(
-      () => SearchPageController(),
-      tag: searchPageCtrlTag,
+      () => SearchPageController(repository: repository, controllerTag: tag),
+      tag: tag,
     );
 
+    final ownership = ControllerTagSnapshot(
+        galleryTag: tags.snapshot.galleryTag, searchTag: tag);
     if (replace) {
       await Get.offNamed(
         EHRoutes.search,
+        id: primaryNavigatorId,
         preventDuplicates: false,
+        arguments: ownership,
       );
     } else {
       await Get.toNamed(
         EHRoutes.search,
-        id: isLayoutLarge ? 1 : null,
+        id: primaryNavigatorId,
         preventDuplicates: false,
+        arguments: ownership,
       );
     }
 
-    Get.find<ControllerTagService>().popSearchPageCtrl();
-    if ((int.tryParse(searchPageCtrlTag) ?? 0) > 0) {
-      logger.d('remove searchPageCtrlTag $searchPageCtrlTag');
-      Get.delete<SearchPageController>(tag: searchPageCtrlTag);
-    }
+    tags.popSearchPageCtrl(tag: tag);
   }
 
   /// 打开搜索页面 指定搜索类型
@@ -78,9 +79,9 @@ class NavigatorUtil {
     bool fromTabItem = true,
   }) async {
     logger.d('fromTabItem $fromTabItem');
-    Get.find<ControllerTagService>().pushSearchPageCtrl();
-
-    Get.replace(SearchRepository(searchType: searchType));
+    final tags = Get.find<ControllerTagService>();
+    final tag = tags.pushSearchPageCtrl();
+    final repository = SearchRepository(searchType: searchType);
 
     // Get.put(
     //   SearchPageController(),
@@ -89,20 +90,19 @@ class NavigatorUtil {
     // );
 
     Get.lazyPut(
-      () => SearchPageController(),
-      tag: searchPageCtrlTag,
+      () => SearchPageController(repository: repository, controllerTag: tag),
+      tag: tag,
     );
 
     await Get.toNamed(
       EHRoutes.search,
-      id: isLayoutLarge ? 1 : null,
+      id: primaryNavigatorId,
+      preventDuplicates: false,
+      arguments: ControllerTagSnapshot(
+          galleryTag: tags.snapshot.galleryTag, searchTag: tag),
     );
 
-    Get.find<ControllerTagService>().popSearchPageCtrl();
-    if ((int.tryParse(searchPageCtrlTag) ?? 0) > 0) {
-      logger.d('remove searchPageCtrlTag $searchPageCtrlTag');
-      Get.delete<SearchPageController>(tag: searchPageCtrlTag);
-    }
+    tags.popSearchPageCtrl(tag: tag);
   }
 
   /// 转到画廊页面
@@ -113,164 +113,111 @@ class NavigatorUtil {
     bool replace = false,
     bool forceReplace = false,
   }) async {
-    final topSecondRoute =
-        SecondNavigatorObserver().history.lastOrNull?.settings.name;
+    final tags = Get.find<ControllerTagService>();
+    final owner = tags.currentOwner;
+    final navigatorId = detailNavigatorId;
     final topMainRoute =
         MainNavigatorObserver().history.lastOrNull?.settings.name;
-    late final String? gid;
+    String? gid;
+    GalleryRepository? repository;
 
-    logger.t('topMainRoute $topMainRoute');
-
-    // url跳转方式
     if (url != null && url.isNotEmpty) {
-      logger.d('goGalleryPage fromUrl $url');
-
-      final RegExp regGalleryUrl =
+      final galleryLink =
           RegExp(r'https?://e[-x]hentai.org/g/([0-9]+)/[0-9a-z]+/?');
-      final RegExp regGalleryPageUrl =
+      final imageLink =
           RegExp(r'https?://e[-x]hentai.org/s/[0-9a-z]+/\d+-\d+/?');
-
-      if (regGalleryUrl.hasMatch(url)) {
-        final matcher = regGalleryUrl.firstMatch(url);
-        gid = matcher?[1];
-        // url为画廊链接
-        // Get.replace(GalleryRepository(url: url.linkRedirect));
-        Get.lazyReplace(
-          () => GalleryRepository(url: url.linkRedirect),
-          tag: gid,
-          fenix: true,
-        );
-      } else if (regGalleryPageUrl.hasMatch(url)) {
-        // url为画廊某一页的链接
+      if (galleryLink.hasMatch(url)) {
+        gid = galleryLink.firstMatch(url)?.group(1);
+        repository = GalleryRepository(url: url.linkRedirect);
+      } else if (imageLink.hasMatch(url)) {
         final image = await fetchImageInfoByApi(url.linkRedirect);
-
-        if (image == null) {
-          return;
-        }
-
-        final ser = image.ser;
-        final galleryUrl = '${Api.getBaseUrl()}/g/${image.gid}/${image.token}';
-        logger.d('jump to $galleryUrl $ser');
-
-        gid = image.gid ?? '0';
-
-        // Get.replace(GalleryRepository(url: _galleryUrl, jumpSer: ser));
-        Get.lazyReplace(
-          () => GalleryRepository(url: galleryUrl, jumpSer: ser),
-          tag: gid,
-          fenix: true,
+        if (image == null) return;
+        gid = image.gid;
+        repository = GalleryRepository(
+          url: '${Api.getBaseUrl()}/g/${image.gid}/${image.token}',
+          jumpSer: image.ser,
         );
-      }
-
-      // if (GetPlatform.isAndroid) {
-      //   final androidInfo = await deviceInfo.androidInfo;
-      //   final sdkInt = androidInfo.version.sdkInt;
-      //   replace = replace && sdkInt < 31;
-      // }
-
-      if (forceReplace || (replace && topMainRoute == EHRoutes.root)) {
-        Get.find<ControllerTagService>().pushPageCtrl(gid: gid);
-        await Get.offNamed(
-          EHRoutes.galleryPage,
-          preventDuplicates: false,
-        );
-        deletePageController();
-        Get.find<ControllerTagService>().popPageCtrl();
-      } else {
-        if (topSecondRoute == EHRoutes.galleryPage) {
-          logger.d('topSecondRoute == EHRoutes.galleryPage');
-          if (Get.isRegistered<GalleryPageController>(tag: pageCtrlTag) &&
-              Get.find<GalleryPageController>(tag: pageCtrlTag).gState.gid ==
-                  gid) {
-            logger.d('same gallery');
-            return;
-          }
-        }
-
-        Get.find<ControllerTagService>().pushPageCtrl(gid: gid);
-        await Get.toNamed(
-          EHRoutes.galleryPage,
-          id: isLayoutLarge ? 2 : null,
-          preventDuplicates: false,
-        );
-        deletePageController();
-        Get.find<ControllerTagService>().popPageCtrl();
       }
     } else {
-      // item点击跳转方式
-      logger.t('goGalleryPage fromItem tabTag=$tabTag');
       gid = galleryProvider?.gid;
+      repository = GalleryRepository(item: galleryProvider, tabTag: tabTag);
+    }
+    if (gid == null || repository == null) return;
 
-      // Get.replace(GalleryRepository(item: galleryProvider, tabTag: tabTag));
-      Get.lazyReplace(
-        () => GalleryRepository(item: galleryProvider, tabTag: tabTag),
-        tag: gid,
-        fenix: true,
-      );
+    final replaceRoot =
+        forceReplace || (replace && topMainRoute == EHRoutes.root);
+    final observer = replaceRoot || navigatorId == null
+        ? MainNavigatorObserver()
+        : SecondNavigatorObserver.forId(navigatorId);
+    final topRoute = observer.history.lastOrNull?.settings.name;
+    final currentTag = replaceRoot || navigatorId == null
+        ? tags.snapshot.galleryTag
+        : tags.snapshotFor(owner).galleryTag;
+    if (topRoute == EHRoutes.galleryPage &&
+        Get.isRegistered<GalleryPageController>(tag: currentTag) &&
+        Get.find<GalleryPageController>(tag: currentTag).gState.gid == gid) {
+      return;
+    }
 
-      // 不同显示模式下的跳转方式
-      if (isLayoutLarge) {
-        //  大屏幕模式
-        // pushPageCtrl 前获取当前的tag
-        final curTag = pageCtrlTag;
-        Get.find<ControllerTagService>().pushPageCtrl(gid: gid);
-        logger.t('topSecondRoute: $topSecondRoute');
-        // 如果当前已经打开了画廊页面
-        if (topSecondRoute == EHRoutes.galleryPage) {
-          logger.d('topSecondRoute == EHRoutes.galleryPage');
-          logger.d(
-              'curTag $curTag  isReg:${Get.isRegistered<GalleryPageController>(tag: curTag)}');
-          if (Get.isRegistered<GalleryPageController>(tag: curTag) &&
-              Get.find<GalleryPageController>(tag: curTag).gState.gid == gid) {
-            logger.d('same gallery');
-            Get.find<ControllerTagService>().popPageCtrl();
-            return;
-          } else {
-            await Get.offNamed(
-              EHRoutes.galleryPage,
-              id: 2,
-              preventDuplicates: true,
-            );
-          }
-        } else if (topSecondRoute != EHRoutes.empty) {
-          logger.d('Get.offNamed');
-          await Get.offNamed(
-            EHRoutes.galleryPage,
-            id: 2,
-            preventDuplicates: true,
-          );
-        } else {
-          await Get.toNamed(
-            EHRoutes.galleryPage,
-            id: 2,
-            preventDuplicates: true,
-          );
-        }
+    final tag = tags.pushPageCtrl(gid: gid, owner: owner, unique: true);
+    final ownership = ControllerTagSnapshot(
+        galleryTag: tag, searchTag: tags.snapshot.searchTag);
+    Get.lazyPut(() => repository!, tag: tag, fenix: true);
+    try {
+      if (replaceRoot) {
+        await Get.offNamed(EHRoutes.galleryPage,
+            preventDuplicates: false, arguments: ownership);
+      } else if (isLayoutLarge &&
+          url == null &&
+          topRoute != null &&
+          topRoute != EHRoutes.empty) {
+        await Get.offNamed(
+          EHRoutes.galleryPage,
+          id: navigatorId,
+          preventDuplicates: false,
+          arguments: ownership,
+        );
       } else {
-        // 一般模式
-        Get.find<ControllerTagService>().pushPageCtrl(gid: gid);
         await Get.toNamed(
           EHRoutes.galleryPage,
+          id: navigatorId,
           preventDuplicates: false,
+          arguments: ownership,
         );
-        deletePageController();
-        Get.find<ControllerTagService>().popPageCtrl();
       }
+    } finally {
+      tags.popPageCtrl(tag: tag);
     }
-    // deletePageController();
   }
 
   // 转到大图浏览
-  static Future<void> goGalleryViewPage(int index, String gid) async {
-    // logger.d('goGalleryViewPage $index');
+  static Future<void> goGalleryViewPage(int index, String gid,
+      {String? galleryTag}) async {
     // 命名路由方式
     await Get.toNamed(EHRoutes.galleryViewExt,
         arguments: ViewRepository(
-          index: index,
-          loadType: LoadFrom.gallery,
-          gid: gid,
+      index: index,
+      loadType: LoadFrom.gallery,
+      gid: gid,
+      galleryControllerTag: galleryTag ?? _liveGalleryTag(gid),
         ));
-    Get.delete<ViewExtController>();
+  }
+
+  /// The global tag can point at a gallery that was already closed; its fenix
+  /// factory would then hand the reader a fresh, empty controller (1/0).
+  static String _liveGalleryTag(String gid) {
+    bool live(String tag) =>
+        Get.isRegistered<GalleryPageController>(tag: tag) &&
+        !Get.isPrepared<GalleryPageController>(tag: tag) &&
+        Get.find<GalleryPageController>(tag: tag).gState.gid == gid;
+    final current = pageCtrlTag;
+    if (gid.isEmpty || live(current)) {
+      return current;
+    }
+    return Get.find<ControllerTagService>()
+            .galleryTagsFor(gid)
+            .lastWhereOrNull(live) ??
+        current;
   }
 
   // 打开已下载任务阅读
@@ -279,12 +226,11 @@ class NavigatorUtil {
     // 命名路由方式
     await Get.toNamed(EHRoutes.galleryViewExt,
         arguments: ViewRepository(
-          index: index,
-          files: pics,
-          loadType: LoadFrom.download,
-          gid: gid,
+      index: index,
+      files: pics,
+      loadType: LoadFrom.download,
+      gid: gid,
         ));
-    Get.delete<ViewExtController>();
   }
 
   // 打开归档压缩包阅读
@@ -293,12 +239,11 @@ class NavigatorUtil {
     // 命名路由方式
     await Get.toNamed(EHRoutes.galleryViewExt,
         arguments: ViewRepository(
-          index: index,
-          asyncArchives: asyncArchive.files,
-          loadType: LoadFrom.archiver,
-          gid: gid,
+      index: index,
+      asyncArchives: asyncArchive.files,
+      loadType: LoadFrom.archiver,
+      gid: gid,
         ));
-    Get.delete<ViewExtController>();
   }
 
   static Future<void> goItemWidthSettingPage() async {
@@ -311,7 +256,7 @@ class NavigatorUtil {
 
     Get.toNamed(
       EHRoutes.itemWidthSetting,
-      id: isLayoutLarge ? 1 : null,
+      id: primaryNavigatorId,
     );
   }
 }

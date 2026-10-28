@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
+import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/controller/tag_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -24,6 +25,8 @@ const CupertinoDynamicColor _kClearButtonColor =
 );
 
 abstract class TabViewController extends GetxController {
+  final galleryAnchor = GalleryAnchorController();
+
   // 当前页码
   // final _curPage = (-1).obs;
   // int get curPage => _curPage.value;
@@ -585,7 +588,8 @@ abstract class TabViewController extends GetxController {
                             editingDate = false;
                           });
                         },
-                        child: FaIcon(FontAwesomeIcons.circleXmark,
+                        child: FaIcon(
+                          FontAwesomeIcons.circleXmark,
                           size: 20.0,
                           color: CupertinoDynamicColor.resolve(
                               _kClearButtonColor, Get.context!),
@@ -597,7 +601,8 @@ abstract class TabViewController extends GetxController {
                           showDatePicker = !showDatePicker;
                         });
                       },
-                      child: FaIcon(FontAwesomeIcons.calendar,
+                      child: FaIcon(
+                        FontAwesomeIcons.calendar,
                         size: 20.0,
                         color: showDatePicker
                             ? null
@@ -678,7 +683,8 @@ abstract class TabViewController extends GetxController {
                             editingGid = false;
                           });
                         },
-                        child: FaIcon(FontAwesomeIcons.circleXmark,
+                        child: FaIcon(
+                          FontAwesomeIcons.circleXmark,
                           size: 20.0,
                           color: CupertinoDynamicColor.resolve(
                               _kClearButtonColor, Get.context!),
@@ -709,7 +715,8 @@ abstract class TabViewController extends GetxController {
                     Expanded(
                       child: Row(
                         children: [
-                          FaIcon(FontAwesomeIcons.circleArrowLeft,
+                          FaIcon(
+                            FontAwesomeIcons.circleArrowLeft,
                             size: 16,
                             color: CupertinoDynamicColor.resolve(
                                 CupertinoColors.secondaryLabel, context),
@@ -731,7 +738,8 @@ abstract class TabViewController extends GetxController {
                             nextGid.replaceFirst('-', '-\n'),
                             textAlign: TextAlign.right,
                           )),
-                          FaIcon(FontAwesomeIcons.circleArrowRight,
+                          FaIcon(
+                            FontAwesomeIcons.circleArrowRight,
                             size: 16,
                             color: CupertinoDynamicColor.resolve(
                                 CupertinoColors.secondaryLabel, context),
@@ -747,7 +755,8 @@ abstract class TabViewController extends GetxController {
       ),
       actions: <Widget>[
         CupertinoDialogAction(
-          child: const FaIcon(FontAwesomeIcons.circleArrowLeft,
+          child: const FaIcon(
+            FontAwesomeIcons.circleArrowLeft,
           ),
           onPressed: () async {
             try {
@@ -759,7 +768,8 @@ abstract class TabViewController extends GetxController {
           },
         ),
         CupertinoDialogAction(
-          child: const FaIcon(FontAwesomeIcons.circleArrowRight,
+          child: const FaIcon(
+            FontAwesomeIcons.circleArrowRight,
           ),
           onPressed: () async {
             // 画廊跳转

@@ -107,6 +107,7 @@ class SearchImagePage extends GetView<SearchImageController> {
               // centerKey: centerKey,
               key: controller.sliverAnimatedListKey,
               lastTopItemIndex: controller.lastTopitemIndex,
+              anchorController: logic.galleryAnchor,
             );
           }
 

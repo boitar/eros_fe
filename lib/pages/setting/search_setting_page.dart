@@ -22,7 +22,7 @@ class SearchSettingPage extends StatelessWidget {
               onTap: () async {
                 await Get.toNamed(
                   EHRoutes.quickSearch,
-                  id: isLayoutLarge ? 2 : null,
+                  id: detailNavigatorId,
                 );
               },
             ),

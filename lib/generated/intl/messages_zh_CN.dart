@@ -43,6 +43,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(version) => "可更新到 ${version}";
 
+  static String m5(seconds) => "${seconds} 秒";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("上传头像"),
@@ -595,6 +597,24 @@ class MessageLookup extends MessageLookupByLibrary {
         "webdav_max_connections":
             MessageLookupByLibrary.simpleMessage("WebDAV 最大连接数"),
         "welcome_text":
-            MessageLookupByLibrary.simpleMessage("小撸怡情~大撸伤身~强撸灰飞烟灭~~")
+            MessageLookupByLibrary.simpleMessage("小撸怡情~大撸伤身~强撸灰飞烟灭~~"),
+        "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("横屏铺满全屏"),
+        "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("竖屏铺满全屏"),
+        "reader_fill_footer": MessageLookupByLibrary.simpleMessage("开启后该方向阅读时隐藏状态栏等系统符号，图片忽略安全区铺满整屏"),
+        "reader_page_layout": MessageLookupByLibrary.simpleMessage("页面版式"),
+        "reader_surface_tabletop": MessageLookupByLibrary.simpleMessage("桌面模式"),
+        "reader_surface_standard": MessageLookupByLibrary.simpleMessage("标准"),
+        "reader_single_page": MessageLookupByLibrary.simpleMessage("单页"),
+        "reader_double_odd_left": MessageLookupByLibrary.simpleMessage("双页（奇数页在左）"),
+        "reader_double_even_left": MessageLookupByLibrary.simpleMessage("双页（偶数页在左）"),
+        "reader_auto_read": MessageLookupByLibrary.simpleMessage("自动翻页"),
+        "reader_auto_read_interval": MessageLookupByLibrary.simpleMessage("翻页间隔"),
+        "reader_interval_seconds": m5,
+        "reader_custom_interval": MessageLookupByLibrary.simpleMessage("自定义…"),
+        "full_title": MessageLookupByLibrary.simpleMessage("完整标题"),
+        "group_management": MessageLookupByLibrary.simpleMessage("分组管理"),
+        "choose_favcat": MessageLookupByLibrary.simpleMessage("选择收藏夹"),
+        "back_to_top": MessageLookupByLibrary.simpleMessage("回到顶部"),
+        "ranking_period": MessageLookupByLibrary.simpleMessage("排行周期")
       };
 }

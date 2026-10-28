@@ -137,7 +137,7 @@ class LoginWebDAV extends GetView<WebdavController> {
                                 final result =
                                     await controller.pressLoginWebDAV();
                                 if (result != null && result) {
-                                  Get.back(id: isLayoutLarge ? 2 : null);
+                                  Get.back(id: detailNavigatorId);
                                 }
                               },
                         child: controller.loadingLogin

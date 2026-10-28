@@ -135,6 +135,7 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
               next: logic.next,
               lastComplete: _favoriteSubListController.lastComplete,
               firstCardKey: widget.firstCardKey,
+              anchorController: logic.galleryAnchor,
               // key: _favoriteSubListController.sliverAnimatedListKey,
               keepPosition: _favoriteSubListController.keepPosition,
             );

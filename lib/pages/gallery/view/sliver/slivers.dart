@@ -121,7 +121,7 @@ class DownloadGalleryButton extends StatelessWidget {
       );
 
       final toDownloadPage =
-          () => Get.toNamed(EHRoutes.download, id: isLayoutLarge ? 1 : null);
+          () => Get.toNamed(EHRoutes.download, id: primaryNavigatorId);
 
       final Map<TaskStatus, Widget> iconMap = {
         // 下载完成

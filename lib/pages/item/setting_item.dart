@@ -100,12 +100,12 @@ class _SettingItems extends State<SettingItems> {
           final topRoute =
               SecondNavigatorObserver().history.lastOrNull?.settings.name;
           if (topRoute?.startsWith('/setting') ?? false) {
-            Get.offNamed(widget.route, id: 2);
+            Get.offNamed(widget.route, id: detailNavigatorId);
           } else {
-            Get.toNamed(widget.route, id: 2);
+            Get.toNamed(widget.route, id: detailNavigatorId);
           }
         } else {
-          Get.toNamed(widget.route);
+          Get.toNamed(widget.route, id: detailNavigatorId);
         }
       },
       onTapDown: (_) => _updatePressedColor(),

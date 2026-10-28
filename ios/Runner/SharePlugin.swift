@@ -4,13 +4,22 @@ import Flutter
 final class ErosSharePlugin: NSObject, FlutterPlugin {
     private static let channelName = "cn.honjow.eros/share"
     private static let maxPresentationAttempts = 30
+    private weak var registrar: FlutterPluginRegistrar?
+
+    private init(registrar: FlutterPluginRegistrar) {
+        self.registrar = registrar
+        super.init()
+    }
 
     static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
             name: channelName,
             binaryMessenger: registrar.messenger()
         )
-        registrar.addMethodCallDelegate(ErosSharePlugin(), channel: channel)
+        registrar.addMethodCallDelegate(
+            ErosSharePlugin(registrar: registrar),
+            channel: channel
+        )
     }
 
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -81,9 +90,8 @@ final class ErosSharePlugin: NSObject, FlutterPlugin {
         )
 
         if let popover = controller.popoverPresentationController {
-            // Flutter reports the anchor in window coordinates. Use the
-            // containing window as the popover source so the coordinate space
-            // remains correct even when the presenter is a nested controller.
+            // RenderBox.localToGlobal is Flutter-view-local, not window-local
+            // once native navigation containers inset the Flutter surface.
             guard let presenterView = presenter.view else {
                 completion.finish(FlutterError(
                     code: "no_presenter",
@@ -94,8 +102,11 @@ final class ErosSharePlugin: NSObject, FlutterPlugin {
             }
             let sourceView = presenterView.window ?? presenterView
             popover.sourceView = sourceView
+            let sourceOrigin = origin(from: arguments).flatMap { rect in
+                registrar?.viewController?.viewIfLoaded?.convert(rect, to: sourceView)
+            }
             popover.sourceRect = normalizedOrigin(
-                from: origin(from: arguments),
+                from: sourceOrigin,
                 in: sourceView.bounds
             )
         }
@@ -218,6 +229,11 @@ final class ErosSharePlugin: NSObject, FlutterPlugin {
         if let split = controller as? UISplitViewController,
            let last = split.viewControllers.last {
             return topViewController(from: last)
+        }
+        if let child = controller.children.reversed().first(where: {
+            $0.viewIfLoaded?.window != nil && $0.viewIfLoaded?.isHidden == false
+        }) {
+            return topViewController(from: child)
         }
         return controller
     }

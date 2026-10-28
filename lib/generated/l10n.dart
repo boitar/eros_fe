@@ -4814,6 +4814,186 @@ class L10n {
       args: [],
     );
   }
+  /// `Fill screen in landscape`
+  String get reader_fill_landscape {
+    return Intl.message(
+      'Fill screen in landscape',
+      name: 'reader_fill_landscape',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fill screen in portrait`
+  String get reader_fill_portrait {
+    return Intl.message(
+      'Fill screen in portrait',
+      name: 'reader_fill_portrait',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hides the status bar and system symbols while reading in that orientation, and lets images ignore the safe area`
+  String get reader_fill_footer {
+    return Intl.message(
+      'Hides the status bar and system symbols while reading in that orientation, and lets images ignore the safe area',
+      name: 'reader_fill_footer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Page Layout`
+  String get reader_page_layout {
+    return Intl.message(
+      'Page Layout',
+      name: 'reader_page_layout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tabletop`
+  String get reader_surface_tabletop {
+    return Intl.message(
+      'Tabletop',
+      name: 'reader_surface_tabletop',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Standard`
+  String get reader_surface_standard {
+    return Intl.message(
+      'Standard',
+      name: 'reader_surface_standard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Single Page`
+  String get reader_single_page {
+    return Intl.message(
+      'Single Page',
+      name: 'reader_single_page',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Two Pages (Odd on Left)`
+  String get reader_double_odd_left {
+    return Intl.message(
+      'Two Pages (Odd on Left)',
+      name: 'reader_double_odd_left',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Two Pages (Even on Left)`
+  String get reader_double_even_left {
+    return Intl.message(
+      'Two Pages (Even on Left)',
+      name: 'reader_double_even_left',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Auto Page Turn`
+  String get reader_auto_read {
+    return Intl.message(
+      'Auto Page Turn',
+      name: 'reader_auto_read',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Page Interval`
+  String get reader_auto_read_interval {
+    return Intl.message(
+      'Page Interval',
+      name: 'reader_auto_read_interval',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{seconds} s`
+  String reader_interval_seconds(Object seconds) {
+    return Intl.message(
+      '$seconds s',
+      name: 'reader_interval_seconds',
+      desc: '',
+      args: [seconds],
+    );
+  }
+
+  /// `Custom…`
+  String get reader_custom_interval {
+    return Intl.message(
+      'Custom…',
+      name: 'reader_custom_interval',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Full Title`
+  String get full_title {
+    return Intl.message(
+      'Full Title',
+      name: 'full_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manage Groups`
+  String get group_management {
+    return Intl.message(
+      'Manage Groups',
+      name: 'group_management',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose Favorites Folder`
+  String get choose_favcat {
+    return Intl.message(
+      'Choose Favorites Folder',
+      name: 'choose_favcat',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Back to Top`
+  String get back_to_top {
+    return Intl.message(
+      'Back to Top',
+      name: 'back_to_top',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ranking Period`
+  String get ranking_period {
+    return Intl.message(
+      'Ranking Period',
+      name: 'ranking_period',
+      desc: '',
+      args: [],
+    );
+  }
+
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

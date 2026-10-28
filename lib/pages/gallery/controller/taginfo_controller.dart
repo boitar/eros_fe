@@ -16,7 +16,10 @@ import 'gallery_page_controller.dart';
 import 'gallery_page_state.dart';
 
 class TagInfoController extends GetxController {
-  TagInfoController();
+  TagInfoController({String? galleryTag})
+      : galleryTag = galleryTag ?? pageCtrlTag;
+
+  final String galleryTag;
   late GalleryPageController pageController;
   GalleryPageState get _pageState => pageController.gState;
   GalleryProvider? get _item => _pageState.galleryProvider;
@@ -38,7 +41,7 @@ class TagInfoController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    pageController = Get.find(tag: pageCtrlTag);
+    pageController = Get.find(tag: galleryTag);
     tagsTextController.addListener(_delayedSearch);
   }
 

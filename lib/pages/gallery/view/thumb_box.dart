@@ -33,8 +33,14 @@ class ThumbBox extends StatefulWidget {
 class _ThumbBoxState extends State<ThumbBox> {
   final ImageBlockController imageHideController = Get.find();
 
-  final _galleryPageController =
-      Get.find<GalleryPageController>(tag: pageCtrlTag);
+  late final GalleryPageController _galleryPageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _galleryPageController =
+        Get.find<GalleryPageController>(tag: pageCtrlTagOf(context));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +178,8 @@ class _ThumbBoxState extends State<ThumbBox> {
       behavior: HitTestBehavior.opaque,
       onTap: () {
         NavigatorUtil.goGalleryViewPage(
-            widget.galleryImage.ser - 1, widget.gid);
+            widget.galleryImage.ser - 1, widget.gid,
+            galleryTag: pageCtrlTagOf(context));
       },
       onLongPress: () {
         Rect? sourceRect;

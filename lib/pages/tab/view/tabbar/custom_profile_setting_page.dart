@@ -88,7 +88,7 @@ class _CustomProfileSettingPageState extends State<CustomProfileSettingPage> {
             }
 
             Get.back(
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
               result: _customProfile.copyWith(
                 lastEditTime: DateTime.now().millisecondsSinceEpoch.oN,
               ),
@@ -363,7 +363,7 @@ class _ListTypeSelectorState extends State<_ListTypeSelector> {
   }
 }
 
-class _BetweenPageTile extends StatelessWidget {
+class _BetweenPageTile extends StatefulWidget {
   const _BetweenPageTile({
     super.key,
     this.enable = false,
@@ -380,6 +380,28 @@ class _BetweenPageTile extends StatelessWidget {
   final ValueChanged<String>? onEndPageChanged;
 
   @override
+  State<_BetweenPageTile> createState() => _BetweenPageTileState();
+}
+
+class _BetweenPageTileState extends State<_BetweenPageTile> {
+  late final TextEditingController _start;
+  late final TextEditingController _end;
+
+  @override
+  void initState() {
+    super.initState();
+    _start = TextEditingController(text: widget.startPage);
+    _end = TextEditingController(text: widget.endPage);
+  }
+
+  @override
+  void dispose() {
+    _start.dispose();
+    _end.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       height: kItemHeight,
@@ -393,23 +415,13 @@ class _BetweenPageTile extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 // cursorHeight: 14,
                 textAlign: TextAlign.center,
-                enabled: enable,
+                enabled: widget.enable,
                 style: const TextStyle(
                   height: 1.2,
                   textBaseline: TextBaseline.alphabetic,
                 ),
-                onChanged: onStartPageChanged,
-                // controller: TextEditingController(text: startPage),
-                controller: TextEditingController()
-                  ..value = TextEditingValue(
-                    text: startPage ?? '',
-                    selection: TextSelection.fromPosition(
-                      TextPosition(
-                        affinity: TextAffinity.downstream,
-                        offset: (startPage ?? '').length,
-                      ),
-                    ),
-                  )),
+                onChanged: widget.onStartPageChanged,
+                controller: _start),
           ),
 
           Padding(
@@ -423,22 +435,13 @@ class _BetweenPageTile extends StatelessWidget {
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
               // cursorHeight: 14,
-              enabled: enable,
+              enabled: widget.enable,
               style: const TextStyle(
                 height: 1.2,
                 textBaseline: TextBaseline.alphabetic,
               ),
-              onChanged: onEndPageChanged,
-              controller: TextEditingController()
-                ..value = TextEditingValue(
-                  text: endPage ?? '',
-                  selection: TextSelection.fromPosition(
-                    TextPosition(
-                      affinity: TextAffinity.downstream,
-                      offset: (endPage ?? '').length,
-                    ),
-                  ),
-                ),
+              onChanged: widget.onEndPageChanged,
+              controller: _end,
             ),
           ),
         ],

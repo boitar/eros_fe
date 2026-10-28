@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/const/const.dart';
+import 'package:eros_fe/debug/offline_acceptance.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/network/app_dio/pdio.dart';
 import 'package:eros_fe/pages/image_view/controller/view_state.dart';
@@ -55,6 +56,19 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
   late AnimationController _fadeAnimationController;
 
+  final ValueNotifier<double>? _acceptanceScale = offlineAcceptanceEnabled &&
+          const bool.fromEnvironment('EROS_DUO_ACCEPTANCE')
+      ? ValueNotifier(1)
+      : null;
+  double _acceptanceInitialScale = 1;
+  double _gestureFittedScale = 1;
+  final int _acceptanceInstance = offlineAcceptanceEnabled &&
+          const bool.fromEnvironment('EROS_DUO_ACCEPTANCE')
+      ? DateTime.now().microsecondsSinceEpoch
+      : 0;
+  double? _pendingAcceptanceScale;
+  bool _acceptanceScaleScheduled = false;
+
   ViewExtState get vState => controller.vState;
 
   bool get checkPHashHide => ehSettingService.enablePHashCheck;
@@ -63,6 +77,10 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
   @override
   void initState() {
+    if (_acceptanceScale != null) {
+      logger.d('OFFLINE_READER_IMAGE_INIT ser=${widget.imageSer};'
+          'instance=$_acceptanceInstance');
+    }
     _doubleClickAnimationController = AnimationController(
         duration: const Duration(milliseconds: 300), vsync: this);
 
@@ -90,38 +108,95 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    final acceptanceScale = _acceptanceScale;
+    if (acceptanceScale != null) {
+      logger.d('OFFLINE_READER_IMAGE_DISPOSE ser=${widget.imageSer};'
+          'instance=$_acceptanceInstance;scale=${acceptanceScale.value}');
+    }
     _doubleClickAnimationController.dispose();
     _fadeAnimationController.dispose();
+    _acceptanceScale?.dispose();
     super.dispose();
+  }
+
+  void _recordAcceptanceScale(GestureDetails? details) {
+    _pendingAcceptanceScale = details?.totalScale ?? 1;
+    if (_acceptanceScaleScheduled) return;
+    _acceptanceScaleScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _acceptanceScaleScheduled = false;
+      if (mounted) {
+        final scale = _pendingAcceptanceScale ?? 1;
+        final acceptanceScale = _acceptanceScale;
+        if (acceptanceScale != null && acceptanceScale.value != scale) {
+          logger.d('OFFLINE_READER_IMAGE_SCALE ser=${widget.imageSer};'
+              'instance=$_acceptanceInstance;scale=$scale');
+          acceptanceScale.value = scale;
+        }
+      }
+    });
+  }
+
+  void _recordReaderScale(GestureDetails? details) {
+    final totalScale = details?.totalScale;
+    if (totalScale != null) {
+      controller.recordReaderZoom(
+        imageSer: widget.imageSer,
+        totalScale: totalScale,
+        fittedScale: _gestureFittedScale,
+      );
+    }
+    if (_acceptanceScale != null) {
+      _recordAcceptanceScale(details);
+    }
   }
 
   InitGestureConfigHandler get _initGestureConfigHandler =>
       (ExtendedImageState state) {
         final Size size = MediaQuery.of(context).size;
-        double? initialScale = widget.initialScale;
+        double fittedScale = widget.initialScale;
 
         final imageInfo = state.extendedImageInfo;
-        if (imageInfo != null) {
-          initialScale = initScale(
-              size: size,
-              initialScale: initialScale,
-              imageSize: Size(imageInfo.image.width.toDouble(),
-                  imageInfo.image.height.toDouble()));
-
-          vState.doubleTapScales[0] = initialScale ?? vState.doubleTapScales[0];
-          vState.doubleTapScales[1] = initialScale != null
-              ? initialScale * 2
-              : vState.doubleTapScales[1];
+        final imageSize = imageInfo != null
+            ? Size(imageInfo.image.width.toDouble(),
+                imageInfo.image.height.toDouble())
+            : vState.imageSizeMap[widget.imageSer];
+        if (imageSize != null) {
+          fittedScale = initScale(
+                size: size,
+                initialScale: widget.initialScale,
+                imageSize: imageSize,
+              ) ??
+              fittedScale;
+        }
+        _gestureFittedScale = fittedScale;
+        vState.doubleTapScales[0] = fittedScale;
+        vState.doubleTapScales[1] = fittedScale * 2;
+        final initialScale =
+            (fittedScale * controller.readerZoomRatioFor(widget.imageSer))
+                .clamp(fittedScale, 10.0)
+                .toDouble();
+        _acceptanceInitialScale = fittedScale;
+        final acceptanceScale = _acceptanceScale;
+        if (acceptanceScale != null && acceptanceScale.value != initialScale) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || acceptanceScale.value == initialScale) return;
+            acceptanceScale.value = initialScale;
+            logger.d(
+                'OFFLINE_READER_IMAGE_CONFIGURED_SCALE ser=${widget.imageSer};'
+                'instance=$_acceptanceInstance;scale=$initialScale');
+          });
         }
         return GestureConfig(
           inPageView: true,
-          initialScale: initialScale ?? 1.0,
+          initialScale: initialScale,
           maxScale: 10.0,
           // animationMaxScale: max(initialScale, 5.0),
           animationMaxScale: 10.0,
           initialAlignment: InitialAlignment.center,
           cacheGesture: false,
           hitTestBehavior: HitTestBehavior.opaque,
+          gestureDetailsIsChanged: _recordReaderScale,
         );
       };
 
@@ -185,6 +260,26 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
           return archiverImage();
       }
     }();
+
+    final acceptanceScale = _acceptanceScale;
+    if (acceptanceScale != null) {
+      image = ValueListenableBuilder<double>(
+        valueListenable: acceptanceScale,
+        child: image,
+        builder: (_, scale, child) => Semantics(
+          container: true,
+          explicitChildNodes: true,
+          identifier: 'offline-duo-image-${widget.imageSer}',
+          label: 'ser=${widget.imageSer};scale=$scale;'
+              'initial=$_acceptanceInitialScale;'
+              'ratio=${controller.readerZoomRatioFor(widget.imageSer)};'
+              'generation=${controller.paginationGeneration};'
+              'instance=$_acceptanceInstance',
+          image: true,
+          child: child,
+        ),
+      );
+    }
 
     // return _image();
 

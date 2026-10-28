@@ -1,7 +1,9 @@
 import 'package:archive_async/archive_async.dart';
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/const/const.dart';
+import 'package:eros_fe/debug/offline_acceptance.dart';
 import 'package:eros_fe/extension.dart';
-import 'package:eros_fe/models/gallery_image.dart';
 import 'package:eros_fe/pages/image_view/view/view_widget.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:extended_image/extended_image.dart';
@@ -10,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../common.dart';
 import '../controller/view_controller.dart';
@@ -17,6 +20,8 @@ import '../controller/view_state.dart';
 import 'image_list_view.dart';
 import 'image_page_view.dart';
 import 'image_page_view_ex.dart';
+import 'reader_chrome.dart';
+import 'reader_layout.dart';
 import 'view_image.dart';
 
 typedef DoubleClickAnimationListener = void Function();
@@ -27,12 +32,14 @@ class ViewRepository {
     this.loadType = LoadFrom.gallery,
     this.files,
     this.asyncArchives,
+    this.galleryControllerTag,
     required this.gid,
   });
 
   final int index;
   final List<String>? files;
   final String gid;
+  final String? galleryControllerTag;
   final LoadFrom loadType;
   final List<AsyncArchiveFile>? asyncArchives;
 }
@@ -57,6 +64,10 @@ class _ViewPageState extends State<ViewPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    if (Get.isRegistered<ViewExtController>() &&
+        identical(Get.find<ViewExtController>(), controller)) {
+      Get.delete<ViewExtController>(force: true);
+    }
     super.dispose();
     logger.t('ViewPage dispose');
   }
@@ -75,6 +86,72 @@ class _ViewPageState extends State<ViewPage> with TickerProviderStateMixin {
         ),
       ),
     );
+    if (offlineAcceptanceEnabled &&
+        const bool.fromEnvironment('EROS_DUO_ACCEPTANCE')) {
+      body = Stack(
+        fit: StackFit.expand,
+        children: [
+          body,
+          Positioned(
+            left: 0,
+            top: 0,
+            child: IgnorePointer(
+              child: GetBuilder<ViewExtController>(
+                id: idViewTopBar,
+                builder: (logic) {
+                  final environment = AdaptiveEnvironment.maybeOf(context);
+                  return Semantics(
+                    container: true,
+                    identifier: 'offline-duo-reader-probe',
+                    label: 'index=${vState.currentItemIndex};'
+                        'count=${vState.fileCount};page=${vState.pageIndex};'
+                        'column=${vState.columnMode.name};'
+                        'preference=${vState.ehSettingService.readerColumnPreference.name};'
+                        'direction=${vState.viewMode.name};'
+                        'interval=${vState.showPageInterval};'
+                        'backend=${logic.pageViewType.name};'
+                        'ignoreScrollingPointer=${logic.extendedPageController.shouldIgnorePointerWhenScrolling};'
+                        'surface=${vState.surfacePreference.name};'
+                        'layout=${environment?.layoutKind.name};'
+                        'size=${environment?.size.width}x${environment?.size.height};'
+                        'divisions=${environment?.activeDivisionRegions.map((region) => region.frame).join("|")};'
+                        'layoutVersion=${environment?.layoutVersion};'
+                        'generation=${logic.paginationGeneration}',
+                    child: const SizedBox(width: 1, height: 1),
+                  );
+                },
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            top: 2,
+            child: IgnorePointer(
+              child: ValueListenableBuilder<Iterable<ItemPosition>>(
+                valueListenable: controller.itemPositionsListener.itemPositions,
+                builder: (_, positions, __) {
+                  final visible = positions
+                      .where((item) =>
+                          item.itemLeadingEdge < 1 && item.itemTrailingEdge > 0)
+                      .toList()
+                    ..sort((a, b) => a.index.compareTo(b.index));
+                  return Semantics(
+                    container: true,
+                    identifier: 'offline-duo-scroll-probe',
+                    label:
+                        'items=${visible.map((item) => '${item.index}:${item.itemLeadingEdge}:${item.itemTrailingEdge}').join("|")};'
+                        'viewport=${vState.viewportSize?.width}x${vState.viewportSize?.height}',
+                    child: const SizedBox(width: 1, height: 1),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    body = ReaderNativeChrome(child: body);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -90,16 +167,30 @@ class _ViewPageState extends State<ViewPage> with TickerProviderStateMixin {
   }
 }
 
-class ViewKeyboardListener extends GetView<ViewExtController> {
+class ViewKeyboardListener extends StatefulWidget {
   const ViewKeyboardListener({required this.child, super.key});
 
   final Widget child;
 
   @override
+  State<ViewKeyboardListener> createState() => _ViewKeyboardListenerState();
+}
+
+class _ViewKeyboardListenerState extends State<ViewKeyboardListener> {
+  final ViewExtController controller = Get.find();
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return KeyboardListener(
       autofocus: true,
-      focusNode: FocusNode(),
+      focusNode: _focusNode,
       onKeyEvent: (KeyEvent event) async {
         if (event is! KeyDownEvent) {
           return;
@@ -129,36 +220,58 @@ class ViewKeyboardListener extends GetView<ViewExtController> {
         logger.t('logicalKey: ${event.logicalKey}');
         actionMap[event.logicalKey]?.call();
       },
-      child: child,
+      child: widget.child,
     );
   }
 }
 
-class ImageView extends StatelessWidget {
+class ImageView extends StatefulWidget {
   const ImageView({super.key});
 
   @override
+  State<ImageView> createState() => _ImageViewState();
+}
+
+class _ImageViewState extends State<ImageView> {
+  int _viewportGeneration = 0;
+
+  @override
   Widget build(BuildContext context) {
-    return GetBuilder<ViewExtController>(
-      id: idImagePageView,
-      builder: (logic) {
-        logger.t('build ImageView');
-        switch (logic.vState.viewMode) {
-          case ViewMode.topToBottom:
-            return const ImageListView();
-          case ViewMode.leftToRight:
-            return const ImagePageView();
-          // return kReleaseMode
-          //     ? const ImagePageView()
-          //     : const ImagePhotoView();
-          case ViewMode.rightToLeft:
-            return const ImagePageView(reverse: true);
-          // return kReleaseMode
-          //     ? const ImagePageView(reverse: true)
-          //     : const ImagePhotoView(reverse: true);
-          default:
-            return const ImagePhotoView();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        final adaptive = AdaptiveEnvironment.maybeOf(context);
+        final canUseDoublePage = adaptive?.canUseReaderDoublePage;
+        final generation = ++_viewportGeneration;
+        if (size.isFinite) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted &&
+                generation == _viewportGeneration &&
+                Get.isRegistered<ViewExtController>()) {
+              Get.find<ViewExtController>().updateViewport(
+                size,
+                canUseDoublePage: canUseDoublePage,
+                bookFolded: adaptive?.isBookFolded ?? false,
+              );
+            }
+          });
         }
+        return GetBuilder<ViewExtController>(
+          id: idImagePageView,
+          builder: (logic) {
+            logger.t('build ImageView');
+            switch (logic.vState.viewMode) {
+              case ViewMode.topToBottom:
+                return const ImageListView();
+              case ViewMode.leftToRight:
+                return const ImagePageView();
+              case ViewMode.rightToLeft:
+                return const ImagePageView(reverse: true);
+              default:
+                return const ImagePhotoView();
+            }
+          },
+        );
       },
     );
   }
@@ -195,167 +308,68 @@ class DoublePageView extends StatefulWidget {
 
 class _DoublePageViewState extends State<DoublePageView> {
   ViewExtController get controller => Get.find();
-
   ViewExtState get vState => controller.vState;
 
-  double _ratioFirst = 1.0;
-  double _ratioSecond = 1.0;
-  int serFirst = 1;
-
-  bool needResizeFirst = false;
-  bool needResizeSecond = false;
-
-  double? getRatio(int ser, ViewExtState vState) {
-    final size = vState.imageSizeMap[ser];
-    if (size != null) {
-      logger.t('getRatio $ser ${size.width} ${size.height}');
-      return size.width / size.height;
+  double _aspectRatio(int ser) {
+    final known = vState.imageSizeMap[ser];
+    if (known != null && known.height > 0) return known.width / known.height;
+    final image = vState.imageMap?[ser];
+    if ((image?.imageHeight ?? 0) > 0 && (image?.imageWidth ?? 0) > 0) {
+      return image!.imageWidth! / image.imageHeight!;
     }
-
-    final GalleryImage? _curImage = vState.imageMap?[ser];
-    // logger.d('_curImage $ser ${_curImage?.toJson()}');
-    if (_curImage == null) {
-      return null;
+    if ((image?.thumbHeight ?? 0) > 0 && (image?.thumbWidth ?? 0) > 0) {
+      return image!.thumbWidth! / image.thumbHeight!;
     }
-
-    if ((_curImage.imageHeight ?? 0) > 0) {
-      return (_curImage.imageWidth ?? 0) / _curImage.imageHeight!;
-    } else if ((_curImage.thumbHeight ?? 0) > 0) {
-      return (_curImage.thumbWidth ?? 0) / _curImage.thumbHeight!;
-    } else {
-      return null;
-    }
+    return 3 / 4;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    // 双页阅读
-    serFirst = vState.columnMode == ViewColumnMode.oddLeft
-        ? widget.pageIndex * 2 + 1
-        : widget.pageIndex * 2;
-    vState.serFirst = serFirst;
-    final ratioFirst = getRatio(serFirst, vState);
-    if (ratioFirst == null) {
-      needResizeFirst = true;
+  void _imageSizeChanged(int ser, Size size) {
+    if (size.isEmpty || !size.isFinite || vState.imageSizeMap[ser] == size) {
+      return;
     }
-    _ratioFirst = ratioFirst ?? 3 / 4;
-
-    final ratioSecond =
-        vState.fileCount <= serFirst ? 0.0 : getRatio(serFirst + 1, vState);
-    if (ratioSecond == null) {
-      needResizeSecond = true;
-    }
-    _ratioSecond = ratioSecond ?? 3 / 4;
+    vState.imageSizeMap[ser] = size;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+    vState.galleryPageController?.uptImageBySer(
+      ser: ser,
+      imageCallback: (image) => image.copyWith(
+        imageWidth: size.width.oN,
+        imageHeight: size.height.oN,
+      ),
+    );
   }
-
-  double get _ratioBoth => _ratioFirst + _ratioSecond;
 
   @override
   Widget build(BuildContext context) {
-    final reverse = vState.viewMode == ViewMode.rightToLeft;
-
-    logger.t(
-        '_ratioStart:$_ratioFirst, _ratioEnd:$_ratioSecond, _ratioBoth:$_ratioBoth');
-
-    final showFirst = serFirst > 0;
-    final showSecond = vState.fileCount > serFirst;
-
-    Widget imageFirst() => AspectRatio(
-          aspectRatio: _ratioFirst,
-          child: buildViewImageFirst(),
-        );
-
-    Widget imageSecond() => AspectRatio(
-          aspectRatio: _ratioSecond,
-          child: buildViewImageSecond(),
-        );
-
-    final List<Widget> pageList = <Widget>[
-      if (showFirst) showSecond ? imageFirst() : Expanded(child: imageFirst()),
-      if (showSecond)
-        showFirst ? imageSecond() : Expanded(child: imageSecond()),
-    ];
-
-    Widget doubleView = Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: reverse ? pageList.reversed.toList() : pageList,
-    );
-
-    doubleView = AspectRatio(
-      aspectRatio: _ratioBoth,
-      child: doubleView,
-    );
-
-    // return GestureDetector(
-    //   onDoubleTapDown: (details) {
-    //     logger.d('onDoubleTapDown');
-    //   },
-    //   child: _pageList.length > 1 ? Center(child: doubleView) : doubleView,
-    // );
-    return pageList.length > 1 ? Center(child: doubleView) : doubleView;
-  }
-
-  ViewImage buildViewImageSecond() {
-    return ViewImage(
-      imageSer: serFirst + 1,
-      enableDoubleTap: false,
-      mode: ExtendedImageMode.none,
-      enableSlideOutPage: false,
-      imageSizeChanged: (Size size) {
-        if (size.width > 0 && size.height > 0 && needResizeSecond) {
-          logger.d('end imageSizeChanged ${serFirst + 1} $_ratioSecond');
-          _ratioSecond = size.width / size.height;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            setState(() {});
-            needResizeSecond = false;
-          });
-        }
-
-        vState.imageSizeMap[serFirst + 1] = size;
-
-        controller.vState.galleryPageController?.uptImageBySer(
-            ser: serFirst + 1,
-            imageCallback: (GalleryImage image) {
-              return image.copyWith(
-                imageWidth: size.width.oN,
-                imageHeight: size.height.oN,
-              );
-            });
-      },
-    );
-  }
-
-  ViewImage buildViewImageFirst() {
-    return ViewImage(
-      imageSer: serFirst,
-      enableDoubleTap: false,
-      mode: ExtendedImageMode.none,
-      enableSlideOutPage: false,
-      imageSizeChanged: (Size size) {
-        if (size.width > 0 && size.height > 0 && needResizeFirst) {
-          _ratioFirst = size.width / size.height;
-          logger.d('start imageSizeChanged $serFirst $_ratioFirst');
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            setState(() {});
-            needResizeFirst = false;
-          });
-        }
-
-        logger.t('${controller.vState.galleryPageController == null}');
-
-        vState.imageSizeMap[serFirst] = size;
-
-        controller.vState.galleryPageController?.uptImageBySer(
-            ser: serFirst,
-            imageCallback: (GalleryImage image) {
-              return image.copyWith(
-                imageWidth: size.width.oN,
-                imageHeight: size.height.oN,
-              );
-            });
-      },
+    final environment = AdaptiveEnvironment.maybeOf(context) ??
+        AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
+    final book = environment.isBookFolded;
+    final images = vState.pagination.imagesForPage(widget.pageIndex);
+    return ReaderSpreadLayout(
+      environment: environment,
+      reverse: vState.viewMode == ViewMode.rightToLeft,
+      pages: [
+        for (final index in images)
+          ReaderSpreadPage(
+            slot: (index +
+                    (vState.columnMode == ViewColumnMode.evenLeft ? 1 : 0)) %
+                2,
+            aspectRatio: _aspectRatio(index + 1),
+            child: Semantics(
+              label: '${index + 1}/${vState.fileCount}',
+              image: true,
+              child: ViewImage(
+                key: ValueKey('spread-image-${index + 1}'),
+                imageSer: index + 1,
+                enableDoubleTap: book,
+                mode: book ? ExtendedImageMode.gesture : ExtendedImageMode.none,
+                enableSlideOutPage: false,
+                imageSizeChanged: (size) => _imageSizeChanged(index + 1, size),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -373,40 +387,80 @@ class ImagePlugins extends GetView<ViewExtController> {
 
   @override
   Widget build(BuildContext context) {
-    vState.bottomBarHeight = context.mediaQueryPadding.bottom +
-        kBottomBarHeight +
-        kSliderBarHeight +
-        (vState.showThumbList ? kThumbListViewHeight : 0);
-
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        child,
-        GetBuilder<ViewExtController>(
-          id: idViewBar,
-          builder: (logic) {
-            return Stack(
-              children: [
-                AnimatedPositioned(
-                  curve: Curves.fastOutSlowIn,
-                  duration: const Duration(milliseconds: 300),
-                  top: logic.vState.topBarOffset,
-                  // top: 50,
-                  child: const ViewTopBar(),
-                ),
-                AnimatedPositioned(
-                  curve: Curves.fastOutSlowIn,
-                  duration: const Duration(milliseconds: 300),
-                  bottom: logic.vState.bottomBarOffset,
-                  child: const ViewBottomBar(),
-                ),
-              ],
-            );
-          },
-        ),
-      ],
+    final nativeChrome = NativeNavigationScope.isEnabled(context);
+    return GetBuilder<ViewExtController>(
+      id: idViewBar,
+      builder: (logic) {
+        final environment = AdaptiveEnvironment.maybeOf(context) ??
+            AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
+        final showInline = environment.isWide;
+        final bottomHeight = nativeChrome
+            ? ReaderDock.heightFor(thumbnails: vState.showThumbList)
+            : (showInline ? 0 : kBottomBarHeight) +
+                kSliderBarHeight +
+                (vState.showThumbList ? kThumbListViewHeight : 0);
+        vState.bottomBarHeight = bottomHeight;
+        return Obx(() {
+          final fillScreen =
+              vState.ehSettingService.readerFillsScreen(environment.size);
+          return _ReaderSystemUiSync(
+            fillScreen: fillScreen,
+            onChanged: controller.syncFullscreen,
+            child: ReaderSurfaceLayout(
+              environment: environment,
+              preference: vState.surfacePreference,
+              singlePage: vState.ehSettingService.readerColumnPreference ==
+                  ReaderColumnPreference.single,
+              showBars: vState.showBar,
+              fillScreen: fillScreen,
+              nativeChrome: nativeChrome,
+              topBarHeight: nativeChrome ? 0 : kTopBarHeight,
+              bottomBarHeight: bottomHeight,
+              topBar: nativeChrome
+                  ? const SizedBox.shrink()
+                  : const ViewTopBar(),
+              bottomBar:
+                  nativeChrome ? const ReaderDock() : const ViewBottomBar(),
+              content: child,
+            ),
+          );
+        });
+      },
     );
   }
+}
+
+/// Re-applies the system bars when rotation or the setting flips the fill.
+class _ReaderSystemUiSync extends StatefulWidget {
+  const _ReaderSystemUiSync({
+    required this.fillScreen,
+    required this.onChanged,
+    required this.child,
+  });
+
+  final bool fillScreen;
+  final VoidCallback onChanged;
+  final Widget child;
+
+  @override
+  State<_ReaderSystemUiSync> createState() => _ReaderSystemUiSyncState();
+}
+
+class _ReaderSystemUiSyncState extends State<_ReaderSystemUiSync> {
+  @override
+  void didUpdateWidget(_ReaderSystemUiSync oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.fillScreen != widget.fillScreen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onChanged();
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// 控制触摸手势事件
@@ -427,7 +481,7 @@ class ImageGestureDetector extends GetView<ViewExtController> {
       onTapUp: (details) {
         // logger.d('${details.globalPosition} ${details.localPosition}');
 
-        final globalPosition = details.globalPosition;
+        final globalPosition = details.localPosition;
         if (globalPosition.dx < context.width * (1 - lrRatio) &&
             globalPosition.dx > context.width * lrRatio) {
           if (globalPosition.dy < context.height * tbRatio) {

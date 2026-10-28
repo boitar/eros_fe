@@ -144,6 +144,39 @@ void main() {
     expect(events, ['first:top']);
   });
 
+  reselectionTest('native tab selections preserve reselection behavior',
+      (tester) async {
+    home.setNavigationMode(useLiquidGlass: false);
+    await home.selectRoute(EHRoutes.favorite);
+    expect(events, isEmpty);
+    await home.selectRoute(EHRoutes.favorite);
+    await home.selectRoute(EHRoutes.favorite);
+    expect(events, ['first:top', 'first:refresh']);
+    await home.selectRoute('/unknown');
+    expect(home.currRoute, EHRoutes.favorite);
+  });
+
+  test('native hidden destinations do not bypass safe mode', () {
+    Get.find<EhSettingService>().isSafeMode.value = true;
+    expect(home.nativeHiddenTabActions, isEmpty);
+  });
+
+  reselectionTest('tab identity survives sorting and hiding siblings',
+      (tester) async {
+    await home.selectRoute(EHRoutes.favorite);
+    home.tabNameList.value = [
+      EHRoutes.history,
+      EHRoutes.download,
+      EHRoutes.favorite,
+      EHRoutes.gallery,
+    ];
+    expect(home.currRoute, EHRoutes.favorite);
+    expect(home.currentIndex, 2);
+    home.tabMap[EHRoutes.history] = false;
+    expect(home.currRoute, EHRoutes.favorite);
+    expect(home.currentIndex, 1);
+  });
+
   reselectionTest(
       'standard reselect scrolls immediately and refreshes within 800ms',
       (tester) async {

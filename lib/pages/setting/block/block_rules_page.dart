@@ -38,7 +38,7 @@ class BlockRulesPage extends GetView<BlockController> {
           onPressed: () async {
             final result = await Get.toNamed<dynamic>(
               EHRoutes.blockRuleEdit,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             );
             if (result != null && result is BlockRule) {
               controller.addBlockRule(result);
@@ -87,7 +87,7 @@ class BlockRulesPage extends GetView<BlockController> {
                               final result = await Get.toNamed<dynamic>(
                                 EHRoutes.blockRuleEdit,
                                 arguments: _blockRule,
-                                id: isLayoutLarge ? 2 : null,
+                                id: detailNavigatorId,
                               );
                               if (result != null && result is BlockRule) {
                                 controller.updateBlockRule(

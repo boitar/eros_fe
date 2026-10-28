@@ -55,7 +55,7 @@ class ListViewAdvancedSetting extends StatelessWidget {
               onTap: () {
                 Get.toNamed(
                   EHRoutes.imageHide,
-                  id: isLayoutLarge ? 2 : null,
+                  id: detailNavigatorId,
                 );
               },
             ),
@@ -65,7 +65,7 @@ class ListViewAdvancedSetting extends StatelessWidget {
               onTap: () {
                 Get.toNamed(
                   EHRoutes.blockers,
-                  id: isLayoutLarge ? 2 : null,
+                  id: detailNavigatorId,
                 );
               },
             ),
@@ -108,7 +108,7 @@ class ListViewAdvancedSetting extends StatelessWidget {
                 onTap: () {
                   Get.toNamed(
                     EHRoutes.proxySetting,
-                    id: isLayoutLarge ? 2 : null,
+                    id: detailNavigatorId,
                   );
                 },
               );
@@ -181,7 +181,7 @@ class ListViewAdvancedSetting extends StatelessWidget {
               onTap: () {
                 Get.toNamed(
                   EHRoutes.logfile,
-                  id: isLayoutLarge ? 2 : null,
+                  id: detailNavigatorId,
                 );
               },
             ),

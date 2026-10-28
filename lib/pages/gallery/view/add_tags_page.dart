@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -24,114 +25,125 @@ class AddTagPage extends StatefulWidget {
 }
 
 class _AddTagPageState extends State<AddTagPage> {
-  final TagInfoController controller = Get.find(tag: pageCtrlTag);
+  late final String _tag;
+  late final TagInfoController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _tag = pageCtrlTagOf(context);
+    controller = Get.find(tag: _tag);
+  }
 
   @override
   void dispose() {
     super.dispose();
-    if (Get.isRegistered<TagInfoController>(tag: pageCtrlTag)) {
-      Get.delete<TagInfoController>(tag: pageCtrlTag);
+    if (Get.isRegistered<TagInfoController>(tag: _tag)) {
+      Get.delete<TagInfoController>(tag: _tag);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(
-          middle: Text(L10n.of(context).add_tags),
-          previousPageTitle: L10n.of(context).cancel,
-          trailing: CupertinoButton(
-            minSize: 40,
-            padding: const EdgeInsets.only(left: 4),
-            child: Text(L10n.of(context).done),
-            onPressed: () {
-              Get.back(
-                result: controller.tags,
-                id: isLayoutLarge ? 2 : null,
-              );
-            },
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              CupertinoTextField(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
-                maxLines: null,
-                // keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.done,
-                decoration: BoxDecoration(
-                  color: ehTheme.textFieldBackgroundColor,
-                  borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                ),
-                controller: controller.tagsTextController,
-                focusNode: controller.focusNode,
-                placeholder: L10n.of(context).add_tag_placeholder,
-                placeholderStyle: const TextStyle(
-                  fontWeight: FontWeight.w400,
-                  color: CupertinoColors.placeholderText,
-                  height: 1.25,
-                ),
-                // clearButtonMode: OverlayVisibilityMode.editing,
-                suffix: GetBuilder<TagInfoController>(
-                  id: GetIds.TAG_ADD_CLEAR_BTN,
-                  tag: pageCtrlTag,
-                  builder: (TagInfoController controller) {
-                    return controller.showClearButton
-                        ? GestureDetector(
-                            onTap: controller.clear,
-                            child: FaIcon(FontAwesomeIcons.circleXmark,
-                              size: 16.0,
-                              color: CupertinoDynamicColor.resolve(
-                                  _kClearButtonColor, context),
-                            ).paddingSymmetric(horizontal: 9),
-                          )
-                        : const SizedBox();
-                  },
-                ),
-                autofocus: true,
-                style: const TextStyle(height: 1.25),
-                // strutStyle:
-                //     const StrutStyle(forceStrutHeight: true, height: 1.2),
-                onEditingComplete: () {
+    return RetainedDraft(
+        controller: controller.tagsTextController,
+        child: CupertinoPageScaffold(
+            navigationBar: CupertinoNavigationBar(
+              middle: Text(L10n.of(context).add_tags),
+              previousPageTitle: L10n.of(context).cancel,
+              trailing: CupertinoButton(
+                minSize: 40,
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(L10n.of(context).done),
+                onPressed: () {
                   Get.back(
                     result: controller.tags,
-                    id: isLayoutLarge ? 2 : null,
+                    id: detailNavigatorId,
                   );
                 },
-              ).paddingSymmetric(vertical: 8, horizontal: 10),
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    // 触摸收起键盘
-                    FocusScope.of(context).requestFocus(FocusNode());
-                  },
-                  onPanDown: (DragDownDetails details) {
-                    // 滑动收起键盘
-                    FocusScope.of(context).requestFocus(FocusNode());
-                  },
-                  child: const CustomScrollView(
-                    slivers: [
-                      QryTagSliverList(),
-                    ],
-                  ),
-                ),
               ),
-            ],
-          ),
-        ));
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  CupertinoTextField(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14.0, vertical: 6.0),
+                    maxLines: null,
+                    // keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.done,
+                    decoration: BoxDecoration(
+                      color: ehTheme.textFieldBackgroundColor,
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(8.0)),
+                    ),
+                    controller: controller.tagsTextController,
+                    focusNode: controller.focusNode,
+                    placeholder: L10n.of(context).add_tag_placeholder,
+                    placeholderStyle: const TextStyle(
+                      fontWeight: FontWeight.w400,
+                      color: CupertinoColors.placeholderText,
+                      height: 1.25,
+                    ),
+                    // clearButtonMode: OverlayVisibilityMode.editing,
+                    suffix: GetBuilder<TagInfoController>(
+                      id: GetIds.TAG_ADD_CLEAR_BTN,
+                      tag: _tag,
+                      builder: (TagInfoController controller) {
+                        return controller.showClearButton
+                            ? GestureDetector(
+                                onTap: controller.clear,
+                                child: FaIcon(
+                                  FontAwesomeIcons.circleXmark,
+                                  size: 16.0,
+                                  color: CupertinoDynamicColor.resolve(
+                                      _kClearButtonColor, context),
+                                ).paddingSymmetric(horizontal: 9),
+                              )
+                            : const SizedBox();
+                      },
+                    ),
+                    autofocus: true,
+                    style: const TextStyle(height: 1.25),
+                    // strutStyle:
+                    //     const StrutStyle(forceStrutHeight: true, height: 1.2),
+                    onEditingComplete: () {
+                      Get.back(
+                        result: controller.tags,
+                        id: detailNavigatorId,
+                      );
+                    },
+                  ).paddingSymmetric(vertical: 8, horizontal: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        // 触摸收起键盘
+                        FocusScope.of(context).requestFocus(FocusNode());
+                      },
+                      onPanDown: (DragDownDetails details) {
+                        // 滑动收起键盘
+                        FocusScope.of(context).requestFocus(FocusNode());
+                      },
+                      child: const CustomScrollView(
+                        slivers: [
+                          QryTagSliverList(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )));
   }
 }
 
 class QryTagSliverList extends StatelessWidget {
   const QryTagSliverList({super.key});
 
-  TagInfoController get controller => Get.find(tag: pageCtrlTag);
-
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<TagInfoController>(tag: pageCtrlTagOf(context));
     final textStyle = TextStyle(
       fontSize: 16,
       color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),

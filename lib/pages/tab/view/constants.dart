@@ -5,6 +5,12 @@ const double kNavBarLargeTitleHeightExtension = 52.0;
 
 const double kTopTabbarHeight = kMinInteractiveDimensionCupertino;
 
+double topTabbarHeightFor(BuildContext context) {
+  final scaledTextHeight = MediaQuery.textScalerOf(context).scale(14) * 1.2;
+  final desiredHeight = scaledTextHeight + 16;
+  return desiredHeight > kTopTabbarHeight ? desiredHeight : kTopTabbarHeight;
+}
+
 const double kHeaderMaxHeight =
     kMinInteractiveDimensionCupertino + kTopTabbarHeight - 2.0;
 

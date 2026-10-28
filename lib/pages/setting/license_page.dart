@@ -66,7 +66,7 @@ class LicensePage extends StatelessWidget {
                     currentPackage: licenseData.packages[index],
                     packageLicenses: packageLicenses,
                   ),
-                  id: isLayoutLarge ? 2 : null,
+                  id: detailNavigatorId,
                 );
               },
             );

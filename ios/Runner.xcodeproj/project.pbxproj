@@ -18,6 +18,8 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		A75F47A70F20CE09F24B900B /* LiquidGlassPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3301E49B3D264BF110A738CE /* LiquidGlassPlugin.swift */; };
+		D0A1D2E3F4A5B6C700000001 /* DuoAdaptivePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A1D2E3F4A5B6C700000002 /* DuoAdaptivePlugin.swift */; };
+		D0A1D2E3F4A5B6C700000003 /* NativeNavigationShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A1D2E3F4A5B6C700000004 /* NativeNavigationShell.swift */; };
 		BA373B2925D2A11600C042FA /* SecurityBlurEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA373B2825D2A11600C042FA /* SecurityBlurEffect.swift */; };
 		BAABB8182AF59F36009C2DA3 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BA1D4D5225B3FC6E00264936 /* libsqlite3.tbd */; };
 		BAABB81B2AF5A144009C2DA3 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = BAABB81D2AF5A144009C2DA3 /* InfoPlist.strings */; };
@@ -97,6 +99,8 @@
 		BAFF47DF2AFC7152008C4C27 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/MainInterface.strings; sourceTree = "<group>"; };
 		BAFF47E02AFC7152008C4C27 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D54F227E16543C455729F0B3 /* HapticsPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HapticsPlugin.swift; sourceTree = "<group>"; };
+		D0A1D2E3F4A5B6C700000002 /* DuoAdaptivePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DuoAdaptivePlugin.swift; sourceTree = "<group>"; };
+		D0A1D2E3F4A5B6C700000004 /* NativeNavigationShell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NativeNavigationShell.swift; sourceTree = "<group>"; };
 		F41D3CF3E08C82EC7233BE93 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -167,6 +171,8 @@
 				D54F227E16543C455729F0B3 /* HapticsPlugin.swift */,
 				448D1F32CE0B739E2D09223F /* LiquidGlassViews.swift */,
 				3301E49B3D264BF110A738CE /* LiquidGlassPlugin.swift */,
+				D0A1D2E3F4A5B6C700000002 /* DuoAdaptivePlugin.swift */,
+				D0A1D2E3F4A5B6C700000004 /* NativeNavigationShell.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -397,6 +403,8 @@
 				36BD69AF93B43BC825A96022 /* HapticsPlugin.swift in Sources */,
 				E949856F3923E96AFA508C2F /* LiquidGlassViews.swift in Sources */,
 				A75F47A70F20CE09F24B900B /* LiquidGlassPlugin.swift in Sources */,
+				D0A1D2E3F4A5B6C700000001 /* DuoAdaptivePlugin.swift in Sources */,
+				D0A1D2E3F4A5B6C700000003 /* NativeNavigationShell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

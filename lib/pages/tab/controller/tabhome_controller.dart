@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
@@ -16,7 +15,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
 import '../../../common/service/layout_service.dart';
-import '../../../route/first_observer.dart';
 import '../comm.dart';
 import '../view/setting_page.dart';
 
@@ -66,19 +64,20 @@ class TabPages {
   Map<String, Widget> get tabIcons => iconDatas
       .map((key, value) => MapEntry(key, FaIcon(value, size: kIconSize)));
 
-  BuildContext get _context => Get.find<TabHomeController>().tContext;
+  Map<String, String> get tabTitles => titlesOf(
+      Get.key.currentContext ?? Get.find<TabHomeController>().tContext);
 
-  Map<String, String> get tabTitles => <String, String>{
-        EHRoutes.popular: L10n.of(_context).tab_popular,
-        EHRoutes.watched: L10n.of(_context).tab_watched,
-        EHRoutes.gallery: L10n.of(_context).tab_gallery,
-        EHRoutes.favorite: L10n.of(_context).tab_favorite,
-        EHRoutes.toplist: L10n.of(_context).tab_toplist,
-        EHRoutes.history: L10n.of(_context).tab_history,
-        EHRoutes.download: L10n.of(_context).tab_download,
-        EHRoutes.setting: L10n.of(_context).tab_setting,
-        EHRoutes.customList: L10n.of(_context).tab_gallery,
-        EHRoutes.favoriteTabbar: L10n.of(_context).tab_favorite,
+  Map<String, String> titlesOf(BuildContext context) => <String, String>{
+        EHRoutes.popular: L10n.of(context).tab_popular,
+        EHRoutes.watched: L10n.of(context).tab_watched,
+        EHRoutes.gallery: L10n.of(context).tab_gallery,
+        EHRoutes.favorite: L10n.of(context).tab_favorite,
+        EHRoutes.toplist: L10n.of(context).tab_toplist,
+        EHRoutes.history: L10n.of(context).tab_history,
+        EHRoutes.download: L10n.of(context).tab_download,
+        EHRoutes.setting: L10n.of(context).tab_setting,
+        EHRoutes.customList: L10n.of(context).tab_gallery,
+        EHRoutes.favoriteTabbar: L10n.of(context).tab_favorite,
       };
 }
 
@@ -114,8 +113,22 @@ class TabHomeController extends GetxController {
 
   DateTime? lastPressedAt; //上次点击时间
 
-  int currentIndex = 0;
+  String _selectedRoute = EHRoutes.gallery;
 
+  int get currentIndex => _showTabs.indexOf(currRoute);
+  set currentIndex(int index) {
+    final tabs = _showTabs;
+    final route = tabs[index.clamp(0, tabs.length - 1)];
+    if (_selectedRoute != route) {
+      _selectedRoute = route;
+      _syncNavigationSelection();
+      selectionRevision.value++;
+    }
+  }
+
+  // Route identity can change without a numeric index change after safe mode
+  // or tab configuration changes.
+  final ValueNotifier<int> selectionRevision = ValueNotifier(0);
   Timer? _reselectionTimer;
   String? _reselectionRoute;
   EhTabController? _reselectionController;
@@ -127,7 +140,13 @@ class TabHomeController extends GetxController {
 
   final CupertinoTabController tabController = CupertinoTabController();
 
-  String get currRoute => _showTabs[currentIndex];
+  String get currRoute =>
+      _showTabs.contains(_selectedRoute) ? _selectedRoute : _showTabs.first;
+
+  // Safe mode never exposes routes retained by the normal browsing session.
+  String get navigationIdentity => isSafeMode ? 'safe:$currRoute' : currRoute;
+
+  List<String> get visibleTabRoutes => List<String>.unmodifiable(_showTabs);
 
   // 需要显示的tab
   List<String> get _showTabs => isSafeMode
@@ -204,6 +223,7 @@ class TabHomeController extends GetxController {
     // logger.d('${tabNameList}');
 
     ever(tabMap, (Map<String, bool> map) {
+      _syncSelectedTab();
       updateItemList(map, tabNameList);
 
       Global.profile = Global.profile.copyWith(tabConfig: _tabConfig.oN);
@@ -214,6 +234,7 @@ class TabHomeController extends GetxController {
     });
 
     ever(tabNameList, (List<String> nameList) {
+      _syncSelectedTab();
       updateItemList(tabMap, nameList);
 
       Global.profile = Global.profile.copyWith(tabConfig: _tabConfig.oN);
@@ -222,6 +243,19 @@ class TabHomeController extends GetxController {
       logger.d(
           '${_tabConfig.tabItemList.map((e) => '${e.name}:${e.enable}').toList().join('\n')} ');
     });
+  }
+
+  void _syncSelectedTab() {
+    resetTabTapSequence();
+    _selectedRoute = currRoute;
+    tabController.index = currentIndex;
+    _syncNavigationSelection();
+  }
+
+  void _syncNavigationSelection() {
+    if (Get.isRegistered<LayoutServices>() && usesAdaptiveNavigation) {
+      Get.find<LayoutServices>().tabNavigation.select(navigationIdentity);
+    }
   }
 
   void updateItemList(Map<String, bool> map, List<String> nameList) {
@@ -250,6 +284,22 @@ class TabHomeController extends GetxController {
               tabPages.liquidGlassFallbackSymbols[route] ?? 'circle.fill',
         );
       }).toList();
+
+  List<NativeNavigationAction> get nativeHiddenTabActions {
+    if (isSafeMode) return const [];
+    return [
+      for (final route in tabNameList)
+        if (!(tabMap[route] ?? false))
+          NativeNavigationAction(
+            id: 'destination:$route',
+            title: tabPages.tabTitles[route] ?? route,
+            symbol: tabPages.liquidGlassFallbackSymbols[route],
+            onPressed: () async {
+              await Get.toNamed<void>(route, id: primaryNavigatorId);
+            },
+          ),
+    ];
+  }
 
   late BuildContext tContext;
 
@@ -304,6 +354,10 @@ class TabHomeController extends GetxController {
     if (index != currentIndex) {
       resetTabTapSequence();
       currentIndex = index;
+      _syncNavigationSelection();
+      if (tabController.index != index) {
+        tabController.index = index;
+      }
       return;
     }
 
@@ -364,10 +418,23 @@ class TabHomeController extends GetxController {
     tabController.index = currentIndex;
   }
 
+  /// Selects a logical tab requested by the optional native UIKit shell.
+  ///
+  /// The shell never owns the Flutter route stack; it only mirrors this
+  /// controller's selection.
+  Future<void> selectRoute(String route) async {
+    final index = _showTabs.indexOf(route);
+    if (index < 0 || index >= _showTabs.length) {
+      return;
+    }
+    await onTap(index, useLiquidGlass: _useLiquidGlass ?? false);
+  }
+
   @override
   void onClose() {
     resetTabTapSequence();
     tabController.dispose();
+    selectionRevision.dispose();
     super.onClose();
   }
 
@@ -386,33 +453,24 @@ class TabHomeController extends GetxController {
   }
 
   Future<bool> onWillPop() async {
-    if (!isLayoutLarge) {
-      return await doubleClickBack();
+    return await popLogicalRoute() ? false : await doubleClickBack();
+  }
+
+  Future<bool> popLogicalRoute() async {
+    final primaryOnTop = usesAdaptiveNavigation &&
+        !(Get.find<LayoutServices>().tabNavigation.selected?.detailOnTop ??
+            false);
+    final order = primaryOnTop
+        ? <int?>[primaryNavigatorId, detailNavigatorId]
+        : <int?>[detailNavigatorId, primaryNavigatorId];
+    for (final id in order) {
+      if (id == null) continue;
+      final navigator = Get.nestedKey(id)?.currentState;
+      if (navigator != null && navigator.canPop()) {
+        return navigator.maybePop();
+      }
     }
-
-    logger.t(
-        'history first ${FirstNavigatorObserver().history.map((e) => e.settings.name).join(', ')} ');
-
-    logger.t(
-        'history second ${SecondNavigatorObserver().history.map((e) => e.settings.name).join(', ')} ');
-
-    logger.t(
-        '${FirstNavigatorObserver().history.length} ${SecondNavigatorObserver().history.length} ');
-
-    final history = SecondNavigatorObserver().history;
-    final prevSecondRoute = history[max(0, history.length - 2)].settings.name;
-    logger.t('prevSecondRoute $prevSecondRoute');
-
-    if (SecondNavigatorObserver().history.length > 1 &&
-        prevSecondRoute != EHRoutes.root) {
-      Get.back(id: 2);
-      return false;
-    } else if (FirstNavigatorObserver().history.length > 1) {
-      Get.back(id: 1);
-      return false;
-    } else {
-      return await doubleClickBack();
-    }
+    return false;
   }
 
   Future<void> onPopInvoked(bool didPop) async {

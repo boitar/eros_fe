@@ -79,7 +79,7 @@ class LayoutSettingList extends StatelessWidget {
           onTap: () {
             Get.toNamed(
               EHRoutes.pageSetting,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             );
           },
         ),
@@ -97,7 +97,7 @@ class LayoutSettingList extends StatelessWidget {
               onTap: () {
                 Get.toNamed(
                   EHRoutes.tagTranslate,
-                  id: isLayoutLarge ? 2 : null,
+                  id: detailNavigatorId,
                 );
               },
             ),
@@ -312,7 +312,7 @@ class LayoutSettingList extends StatelessWidget {
           onTap: () {
             Get.toNamed(
               EHRoutes.itemWidthSetting,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             );
           },
         ),
@@ -357,7 +357,7 @@ class LayoutSettingList extends StatelessWidget {
           onTap: () {
             Get.toNamed(
               EHRoutes.avatarSetting,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             );
           },
         ),

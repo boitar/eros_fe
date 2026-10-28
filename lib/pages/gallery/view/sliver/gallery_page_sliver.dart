@@ -27,32 +27,41 @@ class GallerySliverPage extends StatefulWidget {
 
 class _GallerySliverPageState extends State<GallerySliverPage> {
   late final GalleryPageController _controller;
-  final _tag = pageCtrlTag;
+  late final String _tag;
+  ScrollController? _pageScrollController;
 
   GalleryPageState get pageState => _controller.gState;
 
   @override
   void initState() {
     super.initState();
-    logger.t('initState pageCtrlTag:$pageCtrlTag');
+    _tag = pageCtrlTagOf(context);
+    Get.lazyPut<GalleryPageController>(
+      () => GalleryPageController(controllerTag: _tag),
+      tag: _tag,
+      fenix: true,
+    );
+    _controller = Get.find(tag: _tag);
     initPageController(tag: _tag);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // _controller = Get.put(GalleryPageController(), tag: _tag);
+    final next = PrimaryScrollController.of(context);
+    if (!identical(_pageScrollController, next)) {
+      _pageScrollController?.removeListener(_controller.scrollControllerLister);
+      _pageScrollController = next;
+      _controller.scrollController = next;
+      next.addListener(_controller.scrollControllerLister);
+    }
+  }
 
-    Get.lazyPut<GalleryPageController>(
-      () => GalleryPageController(),
-      tag: _tag,
-      fenix: true,
-    );
-    _controller = Get.find(tag: _tag);
-
-    _controller.scrollController = PrimaryScrollController.of(context);
-    _controller.scrollController
-        ?.addListener(_controller.scrollControllerLister);
+  @override
+  void dispose() {
+    _pageScrollController?.removeListener(_controller.scrollControllerLister);
+    deletePageController(tag: _tag);
+    super.dispose();
   }
 
   @override
@@ -162,7 +171,7 @@ class _GallerySliverPageState extends State<GallerySliverPage> {
             behavior: HitTestBehavior.opaque,
             onTap: () => Get.toNamed(
               EHRoutes.galleryComment,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             ),
             child: Row(
               children: [
@@ -185,7 +194,7 @@ class _GallerySliverPageState extends State<GallerySliverPage> {
                   behavior: HitTestBehavior.deferToChild,
                   onTap: () => Get.toNamed(
                     EHRoutes.galleryComment,
-                    id: isLayoutLarge ? 2 : null,
+                    id: detailNavigatorId,
                   ),
                   child: Obx(() {
                     return TopCommentEx(
@@ -248,7 +257,7 @@ class _GallerySliverPageState extends State<GallerySliverPage> {
           if (pageState.images.isNotEmpty) {
             Get.toNamed(
               EHRoutes.galleryAllThumbnails,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             );
           }
         },
@@ -273,7 +282,7 @@ class _GallerySliverPageState extends State<GallerySliverPage> {
       padding: const EdgeInsetsDirectional.only(end: 10),
       largeTitle: GetBuilder<GalleryPageController>(
         id: GetIds.PAGE_VIEW_HEADER,
-        tag: pageCtrlTag,
+        tag: _tag,
         builder: (logic) {
           return SelectableText(
             logic.gState.subTitle,
@@ -298,7 +307,7 @@ class _GallerySliverPageState extends State<GallerySliverPage> {
             duration: 300.milliseconds,
             child: GetBuilder<GalleryPageController>(
               id: GetIds.PAGE_VIEW_HEADER,
-              tag: pageCtrlTag,
+              tag: _tag,
               builder: (logic) {
                 return NavigationBarImage(
                   imageUrl: logic.gState.galleryProvider?.imgUrl ?? '',

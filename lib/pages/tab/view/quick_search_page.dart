@@ -253,7 +253,7 @@ class _QuickSearchListTile extends GetView<QuickSearchController> {
           if (autoSearch) {
             Get.back<String>(
               result: text,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             );
           }
         },

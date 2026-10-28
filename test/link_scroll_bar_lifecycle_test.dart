@@ -13,24 +13,14 @@ void main() {
       );
 
   Future<void> show(WidgetTester tester, List<Widget> children) async {
-    final initialErrors = <FlutterErrorDetails>[];
-    final errorHandler = FlutterError.onError;
-    try {
-      FlutterError.onError = initialErrors.add;
-      await tester.pumpWidget(CupertinoApp(
-        home: Column(
-            children: children
-                .map((child) => SizedBox(
-                    key: child.key, width: 400, height: 50, child: child))
-                .toList()),
-      ));
-    } finally {
-      FlutterError.onError = errorHandler;
-    }
-    // The inherited rail measures its width in the first layout notification.
-    for (final error in initialErrors) {
-      expect(error.exceptionAsString(), contains('A RenderFlex overflowed'));
-    }
+    await tester.pumpWidget(CupertinoApp(
+      home: Column(
+          children: children
+              .map((child) => SizedBox(
+                  key: child.key, width: 400, height: 50, child: child))
+              .toList()),
+    ));
+    expect(tester.takeException(), isNull);
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
   }
@@ -83,5 +73,49 @@ void main() {
     expect(second.selected, isTrue);
     await show(tester, []);
     controller.dispose();
+  });
+
+  testWidgets('first frame and 20 resizes never overflow the group rail',
+      (tester) async {
+    final controller = LinkScrollBarController();
+    final width = ValueNotifier(320.0);
+    addTearDown(controller.dispose);
+    addTearDown(width.dispose);
+    await tester.pumpWidget(CupertinoApp(
+      home: ValueListenableBuilder(
+        valueListenable: width,
+        builder: (context, value, _) => Center(
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(value == 466 ? 1.6 : 1)),
+            child: SizedBox(
+              width: value,
+              height: 60,
+              child: LinkScrollBar(
+                controller: controller,
+                initIndex: 0,
+                items: List.generate(
+                    10, (i) => LinkTabItem(title: 'Long group title $i')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    expect(tester.takeException(), isNull);
+    for (var cycle = 0; cycle < 20; cycle++) {
+      for (final size in [320.0, 466.0, 720.0]) {
+        width.value = size;
+        await tester.pumpAndSettle();
+        controller.scrollToItem(9);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final item = tester
+            .widgetList<InnerLinkTabItem>(find.byType(InnerLinkTabItem))
+            .last;
+        expect(item.selected, isTrue);
+      }
+    }
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

@@ -1,5 +1,9 @@
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/pages/tab/view/download_page.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/liquid_glass_rail.dart';
+import 'package:eros_fe/widget/scroll_edge_effect.dart';
+import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -138,6 +142,62 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getRect(find.byKey(const ValueKey('task-0-6'))), before);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('native shell download uses the shared rail and soft edge',
+      (tester) async {
+    const size = Size(393, 852);
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final pages = PageController();
+    addTearDown(pages.dispose);
+    var selected = <int>[];
+    await tester.pumpWidget(CupertinoApp(
+      home: MediaQuery(
+        data: const MediaQueryData(
+          size: size,
+          padding: EdgeInsets.only(top: 59, bottom: 34),
+          viewPadding: EdgeInsets.only(top: 59, bottom: 34),
+          disableAnimations: true,
+        ),
+        child: DownloadNativeScaffold(
+          rail: SegmentedRail(
+            compact: true,
+            selectedIndex: 0,
+            pageController: pages,
+            items: [
+              LiquidGlassRailCategory(
+                  title: 'Gallery', onTap: () => selected.add(0)),
+              LiquidGlassRailCategory(
+                  title: 'Archive', onTap: () => selected.add(1)),
+            ],
+          ),
+          child: PageView.builder(
+            controller: pages,
+            itemCount: 2,
+            itemBuilder: (_, page) => _TaskList(page: page),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final header = tester.getRect(find.byType(NativeTopTabHeader));
+    expect(header.top, 0);
+    expect(header.height, 59 + 44);
+    expect(find.byType(SoftScrollEdgeEffect), findsOneWidget);
+    final gallery = tester.getRect(
+        find.byKey(const ValueKey<String>('segmented-rail-segment-0')));
+    final archive = tester.getRect(
+        find.byKey(const ValueKey<String>('segmented-rail-segment-1')));
+    expect(gallery.width, archive.width);
+    expect(gallery.width, lessThanOrEqualTo(144));
+    expect((gallery.left + archive.right) / 2, closeTo(size.width / 2, 0.5));
+    final first = tester.getRect(find.byKey(const ValueKey('task-0-0')));
+    expect(first.top, greaterThanOrEqualTo(header.bottom));
+    await tester.tap(find.text('Archive'));
+    expect(selected, [1]);
   });
 }
 

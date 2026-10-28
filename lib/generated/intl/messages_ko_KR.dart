@@ -43,6 +43,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(version) => "Update to ${version}";
 
+  static String m5(seconds) => "${seconds}초";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
@@ -690,6 +692,24 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("WebDAV Account"),
         "webdav_max_connections":
             MessageLookupByLibrary.simpleMessage("WebDAV Max Connections"),
-        "welcome_text": MessageLookupByLibrary.simpleMessage("oh~ oh~ oh~~~")
+        "welcome_text": MessageLookupByLibrary.simpleMessage("oh~ oh~ oh~~~"),
+        "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("가로 모드 전체 화면"),
+        "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("세로 모드 전체 화면"),
+        "reader_fill_footer": MessageLookupByLibrary.simpleMessage("해당 방향으로 읽을 때 상태 표시줄을 숨기고 이미지를 안전 영역을 무시하여 화면 가득 표시합니다"),
+        "reader_page_layout": MessageLookupByLibrary.simpleMessage("페이지 레이아웃"),
+        "reader_surface_tabletop": MessageLookupByLibrary.simpleMessage("테이블톱"),
+        "reader_surface_standard": MessageLookupByLibrary.simpleMessage("표준"),
+        "reader_single_page": MessageLookupByLibrary.simpleMessage("단일 페이지"),
+        "reader_double_odd_left": MessageLookupByLibrary.simpleMessage("두 페이지 (홀수 왼쪽)"),
+        "reader_double_even_left": MessageLookupByLibrary.simpleMessage("두 페이지 (짝수 왼쪽)"),
+        "reader_auto_read": MessageLookupByLibrary.simpleMessage("자동 넘김"),
+        "reader_auto_read_interval": MessageLookupByLibrary.simpleMessage("넘김 간격"),
+        "reader_interval_seconds": m5,
+        "reader_custom_interval": MessageLookupByLibrary.simpleMessage("사용자 지정…"),
+        "full_title": MessageLookupByLibrary.simpleMessage("전체 제목"),
+        "group_management": MessageLookupByLibrary.simpleMessage("그룹 관리"),
+        "choose_favcat": MessageLookupByLibrary.simpleMessage("즐겨찾기 폴더 선택"),
+        "back_to_top": MessageLookupByLibrary.simpleMessage("맨 위로"),
+        "ranking_period": MessageLookupByLibrary.simpleMessage("순위 기간")
       };
 }

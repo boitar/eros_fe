@@ -22,12 +22,11 @@ class GalleryHeader extends StatelessWidget {
   final GalleryProvider initGalleryProvider;
   final Object? tabTag;
 
-  final _controller = Get.find<GalleryPageController>(tag: pageCtrlTag);
-
-  GalleryPageState get _pageState => _controller.gState;
-
   @override
   Widget build(BuildContext context) {
+    final _controller =
+        Get.find<GalleryPageController>(tag: pageCtrlTagOf(context));
+    final _pageState = _controller.gState;
     final TextStyle _hearTextStyle = TextStyle(
       fontSize: 13,
       color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
@@ -38,7 +37,7 @@ class GalleryHeader extends StatelessWidget {
       child: Column(
         children: <Widget>[
           Container(
-            height: kHeaderHeight,
+            height: galleryHeaderHeightFor(context),
             child: Row(
               children: <Widget>[
                 // 封面
@@ -56,7 +55,7 @@ class GalleryHeader extends StatelessWidget {
                   child: GetBuilder<GalleryPageController>(
                     assignId: true,
                     id: GetIds.PAGE_VIEW_HEADER,
-                    tag: pageCtrlTag,
+                    tag: pageCtrlTagOf(context),
                     builder: (logic) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +126,7 @@ class _GalleryInfoBarState extends State<GalleryInfoBar> {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<GalleryPageController>(
-        tag: pageCtrlTag,
+        tag: pageCtrlTagOf(context),
         id: GetIds.PAGE_VIEW_HEADER,
         builder: (GalleryPageController controller) {
           final GalleryPageState _pageState = controller.gState;
@@ -136,7 +135,7 @@ class _GalleryInfoBarState extends State<GalleryInfoBar> {
             onTap: () {
               Get.toNamed(
                 EHRoutes.galleryInfo,
-                id: isLayoutLarge ? 2 : null,
+                id: detailNavigatorId,
               );
             },
             onTapDown: (_) {
@@ -200,7 +199,8 @@ class _GalleryInfoBarState extends State<GalleryInfoBar> {
                     ),
                     Row(
                       children: [
-                        FaIcon(FontAwesomeIcons.language,
+                        FaIcon(
+                          FontAwesomeIcons.language,
                           color: CupertinoDynamicColor.resolve(
                               CupertinoColors.secondaryLabel, context),
                           size: 13,
@@ -210,7 +210,8 @@ class _GalleryInfoBarState extends State<GalleryInfoBar> {
                           style: widget._hearTextStyle,
                         ),
                         const Spacer(),
-                        FaIcon(FontAwesomeIcons.images,
+                        FaIcon(
+                          FontAwesomeIcons.images,
                           size: 13,
                           color: CupertinoDynamicColor.resolve(
                               CupertinoColors.secondaryLabel, context),
@@ -231,13 +232,14 @@ class _GalleryInfoBarState extends State<GalleryInfoBar> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         // const Text('❤️', style: TextStyle(fontSize: 13)),
-                        const FaIcon(FontAwesomeIcons.solidHeart,
+                        const FaIcon(
+                          FontAwesomeIcons.solidHeart,
                           color: CupertinoColors.systemRed,
                           size: 13,
                         ),
                         GetBuilder(
                             // init: GalleryPageController(),
-                            tag: pageCtrlTag,
+                            tag: pageCtrlTagOf(context),
                             id: GetIds.PAGE_VIEW_HEADER,
                             builder: (GalleryPageController controller) {
                               return Padding(

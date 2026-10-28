@@ -1,5 +1,7 @@
 library eros_fe;
 
+export 'adaptive/adaptive_environment.dart';
+export 'adaptive/native_navigation.dart';
 export 'common/enum.dart';
 export 'common/global.dart';
 export 'const/const.dart';

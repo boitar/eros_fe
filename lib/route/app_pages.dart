@@ -144,22 +144,22 @@ class AppPages {
     ),
     GetPage(
       name: EHRoutes.galleryComment,
-      page: () => const CommentPage(),
+      page: () => const ControllerTagRoute(child: CommentPage()),
     ),
     GetPage(
       name: EHRoutes.galleryAllThumbnails,
-      page: () => const AllThumbnailsPage(),
+      page: () => const ControllerTagRoute(child: AllThumbnailsPage()),
     ),
     GetPage(
       name: EHRoutes.addTag,
-      page: () => const AddTagPage(),
+      page: () => const ControllerTagRoute(child: AddTagPage()),
       binding: BindingsBuilder(
         () => Get.lazyPut(() => TagInfoController(), tag: pageCtrlTag),
       ),
     ),
     GetPage(
       name: EHRoutes.galleryInfo,
-      page: () => const GalleryInfoPage(),
+      page: () => const ControllerTagRoute(child: GalleryInfoPage()),
     ),
     GetPage(
       name: EHRoutes.pageSetting,
@@ -198,9 +198,7 @@ class AppPages {
     GetPage(
       name: EHRoutes.galleryViewExt,
       page: () => const ViewPage(),
-      binding: BindingsBuilder<dynamic>(() {
-        Get.lazyPut(() => ViewExtController(), fenix: true);
-      }),
+      binding: BindingsBuilder<dynamic>(bindViewExtController),
       // opaque: kDebugMode,
       opaque: GetPlatform.isIOS,
       showCupertinoParallax: false,
@@ -208,12 +206,12 @@ class AppPages {
     GetPage(
       name: EHRoutes.galleryPage,
       // page: () => const GallerySliverPage(),
-      page: () => const GalleryPage(),
+      page: () => const ControllerTagRoute(child: GalleryPage()),
       preventDuplicates: false,
     ),
     GetPage(
       name: EHRoutes.search,
-      page: () => const GallerySearchPage(),
+      page: () => const ControllerTagRoute(child: GallerySearchPage()),
       // page: () => const SearchPage(),
       // page: () => const EmptyPage(),
       preventDuplicates: false,
@@ -533,4 +531,19 @@ class AppPages {
             );
         }
       };
+}
+
+/// Registers the reader controller for the incoming route. `fenix` must stay
+/// off: it would let an exit-animation rebuild revive a deleted controller
+/// with no route arguments, and the next reader session would reuse that
+/// empty instance.
+void bindViewExtController() {
+  // Created on the reader route's first lookup, from the arguments of that
+  // route; route-scoped management retires it when the route is disposed, and
+  // ViewPage.dispose deletes it by identity as a fallback.
+  Get.lazyPut(() => ViewExtController(
+        repository: Get.arguments is ViewRepository
+            ? Get.arguments as ViewRepository
+            : null,
+      ));
 }

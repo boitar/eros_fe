@@ -90,7 +90,7 @@ class EhMyTagsPage extends GetView<EhMyTagsController> {
                             }
                             Get.toNamed(
                               EHRoutes.userTags,
-                              id: isLayoutLarge ? 2 : null,
+                              id: detailNavigatorId,
                             );
                           },
                         );

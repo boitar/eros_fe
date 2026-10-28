@@ -43,6 +43,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(version) => "可更新到 ${version}";
 
+  static String m5(seconds) => "${seconds} 秒";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("上傳頭像"),
@@ -595,6 +597,24 @@ class MessageLookup extends MessageLookupByLibrary {
         "webdav_max_connections":
             MessageLookupByLibrary.simpleMessage("WebDAV 最大連接數"),
         "welcome_text":
-            MessageLookupByLibrary.simpleMessage("尻槍並非壞事~上癮絕非好事~過度縱慾者腎虧~~")
+            MessageLookupByLibrary.simpleMessage("尻槍並非壞事~上癮絕非好事~過度縱慾者腎虧~~"),
+        "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("橫屏鋪滿全螢幕"),
+        "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("直屏鋪滿全螢幕"),
+        "reader_fill_footer": MessageLookupByLibrary.simpleMessage("開啟後該方向閱讀時隱藏狀態列等系統符號，圖片忽略安全區鋪滿整個螢幕"),
+        "reader_page_layout": MessageLookupByLibrary.simpleMessage("頁面版式"),
+        "reader_surface_tabletop": MessageLookupByLibrary.simpleMessage("桌面模式"),
+        "reader_surface_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "reader_single_page": MessageLookupByLibrary.simpleMessage("單頁"),
+        "reader_double_odd_left": MessageLookupByLibrary.simpleMessage("雙頁（奇數頁在左）"),
+        "reader_double_even_left": MessageLookupByLibrary.simpleMessage("雙頁（偶數頁在左）"),
+        "reader_auto_read": MessageLookupByLibrary.simpleMessage("自動翻頁"),
+        "reader_auto_read_interval": MessageLookupByLibrary.simpleMessage("翻頁間隔"),
+        "reader_interval_seconds": m5,
+        "reader_custom_interval": MessageLookupByLibrary.simpleMessage("自訂…"),
+        "full_title": MessageLookupByLibrary.simpleMessage("完整標題"),
+        "group_management": MessageLookupByLibrary.simpleMessage("分組管理"),
+        "choose_favcat": MessageLookupByLibrary.simpleMessage("選擇收藏夾"),
+        "back_to_top": MessageLookupByLibrary.simpleMessage("回到頂部"),
+        "ranking_period": MessageLookupByLibrary.simpleMessage("排行週期")
       };
 }

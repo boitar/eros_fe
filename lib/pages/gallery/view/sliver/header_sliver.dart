@@ -25,25 +25,23 @@ class GalleryHeaderSliver extends StatelessWidget {
   final GalleryProvider initGalleryProvider;
   final Object? tabTag;
 
-  GalleryPageController get _controller =>
-      Get.find<GalleryPageController>(tag: pageCtrlTag);
-
-  GalleryPageState get _pageState => _controller.gState;
-
   @override
   Widget build(BuildContext context) {
+    final _controller =
+        Get.find<GalleryPageController>(tag: pageCtrlTagOf(context));
+    final _pageState = _controller.gState;
     return SliverPadding(
       padding: const EdgeInsets.all(kPadding),
       sliver: MultiSliver(
         children: [
           SizedBox(
-            height: kHeaderHeight,
+            height: galleryHeaderHeightFor(context),
             child: Row(
               children: [
                 HeroMode(
                   enabled: _pageState.hideNavigationBtn || isLayoutLarge,
                   child: CoverImage(
-                    imageUrl: initGalleryProvider.imgUrl!,
+                    imageUrl: initGalleryProvider.imgUrl,
                     heroTag: '${initGalleryProvider.gid}_cover_$tabTag',
                   ),
                 ),
@@ -51,7 +49,7 @@ class GalleryHeaderSliver extends StatelessWidget {
                   child: GetBuilder<GalleryPageController>(
                       assignId: true,
                       id: GetIds.PAGE_VIEW_HEADER,
-                      tag: pageCtrlTag,
+                      tag: pageCtrlTagOf(context),
                       builder: (logic) {
                         final _pageState = logic.gState;
                         return Column(
@@ -60,6 +58,7 @@ class GalleryHeaderSliver extends StatelessWidget {
                             // 标题
                             GalleryTitle(
                               title: _pageState.mainTitle,
+                              alternateTitle: _pageState.subTitle,
                             ),
                             // 上传用户
                             GalleryUploader(
@@ -138,6 +137,10 @@ class GalleryInfoBarSliver extends StatelessWidget {
 
     final postTimeTextSize = getTextSize('0000-00-00 00:00', _hearTextStyle);
     final _maxCrossAxisExtent = max(160.0, postTimeTextSize.width + 60.0);
+    final infoRowHeight = max(
+      20.0,
+      MediaQuery.textScalerOf(context).scale(13) * 1.2 + 2,
+    );
     logger.t('_maxCrossAxisExtent $_maxCrossAxisExtent  $postTimeTextSize');
 
     Widget infoWidget() => Container(
@@ -155,14 +158,14 @@ class GalleryInfoBarSliver extends StatelessWidget {
                     ),
                     margin: const EdgeInsets.only(right: 6),
                     width: 4,
-                    height: 48,
+                    height: max(48, infoRowHeight * 2),
                   ),
                 Expanded(
                   child: GridView(
                     physics: const NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(0),
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      mainAxisExtent: 20,
+                      mainAxisExtent: infoRowHeight,
                       maxCrossAxisExtent: _maxCrossAxisExtent,
                     ),
                     shrinkWrap: true,
@@ -186,7 +189,7 @@ class GalleryInfoBarSliver extends StatelessWidget {
       onTap: () {
         Get.toNamed(
           EHRoutes.galleryInfo,
-          id: isLayoutLarge ? 2 : null,
+          id: detailNavigatorId,
         );
       },
       child: Container(
@@ -197,7 +200,7 @@ class GalleryInfoBarSliver extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4),
         child: GetBuilder<GalleryPageController>(
           assignId: true,
-          tag: pageCtrlTag,
+          tag: pageCtrlTagOf(context),
           id: GetIds.PAGE_VIEW_HEADER,
           builder: (logic) {
             final GalleryPageState _pageState = logic.gState;
@@ -268,7 +271,7 @@ class _InfoWidget extends StatelessWidget {
     );
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       children: [
         FaIcon(
           icon,
@@ -276,9 +279,13 @@ class _InfoWidget extends StatelessWidget {
               CupertinoColors.secondaryLabel, context),
           size: 12,
         ).paddingOnly(right: paddingRight),
-        Text(
-          text ?? '...',
-          style: _hearTextStyle,
+        Expanded(
+          child: Text(
+            text ?? '...',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _hearTextStyle,
+          ),
         ),
       ],
     );
@@ -304,7 +311,8 @@ class GalleryInfoView extends StatelessWidget {
     Widget languageWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(FontAwesomeIcons.language,
+            FaIcon(
+              FontAwesomeIcons.language,
               color: CupertinoDynamicColor.resolve(
                   CupertinoColors.secondaryLabel, context),
               size: 12,
@@ -319,7 +327,8 @@ class GalleryInfoView extends StatelessWidget {
     Widget imageCountWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(FontAwesomeIcons.solidImages,
+            FaIcon(
+              FontAwesomeIcons.solidImages,
               size: 12,
               color: CupertinoDynamicColor.resolve(
                   CupertinoColors.secondaryLabel, context),
@@ -333,7 +342,8 @@ class GalleryInfoView extends StatelessWidget {
     Widget fileSizeWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(FontAwesomeIcons.fileArrowDown,
+            FaIcon(
+              FontAwesomeIcons.fileArrowDown,
               size: 12,
               color: CupertinoDynamicColor.resolve(
                   CupertinoColors.secondaryLabel, context),
@@ -347,7 +357,8 @@ class GalleryInfoView extends StatelessWidget {
     Widget favCountWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(FontAwesomeIcons.solidHeart,
+            FaIcon(
+              FontAwesomeIcons.solidHeart,
               // color: CupertinoColors.systemRed,
               color: CupertinoDynamicColor.resolve(
                   CupertinoColors.secondaryLabel, context),
@@ -360,7 +371,8 @@ class GalleryInfoView extends StatelessWidget {
     Widget rateCountWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(FontAwesomeIcons.solidStar,
+            FaIcon(
+              FontAwesomeIcons.solidStar,
               color: CupertinoDynamicColor.resolve(
                   CupertinoColors.secondaryLabel, context),
               size: 12,
@@ -372,7 +384,8 @@ class GalleryInfoView extends StatelessWidget {
     Widget potTimeWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(FontAwesomeIcons.solidClock,
+            FaIcon(
+              FontAwesomeIcons.solidClock,
               size: 12,
               color: CupertinoDynamicColor.resolve(
                   CupertinoColors.secondaryLabel, context),
@@ -422,7 +435,7 @@ class GalleryInfoView extends StatelessWidget {
       onTap: () {
         Get.toNamed(
           EHRoutes.galleryInfo,
-          id: isLayoutLarge ? 2 : null,
+          id: detailNavigatorId,
         );
       },
       child: infoWidget(),

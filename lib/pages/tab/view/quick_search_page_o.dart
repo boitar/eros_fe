@@ -190,7 +190,7 @@ class QuickSearchListPage extends StatelessWidget {
                         if (autoSearch) {
                           Get.back<String>(
                             result: _datas[position],
-                            id: isLayoutLarge ? 2 : null,
+                            id: detailNavigatorId,
                           );
                         }
                       },

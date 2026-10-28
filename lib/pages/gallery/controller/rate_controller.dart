@@ -10,7 +10,9 @@ import 'gallery_page_controller.dart';
 import 'gallery_page_state.dart';
 
 class RateController extends GetxController {
-  RateController();
+  RateController({String? galleryTag}) : galleryTag = galleryTag ?? pageCtrlTag;
+
+  final String galleryTag;
 
   late double rate;
 
@@ -21,7 +23,7 @@ class RateController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    pageController = Get.find(tag: pageCtrlTag);
+    pageController = Get.find(tag: galleryTag);
     rate = _item?.rating ?? 0;
   }
 

@@ -129,8 +129,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
 
             late final String parentPath;
             if (dirPath.contains('/document/')) {
-              parentPath = dirPath.substring(
-                  0, dirPath.lastIndexOf('/document/'));
+              parentPath =
+                  dirPath.substring(0, dirPath.lastIndexOf('/document/'));
             } else {
               parentPath = dirPath.substring(0, dirPath.lastIndexOf('%2F'));
             }
@@ -213,7 +213,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         color: ehTheme.itemBackgroundColor,
         borderRadius: BorderRadius.circular(kCardRadius),
       ),
-      height: 120 * math.max(1, MediaQuery.textScalerOf(context).scale(13) / 13),
+      height:
+          120 * math.max(1, MediaQuery.textScalerOf(context).scale(13) / 13),
       child: Row(
         children: [
           // 封面
@@ -592,7 +593,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
   }
 }
 
-class DownloadItemCoverImage extends StatelessWidget {
+class DownloadItemCoverImage extends StatefulWidget {
   const DownloadItemCoverImage({
     this.url,
     this.filePath,
@@ -605,11 +606,68 @@ class DownloadItemCoverImage extends StatelessWidget {
   final bool cardType;
 
   @override
+  State<DownloadItemCoverImage> createState() => _DownloadItemCoverImageState();
+}
+
+class _DownloadItemCoverImageState extends State<DownloadItemCoverImage> {
+  Future<bool>? _localCoverAvailable;
+  bool _localCoverMissing = false;
+
+  String? get filePath => widget.filePath;
+  String? get url => widget.url;
+  bool get cardType => widget.cardType;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocalCover();
+  }
+
+  @override
+  void didUpdateWidget(DownloadItemCoverImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.filePath != filePath || _localCoverMissing) {
+      _checkLocalCover();
+    }
+  }
+
+  void _checkLocalCover() {
+    final path = filePath;
+    _localCoverMissing = false;
+    _localCoverAvailable = path == null || path.isEmpty || path.isContentUri
+        ? null
+        : _localFileExists(path);
+  }
+
+  Future<bool> _localFileExists(String path) async {
+    var available = false;
+    try {
+      available = await File(path).exists();
+    } on FileSystemException catch (error) {
+      logger.w('Cannot check downloaded cover: $error');
+    }
+    if (mounted && filePath == path) {
+      _localCoverMissing = !available;
+    }
+    return available;
+  }
+
+  Widget _buildFallback(BuildContext context) {
+    if (url != null && url!.isNotEmpty) {
+      return EhNetworkImage(
+        imageUrl: url!,
+        fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
+      );
+    }
+    return _buildCoverPlaceholder(context);
+  }
+
+  @override
   Widget build(BuildContext context) {
     logger.t('$filePath  $url');
 
     Widget image = () {
-      if (filePath != null) {
+      if (filePath != null && filePath!.isNotEmpty) {
         Widget? loadStateChanged(ExtendedImageState state) {
           if (state.extendedImageLoadState == LoadState.loading) {
             return Container(
@@ -621,13 +679,7 @@ class DownloadItemCoverImage extends StatelessWidget {
           }
           if (state.extendedImageLoadState == LoadState.failed) {
             logger.w('下载列表封面加载失败: $filePath');
-            if (url != null && url!.isNotEmpty) {
-              return EhNetworkImage(
-                imageUrl: url!,
-                fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
-              );
-            }
-            return _buildCoverPlaceholder(context);
+            return _buildFallback(context);
           }
           return null;
         }
@@ -636,7 +688,7 @@ class DownloadItemCoverImage extends StatelessWidget {
         final image = ((filePath?.isContentUri ?? false)
             ? ExtendedSafImageProvider(Uri.parse(filePath!))
             : ExtendedFileImageProvider(File(filePath!))) as ImageProvider;
-        return ExtendedImage(
+        final localImage = ExtendedImage(
           image: image,
           fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
           loadStateChanged: loadStateChanged,
@@ -646,14 +698,20 @@ class DownloadItemCoverImage extends StatelessWidget {
           // normal LRU cache so scrolling back does not show a spinner again.
           clearMemoryCacheWhenDispose: false,
         );
-      } else if (url != null) {
-        return EhNetworkImage(
-          imageUrl: url!,
-          fit: cardType ? BoxFit.cover : BoxFit.fitWidth,
+        if (_localCoverAvailable == null) return localImage;
+        // Missing files are normal for paused/recovered downloads. Do not
+        // create an image stream that can fail after its list item is disposed.
+        return FutureBuilder<bool>(
+          future: _localCoverAvailable,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return _buildCoverPlaceholder(context);
+            }
+            return snapshot.data == true ? localImage : _buildFallback(context);
+          },
         );
-      } else {
-        return _buildCoverPlaceholder(context);
       }
+      return _buildFallback(context);
     }();
 
     image = ClipRRect(
@@ -674,7 +732,7 @@ class DownloadItemCoverImage extends StatelessWidget {
                 //阴影
                 BoxShadow(
                   color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.systemGrey5, Get.context!),
+                      CupertinoColors.systemGrey5, context),
                   blurRadius: 3,
                 )
               ],

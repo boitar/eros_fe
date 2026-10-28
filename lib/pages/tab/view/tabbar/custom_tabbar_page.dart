@@ -1,5 +1,6 @@
 import 'package:blur/blur.dart';
 import 'package:english_words/english_words.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -8,10 +9,12 @@ import 'package:eros_fe/debug/offline_group_index.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_sublist_controller.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
+import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
+import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/cupertino.dart' hide CupertinoTabBar;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -74,7 +77,9 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
   }
 
   bool get _useLiquidGlass =>
-      _ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+      _ehSettingService.liquidGlass &&
+      LiquidGlassPlatform.isSupported &&
+      !NativeNavigationBridge.enabled.value;
 
   GlobalKey _firstCardKeyFor(String profileUuid) =>
       _firstCardKeys.putIfAbsent(profileUuid, () => GlobalKey());
@@ -139,13 +144,41 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
             _nestedScrollKey.currentState?.innerPositions ??
             const <ScrollPosition>[],
         firstCardTop: _currentFirstCardTop,
-        child: _buildPage(context),
+        child: Obx(() => NativeNavigationPage(
+              tabId: EHRoutes.gallery,
+              chrome: NativePageChrome(
+                title: L10n.of(context).tab_gallery,
+                actions: [
+                  ...offlineDuoRootNavigationActions(),
+                  ...Get.find<TabHomeController>().nativeHiddenTabActions,
+                  NativeNavigationAction(
+                    id: 'search',
+                    title: L10n.of(context).search,
+                    symbol: 'magnifyingglass',
+                    onPressed: NavigatorUtil.goSearchPage,
+                  ),
+                  if (controller.afterJump)
+                    NativeNavigationAction(
+                      id: 'top',
+                      title: L10n.of(context).back_to_top,
+                      symbol: 'arrow.up.circle',
+                      onPressed: controller.jumpToTop,
+                    ),
+                  NativeNavigationAction(
+                    id: 'jump',
+                    title: L10n.of(context).jump_or_seek,
+                    symbol: 'arrow.uturn.down.circle',
+                    onPressed: () => controller.showJumpDialog(context),
+                  ),
+                ],
+              ),
+              child: _buildPage(context),
+            )),
       );
 
   Widget _buildPage(BuildContext context) {
     return Obx(() {
-      final liquidGlass =
-          _ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+      final liquidGlass = _useLiquidGlass;
       final hideTopBarOnScroll = _ehSettingService.hideTopBarOnScroll;
 
       final Widget scrollView = buildNestedScrollView(
@@ -157,9 +190,9 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
       if (!liquidGlass) {
         return CupertinoPageScaffold(
           child: offlineGroupSelection(
-            uuid: controller.currProfileUuid,
-            index: controller.index,
-            child: SizeCacheWidget(child: scrollView)),
+              uuid: controller.currProfileUuid,
+              index: controller.index,
+              child: SizeCacheWidget(child: scrollView)),
         );
       }
 
@@ -187,13 +220,17 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
     final mediaQuery = MediaQuery.of(context);
     final layout = LiquidGlassTopLayout.fromMediaQuery(mediaQuery);
     final topInset = mediaQuery.viewPadding.top;
-    final headerMaxHeight = liquidGlass
-        ? layout.safeTop +
-            _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
-              MediaQuery.textScalerOf(context),
-              hasCategories: controller.profilesShow.isNotEmpty,
-            )
-        : topInset + kHeaderMaxHeight;
+    final native = NativeNavigationScope.isEnabled(context);
+    final topTabbarHeight = topTabbarHeightFor(context);
+    final headerMaxHeight = native
+        ? topInset + topTabbarHeight
+        : liquidGlass
+            ? layout.safeTop +
+                _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
+                  MediaQuery.textScalerOf(context),
+                  hasCategories: controller.profilesShow.isNotEmpty,
+                )
+            : topInset + kHeaderMaxHeight;
     final dockTopBar =
         liquidGlass && hideTopBarOnScroll && layout.canDockTopRail;
     if (liquidGlass) {
@@ -203,9 +240,14 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
         safeTop: layout.safeTop,
       );
     }
-    _headerScrollController.headerExtent = liquidGlass
-        ? headerMaxHeight
-        : headerMaxHeight - layout.collapsedHeaderHeight;
+    final nativeCollapsible = native && hideTopBarOnScroll;
+    _headerScrollController.headerExtent = native
+        ? nativeCollapsible
+            ? topTabbarHeight
+            : 0
+        : liquidGlass
+            ? headerMaxHeight
+            : headerMaxHeight - layout.collapsedHeaderHeight;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _topState.setBarFadeEnabled(dockTopBar);
@@ -231,25 +273,37 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
               floating: !liquidGlass,
               pinned: true,
               delegate: FooSliverPersistentHeaderDelegate(
-                builder: (context, offset, _) => liquidGlass
-                    ? const SizedBox.expand()
-                    : Obx(
-                        () => _buildSliverTopBar(
-                          context,
-                          offset,
-                          headerMaxHeight,
-                          layout: layout,
-                          dockTopBar: dockTopBar,
-                          liquidGlass: false,
-                        ),
-                      ),
-                minHeight: liquidGlass
-                    ? 0.0
-                    : hideTopBarOnScroll
-                        ? dockTopBar
-                            ? layout.collapsedHeaderHeight
-                            : topInset + kTopTabbarHeight
-                        : headerMaxHeight,
+                builder: (context, offset, _) => native
+                    ? NativeTopTabHeader(
+                        topInset: topInset,
+                        railHeight: topTabbarHeight,
+                        child: CustomTabBar(controller: controller, opacity: 1),
+                      )
+                    : liquidGlass
+                        ? const SizedBox.expand()
+                        : Obx(
+                            () => _buildSliverTopBar(
+                              context,
+                              offset,
+                              headerMaxHeight,
+                              layout: layout,
+                              dockTopBar: dockTopBar,
+                              liquidGlass: false,
+                            ),
+                          ),
+                minHeight: native
+                    ? NativeTopTabHeader.minExtentFor(
+                        topInset: topInset,
+                        railHeight: topTabbarHeight,
+                        collapsible: nativeCollapsible,
+                      )
+                    : liquidGlass
+                        ? 0.0
+                        : hideTopBarOnScroll
+                            ? dockTopBar
+                                ? layout.collapsedHeaderHeight
+                                : topInset + kTopTabbarHeight
+                            : headerMaxHeight,
                 maxHeight: headerMaxHeight,
               ),
             ),
@@ -259,7 +313,7 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
       body: buildSubPages(liquidGlass, hideTopBarOnScroll),
     );
     if (!liquidGlass) {
-      return scrollView;
+      return NativeBarAutoHide(enabled: nativeCollapsible, child: scrollView);
     }
     return Stack(
       fit: StackFit.expand,
@@ -451,7 +505,7 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
         icon: CupertinoIcons.time,
         label: '浏览历史',
         onPressed: () {
-          Get.toNamed(EHRoutes.history, id: isLayoutLarge ? 1 : null);
+          Get.toNamed(EHRoutes.history, id: primaryNavigatorId);
         },
       ),
       trailing: <LiquidGlassRailAction>[
@@ -473,36 +527,8 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
             (profile) => LiquidGlassRailCategory(
               id: profile.uuid,
               title: profile.name,
-              onLongPress: () => showCupertinoModalPopup<void>(
-                context: context,
-                builder: (sheetContext) => EhActionSheet(
-                  title: Text(profile.name),
-                  actions: [
-                    CupertinoActionSheetAction(
-                      onPressed: () {
-                        Navigator.of(sheetContext).pop();
-                        controller.toEditPage(uuid: profile.uuid);
-                      },
-                      child: const Text('编辑分组'),
-                    ),
-                    CupertinoActionSheetAction(
-                      isDestructiveAction: true,
-                      onPressed: () {
-                        Navigator.of(sheetContext).pop();
-                        controller.showDeleteGroupModalBottomSheet(
-                          profile.uuid,
-                          context,
-                        );
-                      },
-                      child: const Text('删除分组'),
-                    ),
-                  ],
-                  cancelButton: CupertinoActionSheetAction(
-                    onPressed: () => Navigator.of(sheetContext).pop(),
-                    child: Text(L10n.of(context).cancel),
-                  ),
-                ),
-              ),
+              onLongPress: () =>
+                  showGroupActionSheet(context, controller, profile),
               onTap: () async {
                 final index = controller.profilesShow.indexOf(profile);
                 await _selectProfile(index);
@@ -683,6 +709,42 @@ class CustomTabBar extends StatelessWidget {
       ehTheme.isDarkMode;
       final useLiquidGlass =
           ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+      final topTabbarHeight = topTabbarHeightFor(context);
+      if (LiquidGlassPlatform.isSupported &&
+          (useLiquidGlass || NativeNavigationScope.isEnabled(context))) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: context.mediaQueryPadding.left,
+            right: context.mediaQueryPadding.right,
+          ),
+          child: SizedBox(
+            height: topTabbarHeight,
+            child: SegmentedRail(
+              opacity: opacity,
+              selectedIndex: controller.index,
+              pageController: controller.pageController,
+              followSystemTransparency:
+                  ehSettingService.liquidGlassFollowSystemTransparency,
+              accessory: LiquidGlassRailAction(
+                icon: CupertinoIcons.line_horizontal_3,
+                label: L10n.of(context).group_management,
+                onPressed: controller.pressedBar,
+              ),
+              items: [
+                for (final profile in controller.profilesShow)
+                  LiquidGlassRailCategory(
+                    id: profile.uuid,
+                    title: profile.name,
+                    onTap: () => controller
+                        .selectPage(controller.profilesShow.indexOf(profile)),
+                    onLongPress: () =>
+                        showGroupActionSheet(context, controller, profile),
+                  ),
+              ],
+            ),
+          ),
+        );
+      }
 
       final Widget bar = Stack(
         // fit: StackFit.expand,
@@ -693,7 +755,7 @@ class CustomTabBar extends StatelessWidget {
               blur: 10,
               blurColor: barBackgroundColor,
               colorOpacity: kEnableImpeller ? 1.0 : opacity,
-              child: Container(height: kTopTabbarHeight),
+              child: Container(height: topTabbarHeight),
             ),
           Container(
             decoration: useLiquidGlass
@@ -704,7 +766,7 @@ class CustomTabBar extends StatelessWidget {
               right: context.mediaQueryPadding.right,
             ),
             child: SizedBox(
-              height: kTopTabbarHeight,
+              height: topTabbarHeight,
               child: Row(
                 children: [
                   Expanded(
@@ -807,18 +869,20 @@ class CustomTabBar extends StatelessWidget {
                               );
                             },
                           ),
-                        offlineGroupControl('manage', CupertinoButton(
-                          minSize: 40,
-                          padding: const EdgeInsets.all(0),
-                          onPressed: controller.pressedBar,
-                          child: Semantics(
-                            label: '分组管理',
-                            child: const FaIcon(
-                              FontAwesomeIcons.bars,
-                              size: 20,
-                            ),
-                          ),
-                        )),
+                        offlineGroupControl(
+                            'manage',
+                            CupertinoButton(
+                              minSize: 40,
+                              padding: const EdgeInsets.all(0),
+                              onPressed: controller.pressedBar,
+                              child: Semantics(
+                                label: '分组管理',
+                                child: const FaIcon(
+                                  FontAwesomeIcons.bars,
+                                  size: 20,
+                                ),
+                              ),
+                            )),
                       ],
                     ),
                   ),
@@ -831,6 +895,44 @@ class CustomTabBar extends StatelessWidget {
       return useLiquidGlass ? Opacity(opacity: opacity, child: bar) : bar;
     });
   }
+}
+
+/// Long-pressing a group offers editing and deletion.
+void showGroupActionSheet(
+  BuildContext context,
+  CustomTabbarController controller,
+  CustomProfile profile,
+) {
+  showCupertinoModalPopup<void>(
+    context: context,
+    builder: (sheetContext) => EhActionSheet(
+      title: Text(profile.name),
+      actions: [
+        CupertinoActionSheetAction(
+          onPressed: () {
+            Navigator.of(sheetContext).pop();
+            controller.toEditPage(uuid: profile.uuid);
+          },
+          child: const Text('编辑分组'),
+        ),
+        CupertinoActionSheetAction(
+          isDestructiveAction: true,
+          onPressed: () {
+            Navigator.of(sheetContext).pop();
+            controller.showDeleteGroupModalBottomSheet(
+              profile.uuid,
+              context,
+            );
+          },
+          child: const Text('删除分组'),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        onPressed: () => Navigator.of(sheetContext).pop(),
+        child: Text(L10n.of(context).cancel),
+      ),
+    ),
+  );
 }
 
 class EnglishWordList extends StatefulWidget {

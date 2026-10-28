@@ -2,6 +2,7 @@ import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/comm.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
@@ -29,16 +30,21 @@ class GalleryPage extends StatefulWidget {
 
 class _GalleryPageState extends State<GalleryPage> {
   late final GalleryPageController _controller;
-  final _tag = pageCtrlTag;
+  late final String _tag;
+  ScrollController? _pageScrollController;
 
   GalleryPageState get pageState => _controller.gState;
+  bool get _isRoot => ModalRoute.of(context)?.isFirst == true;
+
+  void _goHome() => Get.offNamed<void>(EHRoutes.home);
 
   @override
   void initState() {
     super.initState();
+    _tag = pageCtrlTagOf(context);
     // _controller = Get.put(GalleryPageController(), tag: _tag);
     Get.lazyPut<GalleryPageController>(
-      () => GalleryPageController(),
+      () => GalleryPageController(controllerTag: _tag),
       tag: _tag,
       fenix: true,
     );
@@ -50,9 +56,32 @@ class _GalleryPageState extends State<GalleryPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    _controller.scrollController = PrimaryScrollController.of(context);
-    _controller.scrollController
-        ?.addListener(_controller.scrollControllerLister);
+    final next = PrimaryScrollController.of(context);
+    if (!identical(_pageScrollController, next)) {
+      _pageScrollController?.removeListener(_controller.scrollControllerLister);
+      _pageScrollController = next;
+      _controller.scrollController = next;
+      next.addListener(_controller.scrollControllerLister);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageScrollController?.removeListener(_controller.scrollControllerLister);
+    deletePageController(tag: _tag);
+    super.dispose();
+  }
+
+  Future<void> _shareGallery() async {
+    final provider = pageState.galleryProvider;
+    final gid = provider?.gid;
+    final token = provider?.token;
+    if (gid == null || gid.isEmpty || token == null || token.isEmpty) {
+      showToast('Gallery link is unavailable');
+      return;
+    }
+    await ShareService.shareText('${Api.getBaseUrl()}/g/$gid/$token',
+        context: context);
   }
 
   @override
@@ -61,7 +90,15 @@ class _GalleryPageState extends State<GalleryPage> {
       cacheExtent: 1000,
       controller: GetPlatform.isDesktop ? _controller.scrollController : null,
       slivers: [
-        GalleryNavigationBar(controller: _controller),
+        if (NativeNavigationScope.isEnabled(context))
+          // UIKit owns the bar, but this custom sliver view still owns its
+          // scroll insets. Consume the live top inset once, including after
+          // the Duo bar moves from the side to the top.
+          SliverToBoxAdapter(
+            child: SizedBox(height: MediaQuery.paddingOf(context).top),
+          )
+        else
+          GalleryNavigationBar(controller: _controller),
         EhCupertinoSliverRefreshControl(onRefresh: _controller.handOnRefresh),
         GalleryHeadTile(controller: _controller),
         GalleryBody(controller: _controller),
@@ -76,7 +113,7 @@ class _GalleryPageState extends State<GalleryPage> {
           if (pageState.images.isNotEmpty) {
             Get.toNamed(
               EHRoutes.galleryAllThumbnails,
-              id: isLayoutLarge ? 2 : null,
+              id: detailNavigatorId,
             );
           }
         },
@@ -88,7 +125,53 @@ class _GalleryPageState extends State<GalleryPage> {
       ),
     );
 
-    return CupertinoPageScaffold(child: body);
+    return GetBuilder<GalleryPageController>(
+      tag: _tag,
+      id: GetIds.PAGE_VIEW_HEADER,
+      builder: (logic) => Obx(() => NativeNavigationPage(
+            chrome: NativePageChrome(
+              title: pageState.mainTitle,
+              // The header shows the full, selectable title.
+              titleVisible: false,
+              actions: [
+                if (_isRoot)
+                  NativeNavigationAction(
+                    id: 'home',
+                    title: L10n.of(context).tab_gallery,
+                    symbol: 'house',
+                    onPressed: _goHome,
+                  ),
+                NativeNavigationAction(
+                  id: 'read',
+                  title: L10n.of(context).read,
+                  symbol: 'book',
+                  enabled: pageState.enableRead,
+                  onPressed: () => NavigatorUtil.goGalleryViewPage(
+                      pageState.lastIndex, pageState.gid,
+                      galleryTag: _tag),
+                ),
+                NativeNavigationAction(
+                  id: 'addTag',
+                  title: L10n.of(context).add_tags,
+                  symbol: 'tag',
+                  onPressed: _controller.addTag,
+                ),
+                NativeNavigationAction(
+                  id: 'share',
+                  title: L10n.of(context).share,
+                  symbol: 'square.and.arrow.up',
+                  onPressed: _shareGallery,
+                ),
+              ],
+            ),
+            child: offlineDuoRouteProbe(
+              id: 'gallery',
+              label: () => 'gallery=${pageState.gid};tag=$_tag;'
+                  'scope=${pageCtrlTagOf(context)};root=$_isRoot',
+              child: CupertinoPageScaffold(child: body),
+            ),
+          )),
+    );
   }
 }
 
@@ -105,11 +188,21 @@ class GalleryNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final GalleryProvider? provider = pageState.galleryProvider;
     return CupertinoSliverNavigationBar(
+      leading: ModalRoute.of(context)?.isFirst == true
+          ? CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => Get.offNamed<void>(EHRoutes.home),
+              child: Semantics(
+                label: L10n.of(context).tab_gallery,
+                child: const Icon(CupertinoIcons.house),
+              ),
+            )
+          : null,
       padding: const EdgeInsetsDirectional.only(end: 10),
       largeTitle: SelectionArea(
         child: GetBuilder<GalleryPageController>(
           id: GetIds.PAGE_VIEW_HEADER,
-          tag: pageCtrlTag,
+          tag: controller.controllerTag,
           builder: (logic) {
             return Text(
               logic.gState.subTitle,
@@ -136,7 +229,7 @@ class GalleryNavigationBar extends StatelessWidget {
             curve: Curves.ease,
             child: GetBuilder<GalleryPageController>(
               id: GetIds.PAGE_VIEW_HEADER,
-              tag: pageCtrlTag,
+              tag: controller.controllerTag,
               builder: (logic) {
                 return NavigationBarImage(
                   imageUrl: logic.gState.galleryProvider?.imgUrl ?? '',
@@ -397,7 +490,7 @@ class CommentTile extends StatelessWidget {
       GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () =>
-            Get.toNamed(EHRoutes.galleryComment, id: isLayoutLarge ? 2 : null),
+            Get.toNamed(EHRoutes.galleryComment, id: detailNavigatorId),
         child: Row(
           children: [
             MiniTitle(title: L10n.of(context).gallery_comments),
@@ -415,7 +508,7 @@ class CommentTile extends StatelessWidget {
           behavior: HitTestBehavior.deferToChild,
           onTap: () => Get.toNamed(
             EHRoutes.galleryComment,
-            id: isLayoutLarge ? 2 : null,
+            id: detailNavigatorId,
           ),
           child: Obx(() {
             return TopCommentEx(
@@ -454,7 +547,7 @@ class ThumbTile extends StatelessWidget {
             onTap: () {
               Get.toNamed(
                 EHRoutes.galleryAllThumbnails,
-                id: isLayoutLarge ? 2 : null,
+                id: detailNavigatorId,
               );
             },
             child: Row(

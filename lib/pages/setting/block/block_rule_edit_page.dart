@@ -40,7 +40,7 @@ class BlockRuleEditPage extends GetView<BlockController> {
                   FocusScope.of(context).requestFocus(FocusNode());
                   logger.d('blockRule ${blockRule.toJson()}');
                   Get.back<BlockRule>(
-                    id: isLayoutLarge ? 2 : null,
+                    id: detailNavigatorId,
                     result: blockRule,
                   );
                 },

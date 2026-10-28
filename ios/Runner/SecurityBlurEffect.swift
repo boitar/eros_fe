@@ -1,44 +1,32 @@
-//
-//  SecurityBlurEffect.swift
-//  Runner
-//
-//  Created by 三夜 on 2021/2/9.
-//
-
-import Foundation
 import UIKit
 
-
 public class SecurityBlurEffect {
-     class func addBlurEffect(){
-        
-        let blurEffect = UIBlurEffect(style: UIBlurEffect.Style.regular)
-        let blurEffectView = UIVisualEffectView(effect: blurEffect)
-        
-        blurEffectView.tag = 19999
-        blurEffectView.alpha = 0.99
-        blurEffectView.frame = UIApplication.shared.keyWindow!.bounds
-    
-        UIApplication.shared.keyWindow!.backgroundColor = UIColor.clear
-    
-        UIApplication.shared.keyWindow!.addSubview(blurEffectView)
-        
-        
+    private static let blurTag = 19999
+
+    private static var appWindows: [UIWindow] {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .filter { $0.rootViewController != nil && $0.windowLevel == .normal }
     }
-    
-    
-    class func removeBlurEffect(){
-        
-        let subViews = UIApplication.shared.keyWindow!.subviews;
-        
-        for  view in subViews {
-            if view.tag == 19999 {
-                if  view is UIVisualEffectView {
-                    UIView.animate(withDuration: 0.3, animations: {
-                        view.removeFromSuperview()
-                    })
-                }
-            }
+
+    class func addBlurEffect() {
+        for window in appWindows where !window.isHidden {
+            guard window.viewWithTag(blurTag) == nil else { continue }
+            let blur = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+            blur.tag = blurTag
+            blur.alpha = 0.99
+            blur.frame = window.bounds
+            blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            window.addSubview(blur)
+        }
+    }
+
+    class func removeBlurEffect() {
+        for window in appWindows {
+            window.subviews
+                .filter { $0.tag == blurTag && $0 is UIVisualEffectView }
+                .forEach { $0.removeFromSuperview() }
         }
     }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:eros_fe/common/controller/cache_controller.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
@@ -32,9 +34,13 @@ typedef ImageCallback = GalleryImage Function(GalleryImage image);
 
 class GalleryPageController extends GetxController
     with StateMixin<GalleryProvider> {
-  GalleryPageController();
+  GalleryPageController({String? controllerTag})
+      : controllerTag = controllerTag ?? pageCtrlTag;
+
+  final String controllerTag;
 
   late final GalleryPageState gState;
+  StreamSubscription<GalleryCache?>? _readingProgressSubscription;
 
   // 滚动控制器
   ScrollController? scrollController;
@@ -52,9 +58,9 @@ class GalleryPageController extends GetxController
   void onInit() {
     super.onInit();
 
-    logger.t('GalleryPageController $pageCtrlTag onInit');
+    logger.t('GalleryPageController $controllerTag onInit');
 
-    final tag = pageCtrlTag;
+    final tag = controllerTag;
     logger.d('>>>> get GalleryRepository tag $tag');
     final galleryRepository = Get.find<GalleryRepository>(tag: tag);
     bool isStateFromCache = false;
@@ -96,7 +102,7 @@ class GalleryPageController extends GetxController
       _loadData();
 
       // 初始
-      _galleryCacheController
+      _readingProgressSubscription = _galleryCacheController
           .listenGalleryCache(gState.galleryProvider?.gid ?? '')
           .listen((_galleryCache) =>
               gState.lastIndex = _galleryCache?.lastIndex ?? 0);
@@ -112,8 +118,10 @@ class GalleryPageController extends GetxController
 
   @override
   void onClose() {
-    scrollController?.dispose();
-    logger.t('onClose GalleryPageController $pageCtrlTag');
+    _readingProgressSubscription?.cancel();
+    // The route's PrimaryScrollController owns this controller.
+    scrollController = null;
+    logger.t('onClose GalleryPageController $controllerTag');
     super.onClose();
     // _galleryCacheController.addGalleryPageState(gState);
   }
@@ -222,7 +230,7 @@ class GalleryPageController extends GetxController
 
           // 收藏控制器状态更新
           final GalleryFavController _favController =
-              Get.find(tag: pageCtrlTag);
+              Get.find(tag: controllerTag);
           _favController.setFav(gState.galleryProvider?.favcat ?? '',
               gState.galleryProvider?.favTitle ?? '');
         }
@@ -391,7 +399,8 @@ class GalleryPageController extends GetxController
               ),
               onPressed: () {
                 Get.back();
-                NavigatorUtil.goGalleryViewPage(ser - 1, gState.gid);
+                NavigatorUtil.goGalleryViewPage(ser - 1, gState.gid,
+                    galleryTag: controllerTag);
               },
             ),
           ],
@@ -404,7 +413,7 @@ class GalleryPageController extends GetxController
   Future<void> _reloadData() async {
     gState.isRefresh = true;
     try {
-      Get.find<TorrentController>(tag: pageCtrlTag).isRefresh = true;
+      Get.find<TorrentController>(tag: controllerTag).isRefresh = true;
     } catch (e) {
       logger.e('$e');
     }
@@ -495,8 +504,8 @@ class GalleryPageController extends GetxController
 
     gState.currentImagePage++;
     addAllImages(_moreGalleryImageList);
-    if (Get.isRegistered<AllThumbnailsPageController>()) {
-      Get.find<AllThumbnailsPageController>().update();
+    if (Get.isRegistered<AllThumbnailsPageController>(tag: controllerTag)) {
+      Get.find<AllThumbnailsPageController>(tag: controllerTag).update();
     }
   }
 
@@ -528,8 +537,8 @@ class GalleryPageController extends GetxController
     if (_moreImageList != null) {
       addAllImages(_moreImageList);
     }
-    if (Get.isRegistered<AllThumbnailsPageController>()) {
-      Get.find<AllThumbnailsPageController>().update();
+    if (Get.isRegistered<AllThumbnailsPageController>(tag: controllerTag)) {
+      Get.find<AllThumbnailsPageController>(tag: controllerTag).update();
     }
     gState.mapLoadImagesForSer.remove(page);
   }
@@ -699,12 +708,13 @@ class GalleryPageController extends GetxController
   Future<void> addTag() async {
     final dynamic _rult = await Get.toNamed(
       EHRoutes.addTag,
-      id: isLayoutLarge ? 2 : null,
+      id: detailNavigatorId,
     );
     if (_rult != null && _rult is String) {
       logger.t('addTag $_rult');
-      final TagInfoController? controller =
-          Get.put(TagInfoController(), tag: pageCtrlTag);
+      final TagInfoController? controller = Get.put(
+          TagInfoController(galleryTag: controllerTag),
+          tag: controllerTag);
       controller?.tagVoteUp(_rult);
     }
   }

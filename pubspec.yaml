@@ -261,6 +261,8 @@ flutter_intl:
 flutter:
   uses-material-design: true
 
+  shaders:
+    - shaders/soft_edge_blur.frag
 
   assets:
     - assets/

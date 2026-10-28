@@ -19,14 +19,19 @@ class ReadSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).read_setting),
+    return NativeNavigationPage(
+      chrome: NativePageChrome(title: L10n.of(context).read_setting),
+      child: CupertinoPageScaffold(
+        backgroundColor: CupertinoColors.systemGroupedBackground,
+        navigationBar: NativeNavigationScope.isEnabled(context)
+            ? null
+            : CupertinoNavigationBar(
+                middle: Text(L10n.of(context).read_setting),
+              ),
+        child: CustomScrollView(slivers: [
+          SliverSafeArea(sliver: ReadSettingList()),
+        ]),
       ),
-      child: CustomScrollView(slivers: [
-        SliverSafeArea(sliver: ReadSettingList()),
-      ]),
     );
   }
 }
@@ -113,6 +118,32 @@ class ReadSettingList extends StatelessWidget {
               return CupertinoSwitch(
                 value: ehSettingService.viewFullscreen,
                 onChanged: onViewFullscreenChanged,
+              );
+            }),
+          ),
+        ],
+      ),
+
+      SliverCupertinoListSection.listInsetGrouped(
+        footer: Text(L10n.of(context).reader_fill_footer),
+        children: [
+          EhCupertinoListTile(
+            title: Text(L10n.of(context).reader_fill_landscape),
+            trailing: Obx(() {
+              return CupertinoSwitch(
+                value: ehSettingService.readerFillLandscape,
+                onChanged: (bool val) =>
+                    ehSettingService.readerFillLandscape = val,
+              );
+            }),
+          ),
+          EhCupertinoListTile(
+            title: Text(L10n.of(context).reader_fill_portrait),
+            trailing: Obx(() {
+              return CupertinoSwitch(
+                value: ehSettingService.readerFillPortrait,
+                onChanged: (bool val) =>
+                    ehSettingService.readerFillPortrait = val,
               );
             }),
           ),
@@ -341,10 +372,12 @@ Widget _buildDoublePageItem(BuildContext context) {
   final String title = L10n.of(context).double_page_model;
   final EhSettingService ehSettingService = Get.find();
 
-  final Map<ViewColumnMode, String> actionMap = <ViewColumnMode, String>{
-    ViewColumnMode.single: L10n.of(context).off,
-    ViewColumnMode.oddLeft: L10n.of(context).model('A'),
-    ViewColumnMode.evenLeft: L10n.of(context).model('B'),
+  final Map<ReaderColumnPreference, String> actionMap =
+      <ReaderColumnPreference, String>{
+    ReaderColumnPreference.automatic: '${L10n.of(context).automatic}（宽屏双页）',
+    ReaderColumnPreference.single: L10n.of(context).off,
+    ReaderColumnPreference.oddLeft: L10n.of(context).model('A'),
+    ReaderColumnPreference.evenLeft: L10n.of(context).model('B'),
   };
 
   Widget getTempPage(String ser) {
@@ -398,9 +431,12 @@ Widget _buildDoublePageItem(BuildContext context) {
     getTempPage('5'),
   ];
 
-  final Map<ViewColumnMode, Widget> actionWidgetMap = <ViewColumnMode, Widget>{
-    ViewColumnMode.single: Text(L10n.of(context).off),
-    ViewColumnMode.oddLeft: Column(
+  final Map<ReaderColumnPreference, Widget> actionWidgetMap =
+      <ReaderColumnPreference, Widget>{
+    ReaderColumnPreference.automatic:
+        Text('${L10n.of(context).automatic}（宽屏双页）'),
+    ReaderColumnPreference.single: Text(L10n.of(context).off),
+    ReaderColumnPreference.oddLeft: Column(
       children: [
         Text(
           L10n.of(context).model('A'),
@@ -419,7 +455,7 @@ Widget _buildDoublePageItem(BuildContext context) {
         ),
       ],
     ),
-    ViewColumnMode.evenLeft: Column(
+    ReaderColumnPreference.evenLeft: Column(
       children: [
         Text(
           L10n.of(context).model('B'),
@@ -441,12 +477,19 @@ Widget _buildDoublePageItem(BuildContext context) {
   };
 
   return Obx(() {
-    return SelectorCupertinoListTile<ViewColumnMode>(
+    return SelectorCupertinoListTile<ReaderColumnPreference>(
       title: title,
       actionMap: actionMap,
       actionWidgetMap: actionWidgetMap,
-      initVal: ehSettingService.viewColumnMode,
-      onValueChanged: (val) => ehSettingService.viewColumnMode = val,
+      initVal: ehSettingService.readerColumnPreference,
+      onValueChanged: (val) {
+        if (Get.isRegistered<ViewExtController>()) {
+          final reader = Get.find<ViewExtController>();
+          reader.setColumnPreference(val);
+        } else {
+          ehSettingService.setReaderColumnPreference(val);
+        }
+      },
     );
   });
 }

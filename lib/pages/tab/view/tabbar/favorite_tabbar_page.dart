@@ -1,4 +1,5 @@
 import 'package:blur/blur.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -10,6 +11,7 @@ import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
+import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -75,7 +77,9 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
   }
 
   bool get _useLiquidGlass =>
-      _ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+      _ehSettingService.liquidGlass &&
+      LiquidGlassPlatform.isSupported &&
+      !NativeNavigationBridge.enabled.value;
 
   GlobalKey _firstCardKeyFor(String favId) =>
       _firstCardKeys.putIfAbsent(favId, () => GlobalKey());
@@ -146,22 +150,61 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
             _nestedScrollKey.currentState?.innerPositions ??
             const <ScrollPosition>[],
         firstCardTop: _currentFirstCardTop,
-        child: _buildPage(context),
+        child: Obx(() => NativeNavigationPage(
+              tabId: EHRoutes.favorite,
+              chrome: NativePageChrome(
+                title: L10n.of(context).tab_favorite,
+                actions: [
+                  ...Get.find<TabHomeController>().nativeHiddenTabActions,
+                  NativeNavigationAction(
+                    id: 'search',
+                    title: L10n.of(context).search,
+                    symbol: 'magnifyingglass',
+                    onPressed: () => NavigatorUtil.goSearchPage(
+                        searchType: SearchType.favorite),
+                  ),
+                  NativeNavigationAction(
+                    id: 'order',
+                    title:
+                        '${L10n.of(context).favorites_order} (${controller.orderText})',
+                    symbol: 'arrow.down',
+                    onPressed: () => controller.setOrder(context),
+                  ),
+                  if (controller.afterJump)
+                    NativeNavigationAction(
+                      id: 'top',
+                      title: L10n.of(context).back_to_top,
+                      symbol: 'arrow.up.circle',
+                      onPressed: controller.jumpToTop,
+                    ),
+                  NativeNavigationAction(
+                    id: 'jump',
+                    title: L10n.of(context).jump_or_seek,
+                    symbol: 'arrow.uturn.down.circle',
+                    onPressed: () => controller.showJumpDialog(context),
+                  ),
+                ],
+              ),
+              child: _buildPage(context),
+            )),
       );
 
   Widget _buildPage(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final layout = LiquidGlassTopLayout.fromMediaQuery(mediaQuery);
+    final topTabbarHeight = topTabbarHeightFor(context);
     return Obx(() {
-      final liquidGlass =
-          _ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
-      final headerMaxHeight = liquidGlass
-          ? layout.safeTop +
-              _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
-                MediaQuery.textScalerOf(context),
-                hasCategories: controller.favcatList.isNotEmpty,
-              )
-          : mediaQuery.viewPadding.top + kHeaderMaxHeight;
+      final liquidGlass = _useLiquidGlass;
+      final native = NativeNavigationScope.isEnabled(context);
+      final headerMaxHeight = native
+          ? mediaQuery.viewPadding.top + topTabbarHeight
+          : liquidGlass
+              ? layout.safeTop +
+                  _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
+                    MediaQuery.textScalerOf(context),
+                    hasCategories: controller.favcatList.isNotEmpty,
+                  )
+              : mediaQuery.viewPadding.top + kHeaderMaxHeight;
       final hideTopBarOnScroll = _ehSettingService.hideTopBarOnScroll;
 
       final scrollView = buildNestedScrollView(
@@ -197,6 +240,18 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
     required bool dockTopBar,
     required bool liquidGlass,
   }) {
+    if (NativeNavigationScope.isEnabled(context)) {
+      return NativeTopTabHeader(
+        topInset: MediaQuery.viewPaddingOf(context).top,
+        railHeight: topTabbarHeightFor(context),
+        child: FavoriteTabBar(
+          pageController: pageController,
+          linkScrollBarController: linkScrollBarController,
+          controller: controller,
+          opacity: 1,
+        ),
+      );
+    }
     if (liquidGlass) {
       return LiquidGlassBarMotionBuilder(
         enabled: dockTopBar,
@@ -273,7 +328,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
         icon: CupertinoIcons.time,
         label: '浏览历史',
         onPressed: () {
-          Get.toNamed(EHRoutes.history, id: isLayoutLarge ? 1 : null);
+          Get.toNamed(EHRoutes.history, id: primaryNavigatorId);
         },
       ),
       trailing: <LiquidGlassRailAction>[
@@ -296,7 +351,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
                 onPressed: () async {
                   final result = await Get.toNamed(
                     EHRoutes.selFavorite,
-                    id: isLayoutLarge ? 1 : null,
+                    id: primaryNavigatorId,
                   );
                   if (result != null && result is Favcat) {
                     final index = controller.favcatList.indexWhere(
@@ -342,9 +397,16 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
         safeTop: layout.safeTop,
       );
     }
-    _headerScrollController.headerExtent = liquidGlass
-        ? headerMaxHeight
-        : headerMaxHeight - layout.collapsedHeaderHeight;
+    final native = NativeNavigationScope.isEnabled(context);
+    final nativeCollapsible = native && hideTopBarOnScroll;
+    final topTabbarHeight = topTabbarHeightFor(context);
+    _headerScrollController.headerExtent = native
+        ? nativeCollapsible
+            ? topTabbarHeight
+            : 0
+        : liquidGlass
+            ? headerMaxHeight
+            : headerMaxHeight - layout.collapsedHeaderHeight;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _topState.setBarFadeEnabled(dockTopBar);
@@ -381,13 +443,19 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
                         liquidGlass: false,
                       ),
                 // minHeight: context.mediaQueryPadding.top + kTopTabbarHeight,
-                minHeight: liquidGlass
-                    ? 0.0
-                    : hideTopBarOnScroll
-                        ? dockTopBar
-                            ? layout.collapsedHeaderHeight
-                            : layout.safeTop + kTopTabbarHeight
-                        : headerMaxHeight,
+                minHeight: native
+                    ? NativeTopTabHeader.minExtentFor(
+                        topInset: MediaQuery.viewPaddingOf(context).top,
+                        railHeight: topTabbarHeight,
+                        collapsible: nativeCollapsible,
+                      )
+                    : liquidGlass
+                        ? 0.0
+                        : hideTopBarOnScroll
+                            ? dockTopBar
+                                ? layout.collapsedHeaderHeight
+                                : layout.safeTop + kTopTabbarHeight
+                            : headerMaxHeight,
                 maxHeight: headerMaxHeight,
               ),
             ),
@@ -397,7 +465,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
       body: buildBody(liquidGlass, hideTopBarOnScroll),
     );
     if (!liquidGlass) {
-      return scrollView;
+      return NativeBarAutoHide(enabled: nativeCollapsible, child: scrollView);
     }
     return Stack(
       fit: StackFit.expand,
@@ -666,6 +734,50 @@ class FavoriteTabBar extends StatelessWidget {
       ehTheme.isDarkMode;
       final useLiquidGlass =
           ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+      final topTabbarHeight = topTabbarHeightFor(context);
+      if (LiquidGlassPlatform.isSupported &&
+          (useLiquidGlass || NativeNavigationScope.isEnabled(context))) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: context.mediaQueryPadding.left,
+            right: context.mediaQueryPadding.right,
+          ),
+          child: SizedBox(
+            height: topTabbarHeight,
+            child: SegmentedRail(
+              opacity: opacity,
+              selectedIndex: controller.index,
+              pageController: pageController,
+              followSystemTransparency:
+                  ehSettingService.liquidGlassFollowSystemTransparency,
+              accessory: controller.showBarsBtn
+                  ? LiquidGlassRailAction(
+                      icon: CupertinoIcons.line_horizontal_3,
+                      label: L10n.of(context).choose_favcat,
+                      onPressed: () => _chooseFavcat(),
+                    )
+                  : null,
+              items: [
+                for (final favcat in controller.favcatList)
+                  LiquidGlassRailCategory(
+                    id: favcat.favId,
+                    title: favcat.favTitle,
+                    onTap: () {
+                      final index = controller.favcatList.indexOf(favcat);
+                      if (index >= 0 && pageController.hasClients) {
+                        pageController.animateToPage(
+                          index,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOutCubic,
+                        );
+                      }
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      }
 
       final Widget bar = Stack(
         alignment: Alignment.topCenter,
@@ -675,7 +787,7 @@ class FavoriteTabBar extends StatelessWidget {
               blur: 10,
               blurColor: barBackgroundColor,
               colorOpacity: kEnableImpeller ? 1.0 : opacity,
-              child: Container(height: kTopTabbarHeight),
+              child: Container(height: topTabbarHeight),
             ),
           Container(
             decoration: useLiquidGlass
@@ -686,7 +798,7 @@ class FavoriteTabBar extends StatelessWidget {
               right: context.mediaQueryPadding.right,
             ),
             child: SizedBox(
-              height: kTopTabbarHeight,
+              height: topTabbarHeight,
               child: Obx(() {
                 return Row(
                   children: [
@@ -765,20 +877,7 @@ class FavoriteTabBar extends StatelessWidget {
                                   size: 20,
                                 ),
                               ),
-                              onPressed: () async {
-                                // 跳转收藏夹选择页
-                                final result = await Get.toNamed(
-                                  EHRoutes.selFavorite,
-                                  id: isLayoutLarge ? 1 : null,
-                                );
-                                if (result != null && result is Favcat) {
-                                  final index =
-                                      controller.favcatList.indexWhere(
-                                    (element) => element.favId == result.favId,
-                                  );
-                                  pageController.jumpToPage(index);
-                                }
-                              },
+                              onPressed: _chooseFavcat,
                             ),
                         ],
                       ),
@@ -792,5 +891,19 @@ class FavoriteTabBar extends StatelessWidget {
       );
       return useLiquidGlass ? Opacity(opacity: opacity, child: bar) : bar;
     });
+  }
+
+  // 跳转收藏夹选择页
+  Future<void> _chooseFavcat() async {
+    final result = await Get.toNamed(
+      EHRoutes.selFavorite,
+      id: primaryNavigatorId,
+    );
+    if (result != null && result is Favcat) {
+      final index = controller.favcatList.indexWhere(
+        (element) => element.favId == result.favId,
+      );
+      if (index >= 0) pageController.jumpToPage(index);
+    }
   }
 }

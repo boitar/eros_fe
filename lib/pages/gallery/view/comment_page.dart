@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -41,14 +42,17 @@ class _CommentPageState extends State<CommentPage>
   @override
   void initState() {
     super.initState();
-    controller = Get.put(CommentController(), tag: pageCtrlTag);
+    final tag = pageCtrlTagOf(context);
+    controller = Get.put(CommentController(galleryTag: tag), tag: tag);
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     // logger.d('pageCtrlTag $pageCtrlTag');
-    return CupertinoPageScaffold(
+    return RetainedDraft(
+      controller: controller.commentTextController,
+      child: CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(L10n.of(context).gallery_comments),
         previousPageTitle: L10n.of(context).back,
@@ -65,7 +69,7 @@ class _CommentPageState extends State<CommentPage>
           buildCommentTextField(context),
         ],
       ),
-    );
+    ));
   }
 
   // 评论列表
@@ -234,7 +238,8 @@ class _CommentPageState extends State<CommentPage>
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 minSize: 0,
                 onPressed: controller.pressCancel,
-                child: const FaIcon(FontAwesomeIcons.xmark,
+                child: const FaIcon(
+                  FontAwesomeIcons.xmark,
                   // FontAwesomeIcons.solidCheckCircle,
                   size: 24,
                 ),
@@ -313,11 +318,13 @@ class _CommentPageState extends State<CommentPage>
                             //     scale: animation, child: child),
                             FadeTransition(opacity: animation, child: child),
                         child: controller.isEditStat || controller.isReptyStat
-                            ? FaIcon(FontAwesomeIcons.solidCircleCheck,
+                            ? FaIcon(
+                                FontAwesomeIcons.solidCircleCheck,
                                 key: UniqueKey(),
                                 size: 34,
                               )
-                            : FaIcon(FontAwesomeIcons.circleArrowUp,
+                            : FaIcon(
+                                FontAwesomeIcons.circleArrowUp,
                                 key: UniqueKey(),
                                 size: 34,
                               ),

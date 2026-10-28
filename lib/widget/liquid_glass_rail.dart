@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -260,26 +261,19 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final widths = categories.map((category) {
-          final painter = TextPainter(
-            text: TextSpan(
-              text: category.title,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-            textScaler: MediaQuery.textScalerOf(context),
-            textDirection: Directionality.of(context),
-          )..layout();
-          return math.max(44.0, painter.width + 28.0);
-        }).toList();
-        final naturalWidth = widths.fold<double>(0, (a, b) => a + b);
-        final surfaceWidth = widget.compactCategories
-            ? math.min(constraints.maxWidth, naturalWidth + 8)
-            : constraints.maxWidth;
+        final layout = SegmentedRailLayout.compute(
+          SegmentedRailLayout.measure(
+              context, categories.map((category) => category.title).toList()),
+          constraints.maxWidth,
+          compact: widget.compactCategories,
+        );
+        final widths = layout.widths;
+        final surfaceWidth = layout.trackWidth;
         Widget fitSurface(Widget child) => widget.compactCategories
             ? Align(child: SizedBox(width: surfaceWidth, child: child))
             : child;
         if (LiquidGlassPlatform.isSupported) {
-          return fitSurface(_NativeCategoryRail(
+          return fitSurface(NativeCategoryRail(
             categories: categories,
             selectedIndex: widget.selectedIndex,
             followSystemTransparency: widget.followSystemTransparency,
@@ -291,23 +285,16 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             layout: widget.layout,
             initialOffset: _nativeOffset,
             onOffset: (value) => _nativeOffset = value,
+            segmentWidths: widths,
           ));
         }
         final height = constraints.maxHeight;
-        final fits = naturalWidth <= surfaceWidth;
-        final gap = fits && categories.length > 1
-            ? (surfaceWidth - naturalWidth) / (categories.length - 1)
-            : 0.0;
-        final leadingInset = fits && categories.length == 1
-            ? (surfaceWidth - naturalWidth) / 2
-            : 0.0;
-        final positions = <double>[];
-        var nextLeft = leadingInset;
-        for (var index = 0; index < widths.length; index++) {
-          positions.add(nextLeft);
-          nextLeft += widths[index] + (index < widths.length - 1 ? gap : 0);
-        }
-        final contentWidth = fits ? surfaceWidth : naturalWidth;
+        final fits = !layout.scrolls;
+        final positions = <double>[
+          for (var index = 0; index < widths.length; index++)
+            layout.offsetOf(index),
+        ];
+        final contentWidth = fits ? surfaceWidth : layout.contentWidth;
         if ((_reveal || _restoreOffset) && categories.isNotEmpty) {
           final revealSelection = _reveal;
           final restoreOffset = _fallbackOffset;
@@ -372,11 +359,6 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                 ),
                 Positioned.fill(
                   child: Row(
-                    mainAxisAlignment: fits
-                        ? categories.length == 1
-                            ? MainAxisAlignment.center
-                            : MainAxisAlignment.spaceBetween
-                        : MainAxisAlignment.start,
                     children: [
                       for (var i = 0; i < categories.length; i++)
                         _categorySlot(context, categories[i], i, widths[i]),
@@ -876,8 +858,9 @@ class _ContentCornerPainter extends CustomPainter {
 
 /// UIKit owns the entire category control, including its labels, so native
 /// glass never has to be composited behind sibling Flutter text.
-class _NativeCategoryRail extends StatefulWidget {
-  const _NativeCategoryRail({
+class NativeCategoryRail extends StatefulWidget {
+  const NativeCategoryRail({
+    super.key,
     required this.categories,
     required this.selectedIndex,
     required this.followSystemTransparency,
@@ -889,6 +872,8 @@ class _NativeCategoryRail extends StatefulWidget {
     required this.opacity,
     required this.interactive,
     this.pageController,
+    this.segmentWidths,
+    this.height,
   });
 
   final List<LiquidGlassRailCategory> categories;
@@ -903,11 +888,17 @@ class _NativeCategoryRail extends StatefulWidget {
   final bool interactive;
   final PageController? pageController;
 
+  /// Widths from [SegmentedRailLayout]; UIKit sizes the labels otherwise.
+  final List<double>? segmentWidths;
+
+  /// Height of the glass track; defaults to the rail layout's row height.
+  final double? height;
+
   @override
-  State<_NativeCategoryRail> createState() => _NativeCategoryRailState();
+  State<NativeCategoryRail> createState() => _NativeCategoryRailState();
 }
 
-class _NativeCategoryRailState extends State<_NativeCategoryRail> {
+class _NativeCategoryRailState extends State<NativeCategoryRail> {
   MethodChannel? _channel;
   String? _lastParameters;
   bool _scheduled = false;
@@ -952,6 +943,8 @@ class _NativeCategoryRailState extends State<_NativeCategoryRail> {
         'fontSize': widget.fontSize,
         'opacity': widget.opacity,
         'interactive': widget.interactive,
+        if (widget.segmentWidths != null)
+          'segmentWidths': widget.segmentWidths!,
       };
 
   void _created(int viewId) {
@@ -989,7 +982,7 @@ class _NativeCategoryRailState extends State<_NativeCategoryRail> {
   }
 
   @override
-  void didUpdateWidget(covariant _NativeCategoryRail oldWidget) {
+  void didUpdateWidget(covariant NativeCategoryRail oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.pageController != widget.pageController) {
       oldWidget.pageController?.removeListener(_progress);
@@ -1012,7 +1005,8 @@ class _NativeCategoryRailState extends State<_NativeCategoryRail> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: widget.layout.categoryHeight(MediaQuery.textScalerOf(context)),
+      height: widget.height ??
+          widget.layout.categoryHeight(MediaQuery.textScalerOf(context)),
       child: UiKitView(
         viewType: 'eros/liquid-glass-categories',
         creationParams: _parameters,

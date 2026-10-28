@@ -91,12 +91,12 @@ class SettingViewController extends GetxController
           final topRoute =
               SecondNavigatorObserver().history.lastOrNull?.settings.name;
           if (topRoute?.startsWith('/setting') ?? false) {
-            Get.offNamed(route, id: 2);
+            Get.offNamed(route, id: detailNavigatorId);
           } else {
-            Get.toNamed(route, id: 2);
+            Get.toNamed(route, id: detailNavigatorId);
           }
         } else {
-          Get.toNamed(route);
+          Get.toNamed(route, id: detailNavigatorId);
         }
       },
     );

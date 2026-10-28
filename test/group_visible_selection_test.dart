@@ -113,12 +113,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
       if (useBar) {
-        // The master LinkScrollBar measures its width after its first layout.
-        // Keep that known initial-frame overflow separate from group mapping.
-        final initialLayout = tester.takeException();
-        if (initialLayout != null) {
-          expect(initialLayout.toString(), contains('A RenderFlex overflowed'));
-        }
+        expect(tester.takeException(), isNull);
       }
     }
     return controller;

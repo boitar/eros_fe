@@ -89,13 +89,39 @@ class EhCupertinoListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Keep the value readable at accessibility sizes instead of allowing the
+    // CupertinoListTile row to overflow horizontally.
+    final bool largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
+    final bool stackAdditionalInfo =
+        largeText && additionalInfo != null && additionalInfo is! Flexible;
+    final Widget? effectiveSubtitle;
+    final Widget? effectiveAdditionalInfo;
+    if (stackAdditionalInfo) {
+      effectiveSubtitle = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (subtitle != null) subtitle!,
+          if (subtitle != null) const SizedBox(height: 3),
+          DefaultTextStyle.merge(
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            child: additionalInfo!,
+          ),
+        ],
+      );
+      effectiveAdditionalInfo = null;
+    } else {
+      effectiveSubtitle = subtitle;
+      effectiveAdditionalInfo = additionalInfo;
+    }
+
     EdgeInsetsGeometry? _padding = padding;
-    _padding ??= subtitle == null ? _kPadding : _kPaddingWithSubtitle;
+    _padding ??= effectiveSubtitle == null ? _kPadding : _kPaddingWithSubtitle;
 
     return CupertinoListTile(
       title: title,
-      subtitle: subtitle,
-      additionalInfo: additionalInfo,
+      subtitle: effectiveSubtitle,
+      additionalInfo: effectiveAdditionalInfo,
       leading: leading,
       trailing: trailing,
       onTap: onTap,

@@ -107,6 +107,9 @@ class DownloadPathManager {
   }
 
   Future<void> allowMediaScan(bool allow) async {
+    // iOS has no Android media scanner, and its stored download location is
+    // Documents-relative rather than an absolute filesystem path.
+    if (Platform.isIOS) return;
     final downloadPath = await getGalleryDownloadPath();
 
     if (Platform.isAndroid) {
