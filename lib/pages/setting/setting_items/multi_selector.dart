@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,11 +14,8 @@ class MultiSelectorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(title ?? ''),
-        // previousPageTitle: previousPageTitle,
-      ),
+    return SettingScaffold(
+      title: title ?? '',
       child: Container(),
     );
   }

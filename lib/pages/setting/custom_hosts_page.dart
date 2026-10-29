@@ -1,5 +1,6 @@
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/service/dns_service.dart';
-import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
@@ -22,16 +23,17 @@ class CustomHostsPage extends StatelessWidget {
     }
 
     return Obx(() {
-      return CupertinoPageScaffold(
-        backgroundColor: !ehTheme.isDarkMode
-            ? CupertinoColors.secondarySystemBackground
-            : null,
-        navigationBar: CupertinoNavigationBar(
-          padding: const EdgeInsetsDirectional.only(start: 0),
-          middle: Text(_title),
-          // transitionBetweenRoutes: false,
-          trailing: _buildListBtns(context),
-        ),
+      return SettingScaffold(
+        title: _title,
+        actions: [
+          NativeNavigationAction(
+            id: 'customHosts.add',
+            title: L10n.of(context).add,
+            symbol: 'plus',
+            onPressed: () => showCustomHostEditer(context),
+          ),
+        ],
+        trailing: _buildListBtns(context),
         child: Container(
           child: ListView(
             children: <Widget>[
@@ -53,7 +55,8 @@ class CustomHostsPage extends StatelessWidget {
     return CupertinoButton(
         minSize: 40,
         padding: const EdgeInsets.only(right: 20),
-        child: const FaIcon(FontAwesomeIcons.plusCircle,
+        child: const FaIcon(
+          FontAwesomeIcons.plusCircle,
           size: 20,
         ),
         onPressed: () {

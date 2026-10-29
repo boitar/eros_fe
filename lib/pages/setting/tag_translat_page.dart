@@ -1,5 +1,6 @@
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:flutter/cupertino.dart';
@@ -11,10 +12,8 @@ class TagTranslatePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text('标签翻译'),
-      ),
+    return const SettingScaffold(
+      title: '标签翻译',
       child: CustomScrollView(
         slivers: [
           SliverSafeArea(sliver: ListViewTagTranslate()),

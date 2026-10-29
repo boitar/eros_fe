@@ -5144,6 +5144,66 @@ class L10n {
     );
   }
 
+  /// `Appearance & Layout`
+  String get appearance_and_layout {
+    return Intl.message(
+      'Appearance & Layout',
+      name: 'appearance_and_layout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Site`
+  String get setting_site {
+    return Intl.message(
+      'Site',
+      name: 'setting_site',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Browsing`
+  String get setting_group_browse {
+    return Intl.message(
+      'Browsing',
+      name: 'setting_group_browse',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Content`
+  String get setting_group_content {
+    return Intl.message(
+      'Content',
+      name: 'setting_group_content',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `System`
+  String get setting_group_system {
+    return Intl.message(
+      'System',
+      name: 'setting_group_system',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add`
+  String get add {
+    return Intl.message(
+      'Add',
+      name: 'add',
+      desc: '',
+      args: [],
+    );
+  }
+
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

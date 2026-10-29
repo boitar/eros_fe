@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
@@ -24,37 +25,52 @@ class EhMySettingsPage extends GetView<EhMySettingsController> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(
-            padding: const EdgeInsetsDirectional.only(end: 8),
-            middle: Text(L10n.of(context).ehentai_settings),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                CupertinoButton(
-                  padding: const EdgeInsets.all(0),
-                  minSize: 40,
-                  child: const FaIcon(FontAwesomeIcons.earthAmericas,
-                    size: 22,
-                  ),
-                  onPressed: () async {
-                    Get.to(() => const InWebMySetting());
-                  },
-                ),
-                CupertinoButton(
-                  padding: const EdgeInsets.all(0),
-                  minSize: 40,
-                  child: const FaIcon(FontAwesomeIcons.circleCheck,
-                    size: 22,
-                  ),
-                  onPressed: () async {
-                    // 保存配置
-                    controller.printParam();
-                    await controller.applyProfile();
-                  },
-                ),
-              ],
-            )),
+    void openWebsite() => Get.to(() => const InWebMySetting());
+
+    Future<void> apply() async {
+      controller.printParam();
+      await controller.applyProfile();
+    }
+
+    return SettingScaffold(
+        title: L10n.of(context).ehentai_settings,
+        actions: [
+          NativeNavigationAction(
+            id: 'mysettings.website',
+            title: L10n.of(context).setting_on_website,
+            symbol: 'globe',
+            onPressed: openWebsite,
+          ),
+          NativeNavigationAction(
+            id: 'mysettings.apply',
+            title: L10n.of(context).save,
+            symbol: 'checkmark.circle',
+            onPressed: apply,
+          ),
+        ],
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            CupertinoButton(
+              padding: const EdgeInsets.all(0),
+              minSize: 40,
+              child: const FaIcon(
+                FontAwesomeIcons.earthAmericas,
+                size: 22,
+              ),
+              onPressed: openWebsite,
+            ),
+            CupertinoButton(
+              padding: const EdgeInsets.all(0),
+              minSize: 40,
+              child: const FaIcon(
+                FontAwesomeIcons.circleCheck,
+                size: 22,
+              ),
+              onPressed: apply,
+            ),
+          ],
+        ),
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -200,7 +216,8 @@ class _ListViewEhMySettingsState extends State<ListViewEhMySettings> {
               final String favTitle = controller.ehSetting.favMap['$e'] ?? '';
               // logger.d('favMap: $e $_title');
               return CupertinoTextInputListTile(
-                leading: FaIcon(FontAwesomeIcons.solidHeart,
+                leading: FaIcon(
+                  FontAwesomeIcons.solidHeart,
                   color: ThemeColors.favColor['$e'],
                 ),
                 // textAlign: TextAlign.left,

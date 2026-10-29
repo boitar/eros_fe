@@ -183,3 +183,132 @@ final class ErosAppearancePlugin: NSObject, FlutterPlugin {
         }
     }
 }
+
+/// Pull-down menus for Flutter setting rows. A transparent button placed over
+/// the row's value presents a real UIMenu, so the material, haptics and morph
+/// all come from UIKit. Requires `performPrimaryAction` (iOS 17.4); Flutter
+/// draws its own menu when this reports `false`.
+final class ErosMenuPlugin: NSObject, FlutterPlugin {
+    private static let channelName = "eros/menu"
+    private let channel: FlutterMethodChannel
+    private weak var registrar: FlutterPluginRegistrar?
+    private var anchor: ErosMenuAnchor?
+
+    private init(channel: FlutterMethodChannel, registrar: FlutterPluginRegistrar) {
+        self.channel = channel
+        self.registrar = registrar
+    }
+
+    static func register(with registrar: FlutterPluginRegistrar) {
+        let channel = FlutterMethodChannel(
+            name: channelName,
+            binaryMessenger: registrar.messenger()
+        )
+        registrar.addMethodCallDelegate(
+            ErosMenuPlugin(channel: channel, registrar: registrar),
+            channel: channel
+        )
+    }
+
+    func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard call.method == "show" else {
+            result(FlutterMethodNotImplemented)
+            return
+        }
+        guard #available(iOS 17.4, *),
+              let values = call.arguments as? [String: Any],
+              let token = values["token"] as? Int,
+              let frame = Self.rect(values["rect"]),
+              let items = values["items"] as? [[String: Any]],
+              !items.isEmpty,
+              let host = registrar?.viewController?.view,
+              host.window != nil else {
+            result(false)
+            return
+        }
+        anchor?.cancel()
+
+        let actions = items.enumerated().map { index, item -> UIAction in
+            let symbol = item["symbol"] as? String
+            let action = UIAction(
+                title: item["title"] as? String ?? "",
+                image: symbol.flatMap { UIImage(systemName: $0) }
+            ) { [weak self] _ in
+                self?.channel.invokeMethod(
+                    "selected",
+                    arguments: ["token": token, "index": index]
+                )
+            }
+            action.subtitle = item["subtitle"] as? String
+            action.state = item["checked"] as? Bool == true ? .on : .off
+            return action
+        }
+        let button = ErosMenuAnchor(frame: frame)
+        button.menu = UIMenu(options: .singleSelection, children: actions)
+        button.showsMenuAsPrimaryAction = true
+        button.isAccessibilityElement = false
+        button.onEnd = { [weak self, weak button] in
+            self?.channel.invokeMethod("dismissed", arguments: ["token": token])
+            if let button, self?.anchor === button {
+                self?.anchor = nil
+            }
+            button?.removeFromSuperview()
+        }
+        host.addSubview(button)
+        anchor = button
+        button.performPrimaryAction()
+        result(true)
+    }
+
+    private static func rect(_ value: Any?) -> CGRect? {
+        guard let values = value as? [String: Any],
+              let x = values["x"] as? NSNumber,
+              let y = values["y"] as? NSNumber,
+              let width = values["width"] as? NSNumber,
+              let height = values["height"] as? NSNumber,
+              width.doubleValue > 0,
+              height.doubleValue > 0 else {
+            return nil
+        }
+        return CGRect(
+            x: x.doubleValue,
+            y: y.doubleValue,
+            width: width.doubleValue,
+            height: height.doubleValue
+        )
+    }
+}
+
+/// Invisible source of a settings menu; removes itself once the menu closes.
+private final class ErosMenuAnchor: UIButton {
+    var onEnd: (() -> Void)?
+
+    override func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        willEndFor configuration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimating?
+    ) {
+        super.contextMenuInteraction(
+            interaction,
+            willEndFor: configuration,
+            animator: animator
+        )
+        guard let animator else {
+            finish()
+            return
+        }
+        animator.addCompletion { [weak self] in self?.finish() }
+    }
+
+    /// A newer menu replaces this one before it opened or while it closes.
+    func cancel() {
+        contextMenuInteraction?.dismissMenu()
+        finish()
+    }
+
+    private func finish() {
+        let end = onEnd
+        onEnd = nil
+        end?()
+    }
+}

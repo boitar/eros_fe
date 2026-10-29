@@ -676,6 +676,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "show_english_title": MessageLookupByLibrary.simpleMessage("英語タイトルを表示"),
         "show_japanese_title": MessageLookupByLibrary.simpleMessage("日本語タイトルを表示"),
         "search_title": MessageLookupByLibrary.simpleMessage("タイトルで検索"),
-        "copy_title": MessageLookupByLibrary.simpleMessage("タイトルをコピー")
+        "copy_title": MessageLookupByLibrary.simpleMessage("タイトルをコピー"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("外観とレイアウト"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("サイト"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("閲覧"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("コンテンツ"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("システム"),
+        "add": MessageLookupByLibrary.simpleMessage("追加")
       };
 }

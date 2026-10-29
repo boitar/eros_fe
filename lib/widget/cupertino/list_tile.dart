@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -10,9 +11,12 @@ const double _kMinHeightWithSubtitle = _kLeadingSize + 2 * 10.0;
 const double _kNotchedMinHeight = _kNotchedLeadingSize + 2 * 12.0;
 const double _kNotchedMinHeightWithoutLeading = _kNotchedLeadingSize + 2 * 10.0;
 const EdgeInsetsDirectional _kPadding =
-    EdgeInsetsDirectional.only(start: 20.0, end: 14.0, top: 2.0, bottom: 2.0);
+    EdgeInsetsDirectional.only(start: 16.0, end: 16.0, top: 6.0, bottom: 6.0);
 const EdgeInsetsDirectional _kPaddingWithSubtitle =
-    EdgeInsetsDirectional.only(start: 20.0, end: 14.0, top: 8.0, bottom: 8.0);
+    EdgeInsetsDirectional.only(start: 16.0, end: 16.0, top: 10.0, bottom: 10.0);
+
+/// Row height of the system Settings app on iOS 26.
+const double kSettingRowMinHeight = 52.0;
 const EdgeInsets _kNotchedPadding = EdgeInsets.symmetric(horizontal: 14.0);
 const EdgeInsetsDirectional _kNotchedPaddingWithoutLeading =
     EdgeInsetsDirectional.fromSTEB(28.0, 10.0, 14.0, 10.0);
@@ -89,6 +93,8 @@ class EhCupertinoListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = ehTheme.palette;
+    final Color secondary = palette.text2.resolveFrom(context);
     // Keep the value readable at accessibility sizes instead of allowing the
     // CupertinoListTile row to overflow horizontally.
     final bool largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
@@ -103,6 +109,7 @@ class EhCupertinoListTile extends StatelessWidget {
           if (subtitle != null) subtitle!,
           if (subtitle != null) const SizedBox(height: 3),
           DefaultTextStyle.merge(
+            style: const TextStyle(fontSize: 17),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             child: additionalInfo!,
@@ -118,18 +125,63 @@ class EhCupertinoListTile extends StatelessWidget {
     EdgeInsetsGeometry? _padding = padding;
     _padding ??= effectiveSubtitle == null ? _kPadding : _kPaddingWithSubtitle;
 
-    return CupertinoListTile(
-      title: title,
-      subtitle: effectiveSubtitle,
-      additionalInfo: effectiveAdditionalInfo,
-      leading: leading,
-      trailing: trailing,
-      onTap: onTap,
-      backgroundColor: backgroundColor,
-      backgroundColorActivated: backgroundColorActivated,
-      padding: _padding,
-      leadingSize: leadingSize,
-      leadingToTitle: leadingToTitle,
+    // Titles and summaries wrap like the system Settings app; the stock
+    // tile would cut both to one line.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: kSettingRowMinHeight),
+      child: CupertinoListTile(
+        title: _Wrapping(child: title),
+        subtitle: effectiveSubtitle == null
+            ? null
+            : _Wrapping(
+                style: TextStyle(fontSize: 13, color: secondary),
+                child: effectiveSubtitle,
+              ),
+        additionalInfo: switch (effectiveAdditionalInfo) {
+          null => null,
+          // A flexible value must stay a direct child of the tile's row.
+          final Flexible flexible => Flexible(
+              key: flexible.key,
+              flex: flexible.flex,
+              fit: flexible.fit,
+              child: DefaultTextStyle.merge(
+                style: TextStyle(color: secondary),
+                child: flexible.child,
+              ),
+            ),
+          final Widget info => DefaultTextStyle.merge(
+              style: TextStyle(color: secondary),
+              child: info,
+            ),
+        },
+        leading: leading,
+        trailing: trailing,
+        onTap: onTap,
+        backgroundColor: backgroundColor,
+        backgroundColorActivated: backgroundColorActivated ??
+            palette.fillPressed.resolveFrom(context),
+        padding: _padding,
+        leadingSize: leadingSize,
+        leadingToTitle: leadingToTitle,
+      ),
+    );
+  }
+}
+
+/// Lifts the one-line limit [CupertinoListTile] puts on its text.
+class _Wrapping extends StatelessWidget {
+  const _Wrapping({required this.child, this.style});
+
+  final Widget child;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final inherited = DefaultTextStyle.of(context);
+    return DefaultTextStyle(
+      style: style == null ? inherited.style : inherited.style.merge(style),
+      textAlign: inherited.textAlign,
+      child: child,
     );
   }
 }

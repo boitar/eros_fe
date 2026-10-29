@@ -1,5 +1,6 @@
 import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -23,26 +24,33 @@ class BlockRulesPage extends GetView<BlockController> {
       (groupName: L10n.of(context).comment, rules: controller.ruleForComment),
     ];
 
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        padding: const EdgeInsetsDirectional.only(end: 8),
-        middle: Text(_title),
-        trailing: CupertinoButton(
-          padding: const EdgeInsets.all(0),
-          minSize: 40,
-          child: const Icon(
-            CupertinoIcons.plus_circle,
-            size: 28,
-          ),
-          onPressed: () async {
-            final result = await Get.toNamed<dynamic>(
-              EHRoutes.blockRuleEdit,
-              id: detailNavigatorId,
-            );
-            if (result != null && result is BlockRule) {
-              controller.addBlockRule(result);
-            }
-          },
+    Future<void> addRule() async {
+      final result = await Get.toNamed<dynamic>(
+        EHRoutes.blockRuleEdit,
+        id: detailNavigatorId,
+      );
+      if (result != null && result is BlockRule) {
+        controller.addBlockRule(result);
+      }
+    }
+
+    return SettingScaffold(
+      title: _title,
+      actions: [
+        NativeNavigationAction(
+          id: 'blockRules.add',
+          title: L10n.of(context).add,
+          symbol: 'plus',
+          onPressed: addRule,
+        ),
+      ],
+      trailing: CupertinoButton(
+        padding: const EdgeInsets.all(0),
+        minSize: 40,
+        onPressed: addRule,
+        child: const Icon(
+          CupertinoIcons.plus_circle,
+          size: 28,
         ),
       ),
       child: CustomScrollView(slivers: [

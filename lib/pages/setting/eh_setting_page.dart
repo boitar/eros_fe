@@ -3,6 +3,7 @@ import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
@@ -20,10 +21,8 @@ class EhSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).eh),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).setting_site,
       child: CustomScrollView(slivers: [
         SliverSafeArea(sliver: ListViewEhSetting()),
       ]),

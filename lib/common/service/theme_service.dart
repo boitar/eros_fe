@@ -110,8 +110,10 @@ class EHTheme {
   ThemeService get _themeService => Get.find();
   EhSettingService get _ehSettingService => Get.find();
 
-  EhPalette get palette =>
-      EhPalette.forDarkStyle(pureBlack: _ehSettingService.isPureDarkTheme);
+  /// Standalone widgets (tests, previews) get the default dark style.
+  EhPalette get palette => Get.isRegistered<EhSettingService>()
+      ? EhPalette.forDarkStyle(pureBlack: _ehSettingService.isPureDarkTheme)
+      : EhPalette.graphite;
 
   Color _pick(CupertinoDynamicColor color) =>
       EhPalette.pick(color, dark: isDarkMode);

@@ -731,6 +731,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "show_english_title": MessageLookupByLibrary.simpleMessage("영어 제목 보기"),
         "show_japanese_title": MessageLookupByLibrary.simpleMessage("일본어 제목 보기"),
         "search_title": MessageLookupByLibrary.simpleMessage("제목 검색"),
-        "copy_title": MessageLookupByLibrary.simpleMessage("제목 복사")
+        "copy_title": MessageLookupByLibrary.simpleMessage("제목 복사"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("모양 및 레이아웃"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("사이트"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("탐색"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("콘텐츠"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("시스템"),
+        "add": MessageLookupByLibrary.simpleMessage("추가")
       };
 }

@@ -4,13 +4,13 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/login/controller/login_controller.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
-import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -21,10 +21,8 @@ class LayoutSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).layout),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).appearance_and_layout,
       child: CustomScrollView(slivers: [
         SliverSafeArea(sliver: LayoutSettingList()),
       ]),
@@ -232,45 +230,25 @@ class LayoutSettingList extends StatelessWidget {
               return const SizedBox.shrink();
             }
             final l10n = L10n.of(context);
-            final value = _ehSettingService.liquidGlassTopBarLayout;
-            return EhCupertinoListTile(
-              title: Text(l10n.liquid_glass_top_layout),
-              additionalInfo: Text(value == LiquidGlassTopBarLayout.twoRow
-                  ? l10n.liquid_glass_two_row
-                  : l10n.liquid_glass_inline),
-              onTap: () async {
-                final selected =
-                    await showCupertinoModalPopup<LiquidGlassTopBarLayout>(
-                  context: context,
-                  builder: (context) => EhActionSheet(
-                    title: Text(l10n.liquid_glass_top_layout),
-                    actions: [
-                      for (final layout in LiquidGlassTopBarLayout.values)
-                        CupertinoActionSheetAction(
-                          isDefaultAction: value == layout,
-                          onPressed: () => Navigator.of(context).pop(layout),
-                          child: Column(children: [
-                            Text(layout == LiquidGlassTopBarLayout.twoRow
-                                ? l10n.liquid_glass_two_row
-                                : l10n.liquid_glass_inline),
-                            Text(
-                                layout == LiquidGlassTopBarLayout.twoRow
-                                    ? l10n.liquid_glass_two_row_detail
-                                    : l10n.liquid_glass_inline_detail,
-                                style: const TextStyle(fontSize: 13)),
-                          ]),
-                        ),
-                    ],
-                    cancelButton: CupertinoActionSheetAction(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(l10n.cancel),
-                    ),
-                  ),
-                );
-                if (selected != null) {
-                  _ehSettingService.liquidGlassTopBarLayout = selected;
-                }
+            String name(LiquidGlassTopBarLayout layout) =>
+                layout == LiquidGlassTopBarLayout.twoRow
+                    ? l10n.liquid_glass_two_row
+                    : l10n.liquid_glass_inline;
+            return SelectorCupertinoListTile<LiquidGlassTopBarLayout>(
+              title: l10n.liquid_glass_top_layout,
+              actionMap: {
+                for (final layout in LiquidGlassTopBarLayout.values)
+                  layout: name(layout),
               },
+              subtitleMap: {
+                for (final layout in LiquidGlassTopBarLayout.values)
+                  layout: layout == LiquidGlassTopBarLayout.twoRow
+                      ? l10n.liquid_glass_two_row_detail
+                      : l10n.liquid_glass_inline_detail,
+              },
+              initVal: _ehSettingService.liquidGlassTopBarLayout,
+              onValueChanged: (selected) =>
+                  _ehSettingService.liquidGlassTopBarLayout = selected,
             );
           }),
 
@@ -412,11 +390,10 @@ Widget _buildThemeItem(BuildContext context) {
 }
 
 /// 列表模式切换
-Widget _buildListModeItem(BuildContext context) {
-  final String _title = L10n.of(context).list_mode;
+/// Names of the list modes the user can pick.
+Map<ListModeEnum, String> listModeLabels(BuildContext context) {
   final EhSettingService ehSettingService = Get.find();
-
-  final Map<ListModeEnum, String> modeMap = <ListModeEnum, String>{
+  return <ListModeEnum, String>{
     ListModeEnum.list: L10n.of(context).listmode_medium,
     ListModeEnum.simpleList: L10n.of(context).listmode_small,
     ListModeEnum.waterfall: L10n.of(context).listmode_waterfall,
@@ -426,6 +403,13 @@ Widget _buildListModeItem(BuildContext context) {
     if (!kReleaseMode || ehSettingService.debugMode)
       ListModeEnum.debugSimple: 'debugSimple',
   };
+}
+
+Widget _buildListModeItem(BuildContext context) {
+  final String _title = L10n.of(context).list_mode;
+  final EhSettingService ehSettingService = Get.find();
+
+  final Map<ListModeEnum, String> modeMap = listModeLabels(context);
   return Obx(() {
     return SelectorCupertinoListTile<ListModeEnum>(
       title: _title,

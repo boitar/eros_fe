@@ -779,6 +779,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "show_english_title": MessageLookupByLibrary.simpleMessage("Show English Title"),
         "show_japanese_title": MessageLookupByLibrary.simpleMessage("Show Japanese Title"),
         "search_title": MessageLookupByLibrary.simpleMessage("Search Title"),
-        "copy_title": MessageLookupByLibrary.simpleMessage("Copy Title")
+        "copy_title": MessageLookupByLibrary.simpleMessage("Copy Title"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("Appearance & Layout"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("Site"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("Browsing"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("Content"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("System"),
+        "add": MessageLookupByLibrary.simpleMessage("Add")
       };
 }

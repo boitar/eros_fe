@@ -1,3 +1,4 @@
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -14,10 +15,8 @@ class LicensePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomLicensePage((context, licenseData) {
-      return CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(
-          middle: Text(L10n.of(context).license),
-        ),
+      return SettingScaffold(
+        title: L10n.of(context).license,
         child: CustomScrollView(slivers: [
           SliverSafeArea(
             sliver: MultiSliver(children: [_buildBody(licenseData, context)]),

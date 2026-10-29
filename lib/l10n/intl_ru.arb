@@ -508,5 +508,11 @@
   "show_english_title": "Показать английское",
   "show_japanese_title": "Показать японское",
   "search_title": "Искать по названию",
-  "copy_title": "Копировать название"
+  "copy_title": "Копировать название",
+  "appearance_and_layout": "Вид и макет",
+  "setting_site": "Сайт",
+  "setting_group_browse": "Просмотр",
+  "setting_group_content": "Контент",
+  "setting_group_system": "Система",
+  "add": "Добавить"
 }

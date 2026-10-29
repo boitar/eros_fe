@@ -1,5 +1,6 @@
 import 'package:eros_fe/common/controller/mysql_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
@@ -15,11 +16,8 @@ class MysqlSyncPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const String _title = 'MySQL Sync';
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text(_title),
-        // trailing: _buildListButtons(context),
-      ),
+    return SettingScaffold(
+      title: _title,
       child: MysqlSettingView(),
     );
   }

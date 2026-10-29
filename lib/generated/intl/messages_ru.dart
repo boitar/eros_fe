@@ -814,6 +814,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "show_english_title": MessageLookupByLibrary.simpleMessage("Показать английское"),
         "show_japanese_title": MessageLookupByLibrary.simpleMessage("Показать японское"),
         "search_title": MessageLookupByLibrary.simpleMessage("Искать по названию"),
-        "copy_title": MessageLookupByLibrary.simpleMessage("Копировать название")
+        "copy_title": MessageLookupByLibrary.simpleMessage("Копировать название"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("Вид и макет"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("Сайт"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("Просмотр"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("Контент"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("Система"),
+        "add": MessageLookupByLibrary.simpleMessage("Добавить")
       };
 }

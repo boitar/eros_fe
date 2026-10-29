@@ -265,7 +265,8 @@ void main() {
             .getMaxCrossAxisExtent(),
         150);
     await mount(tester, home: const ItemWidthSettingPage());
-    expect(find.text('网格 - 标签'), findsOneWidget);
+    // The value shares one text run with its pull-down chevron.
+    expect(find.textContaining('网格 - 标签'), findsOneWidget);
     expect(find.byType(GalleryGridTagsSliver), findsOneWidget);
     await tester.tap(find.byType(CupertinoSwitch));
     await tester.pump();

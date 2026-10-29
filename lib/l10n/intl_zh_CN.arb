@@ -508,5 +508,11 @@
   "show_english_title": "显示英文标题",
   "show_japanese_title": "显示日文标题",
   "search_title": "搜索标题",
-  "copy_title": "复制标题"
+  "copy_title": "复制标题",
+  "appearance_and_layout": "外观与布局",
+  "setting_site": "站点",
+  "setting_group_browse": "浏览",
+  "setting_group_content": "内容",
+  "setting_group_system": "系统",
+  "add": "添加"
 }

@@ -508,5 +508,11 @@
   "show_english_title": "영어 제목 보기",
   "show_japanese_title": "일본어 제목 보기",
   "search_title": "제목 검색",
-  "copy_title": "제목 복사"
+  "copy_title": "제목 복사",
+  "appearance_and_layout": "모양 및 레이아웃",
+  "setting_site": "사이트",
+  "setting_group_browse": "탐색",
+  "setting_group_content": "콘텐츠",
+  "setting_group_system": "시스템",
+  "add": "추가"
 }

@@ -8,7 +8,6 @@ import 'package:eros_fe/pages/image_view/common.dart';
 import 'package:eros_fe/pages/image_view/controller/view_controller.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:eros_fe/utils/orientation_helper.dart';
-import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -235,58 +234,29 @@ Widget _buildEnableSlideOutPageItem(
 }
 
 /// 阅读方向模式切换
+/// Names of the reading directions.
+Map<ViewMode, String> readingDirectionLabels(BuildContext context) =>
+    <ViewMode, String>{
+      ViewMode.leftToRight: L10n.of(context).left_to_right,
+      ViewMode.rightToLeft: L10n.of(context).right_to_left,
+      ViewMode.topToBottom: L10n.of(context).top_to_bottom,
+    };
+
 Widget _buildViewModeItem(BuildContext context) {
   final String title = L10n.of(context).reading_direction;
   final EhSettingService ehSettingService = Get.find();
 
-  final Map<ViewMode, String> modeMap = <ViewMode, String>{
-    ViewMode.leftToRight: L10n.of(context).left_to_right,
-    ViewMode.rightToLeft: L10n.of(context).right_to_left,
-    ViewMode.topToBottom: L10n.of(context).top_to_bottom,
-  };
+  final Map<ViewMode, String> modeMap = readingDirectionLabels(context);
 
-  List<Widget> getModeList() {
-    return List<Widget>.from(modeMap.keys.map((ViewMode element) {
-      return CupertinoActionSheetAction(
-          onPressed: () {
-            Get.back(result: element);
-          },
-          child: Text(modeMap[element] ?? ''));
-    }).toList());
-  }
-
-  Future<ViewMode?> showDialog(BuildContext context) {
-    return showCupertinoModalPopup<ViewMode>(
-        context: context,
-        builder: (BuildContext context) {
-          final EhActionSheet dialog = EhActionSheet(
-            cancelButton: CupertinoActionSheetAction(
-                onPressed: () {
-                  Get.back();
-                },
-                child: Text(L10n.of(context).cancel)),
-            actions: <Widget>[
-              ...getModeList(),
-            ],
-          );
-          return dialog;
-        });
-  }
-
-  return Obx(() => EhCupertinoListTile(
-        title: Text(title),
-        trailing: const CupertinoListTileChevron(),
-        additionalInfo: Text(modeMap[ehSettingService.viewMode.value] ?? ''),
-        onTap: () async {
-          logger.t('tap ModeItem');
-          final ViewMode? result = await showDialog(context);
-          if (result != null) {
-            // ignore: unnecessary_string_interpolations
-            logger.t('${EnumToString.convertToString(result)}');
-            ehSettingService.viewMode.value = result;
-            if (Get.isRegistered<ViewExtController>()) {
-              Get.find<ViewExtController>().handOnViewModeChanged(result);
-            }
+  return Obx(() => SelectorCupertinoListTile<ViewMode>(
+        title: title,
+        actionMap: modeMap,
+        initVal: ehSettingService.viewMode.value,
+        onValueChanged: (ViewMode result) {
+          logger.t(EnumToString.convertToString(result));
+          ehSettingService.viewMode.value = result;
+          if (Get.isRegistered<ViewExtController>()) {
+            Get.find<ViewExtController>().handOnViewModeChanged(result);
           }
         },
       ));
@@ -308,58 +278,23 @@ class ReadOrientationItem extends StatelessWidget {
             L10n.of(Get.context!).orientation_landscapeRight,
       };
 
-  List<Widget> getModeList(Map<ReadOrientation, String> modeMap) {
-    return List<Widget>.from(modeMap.keys.map((ReadOrientation element) {
-      return CupertinoActionSheetAction(
-          onPressed: () {
-            Get.back(result: element);
-          },
-          child: Text(modeMap[element] ?? ''));
-    }).toList());
-  }
-
-  Future<ReadOrientation?> _showDialog(BuildContext context) {
-    final modeList = getModeList(getModeMap(context));
-
-    return showCupertinoModalPopup<ReadOrientation>(
-        context: context,
-        builder: (BuildContext context) {
-          final EhActionSheet dialog = EhActionSheet(
-            cancelButton: CupertinoActionSheetAction(
-                onPressed: () {
-                  Get.back();
-                },
-                child: Text(L10n.of(context).cancel)),
-            actions: <Widget>[
-              ...modeList,
-            ],
-          );
-          return dialog;
-        });
-  }
-
   @override
   Widget build(BuildContext context) {
     final String title = L10n.of(Get.context!).screen_orientation;
     final modeMap = getModeMap(context);
-    return Obx(() => EhCupertinoListTile(
-          title: Text(title),
-          trailing: const CupertinoListTileChevron(),
-          additionalInfo:
-              Text(modeMap[ehSettingService.orientation.value] ?? ''),
-          onTap: () async {
-            logger.t('tap ModeItem');
-            final ReadOrientation? result = await _showDialog(context);
-            if (result != null) {
-              ehSettingService.orientation.value = result;
-              if (result != ReadOrientation.system &&
-                  result != ReadOrientation.auto) {
-                OrientationHelper.setPreferredOrientations(
-                    [orientationMap[result] ?? DeviceOrientation.portraitUp]);
-              } else if (result == ReadOrientation.system) {
-                OrientationHelper.setPreferredOrientations(
-                    DeviceOrientation.values);
-              }
+    return Obx(() => SelectorCupertinoListTile<ReadOrientation>(
+          title: title,
+          actionMap: modeMap,
+          initVal: ehSettingService.orientation.value,
+          onValueChanged: (ReadOrientation result) {
+            ehSettingService.orientation.value = result;
+            if (result != ReadOrientation.system &&
+                result != ReadOrientation.auto) {
+              OrientationHelper.setPreferredOrientations(
+                  [orientationMap[result] ?? DeviceOrientation.portraitUp]);
+            } else if (result == ReadOrientation.system) {
+              OrientationHelper.setPreferredOrientations(
+                  DeviceOrientation.values);
             }
           },
         ));

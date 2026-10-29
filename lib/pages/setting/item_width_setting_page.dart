@@ -1,5 +1,6 @@
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/item/gallery_grid_tags.dart';
@@ -88,10 +89,8 @@ class _ItemWidthSettingPageState extends State<ItemWidthSettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(
-          middle: Text(L10n.of(context).custom_width),
-        ),
+    return SettingScaffold(
+        title: L10n.of(context).custom_width,
         child: CustomScrollView(
           slivers: [
             SliverSafeArea(

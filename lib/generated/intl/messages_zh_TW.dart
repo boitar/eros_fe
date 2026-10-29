@@ -636,6 +636,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "show_english_title": MessageLookupByLibrary.simpleMessage("顯示英文標題"),
         "show_japanese_title": MessageLookupByLibrary.simpleMessage("顯示日文標題"),
         "search_title": MessageLookupByLibrary.simpleMessage("搜尋標題"),
-        "copy_title": MessageLookupByLibrary.simpleMessage("複製標題")
+        "copy_title": MessageLookupByLibrary.simpleMessage("複製標題"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("外觀與版面"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("站點"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("瀏覽"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("內容"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("系統"),
+        "add": MessageLookupByLibrary.simpleMessage("新增")
       };
 }

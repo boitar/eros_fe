@@ -508,5 +508,11 @@
   "show_english_title": "Show English Title",
   "show_japanese_title": "Show Japanese Title",
   "search_title": "Search Title",
-  "copy_title": "Copy Title"
+  "copy_title": "Copy Title",
+  "appearance_and_layout": "Appearance & Layout",
+  "setting_site": "Site",
+  "setting_group_browse": "Browsing",
+  "setting_group_content": "Content",
+  "setting_group_system": "System",
+  "add": "Add"
 }

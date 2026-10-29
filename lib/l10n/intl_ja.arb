@@ -508,5 +508,11 @@
   "show_english_title": "英語タイトルを表示",
   "show_japanese_title": "日本語タイトルを表示",
   "search_title": "タイトルで検索",
-  "copy_title": "タイトルをコピー"
+  "copy_title": "タイトルをコピー",
+  "appearance_and_layout": "外観とレイアウト",
+  "setting_site": "サイト",
+  "setting_group_browse": "閲覧",
+  "setting_group_content": "コンテンツ",
+  "setting_group_system": "システム",
+  "add": "追加"
 }

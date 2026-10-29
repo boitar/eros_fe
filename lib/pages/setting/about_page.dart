@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:eros_fe/common/controller/update_controller.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -72,10 +73,8 @@ class AboutPage extends StatelessWidget {
       return listW;
     }
 
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).about),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).about,
       child: CustomScrollView(
         slivers: [
           // CupertinoSliverNavigationBar(
