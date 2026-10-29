@@ -29,6 +29,9 @@ class EhCachedNetworkImage extends StatelessWidget {
     this.ser,
     this.blurHash = false,
     this.sourceRect,
+    this.alignment = Alignment.center,
+    this.decodeWidth,
+    this.fadeInDuration,
   });
 
   final String imageUrl;
@@ -50,6 +53,16 @@ class EhCachedNetworkImage extends StatelessWidget {
   final int? ser;
 
   final Rect? sourceRect;
+
+  final Alignment alignment;
+
+  /// Decode at this width in physical pixels instead of the source size,
+  /// so a card-sized cover does not keep a full-size bitmap in memory.
+  /// Ignored with [sourceRect], whose crop is in source pixels.
+  final int? decodeWidth;
+
+  /// Placeholder-to-image fade; the package default (500ms) when null.
+  final Duration? fadeInDuration;
 
   final ImageBlockController imageHideController = Get.find();
 
@@ -84,6 +97,11 @@ class EhCachedNetworkImage extends StatelessWidget {
   }
 
   ImageWidgetBuilder get imageWidgetBuilder => (context, imageProvider) {
+        if (decodeWidth != null && sourceRect == null) {
+          imageProvider = ResizeImage(imageProvider,
+              width: decodeWidth, allowUpscaling: false);
+        }
+
         if (blurHash) {
           imageProvider = BlurhashTheImage(imageProvider);
         }
@@ -101,6 +119,7 @@ class EhCachedNetworkImage extends StatelessWidget {
           width: width,
           height: height,
           fit: fit,
+          alignment: alignment,
         );
         if (checkPHashHide || checkQRCodeHide) {
           return FutureBuilder<bool>(
@@ -156,9 +175,11 @@ class EhCachedNetworkImage extends StatelessWidget {
       height: height,
       fit: fit,
       imageUrl: imageUrl.handleUrl,
+      alignment: alignment,
       placeholder: placeholder,
       errorWidget: errorWidget,
       progressIndicatorBuilder: progressIndicatorBuilder,
+      fadeInDuration: fadeInDuration ?? const Duration(milliseconds: 500),
     );
 
     return image;

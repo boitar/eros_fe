@@ -634,6 +634,10 @@ class CoverImg extends StatelessWidget {
     this.fit = BoxFit.contain,
     this.expand = true,
     this.blurHash = false,
+    this.alignment = Alignment.center,
+    this.decodeWidth,
+    this.fadeInDuration,
+    this.placeholder,
   });
 
   final String imgUrl;
@@ -646,6 +650,15 @@ class CoverImg extends StatelessWidget {
 
   final bool blurHash;
 
+  final Alignment alignment;
+
+  /// Decode width in physical pixels; null decodes at source size.
+  final int? decodeWidth;
+  final Duration? fadeInDuration;
+
+  /// Shown while loading; an activity indicator when null.
+  final WidgetBuilder? placeholder;
+
   @override
   Widget build(BuildContext context) {
     final EhSettingService ehSettingService = Get.find();
@@ -655,17 +668,21 @@ class CoverImg extends StatelessWidget {
         return Obx(() {
           return EhNetworkImage(
             blurHash: ehSettingService.isGalleryImgBlur.value || blurHash,
-            placeholder: (_, __) {
-              return Container(
-                alignment: Alignment.center,
-                child: const CupertinoActivityIndicator(),
-              );
+            placeholder: (context, __) {
+              return placeholder?.call(context) ??
+                  Container(
+                    alignment: Alignment.center,
+                    child: const CupertinoActivityIndicator(),
+                  );
             },
             width: width,
             height: height,
             // httpHeaders: _httpHeaders,
             imageUrl: imgUrl.handleUrl,
             fit: fit, //
+            alignment: alignment,
+            decodeWidth: decodeWidth,
+            fadeInDuration: fadeInDuration,
           );
         });
       } else {

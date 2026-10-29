@@ -19,6 +19,9 @@ class EhNetworkImage extends StatefulWidget {
     this.onHideFlagChanged,
     this.blurHash = false,
     this.sourceRect,
+    this.alignment = Alignment.center,
+    this.decodeWidth,
+    this.fadeInDuration,
   });
 
   final String imageUrl;
@@ -38,6 +41,12 @@ class EhNetworkImage extends StatefulWidget {
   final ValueChanged<bool>? onHideFlagChanged;
 
   final Rect? sourceRect;
+
+  final Alignment alignment;
+
+  /// Decode width in physical pixels; see [EhCachedNetworkImage.decodeWidth].
+  final int? decodeWidth;
+  final Duration? fadeInDuration;
 
   @override
   State<EhNetworkImage> createState() => _EhNetworkImageState();
@@ -85,6 +94,9 @@ class _EhNetworkImageState extends State<EhNetworkImage> {
       onHideFlagChanged: widget.onHideFlagChanged,
       blurHash: widget.blurHash,
       sourceRect: widget.sourceRect,
+      alignment: widget.alignment,
+      decodeWidth: widget.decodeWidth,
+      fadeInDuration: widget.fadeInDuration,
     );
   }
 }
