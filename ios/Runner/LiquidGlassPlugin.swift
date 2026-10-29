@@ -165,7 +165,12 @@ final class ErosAppearancePlugin: NSObject, FlutterPlugin {
             guard let windowScene = scene as? UIWindowScene else { continue }
             for window in windowScene.windows {
                 window.overrideUserInterfaceStyle = currentStyle
-                window.backgroundColor = canvasColor
+                // Only the app's own windows get the canvas. UIKit's text
+                // effects and keyboard windows sit above them and must stay
+                // transparent, or they cover the whole app.
+                if window.rootViewController != nil && window.windowLevel == .normal {
+                    window.backgroundColor = canvasColor
+                }
             }
         }
     }
