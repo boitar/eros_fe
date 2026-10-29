@@ -493,5 +493,20 @@
   "group_management": "Управление группами",
   "choose_favcat": "Выбрать папку избранного",
   "back_to_top": "Наверх",
-  "ranking_period": "Период рейтинга"
+  "ranking_period": "Период рейтинга",
+  "continue_reading_page": "Продолжить · стр. {page}",
+  "see_all": "Все",
+  "page_count": "{count} стр.",
+  "comment_count": "Комментарии: {count}",
+  "more_actions": "Ещё",
+  "copy_link": "Копировать ссылку",
+  "file_size": "Размер",
+  "detail_ambient_background": "Фон страницы галереи",
+  "english_title": "Название (EN)",
+  "japanese_title": "Название (JP)",
+  "title_showing": "Показано",
+  "show_english_title": "Показать английское",
+  "show_japanese_title": "Показать японское",
+  "search_title": "Искать по названию",
+  "copy_title": "Копировать название"
 }

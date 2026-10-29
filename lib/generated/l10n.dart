@@ -4994,6 +4994,156 @@ class L10n {
     );
   }
 
+  /// `Continue · Page {page}`
+  String continue_reading_page(Object page) {
+    return Intl.message(
+      'Continue · Page $page',
+      name: 'continue_reading_page',
+      desc: '',
+      args: [page],
+    );
+  }
+
+  /// `See All`
+  String get see_all {
+    return Intl.message(
+      'See All',
+      name: 'see_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} pages`
+  String page_count(Object count) {
+    return Intl.message(
+      '$count pages',
+      name: 'page_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count} comments`
+  String comment_count(Object count) {
+    return Intl.message(
+      '$count comments',
+      name: 'comment_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `More`
+  String get more_actions {
+    return Intl.message(
+      'More',
+      name: 'more_actions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy Link`
+  String get copy_link {
+    return Intl.message(
+      'Copy Link',
+      name: 'copy_link',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Size`
+  String get file_size {
+    return Intl.message(
+      'Size',
+      name: 'file_size',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ambient Background in Gallery`
+  String get detail_ambient_background {
+    return Intl.message(
+      'Ambient Background in Gallery',
+      name: 'detail_ambient_background',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `English Title`
+  String get english_title {
+    return Intl.message(
+      'English Title',
+      name: 'english_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Japanese Title`
+  String get japanese_title {
+    return Intl.message(
+      'Japanese Title',
+      name: 'japanese_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Showing`
+  String get title_showing {
+    return Intl.message(
+      'Showing',
+      name: 'title_showing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show English Title`
+  String get show_english_title {
+    return Intl.message(
+      'Show English Title',
+      name: 'show_english_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show Japanese Title`
+  String get show_japanese_title {
+    return Intl.message(
+      'Show Japanese Title',
+      name: 'show_japanese_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search Title`
+  String get search_title {
+    return Intl.message(
+      'Search Title',
+      name: 'search_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy Title`
+  String get copy_title {
+    return Intl.message(
+      'Copy Title',
+      name: 'copy_title',
+      desc: '',
+      args: [],
+    );
+  }
+
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

@@ -45,6 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds} с";
 
+  static String m6(page) => "Продолжить · стр. ${page}";
+
+  static String m7(count) => "${count} стр.";
+
+  static String m8(count) => "Комментарии: ${count}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Загрузить аватар"),
@@ -793,6 +799,21 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("Управление группами"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("Выбрать папку избранного"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("Наверх"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("Период рейтинга")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("Период рейтинга"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("Все"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("Ещё"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("Копировать ссылку"),
+        "file_size": MessageLookupByLibrary.simpleMessage("Размер"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("Фон страницы галереи"),
+        "english_title": MessageLookupByLibrary.simpleMessage("Название (EN)"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("Название (JP)"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("Показано"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("Показать английское"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("Показать японское"),
+        "search_title": MessageLookupByLibrary.simpleMessage("Искать по названию"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("Копировать название")
       };
 }

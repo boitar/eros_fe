@@ -435,6 +435,12 @@ class EhSettingService extends ProfileService {
   int get pHashThreshold => _pHashThreshold.value;
   set pHashThreshold(int val) => _pHashThreshold.value = val;
 
+  /// Blurred cover behind the gallery detail header.
+  final _detailAmbientBackground = true.obs;
+  bool get detailAmbientBackground => _detailAmbientBackground.value;
+  set detailAmbientBackground(bool val) =>
+      _detailAmbientBackground.value = val;
+
   // enableSlideOutPage
   final _enableSlideOutPage = true.obs;
   bool get enableSlideOutPage => _enableSlideOutPage.value;
@@ -936,6 +942,12 @@ class EhSettingService extends ProfileService {
     });
 
     // _enableSlideOutPage
+
+    detailAmbientBackground =
+        ehConfig.detailAmbientBackground ?? detailAmbientBackground;
+    everProfile<bool>(_detailAmbientBackground, (value) {
+      ehConfig = ehConfig.copyWith(detailAmbientBackground: value.oN);
+    });
   }
 
   ///

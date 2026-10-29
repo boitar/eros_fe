@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/const.dart';
+import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/utils/toast.dart';
 import 'package:flutter/cupertino.dart';
@@ -40,8 +41,10 @@ class GalleryInfoPage extends StatelessWidget {
                   'Gid': pageState.galleryProvider!.gid,
                   'Token': pageState.galleryProvider!.token,
                   'Url': pageState.url,
-                  'Title': pageState.galleryProvider!.englishTitle,
-                  'Jpn Title': pageState.galleryProvider!.japaneseTitle,
+                  L10n.of(context).english_title:
+                      pageState.galleryProvider!.englishTitle,
+                  L10n.of(context).japanese_title:
+                      pageState.galleryProvider!.japaneseTitle,
                   'Thumb': pageState.galleryProvider!.imgUrl,
                   'Category': pageState.galleryProvider!.category,
                   'Uploader': pageState.galleryProvider!.uploader,

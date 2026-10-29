@@ -493,5 +493,20 @@
   "group_management": "分組管理",
   "choose_favcat": "選擇收藏夾",
   "back_to_top": "回到頂部",
-  "ranking_period": "排行週期"
+  "ranking_period": "排行週期",
+  "continue_reading_page": "繼續閱讀 · 第 {page} 頁",
+  "see_all": "全部",
+  "page_count": "{count} 頁",
+  "comment_count": "{count} 則",
+  "more_actions": "更多",
+  "copy_link": "複製連結",
+  "file_size": "大小",
+  "detail_ambient_background": "詳情頁氛圍背景",
+  "english_title": "英文標題",
+  "japanese_title": "日文標題",
+  "title_showing": "目前顯示",
+  "show_english_title": "顯示英文標題",
+  "show_japanese_title": "顯示日文標題",
+  "search_title": "搜尋標題",
+  "copy_title": "複製標題"
 }

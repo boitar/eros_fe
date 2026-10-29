@@ -45,6 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds} s";
 
+  static String m6(page) => "Continue · Page ${page}";
+
+  static String m7(count) => "${count} pages";
+
+  static String m8(count) => "${count} comments";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
@@ -758,6 +764,21 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("Manage Groups"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("Choose Favorites Folder"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("Back to Top"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("Ranking Period")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("Ranking Period"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("See All"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("More"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("Copy Link"),
+        "file_size": MessageLookupByLibrary.simpleMessage("Size"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("Ambient Background in Gallery"),
+        "english_title": MessageLookupByLibrary.simpleMessage("English Title"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("Japanese Title"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("Showing"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("Show English Title"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("Show Japanese Title"),
+        "search_title": MessageLookupByLibrary.simpleMessage("Search Title"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("Copy Title")
       };
 }

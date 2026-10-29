@@ -493,5 +493,20 @@
   "group_management": "グループ管理",
   "choose_favcat": "お気に入りフォルダを選択",
   "back_to_top": "トップへ戻る",
-  "ranking_period": "ランキング期間"
+  "ranking_period": "ランキング期間",
+  "continue_reading_page": "続きから · {page} ページ",
+  "see_all": "すべて",
+  "page_count": "{count} ページ",
+  "comment_count": "{count} 件",
+  "more_actions": "その他",
+  "copy_link": "リンクをコピー",
+  "file_size": "サイズ",
+  "detail_ambient_background": "詳細ページの背景",
+  "english_title": "英語タイトル",
+  "japanese_title": "日本語タイトル",
+  "title_showing": "表示中",
+  "show_english_title": "英語タイトルを表示",
+  "show_japanese_title": "日本語タイトルを表示",
+  "search_title": "タイトルで検索",
+  "copy_title": "タイトルをコピー"
 }

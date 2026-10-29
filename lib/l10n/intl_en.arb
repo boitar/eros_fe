@@ -493,5 +493,20 @@
   "group_management": "Manage Groups",
   "choose_favcat": "Choose Favorites Folder",
   "back_to_top": "Back to Top",
-  "ranking_period": "Ranking Period"
+  "ranking_period": "Ranking Period",
+  "continue_reading_page": "Continue · Page {page}",
+  "see_all": "See All",
+  "page_count": "{count} pages",
+  "comment_count": "{count} comments",
+  "more_actions": "More",
+  "copy_link": "Copy Link",
+  "file_size": "Size",
+  "detail_ambient_background": "Ambient Background in Gallery",
+  "english_title": "English Title",
+  "japanese_title": "Japanese Title",
+  "title_showing": "Showing",
+  "show_english_title": "Show English Title",
+  "show_japanese_title": "Show Japanese Title",
+  "search_title": "Search Title",
+  "copy_title": "Copy Title"
 }

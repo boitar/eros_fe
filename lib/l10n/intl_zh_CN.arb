@@ -493,5 +493,20 @@
   "group_management": "分组管理",
   "choose_favcat": "选择收藏夹",
   "back_to_top": "回到顶部",
-  "ranking_period": "排行周期"
+  "ranking_period": "排行周期",
+  "continue_reading_page": "继续阅读 · 第 {page} 页",
+  "see_all": "全部",
+  "page_count": "{count} 页",
+  "comment_count": "{count} 条",
+  "more_actions": "更多",
+  "copy_link": "复制链接",
+  "file_size": "大小",
+  "detail_ambient_background": "详情页氛围背景",
+  "english_title": "英文标题",
+  "japanese_title": "日文标题",
+  "title_showing": "当前显示",
+  "show_english_title": "显示英文标题",
+  "show_japanese_title": "显示日文标题",
+  "search_title": "搜索标题",
+  "copy_title": "复制标题"
 }

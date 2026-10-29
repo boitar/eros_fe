@@ -45,6 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds} 秒";
 
+  static String m6(page) => "続きから · ${page} ページ";
+
+  static String m7(count) => "${count} ページ";
+
+  static String m8(count) => "${count} 件";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
@@ -655,6 +661,21 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("グループ管理"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("お気に入りフォルダを選択"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("トップへ戻る"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("ランキング期間")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("ランキング期間"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("すべて"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("その他"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("リンクをコピー"),
+        "file_size": MessageLookupByLibrary.simpleMessage("サイズ"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("詳細ページの背景"),
+        "english_title": MessageLookupByLibrary.simpleMessage("英語タイトル"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("日本語タイトル"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("表示中"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("英語タイトルを表示"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("日本語タイトルを表示"),
+        "search_title": MessageLookupByLibrary.simpleMessage("タイトルで検索"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("タイトルをコピー")
       };
 }

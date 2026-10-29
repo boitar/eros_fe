@@ -140,6 +140,29 @@ class GalleryPageState {
 
   String firstMainTitle = '';
 
+  /// Title language picked in the title sheet for this page only; null
+  /// follows the global setting. Display only: downloads, archives and
+  /// shares keep using [mainTitle].
+  final Rxn<bool> _displayJapanese = Rxn<bool>();
+
+  bool get hasJapaneseTitle =>
+      galleryProvider?.japaneseTitle?.trim().isNotEmpty ?? false;
+
+  bool get hasBothTitles =>
+      hasJapaneseTitle &&
+      (galleryProvider?.englishTitle?.trim().isNotEmpty ?? false);
+
+  bool get showingJapaneseTitle =>
+      hasJapaneseTitle &&
+      (_displayJapanese.value ?? _ehSettingService.jpnTitleInGalleryPage);
+
+  String get displayTitle => showingJapaneseTitle
+      ? galleryProvider?.japaneseTitle ?? ''
+      : galleryProvider?.englishTitle ?? '';
+
+  void toggleDisplayTitleLanguage() =>
+      _displayJapanese.value = !showingJapaneseTitle;
+
   // 根据设置的语言显示的标题
   String get mainTitle {
     if ((_ehSettingService.jpnTitleInGalleryPage) &&

@@ -28,7 +28,9 @@ import 'gallery_page_state.dart';
 import 'taginfo_controller.dart';
 import 'torrent_controller.dart';
 
-const double kHeaderHeightOffset = kHeaderHeight + 52.0;
+/// Scroll offset at which the hero's Read button has passed under the bar,
+/// so the bar takes over the title and the Read action.
+const double kHeaderHeightOffset = 452.0;
 
 typedef ImageCallback = GalleryImage Function(GalleryImage image);
 

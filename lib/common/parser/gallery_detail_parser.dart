@@ -235,6 +235,12 @@ Future<GalleryProvider> parseGalleryDetail(String response) async {
   final RegExpMatch? _match =
       RegExp(r'url\((.+)\)').firstMatch(_imageElemStyle);
   final String _imageUrl = _match?.group(1) ?? '';
+  // The cover box carries the thumbnail's size, which gives its shape.
+  final int? _imageWidth = int.tryParse(
+      RegExp(r'width:\s*(\d+)px').firstMatch(_imageElemStyle)?.group(1) ?? '');
+  final int? _imageHeight = int.tryParse(
+      RegExp(r'height:\s*(\d+)px').firstMatch(_imageElemStyle)?.group(1) ??
+          '');
 
   final favorite = parseDetailFavorite(document);
   final String? _favTitle = favorite.$2;
@@ -331,6 +337,8 @@ Future<GalleryProvider> parseGalleryDetail(String response) async {
 
   final galleryProvider = GalleryProvider(
     imgUrl: _imageUrl,
+    imgWidth: _imageWidth,
+    imgHeight: _imageHeight,
     tagGroup: await parseGalleryTags(document),
     galleryComment: _galleryComments,
     galleryImages: parseGalleryImage(document),

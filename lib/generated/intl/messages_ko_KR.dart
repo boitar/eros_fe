@@ -45,6 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds}초";
 
+  static String m6(page) => "이어 읽기 · ${page}페이지";
+
+  static String m7(count) => "${count}페이지";
+
+  static String m8(count) => "댓글 ${count}개";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
@@ -710,6 +716,21 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("그룹 관리"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("즐겨찾기 폴더 선택"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("맨 위로"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("순위 기간")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("순위 기간"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("모두 보기"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("더 보기"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("링크 복사"),
+        "file_size": MessageLookupByLibrary.simpleMessage("크기"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("상세 페이지 배경"),
+        "english_title": MessageLookupByLibrary.simpleMessage("영어 제목"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("일본어 제목"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("표시 중"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("영어 제목 보기"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("일본어 제목 보기"),
+        "search_title": MessageLookupByLibrary.simpleMessage("제목 검색"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("제목 복사")
       };
 }

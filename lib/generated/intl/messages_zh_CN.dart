@@ -45,6 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds} 秒";
 
+  static String m6(page) => "继续阅读 · 第 ${page} 页";
+
+  static String m7(count) => "${count} 页";
+
+  static String m8(count) => "${count} 条";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("上传头像"),
@@ -615,6 +621,21 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("分组管理"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("选择收藏夹"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("回到顶部"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("排行周期")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("排行周期"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("全部"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("更多"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("复制链接"),
+        "file_size": MessageLookupByLibrary.simpleMessage("大小"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("详情页氛围背景"),
+        "english_title": MessageLookupByLibrary.simpleMessage("英文标题"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("日文标题"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("当前显示"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("显示英文标题"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("显示日文标题"),
+        "search_title": MessageLookupByLibrary.simpleMessage("搜索标题"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("复制标题")
       };
 }

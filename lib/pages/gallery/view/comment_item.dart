@@ -26,9 +26,13 @@ class CommentItem extends StatelessWidget {
     Key? key,
     required this.galleryComment,
     this.simple = false,
+    this.grouped = false,
   }) : super(key: key);
   final GalleryComment galleryComment;
   final bool simple;
+
+  /// Inside a grouped container that already draws the surface.
+  final bool grouped;
 
   @override
   Widget build(BuildContext context) {
@@ -53,13 +57,17 @@ class CommentItem extends StatelessWidget {
       id: galleryComment.id ?? 'None',
       builder: (_commentController) {
         return Container(
-          margin: const EdgeInsets.only(top: 8),
+          margin: grouped ? EdgeInsets.zero : const EdgeInsets.only(top: 8),
           child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: ehTheme.commentBackgroundColor,
-            ),
-            padding: const EdgeInsets.all(8),
+            decoration: grouped
+                ? null
+                : BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: ehTheme.commentBackgroundColor,
+                  ),
+            padding: grouped
+                ? const EdgeInsets.fromLTRB(16, 12, 16, 6)
+                : const EdgeInsets.all(8),
             alignment: Alignment.centerLeft,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

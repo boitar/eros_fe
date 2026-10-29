@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
@@ -201,22 +202,65 @@ class DownloadGalleryButton extends StatelessWidget {
   }
 }
 
+/// Section title. With [onTap], ends with "[count] · See All".
 class MiniTitle extends StatelessWidget {
-  const MiniTitle({Key? key, required this.title}) : super(key: key);
+  const MiniTitle({
+    super.key,
+    required this.title,
+    this.count,
+    this.onTap,
+  });
+
   final String title;
+  final String? count;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 2 + kPadding, vertical: 4),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
+    final palette = ehTheme.palette;
+    final text2 = CupertinoDynamicColor.resolve(palette.text2, context);
+    final row = Padding(
+      padding: const EdgeInsets.fromLTRB(kPadding + 4, 22, kPadding + 4, 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+                color: CupertinoDynamicColor.resolve(palette.text1, context),
+              ),
+            ),
+          ),
+          if (onTap != null)
+            Text.rich(
+              TextSpan(children: [
+                if (count != null && count!.isNotEmpty)
+                  TextSpan(text: '$count · ', style: TextStyle(color: text2)),
+                TextSpan(
+                  text: L10n.of(context).see_all,
+                  style: TextStyle(
+                    color: CupertinoDynamicColor.resolve(
+                        EhPalette.accent, context),
+                  ),
+                ),
+              ]),
+              style: const TextStyle(fontSize: 15),
+            ),
+        ],
       ),
+    );
+    if (onTap == null) {
+      return row;
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: row,
     );
   }
 }

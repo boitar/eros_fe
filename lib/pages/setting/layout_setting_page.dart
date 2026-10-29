@@ -332,6 +332,17 @@ class LayoutSettingList extends StatelessWidget {
           }),
         ),
 
+        EhCupertinoListTile(
+          title: Text(L10n.of(context).detail_ambient_background),
+          trailing: Obx(() {
+            return CupertinoSwitch(
+              value: _ehSettingService.detailAmbientBackground,
+              onChanged: (bool val) =>
+                  _ehSettingService.detailAmbientBackground = val,
+            );
+          }),
+        ),
+
         // fixed_height_of_list_items switch
         EhCupertinoListTile(
           title: Text(L10n.of(context).fixed_height_of_list_items),

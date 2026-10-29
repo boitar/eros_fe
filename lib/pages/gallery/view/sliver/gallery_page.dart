@@ -1,7 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/pages/gallery/view/thumb_box.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/comm.dart';
@@ -9,7 +13,10 @@ import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
 import 'package:eros_fe/pages/gallery/view/const.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_widget.dart';
+import 'package:eros_fe/pages/gallery/view/sliver/gallery_hero.dart';
+import 'package:eros_fe/pages/gallery/view/sliver/gallery_more_actions.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/gallery_page_sliver.dart';
+import 'package:eros_fe/utils/gallery_title.dart';
 import 'package:eros_fe/utils/share_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +25,6 @@ import 'package:get/get.dart';
 import 'package:keframe/keframe.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
-import 'header_sliver.dart';
 import 'slivers.dart';
 
 class GalleryPage extends StatefulWidget {
@@ -33,10 +39,11 @@ class _GalleryPageState extends State<GalleryPage> {
   late final String _tag;
   ScrollController? _pageScrollController;
 
+  /// Drives the ambient backdrop's parallax without rebuilding the page.
+  final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0);
+
   GalleryPageState get pageState => _controller.gState;
   bool get _isRoot => ModalRoute.of(context)?.isFirst == true;
-
-  void _goHome() => Get.offNamed<void>(EHRoutes.home);
 
   @override
   void initState() {
@@ -68,6 +75,7 @@ class _GalleryPageState extends State<GalleryPage> {
   @override
   void dispose() {
     _pageScrollController?.removeListener(_controller.scrollControllerLister);
+    _scrollOffset.dispose();
     deletePageController(tag: _tag);
     super.dispose();
   }
@@ -86,6 +94,7 @@ class _GalleryPageState extends State<GalleryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final native = NativeNavigationScope.isEnabled(context);
     Widget body = CustomScrollView(
       cacheExtent: 1000,
       controller: GetPlatform.isDesktop ? _controller.scrollController : null,
@@ -125,42 +134,84 @@ class _GalleryPageState extends State<GalleryPage> {
       ),
     );
 
+    // Outside EasyRefresh: it rebuilds its own scroll view from a ScrollView
+    // child and would not accept a wrapper.
+    body = NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification.depth == 0 &&
+            notification.metrics.axis == Axis.vertical) {
+          _scrollOffset.value = notification.metrics.pixels;
+        }
+        return false;
+      },
+      child: body,
+    );
+
+    // The backdrop runs under the bar, through the cover, and has faded to
+    // the canvas by the time the title starts.
+    final topInset = MediaQuery.paddingOf(context).top + (native ? 0 : 96);
+    body = Stack(
+      children: [
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: GetBuilder<GalleryPageController>(
+            tag: _tag,
+            id: GetIds.PAGE_VIEW_HEADER,
+            builder: (logic) {
+              final provider = logic.gState.galleryProvider;
+              final cover = heroCoverSize(heroCoverSource(
+                  logic.gState.galleryRepository?.item, provider));
+              return GalleryAmbientBackdrop(
+                imageUrl: provider?.imgUrl ?? '',
+                category: provider?.category,
+                height: topInset + 8 + cover.height + 48,
+                scrollOffset: _scrollOffset,
+              );
+            },
+          ),
+        ),
+        Positioned.fill(child: body),
+      ],
+    );
+
     return GetBuilder<GalleryPageController>(
       tag: _tag,
       id: GetIds.PAGE_VIEW_HEADER,
       builder: (logic) => Obx(() => NativeNavigationPage(
             chrome: NativePageChrome(
-              title: pageState.mainTitle,
-              // The header shows the full, selectable title.
-              titleVisible: false,
+              title: GalleryTitleParts.parse(pageState.displayTitle).title,
+              // The hero shows the title; the bar takes it, and the Read
+              // action, once the hero has scrolled away.
+              titleVisible: !pageState.hideNavigationBtn,
               actions: [
-                if (_isRoot)
+                if (!pageState.hideNavigationBtn)
                   NativeNavigationAction(
-                    id: 'home',
-                    title: L10n.of(context).tab_gallery,
-                    symbol: 'house',
-                    onPressed: _goHome,
+                    id: 'read',
+                    title: L10n.of(context).read,
+                    symbol: 'book',
+                    enabled: pageState.enableRead,
+                    onPressed: () => NavigatorUtil.goGalleryViewPage(
+                        pageState.lastIndex, pageState.gid,
+                        galleryTag: _tag),
                   ),
-                NativeNavigationAction(
-                  id: 'read',
-                  title: L10n.of(context).read,
-                  symbol: 'book',
-                  enabled: pageState.enableRead,
-                  onPressed: () => NavigatorUtil.goGalleryViewPage(
-                      pageState.lastIndex, pageState.gid,
-                      galleryTag: _tag),
-                ),
-                NativeNavigationAction(
-                  id: 'addTag',
-                  title: L10n.of(context).add_tags,
-                  symbol: 'tag',
-                  onPressed: _controller.addTag,
-                ),
                 NativeNavigationAction(
                   id: 'share',
                   title: L10n.of(context).share,
                   symbol: 'square.and.arrow.up',
                   onPressed: _shareGallery,
+                ),
+                NativeNavigationAction(
+                  id: 'gallery.more',
+                  title: L10n.of(context).more_actions,
+                  symbol: 'ellipsis.circle',
+                  children: [
+                    for (final action in galleryMoreActions(
+                        context, _controller,
+                        isRoot: _isRoot))
+                      action.toNative(),
+                  ],
                 ),
               ],
             ),
@@ -281,13 +332,15 @@ class GalleryNavigationBar extends StatelessWidget {
 
             CupertinoButton(
               padding: const EdgeInsets.all(0),
-              minSize: 38,
-              child: const MouseRegionClick(
-                child: Icon(CupertinoIcons.tag_circle, size: 28),
+              minimumSize: const Size(38, 38),
+              child: MouseRegionClick(
+                child: Semantics(
+                  label: L10n.of(context).more_actions,
+                  child: const Icon(CupertinoIcons.ellipsis_circle, size: 26),
+                ),
               ),
-              onPressed: () {
-                controller.addTag();
-              },
+              onPressed: () => showGalleryMoreSheet(context, controller,
+                  isRoot: ModalRoute.of(context)?.isFirst == true),
             ),
             Builder(
               builder: (buttonContext) {
@@ -363,7 +416,7 @@ class GalleryHeadTile extends StatelessWidget {
       if (pageState.fromUrl)
         GallerySliverSafeArea(
           child: GalleryObxSliver(
-            (state) => GalleryHeaderSliver(
+            (state) => GalleryHeroSliver(
               initGalleryProvider: state,
               tabTag: tabTag,
             ),
@@ -372,7 +425,7 @@ class GalleryHeadTile extends StatelessWidget {
         )
       else if (provider != null)
         GallerySliverSafeArea(
-          child: GalleryHeaderSliver(
+          child: GalleryHeroSliver(
             initGalleryProvider: provider,
             tabTag: tabTag,
           ),
@@ -396,8 +449,8 @@ class GalleryBody extends StatelessWidget {
       (GalleryProvider state) {
         return GallerySliverSafeArea(
           child: MultiSliver(children: [
-            GalleryActions(controller: controller, provider: state),
-            if (_ehSettingService.showGalleryTags) TagTile(provider: state),
+            if (_ehSettingService.showGalleryTags)
+              TagTile(provider: state, pageController: controller),
             ChapterTile(controller: controller, provider: state),
             if (_ehSettingService.showComments)
               CommentTile(controller: controller, provider: state),
@@ -423,27 +476,39 @@ class TagTile extends StatelessWidget {
   final GalleryProvider provider;
   final GalleryPageController? pageController;
 
+  EhSettingService get _ehSettingService => Get.find();
+
   @override
   Widget build(BuildContext context) {
-    return MultiSliver(children: [
-      MiniTitle(title: L10n.of(context).tags),
-      SliverPadding(
-        padding: const EdgeInsets.only(
-          left: kPadding,
-          right: kPadding,
-          bottom: 20,
-        ),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              return TagGroupItem(
-                  tagGroupData: (provider.tagGroup ?? [])[index]);
-            },
-            childCount: (provider.tagGroup ?? []).length,
+    final groups = provider.tagGroup ?? [];
+    return Obx(() {
+      final labelWidth = tagNamespaceColumnWidth(context, groups,
+          translate: _ehSettingService.isTagTranslate);
+      return MultiSliver(children: [
+        MiniTitle(title: L10n.of(context).tags),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: kPadding + 4),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => TagGroupItem(
+                tagGroupData: groups[index],
+                labelWidth: labelWidth,
+              ),
+              childCount: groups.length,
+            ),
           ),
         ),
-      ),
-    ]);
+        if (pageController != null)
+          Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(
+                kPadding + 4 + labelWidth + 10, 6, kPadding + 4, 4),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AddTagChip(onPressed: pageController!.addTag),
+            ),
+          ),
+      ]);
+    });
   }
 }
 
@@ -484,38 +549,47 @@ class CommentTile extends StatelessWidget {
   final GalleryProvider provider;
   final GalleryPageController controller;
 
+  void _openComments() =>
+      Get.toNamed(EHRoutes.galleryComment, id: detailNavigatorId);
+
   @override
   Widget build(BuildContext context) {
+    final comments = controller.gState.comments;
     return MultiSliver(children: [
-      GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () =>
-            Get.toNamed(EHRoutes.galleryComment, id: detailNavigatorId),
-        child: Row(
-          children: [
-            MiniTitle(title: L10n.of(context).gallery_comments),
-            const Spacer(),
-          ],
-        ),
-      ),
-      Container(
-        padding: const EdgeInsets.only(
-          left: kPadding,
-          right: kPadding,
-          bottom: 20,
-        ),
+      Obx(() => MiniTitle(
+            title: L10n.of(context).gallery_comments,
+            count: comments.isEmpty
+                ? null
+                : L10n.of(context).comment_count(comments.length),
+            onTap: _openComments,
+          )),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(kPadding + 4, 0, kPadding + 4, 8),
         child: GestureDetector(
           behavior: HitTestBehavior.deferToChild,
-          onTap: () => Get.toNamed(
-            EHRoutes.galleryComment,
-            id: detailNavigatorId,
-          ),
+          onTap: _openComments,
           child: Obx(() {
-            return TopCommentEx(
-              key: ValueKey(
-                  controller.gState.comments.map((e) => e.id).join('')),
-              comments: controller.gState.comments,
-              uploader: controller.gState.galleryProvider?.uploader,
+            if (comments.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return DecoratedBox(
+              decoration: ShapeDecoration(
+                color: CupertinoDynamicColor.resolve(
+                    ehTheme.palette.surface, context),
+                shape: RoundedSuperellipseBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: TopCommentEx(
+                  key: ValueKey(comments.map((e) => e.id).join('')),
+                  comments: comments,
+                  uploader: controller.gState.galleryProvider?.uploader,
+                  max: 3,
+                  grouped: true,
+                ),
+              ),
             );
           }),
         ),
@@ -565,23 +639,47 @@ class ThumbTile extends StatelessWidget {
         ],
       );
     } else {
+      // The first rows only; "See All" and pulling past the end open every
+      // thumbnail.
       return MultiSliver(children: [
-        SliverPadding(
-          padding: const EdgeInsets.only(
-            left: kPadding,
-            right: kPadding,
-            bottom: 20,
-          ),
-          sliver: ThumbSliverGrid(
-            images: pageState.firstPageImage,
-            gid: provider.gid ?? '',
-            referer: controller.gState.url,
+        MiniTitle(
+          title: L10n.of(context).thumbnails,
+          count: L10n.of(context).page_count(pageState.filecount),
+          onTap: () => Get.toNamed(
+            EHRoutes.galleryAllThumbnails,
+            id: detailNavigatorId,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 20),
-          child: MorePreviewButton(hasMorePreview: pageState.hasMoreImage),
-        ),
+        LayoutBuilder(builder: (context, constraints) {
+          const gap = 8.0;
+          const inset = kPadding + 4;
+          final width = constraints.maxWidth - inset * 2;
+          final columns = math.max(3, ((width + gap) / (120 + gap)).floor());
+          final rows = math.max(2, (9 / columns).ceil());
+          final images = pageState.firstPageImage;
+          final shown = math.min(images.length, columns * rows);
+          final cell = (width - gap * (columns - 1)) / columns;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(inset, 0, inset, 28),
+            child: Wrap(
+              spacing: gap,
+              runSpacing: 12,
+              children: [
+                for (var index = 0; index < shown; index++)
+                  SizedBox(
+                    width: cell,
+                    height: cell * 1.42 + 22,
+                    child: ThumbBox(
+                      galleryImageList: images,
+                      index: index,
+                      gid: provider.gid ?? '',
+                      referer: controller.gState.url,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }),
       ]);
     }
   }

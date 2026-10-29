@@ -1,5 +1,6 @@
 import 'package:eros_fe/common/controller/image_block_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
@@ -253,8 +254,8 @@ class _ThumbBoxState extends State<ThumbBox> {
         children: <Widget>[
           Expanded(
             child: Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
+              child: ClipRSuperellipse(
+                borderRadius: BorderRadius.circular(8),
                 child: Hero(
                   tag: '${widget.index + 1}',
                   createRectTween: (Rect? begin, Rect? end) {
@@ -268,13 +269,14 @@ class _ThumbBoxState extends State<ThumbBox> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: 6),
             child: Text(
               '${widget.galleryImage.ser}',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 11,
+                fontFeatures: const [FontFeature.tabularFigures()],
                 color: CupertinoDynamicColor.resolve(
-                    CupertinoColors.systemGrey, context),
+                    ehTheme.palette.text3, context),
               ),
             ),
           ),

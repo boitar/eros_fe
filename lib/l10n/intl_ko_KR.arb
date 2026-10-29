@@ -493,5 +493,20 @@
   "group_management": "그룹 관리",
   "choose_favcat": "즐겨찾기 폴더 선택",
   "back_to_top": "맨 위로",
-  "ranking_period": "순위 기간"
+  "ranking_period": "순위 기간",
+  "continue_reading_page": "이어 읽기 · {page}페이지",
+  "see_all": "모두 보기",
+  "page_count": "{count}페이지",
+  "comment_count": "댓글 {count}개",
+  "more_actions": "더 보기",
+  "copy_link": "링크 복사",
+  "file_size": "크기",
+  "detail_ambient_background": "상세 페이지 배경",
+  "english_title": "영어 제목",
+  "japanese_title": "일본어 제목",
+  "title_showing": "표시 중",
+  "show_english_title": "영어 제목 보기",
+  "show_japanese_title": "일본어 제목 보기",
+  "search_title": "제목 검색",
+  "copy_title": "제목 복사"
 }
