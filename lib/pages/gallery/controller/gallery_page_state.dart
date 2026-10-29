@@ -140,6 +140,10 @@ class GalleryPageState {
 
   String firstMainTitle = '';
 
+  /// The header stays on screen in its own column, so the bar never takes
+  /// over the title or the Read action.
+  bool heroPinned = false;
+
   /// Title language picked in the title sheet for this page only; null
   /// follows the global setting. Display only: downloads, archives and
   /// shares keep using [mainTitle].

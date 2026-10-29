@@ -73,22 +73,42 @@ class GalleryHeroSliver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tag = pageCtrlTagOf(context);
     return SliverToBoxAdapter(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: kHeroMaxWidth),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-            child: GetBuilder<GalleryPageController>(
-              assignId: true,
-              id: GetIds.PAGE_VIEW_HEADER,
-              tag: tag,
-              builder: (logic) => _GalleryHero(
-                controller: logic,
-                initProvider: initGalleryProvider,
-                tabTag: tabTag,
-              ),
+      child: GalleryHero(
+        initGalleryProvider: initGalleryProvider,
+        tabTag: tabTag,
+      ),
+    );
+  }
+}
+
+/// The header as a box, for the fixed side column of the two-column layout.
+class GalleryHero extends StatelessWidget {
+  const GalleryHero({
+    super.key,
+    required this.initGalleryProvider,
+    this.tabTag,
+  });
+
+  final GalleryProvider initGalleryProvider;
+  final Object? tabTag;
+
+  @override
+  Widget build(BuildContext context) {
+    final tag = pageCtrlTagOf(context);
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: kHeroMaxWidth),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: GetBuilder<GalleryPageController>(
+            assignId: true,
+            id: GetIds.PAGE_VIEW_HEADER,
+            tag: tag,
+            builder: (logic) => _GalleryHero(
+              controller: logic,
+              initProvider: initGalleryProvider,
+              tabTag: tabTag,
             ),
           ),
         ),
@@ -854,4 +874,61 @@ class GalleryAmbientBackdrop extends StatelessWidget {
       );
     });
   }
+}
+
+/// Two-column geometry for the detail page, or null for one column.
+@immutable
+class GalleryDetailColumns {
+  const GalleryDetailColumns({required this.leading, required this.gap});
+
+  /// Width of the fixed column holding the header.
+  final double leading;
+
+  /// Space between the columns: the fold on an unfolded Duo, else none.
+  final double gap;
+
+  /// Fixed header column on wide windows.
+  static const double sideWidth = 320;
+
+  /// Narrowest page that gets two columns without a fold.
+  static const double wideWidth = 700;
+
+  /// Narrowest column either side of a fold.
+  static const double minPane = 260;
+
+  /// [width] is the page's own width. A book fold only splits the page
+  /// when the page fills the window, so window and page coordinates agree;
+  /// split panes already sit either side of it.
+  static GalleryDetailColumns? resolve({
+    required double width,
+    AdaptiveEnvironmentSnapshot? environment,
+    bool split = false,
+  }) {
+    if (environment != null &&
+        !split &&
+        (width - environment.size.width).abs() < 1) {
+      for (final region in environment.activeDivisionRegions) {
+        final fold = region.frame;
+        if (fold.height < fold.width) {
+          continue;
+        }
+        if (fold.left >= minPane && width - fold.right >= minPane) {
+          return GalleryDetailColumns(leading: fold.left, gap: fold.width);
+        }
+      }
+    }
+    if (width >= wideWidth) {
+      return const GalleryDetailColumns(leading: sideWidth, gap: 0);
+    }
+    return null;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is GalleryDetailColumns &&
+      other.leading == leading &&
+      other.gap == gap;
+
+  @override
+  int get hashCode => Object.hash(leading, gap);
 }

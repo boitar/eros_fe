@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
-import 'package:eros_fe/index.dart';
-import 'package:eros_fe/pages/gallery/view/thumb_box.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
+import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/comm.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
@@ -16,9 +17,11 @@ import 'package:eros_fe/pages/gallery/view/gallery_widget.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/gallery_hero.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/gallery_more_actions.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/gallery_page_sliver.dart';
+import 'package:eros_fe/pages/gallery/view/thumb_box.dart';
 import 'package:eros_fe/utils/gallery_title.dart';
 import 'package:eros_fe/utils/share_service.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyrefresh/easy_refresh.dart';
 import 'package:get/get.dart';
@@ -41,6 +44,7 @@ class _GalleryPageState extends State<GalleryPage> {
 
   /// Drives the ambient backdrop's parallax without rebuilding the page.
   final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0);
+  final ValueNotifier<double> _sideOffset = ValueNotifier<double>(0);
 
   GalleryPageState get pageState => _controller.gState;
   bool get _isRoot => ModalRoute.of(context)?.isFirst == true;
@@ -76,6 +80,7 @@ class _GalleryPageState extends State<GalleryPage> {
   void dispose() {
     _pageScrollController?.removeListener(_controller.scrollControllerLister);
     _scrollOffset.dispose();
+    _sideOffset.dispose();
     deletePageController(tag: _tag);
     super.dispose();
   }
@@ -92,29 +97,28 @@ class _GalleryPageState extends State<GalleryPage> {
         context: context);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final native = NativeNavigationScope.isEnabled(context);
-    Widget body = CustomScrollView(
-      cacheExtent: 1000,
-      controller: GetPlatform.isDesktop ? _controller.scrollController : null,
-      slivers: [
-        if (NativeNavigationScope.isEnabled(context))
-          // UIKit owns the bar, but this custom sliver view still owns its
-          // scroll insets. Consume the live top inset once, including after
-          // the Duo bar moves from the side to the top.
-          SliverToBoxAdapter(
-            child: SizedBox(height: MediaQuery.paddingOf(context).top),
-          )
-        else
-          GalleryNavigationBar(controller: _controller),
-        EhCupertinoSliverRefreshControl(onRefresh: _controller.handOnRefresh),
-        GalleryHeadTile(controller: _controller),
-        GalleryBody(controller: _controller),
-      ],
-    );
+  /// Follows the layout: a pinned header keeps the bar from taking over the
+  /// title, and leaving two columns re-reads the scroll position.
+  void _pinHero(bool pinned) {
+    if (pageState.heroPinned == pinned) {
+      return;
+    }
+    pageState.heroPinned = pinned;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      if (pinned) {
+        pageState.hideNavigationBtn = true;
+      } else {
+        _controller.scrollControllerLister();
+      }
+    });
+  }
 
-    body = SizeCacheWidget(
+  /// Pulling past the end opens every thumbnail, as before.
+  Widget _refreshable(Widget scrollView) {
+    return SizeCacheWidget(
       child: EasyRefresh(
         enableControlFinishRefresh: false,
         enableControlFinishLoad: false,
@@ -130,51 +134,176 @@ class _GalleryPageState extends State<GalleryPage> {
           backgroundColor: Colors.transparent,
           color: CupertinoColors.inactiveGray,
         ),
-        child: body,
+        child: scrollView,
       ),
     );
+  }
 
-    // Outside EasyRefresh: it rebuilds its own scroll view from a ScrollView
-    // child and would not accept a wrapper.
-    body = NotificationListener<ScrollNotification>(
+  /// Reports vertical scroll offsets of the scroll view directly inside.
+  Widget _trackScroll(ValueNotifier<double> offset, Widget child) {
+    return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification.depth == 0 &&
             notification.metrics.axis == Axis.vertical) {
-          _scrollOffset.value = notification.metrics.pixels;
+          offset.value = notification.metrics.pixels;
         }
         return false;
       },
-      child: body,
+      child: child,
     );
+  }
 
-    // The backdrop runs under the bar, through the cover, and has faded to
-    // the canvas by the time the title starts.
-    final topInset = MediaQuery.paddingOf(context).top + (native ? 0 : 96);
-    body = Stack(
+  /// The backdrop runs under the bar, through the cover, and has faded to
+  /// the canvas by the time the title starts.
+  Widget _backdrop(double topInset, ValueListenable<double> offset) {
+    return GetBuilder<GalleryPageController>(
+      tag: _tag,
+      id: GetIds.PAGE_VIEW_HEADER,
+      builder: (logic) {
+        final provider = logic.gState.galleryProvider;
+        final cover = heroCoverSize(
+            heroCoverSource(logic.gState.galleryRepository?.item, provider));
+        return GalleryAmbientBackdrop(
+          imageUrl: provider?.imgUrl ?? '',
+          category: provider?.category,
+          height: topInset + 8 + cover.height + 48,
+          scrollOffset: offset,
+        );
+      },
+    );
+  }
+
+  Widget _singleColumn(BuildContext context,
+      {required bool native, required double topInset}) {
+    // Outside EasyRefresh: it rebuilds its own scroll view from a ScrollView
+    // child and would not accept a wrapper.
+    final body = _trackScroll(
+      _scrollOffset,
+      _refreshable(CustomScrollView(
+        cacheExtent: 1000,
+        controller: GetPlatform.isDesktop ? _controller.scrollController : null,
+        slivers: [
+          if (native)
+            // UIKit owns the bar, but this custom sliver view still owns its
+            // scroll insets. Consume the live top inset once, including after
+            // the Duo bar moves from the side to the top.
+            SliverToBoxAdapter(
+              child: SizedBox(height: MediaQuery.paddingOf(context).top),
+            )
+          else
+            GalleryNavigationBar(controller: _controller),
+          EhCupertinoSliverRefreshControl(onRefresh: _controller.handOnRefresh),
+          GalleryHeadTile(controller: _controller),
+          GalleryBody(controller: _controller),
+        ],
+      )),
+    );
+    return Stack(
       children: [
         Positioned(
           top: 0,
           left: 0,
           right: 0,
-          child: GetBuilder<GalleryPageController>(
-            tag: _tag,
-            id: GetIds.PAGE_VIEW_HEADER,
-            builder: (logic) {
-              final provider = logic.gState.galleryProvider;
-              final cover = heroCoverSize(heroCoverSource(
-                  logic.gState.galleryRepository?.item, provider));
-              return GalleryAmbientBackdrop(
-                imageUrl: provider?.imgUrl ?? '',
-                category: provider?.category,
-                height: topInset + 8 + cover.height + 48,
-                scrollOffset: _scrollOffset,
-              );
-            },
-          ),
+          child: _backdrop(topInset, _scrollOffset),
         ),
         Positioned.fill(child: body),
       ],
     );
+  }
+
+  /// The header sits in a fixed column with its own backdrop; tags,
+  /// thumbnails and comments scroll beside it. On an unfolded Duo the
+  /// columns meet at the fold.
+  Widget _twoColumns(BuildContext context, GalleryDetailColumns columns,
+      {required double topInset}) {
+    final dynamic tabTag = pageState.galleryRepository?.tabTag;
+    Widget hero() {
+      if (pageState.fromUrl) {
+        return _controller.obx(
+          (state) => state == null
+              ? const SizedBox.shrink()
+              : GalleryHero(initGalleryProvider: state, tabTag: tabTag),
+          onLoading: const SizedBox.shrink(),
+          onError: (_) => const SizedBox.shrink(),
+        );
+      }
+      final provider = pageState.galleryProvider;
+      return provider == null
+          ? const SizedBox.shrink()
+          : GalleryHero(initGalleryProvider: provider, tabTag: tabTag);
+    }
+
+    final side = Stack(
+      children: [
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: _backdrop(topInset, _sideOffset),
+        ),
+        Positioned.fill(
+          child: _trackScroll(
+            _sideOffset,
+            SingleChildScrollView(
+              // The content column owns the primary scroll controller.
+              primary: false,
+              padding: EdgeInsets.only(
+                top: topInset,
+                bottom: MediaQuery.paddingOf(context).bottom + 16,
+              ),
+              child: hero(),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    final content = _refreshable(CustomScrollView(
+      cacheExtent: 1000,
+      controller: GetPlatform.isDesktop ? _controller.scrollController : null,
+      slivers: [
+        SliverToBoxAdapter(child: SizedBox(height: topInset)),
+        EhCupertinoSliverRefreshControl(onRefresh: _controller.handOnRefresh),
+        GalleryBody(controller: _controller),
+      ],
+    ));
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(width: columns.leading, child: side),
+        if (columns.gap > 0)
+          SizedBox(width: columns.gap)
+        else
+          Container(
+            width: 0.5,
+            color: CupertinoDynamicColor.resolve(EhPalette.separator, context),
+          ),
+        Expanded(child: content),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final native = NativeNavigationScope.isEnabled(context);
+    final topInset = MediaQuery.paddingOf(context).top + (native ? 0 : 96);
+
+    final Widget body = LayoutBuilder(builder: (context, constraints) {
+      // Two columns need the native bar: the Flutter bar lives inside the
+      // single scroll view.
+      final columns = native
+          ? GalleryDetailColumns.resolve(
+              width: constraints.maxWidth,
+              environment: AdaptiveEnvironment.maybeOf(context),
+              split: BrowsePaneScope.isSplit(context),
+            )
+          : null;
+      _pinHero(columns != null);
+      return columns == null
+          ? _singleColumn(context, native: native, topInset: topInset)
+          : _twoColumns(context, columns, topInset: topInset);
+    });
 
     return GetBuilder<GalleryPageController>(
       tag: _tag,

@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_widget.dart';
@@ -153,6 +154,56 @@ void main() {
     const detail = GalleryProvider(imgWidth: 250, imgHeight: 250);
     expect(heroCoverSource(list, detail), same(list));
     expect(heroCoverSource(const GalleryProvider(), detail), same(detail));
+  });
+
+  group('detail columns', () {
+    AdaptiveEnvironmentSnapshot window(Size size, [Rect? fold]) =>
+        AdaptiveEnvironmentSnapshot(
+          size: size,
+          reservedRegions: [
+            if (fold != null)
+              AdaptiveRegion(frame: fold, kind: AdaptiveRegionKind.division),
+          ],
+        );
+
+    test('phones keep one column; wide pages get a fixed side column', () {
+      expect(GalleryDetailColumns.resolve(width: 402), isNull);
+      expect(GalleryDetailColumns.resolve(width: 699), isNull);
+      expect(GalleryDetailColumns.resolve(width: 700),
+          const GalleryDetailColumns(leading: 320, gap: 0));
+      expect(GalleryDetailColumns.resolve(width: 1032),
+          const GalleryDetailColumns(leading: 320, gap: 0));
+    });
+
+    test('an unfolded Duo splits the page at the fold', () {
+      final duo =
+          window(const Size(560, 900), const Rect.fromLTWH(272, 0, 16, 900));
+      expect(GalleryDetailColumns.resolve(width: 560, environment: duo),
+          const GalleryDetailColumns(leading: 272, gap: 16));
+    });
+
+    test('the fold is ignored when it cannot split the page', () {
+      final duo =
+          window(const Size(560, 900), const Rect.fromLTWH(272, 0, 16, 900));
+      // Split panes already sit either side of the fold.
+      expect(
+          GalleryDetailColumns.resolve(
+              width: 560, environment: duo, split: true),
+          isNull);
+      // A page narrower than the window is a pane, not the whole window.
+      expect(
+          GalleryDetailColumns.resolve(width: 400, environment: duo), isNull);
+      // Panes narrower than 260pt each stay one column.
+      final narrow =
+          window(const Size(500, 900), const Rect.fromLTWH(242, 0, 16, 900));
+      expect(GalleryDetailColumns.resolve(width: 500, environment: narrow),
+          isNull);
+      // A horizontal fold is tabletop, not a book.
+      final tabletop =
+          window(const Size(900, 700), const Rect.fromLTWH(0, 342, 900, 16));
+      expect(GalleryDetailColumns.resolve(width: 900, environment: tabletop),
+          const GalleryDetailColumns(leading: 320, gap: 0));
+    });
   });
 
   test('saturation matrix keeps grey and amplifies colour', () {

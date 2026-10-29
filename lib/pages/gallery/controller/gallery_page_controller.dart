@@ -449,6 +449,12 @@ class GalleryPageController extends GetxController
     if (scrollController == null) {
       return;
     }
+    if (gState.heroPinned) {
+      if (!gState.hideNavigationBtn) {
+        gState.hideNavigationBtn = true;
+      }
+      return;
+    }
     // logger.d('${scrollController?.offset}');
     try {
       if (scrollController!.offset < kHeaderHeightOffset + kHeaderPaddingTop &&
