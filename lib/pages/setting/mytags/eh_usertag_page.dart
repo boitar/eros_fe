@@ -33,7 +33,6 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         padding: const EdgeInsetsDirectional.only(end: 10),
         middle: _middle(context),

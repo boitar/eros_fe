@@ -16,7 +16,6 @@ class MysqlSyncPage extends StatelessWidget {
   Widget build(BuildContext context) {
     const String _title = 'MySQL Sync';
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         middle: const Text(_title),
         // trailing: _buildListButtons(context),

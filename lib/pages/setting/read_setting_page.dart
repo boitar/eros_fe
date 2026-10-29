@@ -22,7 +22,6 @@ class ReadSettingPage extends StatelessWidget {
     return NativeNavigationPage(
       chrome: NativePageChrome(title: L10n.of(context).read_setting),
       child: CupertinoPageScaffold(
-        backgroundColor: CupertinoColors.systemGroupedBackground,
         navigationBar: NativeNavigationScope.isEnabled(context)
             ? null
             : CupertinoNavigationBar(

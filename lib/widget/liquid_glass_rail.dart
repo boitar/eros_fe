@@ -405,10 +405,11 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     final textStyle = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
           fontSize: 15.0,
           fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          color: selected
-              ? CupertinoDynamicColor.resolve(
-                  CupertinoColors.activeBlue, context)
-              : CupertinoDynamicColor.resolve(CupertinoColors.label, context),
+          // Glass bars stay monochrome over colourful covers; the lens and
+          // weight carry the selection.
+          color: CupertinoDynamicColor.resolve(
+              selected ? CupertinoColors.label : CupertinoColors.secondaryLabel,
+              context),
         );
     return Semantics(
       button: true,

@@ -698,7 +698,7 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         for (index, button) in buttons.enumerated() {
             let selected = index == previewIndex
             button.isSelected = selected
-            button.setTitleColor(selected ? .systemBlue : .label, for: .normal)
+            button.setTitleColor(selected ? .label : .secondaryLabel, for: .normal)
             button.titleLabel?.font = .systemFont(ofSize: fontSize,
                                                   weight: selected ? .semibold : .regular)
             button.accessibilityTraits = selected ? [.button, .selected] : [.button]
@@ -831,6 +831,8 @@ private final class SystemLiquidGlassTabBarPlatformView: NSObject, FlutterPlatfo
         super.init()
         root.backgroundColor = .clear
         bar.delegate = self
+        // Monochrome over colourful content; the glass lens marks selection.
+        bar.tintColor = .label
         // This bar lives in a Flutter pane, which can be only 320pt wide
         // while the iPad window still has regular-width traits. Keep UIKit's
         // compact item layout and distribute it across the actual bar width.
@@ -855,6 +857,7 @@ private final class SystemLiquidGlassTabBarPlatformView: NSObject, FlutterPlatfo
         root.addSubview(search)
         search.addTarget(self, action: #selector(openSearch), for: .touchUpInside)
         search.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
+        search.tintColor = .label
         search.accessibilityLabel = "Search"
         search.accessibilityIdentifier = "liquid-glass-search"
         search.isAccessibilityElement = true

@@ -28,7 +28,6 @@ class BlockRuleEditPage extends GetView<BlockController> {
     controller.currentEnableRegex = blockRule.enableRegex ?? false;
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         middle: Text(title),
         trailing: CupertinoButton(

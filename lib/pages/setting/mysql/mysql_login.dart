@@ -56,7 +56,6 @@ class _MysqlLoginState extends State<MysqlLogin> {
     );
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: const CupertinoNavigationBar(
         middle: Text('MySQL Login'),
       ),

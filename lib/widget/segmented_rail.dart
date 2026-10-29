@@ -422,8 +422,8 @@ class _SegmentedRailState extends State<SegmentedRail> {
                           selected ? FontWeight.w600 : FontWeight.w400,
                       color: CupertinoDynamicColor.resolve(
                           selected
-                              ? CupertinoColors.activeBlue
-                              : CupertinoColors.label,
+                              ? CupertinoColors.label
+                              : CupertinoColors.secondaryLabel,
                           context),
                     ),
               ),

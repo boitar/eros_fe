@@ -73,7 +73,6 @@ class AboutPage extends StatelessWidget {
     }
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         middle: Text(L10n.of(context).about),
       ),

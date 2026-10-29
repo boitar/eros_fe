@@ -1,5 +1,4 @@
 import 'package:chinese_font_library/chinese_font_library.dart';
-import 'package:eros_fe/common/colors.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_boring_avatars/flutter_boring_avatars.dart';
 
@@ -19,50 +18,6 @@ enum ThemesModeEnum {
 
 class CustomTheme {
   late CupertinoThemeData themeData;
-}
-
-class EhDynamicColors {
-  static const EhDynamicColor textFieldBackground = EhDynamicColor(
-    color: Color.fromARGB(255, 239, 239, 240),
-    darkColor: Color.fromARGB(255, 28, 28, 31),
-    darkGrayColor: Color.fromARGB(255, 47, 47, 47),
-  );
-
-  static const EhDynamicColor commentTextFieldBackground = EhDynamicColor(
-    color: Color.fromARGB(255, 233, 233, 233),
-    darkColor: Color.fromARGB(255, 28, 28, 31),
-    darkGrayColor: Color.fromARGB(255, 47, 47, 47),
-  );
-
-  static const EhDynamicColor commentReplyBackground = EhDynamicColor(
-    color: Color.fromARGB(255, 253, 253, 253),
-    darkColor: Color.fromARGB(255, 0, 0, 0),
-    darkGrayColor: Color.fromARGB(255, 28, 28, 28),
-  );
-
-  static const EhDynamicColor commentBackground = EhDynamicColor(
-    color: Color.fromARGB(255, 242, 242, 247),
-    darkColor: Color.fromARGB(255, 20, 20, 20),
-    darkGrayColor: Color.fromARGB(255, 40, 40, 40),
-  );
-
-  static const EhDynamicColor favnoteTextFieldBackground = EhDynamicColor(
-    color: Color.fromARGB(255, 250, 250, 250),
-    darkColor: Color.fromARGB(255, 28, 28, 31),
-    darkGrayColor: Color.fromARGB(255, 47, 47, 47),
-  );
-
-  static const EhDynamicColor itemBackground = EhDynamicColor(
-    color: Color.fromARGB(255, 255, 255, 255),
-    darkColor: Color.fromARGB(255, 30, 30, 30),
-    darkGrayColor: Color.fromARGB(255, 32, 32, 32),
-  );
-
-  static const EhDynamicColor commitIcon = EhDynamicColor(
-    color: Color.fromARGB(255, 140, 140, 142),
-    darkColor: Color.fromARGB(255, 132, 132, 137),
-    darkGrayColor: Color.fromARGB(255, 132, 132, 137),
-  );
 }
 
 // ignore: avoid_classes_with_only_static_members
@@ -97,17 +52,21 @@ class ThemeColors {
   );
 
   static const CupertinoDynamicColor tagText =
-      CupertinoDynamicColor.withBrightness(
+      CupertinoDynamicColor.withBrightnessAndContrast(
     debugLabel: 'tagText',
-    color: Color(0xff505050),
-    darkColor: CupertinoColors.systemGrey4,
+    color: Color(0xFF5E636B),
+    darkColor: Color(0xFFA3A7AF),
+    highContrastColor: Color(0xFF454A52),
+    darkHighContrastColor: Color(0xFFC4C7CE),
   );
 
   static const CupertinoDynamicColor tagBackground =
-      CupertinoDynamicColor.withBrightness(
+      CupertinoDynamicColor.withBrightnessAndContrast(
     debugLabel: 'tagBackground',
-    color: Color(0xffeeeeee),
-    darkColor: CupertinoColors.secondaryLabel,
+    color: Color(0x0F14161C),
+    darkColor: Color(0x14FFFFFF),
+    highContrastColor: Color(0x1F14161C),
+    darkHighContrastColor: Color(0x24FFFFFF),
   );
 
   static const CupertinoDynamicColor line =
@@ -175,40 +134,6 @@ class ThemeColors {
       darkColor: Color.fromARGB(255, 127, 74, 107),
     ),
   };
-
-  /// 主题配置
-  /// 浅色主题
-  static CupertinoThemeData lightTheme = CupertinoThemeData(
-    brightness: Brightness.light,
-    barBackgroundColor: navigationBarBackground,
-    textTheme: ehTextTheme,
-    primaryColor: CupertinoColors.systemBlue,
-    // scaffoldBackgroundColor: CupertinoColors.secondarySystemBackground,
-  );
-
-  /// 浅色主题
-  static CupertinoThemeData lightThemeSecondary = CupertinoThemeData(
-    brightness: Brightness.light,
-    barBackgroundColor: navigationBarBackground,
-    scaffoldBackgroundColor: CupertinoColors.secondarySystemBackground,
-    textTheme: ehTextTheme,
-  );
-
-  /// 深色纯黑主题
-  static CupertinoThemeData darkPureTheme = CupertinoThemeData(
-    brightness: Brightness.dark,
-    barBackgroundColor: navigationBarBackground,
-    // scaffoldBackgroundColor: CupertinoColors.secondarySystemBackground,
-    textTheme: ehTextTheme,
-  );
-
-  /// 深色灰黑
-  static CupertinoThemeData darkGrayTheme = CupertinoThemeData(
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: const Color.fromARGB(255, 20, 20, 20),
-    barBackgroundColor: navigationBarBackgroundGray,
-    textTheme: ehTextTheme,
-  );
 
   static List<Color> get catColorList => catColor.entries
       .where((e) => e.key != 'default')
@@ -343,23 +268,6 @@ class ThemeColors {
   /// 收藏颜色解析失败时仍显示收藏状态。
   static Color favColorFor(String? favcat) =>
       favColor[favcat] ?? CupertinoColors.systemGrey;
-
-  static const CupertinoDynamicColor navigationBarBackground =
-      CupertinoDynamicColor.withBrightness(
-    debugLabel: 'navigationBarBackground',
-    color: Color.fromARGB(200, 255, 255, 255),
-    darkColor: Color.fromARGB(200, 20, 20, 20),
-  );
-
-  static const CupertinoDynamicColor navigationBarBackgroundGray =
-      CupertinoDynamicColor.withBrightness(
-    debugLabel: 'navigationBarBackgroundGray',
-    // color: Color.fromARGB(230, 35, 35, 35),
-    color: Color.fromARGB(200, 249, 249, 249),
-    darkColor: Color.fromARGB(200, 20, 20, 20),
-    // color: Color.fromARGB(222, 186, 27, 27),
-    // darkColor: Color.fromARGB(230, 21, 212, 75),
-  );
 
   static const Map<String, Color> colorRatingMap = <String, Color>{
     'ir': Color.fromARGB(255, 255, 150, 46),

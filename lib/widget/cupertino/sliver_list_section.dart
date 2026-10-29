@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
@@ -101,7 +103,7 @@ class SliverCupertinoListSection extends StatelessWidget {
     this.header,
     this.footer,
     this.margin = _kDefaultRowsMargin,
-    this.backgroundColor = CupertinoColors.systemGroupedBackground,
+    this.backgroundColor,
     this.decoration,
     this.clipBehavior = Clip.none,
     this.dividerMargin = _kBaseDividerMargin,
@@ -125,7 +127,7 @@ class SliverCupertinoListSection extends StatelessWidget {
     this.header,
     this.footer,
     this.margin = _kDefaultRowsMargin,
-    this.backgroundColor = CupertinoColors.systemGroupedBackground,
+    this.backgroundColor,
     this.decoration,
     this.clipBehavior = Clip.hardEdge,
     this.dividerMargin = _kInsetDividerMargin,
@@ -151,7 +153,7 @@ class SliverCupertinoListSection extends StatelessWidget {
     this.header,
     this.footer,
     EdgeInsetsGeometry? margin,
-    this.backgroundColor = CupertinoColors.systemGroupedBackground,
+    this.backgroundColor,
     this.decoration,
     this.clipBehavior = Clip.hardEdge,
     this.dividerMargin = _kInsetDividerMargin,
@@ -180,7 +182,7 @@ class SliverCupertinoListSection extends StatelessWidget {
     this.header,
     this.footer,
     EdgeInsetsGeometry? margin,
-    this.backgroundColor = CupertinoColors.systemGroupedBackground,
+    this.backgroundColor,
     this.decoration,
     this.clipBehavior = Clip.hardEdge,
     this.dividerMargin = _kInsetDividerMargin,
@@ -248,8 +250,7 @@ class SliverCupertinoListSection extends StatelessWidget {
 
   /// Sets the decoration around [children].
   ///
-  /// If null, background color defaults to
-  /// [CupertinoColors.secondarySystemGroupedBackground].
+  /// If null, background color defaults to the palette surface.
   ///
   /// If null, border radius defaults to 10.0 circular radius when constructing
   /// with [SliverCupertinoListSection.insetGrouped]. Defaults to zero radius for the
@@ -258,8 +259,8 @@ class SliverCupertinoListSection extends StatelessWidget {
 
   /// Sets the background color behind the section.
   ///
-  /// Defaults to [CupertinoColors.systemGroupedBackground].
-  final Color backgroundColor;
+  /// Defaults to the theme's scaffold background, the palette canvas.
+  final Color? backgroundColor;
 
   /// {@macro flutter.material.Material.clipBehavior}
   ///
@@ -293,7 +294,7 @@ class SliverCupertinoListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color dividerColor =
-        separatorColor ?? CupertinoColors.separator.resolveFrom(context);
+        separatorColor ?? EhPalette.separator.resolveFrom(context);
     final double dividerHeight = 1.0 / MediaQuery.devicePixelRatioOf(context);
 
     SliverChildDelegate? _delegate = delegate;
@@ -460,8 +461,7 @@ class SliverCupertinoListSection extends StatelessWidget {
         decoration: decoration ??
             BoxDecoration(
               color: CupertinoDynamicColor.resolve(
-                  decoration?.color ??
-                      CupertinoColors.secondarySystemGroupedBackground,
+                  decoration?.color ?? ehTheme.palette.surface,
                   context),
               borderRadius: childrenGroupBorderRadius,
             ),
@@ -489,7 +489,10 @@ class SliverCupertinoListSection extends StatelessWidget {
 
     return DecoratedSliver(
       decoration: BoxDecoration(
-          color: CupertinoDynamicColor.resolve(backgroundColor, context)),
+          color: CupertinoDynamicColor.resolve(
+              backgroundColor ??
+                  CupertinoTheme.of(context).scaffoldBackgroundColor,
+              context)),
       sliver: MultiSliver(
         children: <Widget>[
           if (type == SliverCupertinoListSectionType.base)

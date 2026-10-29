@@ -20,6 +20,8 @@ class _Settings extends GetxService implements EhSettingService {
   @override
   bool get isPureDarkTheme => false;
   @override
+  RxBool get pureDarkThemeObs => false.obs;
+  @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw StateError('Unexpected setting $invocation');
 }

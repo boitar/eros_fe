@@ -69,7 +69,6 @@ class _CustomProfileSettingPageState extends State<CustomProfileSettingPage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         trailing: CupertinoButton(
           padding: const EdgeInsets.all(0),

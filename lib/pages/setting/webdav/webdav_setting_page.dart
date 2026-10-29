@@ -13,7 +13,6 @@ class WebDavSetting extends GetView<WebdavController> {
   Widget build(BuildContext context) {
     const String _title = 'WebDAV';
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         middle: const Text(_title),
         trailing: _buildListButtons(context),

@@ -24,7 +24,6 @@ class LoginWebDAV extends GetView<WebdavController> {
     );
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: const CupertinoNavigationBar(
         middle: Text('WebDAV Login'),
       ),

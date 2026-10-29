@@ -9,7 +9,6 @@ class PHashImageListPage extends GetView<ImageBlockController> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         padding: const EdgeInsetsDirectional.only(end: 12),
         middle: Text(L10n.of(context).phash_block_list),

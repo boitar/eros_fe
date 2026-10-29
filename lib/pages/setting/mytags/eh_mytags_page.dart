@@ -14,7 +14,6 @@ class EhMyTagsPage extends GetView<EhMyTagsController> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         padding: const EdgeInsetsDirectional.only(end: 10),
         middle: Text(L10n.of(context).ehentai_my_tags),

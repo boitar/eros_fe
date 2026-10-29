@@ -17,7 +17,6 @@ class ProxyPage extends StatelessWidget {
     final String _title = L10n.of(context).proxy;
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         padding: const EdgeInsetsDirectional.only(start: 0),
         middle: Text(_title),

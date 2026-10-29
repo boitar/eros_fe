@@ -47,10 +47,11 @@ class EhSettingService extends ProfileService {
   // RxBool blurredInRecentTasks = true.obs;
   Rx<TagIntroImgLv> tagIntroImgLv = TagIntroImgLv.nonh.obs;
 
+  /// Dark style: graphite (false) or pure black for OLED (true).
   final _isPureDarkTheme = false.obs;
-  // bool get isPureDarkTheme => _isPureDarkTheme.value;
-  bool get isPureDarkTheme => false;
+  bool get isPureDarkTheme => _isPureDarkTheme.value;
   set isPureDarkTheme(bool val) => _isPureDarkTheme.value = val;
+  RxBool get pureDarkThemeObs => _isPureDarkTheme;
 
   final _blurredInRecentTasks = false.obs;
   bool get blurredInRecentTasks => _blurredInRecentTasks.value;
@@ -737,9 +738,7 @@ class EhSettingService extends ProfileService {
     everProfile<bool>(isFavPicker,
         (value) => ehConfig = ehConfig.copyWith(favPicker: value.oN));
 
-    // TODO isPureDarkTheme 暂时禁用
-    // isPureDarkTheme = ehConfig.pureDarkTheme ?? isPureDarkTheme;
-    isPureDarkTheme = false;
+    isPureDarkTheme = ehConfig.pureDarkTheme ?? isPureDarkTheme;
     everProfile<bool>(_isPureDarkTheme,
         (bool value) => ehConfig = ehConfig.copyWith(pureDarkTheme: value.oN));
 

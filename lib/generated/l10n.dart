@@ -550,10 +550,10 @@ class L10n {
     );
   }
 
-  /// `Gray black`
+  /// `Graphite`
   String get gray_black {
     return Intl.message(
-      'Gray black',
+      'Graphite',
       name: 'gray_black',
       desc: '',
       args: [],

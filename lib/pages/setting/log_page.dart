@@ -12,7 +12,6 @@ class LogPage extends GetView<LogService> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Log'),
         trailing: CupertinoButton(

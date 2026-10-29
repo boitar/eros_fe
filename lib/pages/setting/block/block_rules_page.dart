@@ -24,7 +24,6 @@ class BlockRulesPage extends GetView<BlockController> {
     ];
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         padding: const EdgeInsetsDirectional.only(end: 8),
         middle: Text(_title),

@@ -192,7 +192,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "galery_site": MessageLookupByLibrary.simpleMessage("畫廊站點"),
         "gallery_comments": MessageLookupByLibrary.simpleMessage("畫廊評論"),
         "global_setting": MessageLookupByLibrary.simpleMessage("全域設定"),
-        "gray_black": MessageLookupByLibrary.simpleMessage("灰黑"),
+        "gray_black": MessageLookupByLibrary.simpleMessage("石墨"),
         "group": MessageLookupByLibrary.simpleMessage("分組"),
         "groupName": MessageLookupByLibrary.simpleMessage("分組名稱"),
         "groupType": MessageLookupByLibrary.simpleMessage("類型"),

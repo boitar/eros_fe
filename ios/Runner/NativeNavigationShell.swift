@@ -116,6 +116,9 @@ final class ErosNativeNavigationShell: UITabBarController,
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        // Bars float over colourful covers: keep their symbols and the
+        // selected tab monochrome and let the glass lens mark selection.
+        view.tintColor = .label
         // The bar items move into the vertical bar, but a title keeps a
         // horizontal band that pushes the panes down; refresh on axis changes.
         registerForTraitChanges(
@@ -437,6 +440,13 @@ private final class NativeTabHostController: UIViewController {
     fileprivate var barItemCache: [String: (signature: String, item: UIBarButtonItem)] = [:]
     private var visible = false
     private var appearing: Bool?
+    private var canvasObserver: NSObjectProtocol?
+
+    deinit {
+        if let canvasObserver {
+            NotificationCenter.default.removeObserver(canvasObserver)
+        }
+    }
 
     override var shouldAutomaticallyForwardAppearanceMethods: Bool { false }
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
@@ -454,7 +464,15 @@ private final class NativeTabHostController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
+        // Seen behind Flutter while a tab or route transitions.
+        view.backgroundColor = ErosAppearancePlugin.canvasColor
+        canvasObserver = NotificationCenter.default.addObserver(
+            forName: ErosAppearancePlugin.canvasDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.view.backgroundColor = ErosAppearancePlugin.canvasColor
+        }
         edgeAnchorScrollView.isHidden = true
         edgeAnchorScrollView.isUserInteractionEnabled = false
         edgeAnchorScrollView.scrollsToTop = false

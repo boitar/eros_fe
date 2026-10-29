@@ -14,7 +14,6 @@ class SecuritySettingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final _widgetList = _buildList(context);
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         transitionBetweenRoutes: true,
         middle: Text(L10n.of(context).security),

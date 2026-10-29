@@ -110,7 +110,6 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
         return true;
       },
       child: CupertinoPageScaffold(
-        backgroundColor: CupertinoColors.systemGroupedBackground,
         navigationBar: CupertinoNavigationBar(
           middle: Text(L10n.of(context).group),
           padding: const EdgeInsetsDirectional.only(end: 8),

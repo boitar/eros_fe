@@ -15,7 +15,6 @@ class LicensePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomLicensePage((context, licenseData) {
       return CupertinoPageScaffold(
-        backgroundColor: CupertinoColors.systemGroupedBackground,
         navigationBar: CupertinoNavigationBar(
           middle: Text(L10n.of(context).license),
         ),
@@ -96,7 +95,6 @@ class _LicensePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         middle: Text(
           currentPackage,

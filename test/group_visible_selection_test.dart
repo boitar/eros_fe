@@ -22,6 +22,8 @@ class _Settings extends GetxService implements EhSettingService {
   @override
   bool get isPureDarkTheme => false;
   @override
+  RxBool get pureDarkThemeObs => false.obs;
+  @override
   bool get liquidGlassFollowSystemTransparency => true;
   @override
   dynamic noSuchMethod(Invocation invocation) =>
