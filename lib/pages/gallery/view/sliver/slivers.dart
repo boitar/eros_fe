@@ -657,8 +657,7 @@ class ChapterItem extends StatelessWidget {
       child: Container(
         // height: 40,
         decoration: BoxDecoration(
-          color: CupertinoDynamicColor.resolve(
-              CupertinoColors.systemGrey6, context),
+          color: ehTheme.palette.fill.resolveFrom(context),
           borderRadius: BorderRadius.circular(10),
         ),
         constraints: BoxConstraints(
@@ -744,8 +743,7 @@ class ChapterItemFlex extends StatelessWidget {
                     CupertinoColors.systemGrey4, context))
             : null,
         borderRadius: BorderRadius.circular(10),
-        color:
-            CupertinoDynamicColor.resolve(CupertinoColors.systemGrey6, context),
+        color: ehTheme.palette.fill.resolveFrom(context),
       ),
       child: GestureDetector(
         onTap: () {
@@ -753,8 +751,7 @@ class ChapterItemFlex extends StatelessWidget {
         },
         child: Container(
           decoration: BoxDecoration(
-            color: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemGrey6, context),
+            color: ehTheme.palette.fill.resolveFrom(context),
             borderRadius: BorderRadius.circular(10),
           ),
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),

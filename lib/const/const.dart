@@ -297,6 +297,9 @@ class EHConst {
   static const double waterfallFlowLargeMainAxisSpacing = 14.0;
   static const double waterfallFlowLargeMaxCrossAxisExtent = 220.0;
   static const double waterfallFlowLargeMargin = 12.0;
+
+  /// Immersive cards are only covers, so only a seam separates them.
+  static const double waterfallFlowImmersiveSpacing = 6.0;
   static const double waterfallFlowLargeMinColumnWidth = 168.0;
 
   // Grid视图参数

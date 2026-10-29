@@ -9,6 +9,7 @@ import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/utils/cust_lib/persistent_header_builder.dart';
 import 'package:eros_fe/utils/cust_lib/sliver/sliver_persistent_header.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
@@ -497,10 +498,12 @@ class _ToplistTabState extends State<ToplistTab> {
 
       if (native) {
         return CupertinoPageScaffold(
-          child: SizeCacheWidget(
-            child: NativeBarAutoHide(
-              enabled: nativeCollapsible,
-              child: pageContent,
+          child: CanvasGrain(
+            child: SizeCacheWidget(
+              child: NativeBarAutoHide(
+                enabled: nativeCollapsible,
+                child: pageContent,
+              ),
             ),
           ),
         );
@@ -510,7 +513,7 @@ class _ToplistTabState extends State<ToplistTab> {
         return CupertinoPageScaffold(
           navigationBar:
               useLiquidGlass || hideTopBarOnScroll ? null : navigationBar,
-          child: SizeCacheWidget(child: pageContent),
+          child: CanvasGrain(child: SizeCacheWidget(child: pageContent)),
         );
       }
 

@@ -820,6 +820,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("Просмотр"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("Контент"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("Система"),
-        "add": MessageLookupByLibrary.simpleMessage("Добавить")
+        "add": MessageLookupByLibrary.simpleMessage("Добавить"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("Автопрокрутка"),
+        "reload": MessageLookupByLibrary.simpleMessage("Обновить"),
+        "card_style": MessageLookupByLibrary.simpleMessage("Стиль карточек"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("Обычный"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("Погружение"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("Обложка, название, сведения и теги"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("Только обложка, название и оценка поверх неё")
       };
 }

@@ -5204,6 +5204,76 @@ class L10n {
     );
   }
 
+  /// `Auto Scroll`
+  String get auto_scroll {
+    return Intl.message(
+      'Auto Scroll',
+      name: 'auto_scroll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reload`
+  String get reload {
+    return Intl.message(
+      'Reload',
+      name: 'reload',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Card Style`
+  String get card_style {
+    return Intl.message(
+      'Card Style',
+      name: 'card_style',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Standard`
+  String get card_style_standard {
+    return Intl.message(
+      'Standard',
+      name: 'card_style_standard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Immersive`
+  String get card_style_immersive {
+    return Intl.message(
+      'Immersive',
+      name: 'card_style_immersive',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cover, title, details and tags`
+  String get card_style_standard_detail {
+    return Intl.message(
+      'Cover, title, details and tags',
+      name: 'card_style_standard_detail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cover only, with the title and rating on it`
+  String get card_style_immersive_detail {
+    return Intl.message(
+      'Cover only, with the title and rating on it',
+      name: 'card_style_immersive_detail',
+      desc: '',
+      args: [],
+    );
+  }
+
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

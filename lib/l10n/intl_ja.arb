@@ -514,5 +514,12 @@
   "setting_group_browse": "閲覧",
   "setting_group_content": "コンテンツ",
   "setting_group_system": "システム",
-  "add": "追加"
+  "add": "追加",
+  "auto_scroll": "自動スクロール",
+  "reload": "再読み込み",
+  "card_style": "カードスタイル",
+  "card_style_standard": "標準",
+  "card_style_immersive": "イマーシブ",
+  "card_style_standard_detail": "表紙、タイトル、情報、タグ",
+  "card_style_immersive_detail": "表紙のみ。タイトルと評価を表紙に重ねて表示"
 }

@@ -137,10 +137,11 @@ class ListViewAdvancedSetting extends StatelessWidget {
         ),
 
         SliverCupertinoListSection.listInsetGrouped(
+          footer: Text('${L10n.of(context).export_app_data_summary}\n'
+              '${L10n.of(context).import_app_data_summary}'),
           children: [
             EhCupertinoListTile(
               title: Text(L10n.of(context).export_app_data),
-              subtitle: Text(L10n.of(context).export_app_data_summary),
               trailing: const CupertinoListTileChevron(),
               onTap: () async {
                 // exportAppDataToFile(base64: !kDebugMode);
@@ -149,7 +150,6 @@ class ListViewAdvancedSetting extends StatelessWidget {
             ),
             EhCupertinoListTile(
               title: Text(L10n.of(context).import_app_data),
-              subtitle: Text(L10n.of(context).import_app_data_summary),
               trailing: const CupertinoListTileChevron(),
               onTap: () async {
                 importAppDataFromFile();

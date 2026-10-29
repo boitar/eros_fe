@@ -682,6 +682,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("閲覧"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("コンテンツ"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("システム"),
-        "add": MessageLookupByLibrary.simpleMessage("追加")
+        "add": MessageLookupByLibrary.simpleMessage("追加"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("自動スクロール"),
+        "reload": MessageLookupByLibrary.simpleMessage("再読み込み"),
+        "card_style": MessageLookupByLibrary.simpleMessage("カードスタイル"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("イマーシブ"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("表紙、タイトル、情報、タグ"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("表紙のみ。タイトルと評価を表紙に重ねて表示")
       };
 }

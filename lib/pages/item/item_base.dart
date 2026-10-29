@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
@@ -130,8 +131,7 @@ class PlaceHolderLine extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(6),
         child: Container(
-          color: CupertinoDynamicColor.resolve(
-              CupertinoColors.systemGrey5, context),
+          color: ehTheme.palette.fill.resolveFrom(context),
           height: 16,
         ),
       ).paddingSymmetric(vertical: 4, horizontal: 4),
@@ -165,7 +165,7 @@ class PostTime extends StatelessWidget {
       textAlign: TextAlign.right,
       style: TextStyle(
         fontSize: fontSize,
-        color: CupertinoColors.systemGrey,
+        color: ehTheme.palette.text2.resolveFrom(context),
         decoration: (expunged ?? false)
             ? TextDecoration.lineThrough
             : TextDecoration.none,

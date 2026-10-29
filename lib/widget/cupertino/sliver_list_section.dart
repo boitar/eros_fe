@@ -256,7 +256,9 @@ class SliverCupertinoListSection extends StatelessWidget {
 
   /// Sets the background color behind the section.
   ///
-  /// Defaults to the theme's scaffold background, the palette canvas.
+  /// Defaults to the theme's scaffold background, the palette canvas. An
+  /// inset grouped section without one is transparent, so the page canvas
+  /// and its grain show around the group.
   final Color? backgroundColor;
 
   /// {@macro flutter.material.Material.clipBehavior}
@@ -491,40 +493,44 @@ class SliverCupertinoListSection extends StatelessWidget {
       );
     }
 
+    final Widget content = MultiSliver(
+      children: <Widget>[
+        if (type == SliverCupertinoListSectionType.base)
+          SizedBox(height: topMargin),
+        if (headerWidget != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Padding(
+              padding: type == SliverCupertinoListSectionType.base
+                  ? _kDefaultHeaderMargin
+                  : _kInsetGroupedDefaultHeaderMargin,
+              child: headerWidget,
+            ),
+          ),
+        if (sliverDecoratedChildrenGroup != null) sliverDecoratedChildrenGroup,
+        if (footerWidget != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Padding(
+              padding: type == SliverCupertinoListSectionType.base
+                  ? _kDefaultFooterMargin
+                  : _kInsetGroupedDefaultFooterMargin,
+              child: footerWidget,
+            ),
+          ),
+      ],
+    );
+    if (backgroundColor == null &&
+        type == SliverCupertinoListSectionType.insetGrouped) {
+      return content;
+    }
     return DecoratedSliver(
       decoration: BoxDecoration(
           color: CupertinoDynamicColor.resolve(
               backgroundColor ??
                   CupertinoTheme.of(context).scaffoldBackgroundColor,
               context)),
-      sliver: MultiSliver(
-        children: <Widget>[
-          if (type == SliverCupertinoListSectionType.base)
-            SizedBox(height: topMargin),
-          if (headerWidget != null)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Padding(
-                padding: type == SliverCupertinoListSectionType.base
-                    ? _kDefaultHeaderMargin
-                    : _kInsetGroupedDefaultHeaderMargin,
-                child: headerWidget,
-              ),
-            ),
-          if (sliverDecoratedChildrenGroup != null)
-            sliverDecoratedChildrenGroup,
-          if (footerWidget != null)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Padding(
-                padding: type == SliverCupertinoListSectionType.base
-                    ? _kDefaultFooterMargin
-                    : _kInsetGroupedDefaultFooterMargin,
-                child: footerWidget,
-              ),
-            ),
-        ],
-      ),
+      sliver: content,
     );
   }
 }

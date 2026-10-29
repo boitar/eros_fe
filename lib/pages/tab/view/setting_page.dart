@@ -1,10 +1,12 @@
 import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/layout_setting_page.dart';
 import 'package:eros_fe/pages/setting/read_setting_page.dart';
 import 'package:eros_fe/pages/tab/controller/setting_controller.dart';
+import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/user_avatar_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -25,6 +27,8 @@ class SettingTab extends GetView<SettingViewController> {
 
     return Obx(() {
       final bool safeMode = ehSettingService.isSafeMode.value;
+      final bool glassBar = !nativeBar && SettingGlassBar.isActive;
+      final bool titleInContent = nativeBar || glassBar;
       return NativeNavigationPage(
         tabId: EHRoutes.setting,
         chrome: NativePageChrome(
@@ -32,18 +36,28 @@ class SettingTab extends GetView<SettingViewController> {
           titleVisible: controller.titleInBar.value,
         ),
         child: CupertinoPageScaffold(
-          child: NotificationListener<ScrollUpdateNotification>(
+          navigationBar: glassBar
+              ? SettingGlassBar(
+                  title: title,
+                  titleVisible: controller.titleInBar.value,
+                  edgeVisible: controller.contentUnderBar.value,
+                )
+              : null,
+          child: CanvasGrain(
+              child: NotificationListener<ScrollUpdateNotification>(
             onNotification: (notification) {
               if (notification.depth == 0) {
                 controller.titleInBar.value =
                     notification.metrics.pixels > _kLargeTitleExtent;
+                controller.contentUnderBar.value =
+                    notification.metrics.pixels > 0;
               }
               return false;
             },
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: <Widget>[
-                if (nativeBar)
+                if (titleInContent)
                   SliverSafeArea(
                     bottom: false,
                     sliver: SliverToBoxAdapter(
@@ -130,7 +144,7 @@ class SettingTab extends GetView<SettingViewController> {
                 ),
               ],
             ),
-          ),
+          )),
         ),
       );
     });

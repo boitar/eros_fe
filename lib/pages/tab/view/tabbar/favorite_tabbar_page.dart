@@ -9,6 +9,7 @@ import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
@@ -216,7 +217,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
 
       if (!liquidGlass) {
         return CupertinoPageScaffold(
-          child: SizeCacheWidget(child: scrollView),
+          child: CanvasGrain(child: SizeCacheWidget(child: scrollView)),
         );
       }
 

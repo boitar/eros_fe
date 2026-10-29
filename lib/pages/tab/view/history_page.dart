@@ -7,6 +7,7 @@ import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/utils/cust_lib/persistent_header_builder.dart';
 import 'package:eros_fe/utils/cust_lib/sliver/sliver_persistent_header.dart';
 import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/refresh.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -143,7 +144,7 @@ class _HistoryTabState extends State<HistoryTab> {
     );
 
     return CupertinoPageScaffold(
-      child: SizeCacheWidget(child: customScrollView),
+      child: CanvasGrain(child: SizeCacheWidget(child: customScrollView)),
     );
   }
 }

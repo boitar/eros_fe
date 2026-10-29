@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
@@ -75,18 +76,7 @@ class GalleryItemWidget extends StatelessWidget {
         return Container(
           height: useFixedHeight ? kFixedHeight : null,
           decoration: BoxDecoration(
-            boxShadow: ehTheme.isDarkMode
-                ? null
-                : [
-                    BoxShadow(
-                      color: CupertinoDynamicColor.resolve(
-                              CupertinoColors.darkBackgroundGray, Get.context!)
-                          .withOpacity(0.11),
-                      blurRadius: 8,
-                      spreadRadius: 2,
-                      offset: const Offset(0.5, 4),
-                    )
-                  ],
+            boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
             color: itemController.colorTap.value,
             borderRadius: BorderRadius.circular(kCardRadius),
           ),
@@ -131,8 +121,10 @@ class GalleryItemWidget extends StatelessWidget {
                               : (galleryProvider.favNote?.isNotEmpty ?? false)
                                   ? 'Note: ${galleryProvider.favNote ?? ''}'
                                   : '',
-                          style: const TextStyle(
-                              fontSize: 12, color: CupertinoColors.systemGrey),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  ehTheme.palette.text2.resolveFrom(context)),
                         ),
                         const Spacer(),
                         const SizedBox(height: 6),
@@ -316,8 +308,7 @@ class _CoverImage extends StatelessWidget {
         return getImageBlurFittedBox();
       } else {
         return Container(
-          color: CupertinoDynamicColor.resolve(
-              CupertinoColors.systemGrey5, context),
+          color: ehTheme.palette.fill.resolveFrom(context),
         );
       }
     }
@@ -332,14 +323,8 @@ class _CoverImage extends StatelessWidget {
       );
 
       image = Container(
-        decoration: BoxDecoration(boxShadow: [
-          //阴影
-          BoxShadow(
-            color: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemGrey4, Get.context!),
-            blurRadius: 10,
-          )
-        ]),
+        decoration: BoxDecoration(
+            boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows),
         child: ClipRRect(
           // 圆角
           borderRadius: BorderRadius.circular(6),
@@ -405,16 +390,16 @@ class _Title extends StatelessWidget {
     final maxLine = 5 - galleryItemController.tagLine;
 
     return Text(
-          galleryItemController.title,
-          maxLines: fixedHeight ? maxLine : 4,
-          textAlign: TextAlign.left, // 对齐方式
-          overflow: TextOverflow.ellipsis, // 超出部分省略号
-          style: const TextStyle(
-            fontSize: 14.5,
-            // fontWeight: FontWeight.normal,
-            // color: CupertinoColors.label,
-          ),
-        );
+      galleryItemController.title,
+      maxLines: fixedHeight ? maxLine : 4,
+      textAlign: TextAlign.left, // 对齐方式
+      overflow: TextOverflow.ellipsis, // 超出部分省略号
+      style: const TextStyle(
+        fontSize: 14.5,
+        // fontWeight: FontWeight.normal,
+        // color: CupertinoColors.label,
+      ),
+    );
   }
 }
 
@@ -432,21 +417,23 @@ class _Filecont extends StatelessWidget {
           padding: const EdgeInsets.only(right: 4),
           child: Text(
             translated ?? '',
-            style: const TextStyle(
-                fontSize: 12, color: CupertinoColors.systemGrey),
+            style: TextStyle(
+                fontSize: 12,
+                color: ehTheme.palette.text2.resolveFrom(context)),
           ),
         ),
-        const Icon(
+        Icon(
           Icons.panorama,
           size: 13,
-          color: CupertinoColors.systemGrey,
+          color: ehTheme.palette.text2.resolveFrom(context),
         ),
         Container(
           padding: const EdgeInsets.only(left: 2),
           child: Text(
             filecount ?? '',
-            style: const TextStyle(
-                fontSize: 12, color: CupertinoColors.systemGrey),
+            style: TextStyle(
+                fontSize: 12,
+                color: ehTheme.palette.text2.resolveFrom(context)),
           ),
         ),
       ],
@@ -499,8 +486,7 @@ class _Rating extends StatelessWidget {
             rate: ratingFallBack ?? 0,
             radiusRatio: 1.5,
             colorLight: ThemeColors.colorRatingMap[colorRating?.trim() ?? 'ir'],
-            colorDark: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemGrey3, Get.context!),
+            colorDark: ehTheme.palette.text3.resolveFrom(Get.context!),
           ),
         ),
         // Text(

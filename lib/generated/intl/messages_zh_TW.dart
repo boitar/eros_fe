@@ -642,6 +642,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("瀏覽"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("內容"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("系統"),
-        "add": MessageLookupByLibrary.simpleMessage("新增")
+        "add": MessageLookupByLibrary.simpleMessage("新增"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("自動捲動"),
+        "reload": MessageLookupByLibrary.simpleMessage("重新載入"),
+        "card_style": MessageLookupByLibrary.simpleMessage("卡片樣式"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("沉浸"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("封面、標題、資訊與標籤"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("只顯示封面，標題與評分疊在封面上")
       };
 }

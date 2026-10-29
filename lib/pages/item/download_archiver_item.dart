@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
@@ -68,18 +69,7 @@ class DownloadArchiverItem extends GetView<DownloadViewController> {
       padding: const EdgeInsets.only(right: 10),
       margin: const EdgeInsets.fromLTRB(10, 5, 10, 10),
       decoration: BoxDecoration(
-        boxShadow: ehTheme.isDarkMode
-            ? null
-            : [
-                BoxShadow(
-                  color: CupertinoDynamicColor.resolve(
-                          CupertinoColors.systemGrey5, Get.context!)
-                      .withOpacity(0.7),
-                  blurRadius: 10,
-                  spreadRadius: 1,
-                  offset: const Offset(2, 2),
-                )
-              ],
+        boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
         color: ehTheme.itemBackgroundColor,
         borderRadius: BorderRadius.circular(kCardRadius),
       ),
@@ -140,8 +130,8 @@ class DownloadArchiverItem extends GetView<DownloadViewController> {
                                   fontSize: 11,
                                   height: 1.2,
                                   fontWeight: FontWeight.w600,
-                                  color: CupertinoDynamicColor.resolve(
-                                      CupertinoColors.secondaryLabel, context),
+                                  color: ehTheme.palette.text2
+                                      .resolveFrom(context),
                                 ),
                               )
                             else
@@ -153,8 +143,8 @@ class DownloadArchiverItem extends GetView<DownloadViewController> {
                                 style: TextStyle(
                                   fontSize: 10,
                                   height: 1.2,
-                                  color: CupertinoDynamicColor.resolve(
-                                      CupertinoColors.secondaryLabel, context),
+                                  color: ehTheme.palette.text2
+                                      .resolveFrom(context),
                                 ),
                               )
                             else
@@ -320,7 +310,8 @@ class TaskActionButton extends GetView<DownloadViewController> {
           child: !Platform.isIOS
               ? CupertinoButton(
                   padding: const EdgeInsets.all(0),
-                  child: const FaIcon(FontAwesomeIcons.pause,
+                  child: const FaIcon(
+                    FontAwesomeIcons.pause,
                     size: 18,
                   ),
                   onPressed: () {
@@ -329,7 +320,8 @@ class TaskActionButton extends GetView<DownloadViewController> {
                 )
               : CupertinoButton(
                   padding: const EdgeInsets.all(0),
-                  child: const FaIcon(FontAwesomeIcons.stop,
+                  child: const FaIcon(
+                    FontAwesomeIcons.stop,
                     size: 18,
                   ),
                   onPressed: () {
@@ -344,7 +336,8 @@ class TaskActionButton extends GetView<DownloadViewController> {
               primaryColor: CupertinoColors.activeGreen),
           child: CupertinoButton(
             padding: const EdgeInsets.all(0),
-            child: const FaIcon(FontAwesomeIcons.check,
+            child: const FaIcon(
+              FontAwesomeIcons.check,
               size: 18,
             ),
             onPressed: () {},
@@ -357,7 +350,8 @@ class TaskActionButton extends GetView<DownloadViewController> {
               primaryColor: CupertinoColors.activeBlue),
           child: CupertinoButton(
             padding: const EdgeInsets.all(0),
-            child: const FaIcon(FontAwesomeIcons.play,
+            child: const FaIcon(
+              FontAwesomeIcons.play,
               size: 18,
             ),
             onPressed: () {
@@ -372,7 +366,8 @@ class TaskActionButton extends GetView<DownloadViewController> {
               const CupertinoThemeData(primaryColor: CupertinoColors.systemRed),
           child: CupertinoButton(
             padding: const EdgeInsets.all(0),
-            child: const FaIcon(FontAwesomeIcons.arrowRotateLeft,
+            child: const FaIcon(
+              FontAwesomeIcons.arrowRotateLeft,
               size: 18,
             ),
             onPressed: () {
@@ -384,7 +379,8 @@ class TaskActionButton extends GetView<DownloadViewController> {
         // 取消状态 显示重试按钮。按下重试任务
         return CupertinoButton(
           padding: const EdgeInsets.all(0),
-          child: const FaIcon(FontAwesomeIcons.arrowRotateLeft,
+          child: const FaIcon(
+            FontAwesomeIcons.arrowRotateLeft,
             size: 18,
           ),
           onPressed: () {

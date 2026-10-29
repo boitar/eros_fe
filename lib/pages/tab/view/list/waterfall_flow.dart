@@ -41,7 +41,10 @@ class EhWaterfallFlow extends StatelessWidget {
           ? LastChildLayoutType.foot
           : LastChildLayoutType.none;
 
-  SliverWaterfallFlowDelegate _gridDelegate(BuildContext context) {
+  SliverWaterfallFlowDelegate _gridDelegate(
+    BuildContext context, {
+    required bool immersive,
+  }) {
     if (!large) {
       return SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: getMaxCrossAxisExtent(),
@@ -61,14 +64,29 @@ class EhWaterfallFlow extends StatelessWidget {
           ? itemConfig?.customWidth?.toDouble()
           : null,
       evenColumns: foldGap != null,
-      crossAxisSpacing: foldGap ?? EHConst.waterfallFlowLargeCrossAxisSpacing,
-      mainAxisSpacing: EHConst.waterfallFlowLargeMainAxisSpacing,
+      crossAxisSpacing: foldGap ??
+          (immersive
+              ? EHConst.waterfallFlowImmersiveSpacing
+              : EHConst.waterfallFlowLargeCrossAxisSpacing),
+      mainAxisSpacing: immersive
+          ? EHConst.waterfallFlowImmersiveSpacing
+          : EHConst.waterfallFlowLargeMainAxisSpacing,
       lastChildLayoutTypeBuilder: _lastChildLayoutType,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (large) {
+      return Obx(() => _buildFlow(
+            context,
+            immersive: _ehSettingService.immersiveLargeCards,
+          ));
+    }
+    return _buildFlow(context, immersive: false);
+  }
+
+  Widget _buildFlow(BuildContext context, {required bool immersive}) {
     final padding = large
         ? const EdgeInsets.all(EHConst.waterfallFlowLargeMargin)
         : const EdgeInsets.all(EHConst.waterfallFlowCrossAxisSpacing);
@@ -77,7 +95,7 @@ class EhWaterfallFlow extends StatelessWidget {
       padding: padding,
       sliver: SliverWaterfallFlow(
         key: key,
-        gridDelegate: _gridDelegate(context),
+        gridDelegate: _gridDelegate(context, immersive: immersive),
         delegate: SliverChildBuilderDelegate(
           (BuildContext context, int index) {
             if (galleryProviders.length - 1 < index) {

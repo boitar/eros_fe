@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/controller/log_controller.dart';
-import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/utils/share_service.dart';
 import 'package:flutter/cupertino.dart';
@@ -212,27 +213,41 @@ class _LogViewPageState extends State<LogViewPage> {
   Widget build(BuildContext context) {
     final logFile = logService.logFiles[widget.index];
 
-    return CupertinoPageScaffold(
-      backgroundColor: !ehTheme.isDarkMode
-          ? CupertinoColors.secondarySystemBackground
-          : null,
-      navigationBar: CupertinoNavigationBar(
-        padding: const EdgeInsetsDirectional.only(start: 0),
-        middle: Text(widget.title),
-        previousPageTitle: 'Log',
-        trailing: Row(
+    void toggleAutoScroll() {
+      setState(() {
+        _autoScroll = !_autoScroll;
+      });
+      if (_autoScroll) {
+        _scrollToBottom();
+      }
+    }
+
+    Future<void> share() =>
+        ShareService.shareFiles([XFile(logFile.path)], context: context);
+
+    return SettingScaffold(
+      title: widget.title,
+      actions: <NativeNavigationAction>[
+        NativeNavigationAction(
+          id: 'logView.autoScroll',
+          title: L10n.of(context).auto_scroll,
+          symbol: 'arrow.down.circle',
+          selected: _autoScroll,
+          onPressed: toggleAutoScroll,
+        ),
+        NativeNavigationAction(
+          id: 'logView.share',
+          title: L10n.of(context).share,
+          symbol: 'square.and.arrow.up',
+          onPressed: share,
+        ),
+      ],
+      trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             CupertinoButton(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              onPressed: () {
-                setState(() {
-                  _autoScroll = !_autoScroll;
-                });
-                if (_autoScroll) {
-                  _scrollToBottom();
-                }
-              },
+              onPressed: toggleAutoScroll,
               child: Icon(
                 _autoScroll
                     ? CupertinoIcons.arrow_down_circle_fill
@@ -242,20 +257,14 @@ class _LogViewPageState extends State<LogViewPage> {
             ),
             CupertinoButton(
               padding: const EdgeInsets.only(right: 12),
+              onPressed: share,
               child: const Icon(
                 CupertinoIcons.share,
                 size: 26,
               ),
-              onPressed: () async {
-                await ShareService.shareFiles(
-                  [XFile(logFile.path)],
-                  context: context,
-                );
-              },
             ),
           ],
         ),
-      ),
       child: SafeArea(
         bottom: false,
         child: ValueListenableBuilder<String>(

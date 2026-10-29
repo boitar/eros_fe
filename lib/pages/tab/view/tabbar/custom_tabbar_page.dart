@@ -11,6 +11,7 @@ import 'package:eros_fe/pages/tab/controller/group/custom_sublist_controller.dar
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
@@ -189,10 +190,12 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
 
       if (!liquidGlass) {
         return CupertinoPageScaffold(
-          child: offlineGroupSelection(
-              uuid: controller.currProfileUuid,
-              index: controller.index,
-              child: SizeCacheWidget(child: scrollView)),
+          child: CanvasGrain(
+            child: offlineGroupSelection(
+                uuid: controller.currProfileUuid,
+                index: controller.index,
+                child: SizeCacheWidget(child: scrollView)),
+          ),
         );
       }
 

@@ -514,5 +514,12 @@
   "setting_group_browse": "탐색",
   "setting_group_content": "콘텐츠",
   "setting_group_system": "시스템",
-  "add": "추가"
+  "add": "추가",
+  "auto_scroll": "자동 스크롤",
+  "reload": "새로고침",
+  "card_style": "카드 스타일",
+  "card_style_standard": "표준",
+  "card_style_immersive": "몰입형",
+  "card_style_standard_detail": "표지, 제목, 정보, 태그",
+  "card_style_immersive_detail": "표지만 표시하고 제목과 평점을 표지 위에 표시"
 }

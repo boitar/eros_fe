@@ -1,5 +1,7 @@
 import 'dart:io' as io;
 
+import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/utils/avatar_upload_retry.dart';
 import 'package:eros_fe/utils/logger.dart';
@@ -74,15 +76,19 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).avatar_cf_verify_title),
-        transitionBetweenRoutes: false,
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
+    return SettingScaffold(
+      title: L10n.of(context).avatar_cf_verify_title,
+      actions: <NativeNavigationAction>[
+        NativeNavigationAction(
+          id: 'cfVerify.done',
+          title: L10n.of(context).done,
           onPressed: _finish,
-          child: Text(L10n.of(context).done),
         ),
+      ],
+      trailing: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: _finish,
+        child: Text(L10n.of(context).done),
       ),
       child: SafeArea(
         child: InAppWebView(

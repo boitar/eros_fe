@@ -8,6 +8,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -237,7 +238,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     return offlineDuoNavigationProbe(
         child: ColoredBox(
       color: CupertinoTheme.of(context).scaffoldBackgroundColor,
-      child: Stack(
+      // Shows through the transparent list pages of the glass layout.
+      child: CanvasGrain(
+          child: Stack(
         fit: StackFit.expand,
         children: [
           Positioned.fromRect(
@@ -270,7 +273,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
               child: MediaQuery.withNoTextScaling(child: tabBar),
             ),
         ],
-      ),
+      )),
     ));
   }
 }

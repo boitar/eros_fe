@@ -1,3 +1,5 @@
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -23,9 +25,8 @@ class GalleryItemSimplePlaceHolder extends StatelessWidget {
               // 圆角
               borderRadius: BorderRadius.circular(6),
               child: SizedBox.expand(
-                child: Container(
-                    color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.systemGrey5, context)),
+                child:
+                    Container(color: ehTheme.palette.fill.resolveFrom(context)),
               ),
             ),
           ),
@@ -64,8 +65,7 @@ class GalleryItemSimplePlaceHolder extends StatelessWidget {
                 Divider(
                   height: 0.5,
                   indent: kPaddingLeft,
-                  color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.systemGrey4, context),
+                  color: EhPalette.separator.resolveFrom(context),
                 ),
               ],
             ),

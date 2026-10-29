@@ -514,5 +514,12 @@
   "setting_group_browse": "瀏覽",
   "setting_group_content": "內容",
   "setting_group_system": "系統",
-  "add": "新增"
+  "add": "新增",
+  "auto_scroll": "自動捲動",
+  "reload": "重新載入",
+  "card_style": "卡片樣式",
+  "card_style_standard": "標準",
+  "card_style_immersive": "沉浸",
+  "card_style_standard_detail": "封面、標題、資訊與標籤",
+  "card_style_immersive_detail": "只顯示封面，標題與評分疊在封面上"
 }

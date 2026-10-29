@@ -438,8 +438,12 @@ class EhSettingService extends ProfileService {
   /// Blurred cover behind the gallery detail header.
   final _detailAmbientBackground = true.obs;
   bool get detailAmbientBackground => _detailAmbientBackground.value;
-  set detailAmbientBackground(bool val) =>
-      _detailAmbientBackground.value = val;
+  set detailAmbientBackground(bool val) => _detailAmbientBackground.value = val;
+
+  /// Large waterfall cards show only the cover, with the title on a scrim.
+  final _immersiveLargeCards = false.obs;
+  bool get immersiveLargeCards => _immersiveLargeCards.value;
+  set immersiveLargeCards(bool val) => _immersiveLargeCards.value = val;
 
   // enableSlideOutPage
   final _enableSlideOutPage = true.obs;
@@ -947,6 +951,11 @@ class EhSettingService extends ProfileService {
         ehConfig.detailAmbientBackground ?? detailAmbientBackground;
     everProfile<bool>(_detailAmbientBackground, (value) {
       ehConfig = ehConfig.copyWith(detailAmbientBackground: value.oN);
+    });
+
+    immersiveLargeCards = ehConfig.immersiveLargeCards ?? immersiveLargeCards;
+    everProfile<bool>(_immersiveLargeCards, (value) {
+      ehConfig = ehConfig.copyWith(immersiveLargeCards: value.oN);
     });
   }
 

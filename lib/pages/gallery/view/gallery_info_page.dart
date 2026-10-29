@@ -1,5 +1,4 @@
 import 'package:eros_fe/common/service/controller_tag_service.dart';
-import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
@@ -16,68 +15,63 @@ class GalleryInfoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      return CupertinoPageScaffold(
-        backgroundColor: !ehTheme.isDarkMode
-            ? CupertinoColors.secondarySystemBackground
-            : null,
-        navigationBar: const CupertinoNavigationBar(
-          middle: Text('Gallery info'),
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: SingleChildScrollView(
-            child: GetBuilder<GalleryPageController>(
-              // init: GalleryPageController(),
-              tag: pageCtrlTagOf(context),
-              id: GetIds.PAGE_VIEW_HEADER,
-              builder: (GalleryPageController controller) {
-                final pageState = controller.gState;
-                if (pageState.galleryProvider == null) {
-                  return const SizedBox.shrink();
-                }
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Gallery info'),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          child: GetBuilder<GalleryPageController>(
+            // init: GalleryPageController(),
+            tag: pageCtrlTagOf(context),
+            id: GetIds.PAGE_VIEW_HEADER,
+            builder: (GalleryPageController controller) {
+              final pageState = controller.gState;
+              if (pageState.galleryProvider == null) {
+                return const SizedBox.shrink();
+              }
 
-                final _infoMap = {
-                  'Gid': pageState.galleryProvider!.gid,
-                  'Token': pageState.galleryProvider!.token,
-                  'Url': pageState.url,
-                  L10n.of(context).english_title:
-                      pageState.galleryProvider!.englishTitle,
-                  L10n.of(context).japanese_title:
-                      pageState.galleryProvider!.japaneseTitle,
-                  'Thumb': pageState.galleryProvider!.imgUrl,
-                  'Category': pageState.galleryProvider!.category,
-                  'Uploader': pageState.galleryProvider!.uploader,
-                  'Posted': pageState.galleryProvider!.postTime,
-                  'Language': pageState.galleryProvider!.language,
-                  'Pages': pageState.galleryProvider!.filecount,
-                  'Size': pageState.galleryProvider!.filesizeText,
-                  'Favorite count': pageState.galleryProvider!.favoritedCount,
-                  'Favorited':
-                      '${pageState.galleryProvider!.favcat?.isNotEmpty ?? false}',
-                  'Favorite': pageState.galleryProvider!.favTitle ?? '',
-                  'Rating count': pageState.galleryProvider!.ratingCount,
-                  'Rating': '${pageState.galleryProvider!.rating}',
-                  'Torrents': pageState.galleryProvider!.torrentcount,
-                  // 'Torrents Url': controller.galleryProvider.torrentcount,
-                };
+              final _infoMap = {
+                'Gid': pageState.galleryProvider!.gid,
+                'Token': pageState.galleryProvider!.token,
+                'Url': pageState.url,
+                L10n.of(context).english_title:
+                    pageState.galleryProvider!.englishTitle,
+                L10n.of(context).japanese_title:
+                    pageState.galleryProvider!.japaneseTitle,
+                'Thumb': pageState.galleryProvider!.imgUrl,
+                'Category': pageState.galleryProvider!.category,
+                'Uploader': pageState.galleryProvider!.uploader,
+                'Posted': pageState.galleryProvider!.postTime,
+                'Language': pageState.galleryProvider!.language,
+                'Pages': pageState.galleryProvider!.filecount,
+                'Size': pageState.galleryProvider!.filesizeText,
+                'Favorite count': pageState.galleryProvider!.favoritedCount,
+                'Favorited':
+                    '${pageState.galleryProvider!.favcat?.isNotEmpty ?? false}',
+                'Favorite': pageState.galleryProvider!.favTitle ?? '',
+                'Rating count': pageState.galleryProvider!.ratingCount,
+                'Rating': '${pageState.galleryProvider!.rating}',
+                'Torrents': pageState.galleryProvider!.torrentcount,
+                // 'Torrents Url': controller.galleryProvider.torrentcount,
+              };
 
-                return CupertinoFormSection.insetGrouped(
-                  backgroundColor: Colors.transparent,
-                  margin: const EdgeInsets.fromLTRB(16, 10, 16, 30),
-                  children: _infoMap.entries
-                      .map((e) => TextItem(
-                            prefixText: e.key,
-                            initialValue: e.value,
-                          ))
-                      .toList(),
-                );
-              },
-            ),
+              return CupertinoFormSection.insetGrouped(
+                backgroundColor: Colors.transparent,
+                margin: const EdgeInsets.fromLTRB(16, 10, 16, 30),
+                children: _infoMap.entries
+                    .map((e) => TextItem(
+                          prefixText: e.key,
+                          initialValue: e.value,
+                        ))
+                    .toList(),
+              );
+            },
           ),
         ),
-      );
-    });
+      ),
+    );
   }
 }
 

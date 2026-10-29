@@ -1,3 +1,5 @@
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
@@ -75,15 +77,8 @@ class GalleryItemFlow extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                     // borderRadius: BorderRadius.circular(kRadius), //圆角
-                    // ignore: prefer_const_literals_to_create_immutables
-                    boxShadow: [
-                      //阴影
-                      BoxShadow(
-                        color: CupertinoDynamicColor.resolve(
-                            CupertinoColors.systemGrey6, context),
-                        blurRadius: 5,
-                      )
-                    ]),
+                    boxShadow:
+                        ehTheme.isDarkMode ? null : EhPalette.lightCardShadows),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(kRadius),
                   child: Container(

@@ -514,5 +514,12 @@
   "setting_group_browse": "Browsing",
   "setting_group_content": "Content",
   "setting_group_system": "System",
-  "add": "Add"
+  "add": "Add",
+  "auto_scroll": "Auto Scroll",
+  "reload": "Reload",
+  "card_style": "Card Style",
+  "card_style_standard": "Standard",
+  "card_style_immersive": "Immersive",
+  "card_style_standard_detail": "Cover, title, details and tags",
+  "card_style_immersive_detail": "Cover only, with the title and rating on it"
 }

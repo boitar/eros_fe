@@ -63,56 +63,57 @@ class ListViewTagTranslate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiSliver(children: [
-      SliverCupertinoListSection.listInsetGrouped(children: [
-        // _handleTagTranslatChanged switch
-        EhCupertinoListTile(
-          title: const Text('启用标签翻译'),
-          subtitle: Text('当前版本:${_ehSettingService.tagTranslatVer.value}'),
-          trailing: Obx(() {
-            return Row(
-              children: [
-                CupertinoButton(
-                  padding: const EdgeInsets.all(0),
-                  onPressed: _forceUpdateTranslate,
-                  child: const Icon(CupertinoIcons.refresh),
-                ),
-                CupertinoSwitch(
-                  value: _ehSettingService.isTagTranslate,
-                  onChanged: _handleTagTranslatChanged,
-                ),
-              ],
-            );
-          }),
-        ),
+      SliverCupertinoListSection.listInsetGrouped(
+          footer: const Text('开启“加速下载数据”后，通过 CDN 下载标签翻译数据。'),
+          children: [
+            // _handleTagTranslatChanged switch
+            EhCupertinoListTile(
+              title: const Text('启用标签翻译'),
+              subtitle: Text('当前版本:${_ehSettingService.tagTranslatVer.value}'),
+              trailing: Obx(() {
+                return Row(
+                  children: [
+                    CupertinoButton(
+                      padding: const EdgeInsets.all(0),
+                      onPressed: _forceUpdateTranslate,
+                      child: const Icon(CupertinoIcons.refresh),
+                    ),
+                    CupertinoSwitch(
+                      value: _ehSettingService.isTagTranslate,
+                      onChanged: _handleTagTranslatChanged,
+                    ),
+                  ],
+                );
+              }),
+            ),
 
-        Obx(() {
-          return AnimatedCrossFade(
-            alignment: Alignment.center,
-            crossFadeState: _ehSettingService.isTagTranslate
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstCurve: Curves.easeIn,
-            secondCurve: Curves.easeOut,
-            duration: const Duration(milliseconds: 200),
-            firstChild: const SizedBox(),
-            secondChild: _buildTagIntroImgLvItem(context),
-          );
-        }),
+            Obx(() {
+              return AnimatedCrossFade(
+                alignment: Alignment.center,
+                crossFadeState: _ehSettingService.isTagTranslate
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                firstCurve: Curves.easeIn,
+                secondCurve: Curves.easeOut,
+                duration: const Duration(milliseconds: 200),
+                firstChild: const SizedBox(),
+                secondChild: _buildTagIntroImgLvItem(context),
+              );
+            }),
 
-        // enableTagTranslateCDN switch
-        EhCupertinoListTile(
-          title: const Text('加速下载数据'),
-          subtitle: const Text('使用CDN加速下载数据'),
-          trailing: Obx(() {
-            return CupertinoSwitch(
-              value: _ehSettingService.enableTagTranslateCDN,
-              onChanged: _handleTagTranslatCDNChanged,
-            );
-          }),
-        ),
+            // enableTagTranslateCDN switch
+            EhCupertinoListTile(
+              title: const Text('加速下载数据'),
+              trailing: Obx(() {
+                return CupertinoSwitch(
+                  value: _ehSettingService.enableTagTranslateCDN,
+                  onChanged: _handleTagTranslatCDNChanged,
+                );
+              }),
+            ),
 
-        _buildTagTranslateDataUpdateModeItem(context),
-      ]),
+            _buildTagTranslateDataUpdateModeItem(context),
+          ]),
     ]);
   }
 }

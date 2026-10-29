@@ -43,6 +43,13 @@ class GalleryItemFlowLarge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final EhSettingService settings = Get.find();
+    return Obx(() => settings.immersiveLargeCards
+        ? _buildImmersive(context)
+        : _buildStandard(context));
+  }
+
+  Widget _buildStandard(BuildContext context) {
     final controller = galleryProviderController;
     final GalleryProvider provider = controller.galleryProvider;
 
@@ -67,6 +74,25 @@ class GalleryItemFlowLarge extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    ).autoCompressKeyboard(context);
+  }
+
+  /// Only the cover: title and rating sit on a deeper scrim at its foot.
+  Widget _buildImmersive(BuildContext context) {
+    final controller = galleryProviderController;
+    final GalleryProvider provider = controller.galleryProvider;
+
+    return _PressScale(
+      onTap: () => controller.onTap(tabTag),
+      onLongPress: controller.onLongPress,
+      child: _CardFrame(
+        child: _Cover(
+          provider: provider,
+          controller: controller,
+          tabTag: tabTag,
+          immersive: true,
         ),
       ),
     ).autoCompressKeyboard(context);
@@ -199,11 +225,15 @@ class _Cover extends StatelessWidget {
     required this.provider,
     required this.controller,
     required this.tabTag,
+    this.immersive = false,
   });
 
   final GalleryProvider provider;
   final GalleryItemController controller;
   final dynamic tabTag;
+
+  /// The cover is the whole card and carries the title.
+  final bool immersive;
 
   @override
   Widget build(BuildContext context) {
@@ -211,6 +241,8 @@ class _Cover extends StatelessWidget {
     final language = provider.translated?.trim() ?? '';
     final count = provider.filecount?.trim() ?? '';
     final category = provider.category?.trim() ?? '';
+    final BorderRadius radius =
+        immersive ? BorderRadius.circular(kCardRadius) : _coverRadius;
 
     return AspectRatio(
       aspectRatio: coverAspectRatio(
@@ -230,14 +262,13 @@ class _Cover extends StatelessWidget {
             DecoratedBox(
               decoration: ShapeDecoration(
                 color: CupertinoDynamicColor.resolve(palette.fill, context),
-                shape:
-                    const RoundedSuperellipseBorder(borderRadius: _coverRadius),
+                shape: RoundedSuperellipseBorder(borderRadius: radius),
               ),
             ),
             Hero(
               tag: '${provider.gid}_cover_$tabTag',
               child: ClipRSuperellipse(
-                borderRadius: _coverRadius,
+                borderRadius: radius,
                 child: CoverImg(
                   imgUrl: provider.imgUrl ?? '',
                   fit: BoxFit.cover,
@@ -254,7 +285,9 @@ class _Cover extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
-                  if (language.isNotEmpty || count.isNotEmpty)
+                  if (immersive)
+                    _BottomShade.deep(radius: radius)
+                  else if (language.isNotEmpty || count.isNotEmpty)
                     const _BottomShade(),
                   if (category.isNotEmpty)
                     PositionedDirectional(
@@ -267,25 +300,37 @@ class _Cover extends StatelessWidget {
                     end: 6,
                     child: _FavoriteBadge(controller: controller),
                   ),
-                  PositionedDirectional(
-                    start: 8,
-                    end: 8,
-                    bottom: 6,
-                    child: Row(
-                      children: <Widget>[
-                        if (language.isNotEmpty)
-                          Text(language, style: _overlayText),
-                        const Spacer(),
-                        if (count.isNotEmpty)
-                          Text('${count}P',
-                              style: _overlayText.copyWith(
-                                fontFeatures: const <FontFeature>[
-                                  FontFeature.tabularFigures()
-                                ],
-                              )),
-                      ],
+                  if (immersive)
+                    PositionedDirectional(
+                      start: 10,
+                      end: 10,
+                      bottom: 9,
+                      child: _ImmersiveCaption(
+                        controller: controller,
+                        language: language,
+                        count: count,
+                      ),
+                    )
+                  else
+                    PositionedDirectional(
+                      start: 8,
+                      end: 8,
+                      bottom: 6,
+                      child: Row(
+                        children: <Widget>[
+                          if (language.isNotEmpty)
+                            Text(language, style: _overlayText),
+                          const Spacer(),
+                          if (count.isNotEmpty)
+                            Text('${count}P',
+                                style: _overlayText.copyWith(
+                                  fontFeatures: const <FontFeature>[
+                                    FontFeature.tabularFigures()
+                                  ],
+                                )),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -310,10 +355,39 @@ const TextStyle _overlayText = TextStyle(
 /// Darkens the bottom third of the cover so white labels stay legible on
 /// bright art.
 class _BottomShade extends StatelessWidget {
-  const _BottomShade();
+  const _BottomShade()
+      : deep = false,
+        radius = BorderRadius.zero;
+
+  /// Covers the lower half, deep enough for a two-line title.
+  const _BottomShade.deep({required this.radius}) : deep = true;
+
+  final bool deep;
+  final BorderRadius radius;
 
   @override
   Widget build(BuildContext context) {
+    if (deep) {
+      return IgnorePointer(
+        child: ClipRSuperellipse(
+          borderRadius: radius,
+          child: const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: <Color>[
+                  Color(0xCC08080C),
+                  Color(0x9908080C),
+                  Color(0x0008080C),
+                ],
+                stops: <double>[0, 0.3, 0.62],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return const IgnorePointer(
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -329,6 +403,84 @@ class _BottomShade extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Title and rating of an immersive card, white on the cover's scrim.
+class _ImmersiveCaption extends StatelessWidget {
+  const _ImmersiveCaption({
+    required this.controller,
+    required this.language,
+    required this.count,
+  });
+
+  final GalleryItemController controller;
+  final String language;
+  final String count;
+
+  @override
+  Widget build(BuildContext context) {
+    final meta = <String>[
+      if (language.isNotEmpty) language,
+      if (count.isNotEmpty) '${count}P',
+    ].join(' · ');
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          controller.title,
+          maxLines: kTitleMaxLines,
+          overflow: TextOverflow.ellipsis,
+          style: _overlayText.copyWith(
+            fontSize: 14,
+            height: 1.25,
+            letterSpacing: -0.1,
+          ),
+        ),
+        const SizedBox(height: 5),
+        Obx(() {
+          final colorRating = controller.colorRating.trim();
+          final filled = colorRating.isEmpty || colorRating == 'ir'
+              ? EhPalette.star.darkColor
+              : ThemeColors.colorRatingMap[colorRating] ??
+                  EhPalette.star.darkColor;
+          final score = controller.rating > 0
+              ? controller.rating
+              : controller.ratingFallBack;
+          return Row(
+            children: <Widget>[
+              StaticRatingBar(
+                size: 10,
+                rate: controller.ratingFallBack,
+                radiusRatio: 1.5,
+                colorLight: filled,
+                colorDark: const Color(0x52FFFFFF),
+              ),
+              if (score > 0) ...<Widget>[
+                const SizedBox(width: 4),
+                Text(score.toStringAsFixed(1), style: _overlayText),
+              ],
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  meta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: _overlayText.copyWith(
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures()
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+      ],
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
@@ -198,18 +199,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       padding: const EdgeInsets.only(right: 10),
       margin: const EdgeInsets.fromLTRB(10, 5, 10, 10),
       decoration: BoxDecoration(
-        boxShadow: ehTheme.isDarkMode
-            ? null
-            : [
-                BoxShadow(
-                  color: CupertinoDynamicColor.resolve(
-                          CupertinoColors.systemGrey5, Get.context!)
-                      .withOpacity(0.9),
-                  blurRadius: 10,
-                  spreadRadius: 1.0,
-                  offset: const Offset(2, 2),
-                )
-              ],
+        boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
         color: ehTheme.itemBackgroundColor,
         borderRadius: BorderRadius.circular(kCardRadius),
       ),
@@ -254,8 +244,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         Divider(
           indent: 20,
           height: 0.6,
-          color: CupertinoDynamicColor.resolve(
-              CupertinoColors.systemGrey4, context),
+          color: EhPalette.separator.resolveFrom(context),
         ),
       ],
     );
@@ -325,8 +314,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
-                              color: CupertinoDynamicColor.resolve(
-                                  CupertinoColors.secondaryLabel, context),
+                              color: ehTheme.palette.text2.resolveFrom(context),
                             ),
                           ),
                         ),
@@ -339,8 +327,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
-                              color: CupertinoDynamicColor.resolve(
-                                  CupertinoColors.secondaryLabel, context),
+                              color: ehTheme.palette.text2.resolveFrom(context),
                             ),
                           ),
                         ),
@@ -378,8 +365,8 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
                               : '${galleryTask.completCount ?? 0}/${galleryTask.fileCount}',
                           style: TextStyle(
                               fontSize: 13,
-                              color: CupertinoDynamicColor.resolve(
-                                  CupertinoColors.secondaryLabel, context)),
+                              color:
+                                  ehTheme.palette.text2.resolveFrom(context)),
                         ),
                         // 控制按钮
                         _getIcon(),
@@ -412,9 +399,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       return Text(
         speed != null ? '$speed/s' : '',
         style: TextStyle(
-            fontSize: 13,
-            color: CupertinoDynamicColor.resolve(
-                CupertinoColors.secondaryLabel, context)),
+            fontSize: 13, color: ehTheme.palette.text2.resolveFrom(context)),
       );
     }
   }
@@ -433,16 +418,14 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
             rate: rating,
             radiusRatio: 1.5,
             colorLight: ThemeColors.colorRatingMap['ir'],
-            colorDark: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemGrey3, Get.context!),
+            colorDark: ehTheme.palette.text3.resolveFrom(Get.context!),
           ),
         ),
         Text(
           rating.toString(),
           style: TextStyle(
             fontSize: 11,
-            color: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemGrey, Get.context!),
+            color: ehTheme.palette.text2.resolveFrom(Get.context!),
           ),
         ),
       ],
@@ -672,8 +655,7 @@ class _DownloadItemCoverImageState extends State<DownloadItemCoverImage> {
           if (state.extendedImageLoadState == LoadState.loading) {
             return Container(
               alignment: Alignment.center,
-              color: CupertinoDynamicColor.resolve(
-                  CupertinoColors.systemGrey5, context),
+              color: ehTheme.palette.fill.resolveFrom(context),
               child: const CupertinoActivityIndicator(),
             );
           }
@@ -731,8 +713,7 @@ class _DownloadItemCoverImageState extends State<DownloadItemCoverImage> {
             : [
                 //阴影
                 BoxShadow(
-                  color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.systemGrey5, context),
+                  color: ehTheme.palette.fill.resolveFrom(context),
                   blurRadius: 3,
                 )
               ],
@@ -744,11 +725,10 @@ class _DownloadItemCoverImageState extends State<DownloadItemCoverImage> {
   Widget _buildCoverPlaceholder(BuildContext context) {
     return Container(
       alignment: Alignment.center,
-      color:
-          CupertinoDynamicColor.resolve(CupertinoColors.systemGrey5, context),
-      child: const Icon(
+      color: ehTheme.palette.fill.resolveFrom(context),
+      child: Icon(
         CupertinoIcons.photo,
-        color: CupertinoColors.systemGrey,
+        color: ehTheme.palette.text2.resolveFrom(context),
       ),
     );
   }

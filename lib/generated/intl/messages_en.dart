@@ -785,6 +785,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("Browsing"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("Content"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("System"),
-        "add": MessageLookupByLibrary.simpleMessage("Add")
+        "add": MessageLookupByLibrary.simpleMessage("Add"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("Auto Scroll"),
+        "reload": MessageLookupByLibrary.simpleMessage("Reload"),
+        "card_style": MessageLookupByLibrary.simpleMessage("Card Style"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("Immersive"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("Cover, title, details and tags"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("Cover only, with the title and rating on it")
       };
 }

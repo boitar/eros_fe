@@ -303,6 +303,8 @@ class EhPalette {
       // A text theme built with the default constructor carries its own
       // systemBlue; action and nav-action styles must follow the accent.
       textTheme: textTheme.copyWith(primaryColor: accent),
+      // Switches tint with the accent instead of the system green.
+      applyThemeToAll: true,
     );
   }
 

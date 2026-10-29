@@ -514,5 +514,12 @@
   "setting_group_browse": "Просмотр",
   "setting_group_content": "Контент",
   "setting_group_system": "Система",
-  "add": "Добавить"
+  "add": "Добавить",
+  "auto_scroll": "Автопрокрутка",
+  "reload": "Обновить",
+  "card_style": "Стиль карточек",
+  "card_style_standard": "Обычный",
+  "card_style_immersive": "Погружение",
+  "card_style_standard_detail": "Обложка, название, сведения и теги",
+  "card_style_immersive_detail": "Только обложка, название и оценка поверх неё"
 }
