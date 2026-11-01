@@ -10,8 +10,10 @@ The version remains `1.9.2+566`. The iOS Bundle ID is `cn.honjow.fehv`.
 
 ## Screenshots
 
-Captured on the iOS 27.1 Simulator (iPhone Duo outer display, dark Graphite theme). All galleries
-shown are in the Non-H category.
+Captured on the iOS 27.1 iPhone Duo Simulator with the dark Graphite theme. All galleries shown are
+in the Non-H category.
+
+### Closed (outer display)
 
 | Home (large waterfall cards) | Search | Gallery detail |
 | :---: | :---: | :---: |
@@ -20,6 +22,20 @@ shown are in the Non-H category.
 | <img width="220" src="./screenshot/outer-thumbnails.png"> | <img width="220" src="./screenshot/outer-reader.png"> | <img width="220" src="./screenshot/outer-settings.png"> |
 | **Site settings and Cloudflare verification** | | |
 | <img width="220" src="./screenshot/outer-site.png"> | | |
+
+### Open (inner display)
+
+When opened, the app switches to two panes: the list or settings home on the left, and the gallery
+detail or a settings page on the right. The reader shows two pages side by side when there is room.
+The native vertical bars sit on the right edge.
+
+| Home with gallery detail (two panes) |
+| :---: |
+| <img width="720" src="./screenshot/inner-split.png"> |
+| **Two-page reader with thumbnail strip** |
+| <img width="720" src="./screenshot/inner-reader.png"> |
+| **Settings (two panes)** |
+| <img width="720" src="./screenshot/inner-settings.png"> |
 
 ## Enhancements over upstream
 
@@ -95,8 +111,7 @@ Tags: `2026-11-01-cf-verification`, `2026-11-01-custom-ui-refresh`.
   - All 841 Flutter tests passed; `flutter analyze lib test` reported 0 errors.
   - On the highest installed runtime, iOS 27.1 (24A94425), the iPhone Duo Simulator confirmed that
     switching sites shows no popup, and that the Cloudflare page loads and reports success.
-  - Unsigned IPA build 93 was made locally for device testing only and was not uploaded to the
-    repository or Releases.
+  - Unsigned IPA build 93 is published on this fork's [Releases](https://github.com/boitar/eros_fe/releases/latest).
   - Behavior on a physical device is still pending.
 
 ### 2026-10-30: fix black screen on device launch
@@ -224,12 +239,15 @@ Simulator results do not substitute for these checks.
 
 ## Installation for iOS
 
-This fork publishes source code only, not an IPA. The Releases link below points to upstream builds
-and does not include these enhancements.
+Unsigned IPAs of this fork are published on [Releases](https://github.com/boitar/eros_fe/releases/latest): arm64, main app unsigned,
+Bundle ID `cn.honjow.fehv`, iOS 15.6 or later.
 
-1. Get the ipa file from [Releases](https://github.com/erosTeam/eros_fe/releases/latest).
-2. Install it with a tool such as [AltStore](https://altstore.io), or use
-   [AltStore.json](https://config-feh.vercel.app/AltStore.json).
+1. Download the latest `Eros-FE_*-unsigned_*.ipa` from [Releases](https://github.com/boitar/eros_fe/releases/latest).
+2. Sign and install it yourself with a tool such as [AltStore](https://altstore.io). It replaces any
+   installed app with the same Bundle ID, so back up the app data before switching.
+
+Upstream builds are on [erosTeam/eros_fe Releases](https://github.com/erosTeam/eros_fe/releases/latest)
+and [AltStore.json](https://config-feh.vercel.app/AltStore.json); they do not include these enhancements.
 
 ## Features
 

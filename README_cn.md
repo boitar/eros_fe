@@ -9,7 +9,9 @@
 
 ## 应用截图
 
-以下为 iOS 27.1 模拟器（iPhone Duo 外屏，深色石墨主题）截图，画廊内容均为 Non-H 分类。
+以下为 iOS 27.1 模拟器上的 iPhone Duo 截图，深色石墨主题，画廊内容均为 Non-H 分类。
+
+### 合上（外屏）
 
 | 首页（瀑布流大卡） | 搜索 | 画廊详情 |
 | :---: | :---: | :---: |
@@ -18,6 +20,18 @@
 | <img width="220" src="./screenshot/outer-thumbnails.png"> | <img width="220" src="./screenshot/outer-reader.png"> | <img width="220" src="./screenshot/outer-settings.png"> |
 | **站点设置与 Cloudflare 验证** | | |
 | <img width="220" src="./screenshot/outer-site.png"> | | |
+
+### 展开（内屏）
+
+展开后自动改为双栏：左栏是列表或设置首页，右栏显示画廊详情或设置子页；阅读器按可用宽度并排显示两页。原生竖向栏位于右侧。
+
+| 首页与画廊详情（双栏） |
+| :---: |
+| <img width="720" src="./screenshot/inner-split.png"> |
+| **双页阅读与缩略图条** |
+| <img width="720" src="./screenshot/inner-reader.png"> |
+| **设置（双栏）** |
+| <img width="720" src="./screenshot/inner-settings.png"> |
 
 ## 相比上游的增强
 
@@ -53,7 +67,7 @@
 - **卡片大小**：「自定义宽度」改为每种列表样式 5 档，列数按实际栏宽计算。
 - **原生壳打磨**：再次点当前标签先退回根页面；单栏详情转场主栏保持可见；详情背景与封面同图，消除切换画廊时的闪烁；对话框打开时原生栏保持标题；所有推入页统一向原生壳提供顶栏配置，并加源码守卫测试。
 - **石墨颗粒**：修复背景颗粒的方格接缝。
-- 验证：Flutter 全量 841 项通过，`flutter analyze lib test` 0 error。本机最高 runtime iOS 27.1（24A94425）／iPhone Duo 模拟器验证站点来回切换无弹窗、Cloudflare 验证页正常加载并提示「验证完成」。本机无签名 IPA 串号 93 仅用于真机测试，未上传到仓库或 Releases。真机效果仍待确认。
+- 验证：Flutter 全量 841 项通过，`flutter analyze lib test` 0 error。本机最高 runtime iOS 27.1（24A94425）／iPhone Duo 模拟器验证站点来回切换无弹窗、Cloudflare 验证页正常加载并提示「验证完成」。无签名 IPA（包 93）已发布到本 fork 的 [Releases](https://github.com/boitar/eros_fe/releases/latest)。真机效果仍待确认。
 
 ### 2026-10-30：修复真机启动黑屏
 
@@ -142,10 +156,12 @@ bash benchmark/favorites_ui_tests/run-native.sh \
 
 ## iOS 安装
 
-本 fork 只发布源码，不提供 IPA。下方 Releases 链接指向上游构建，不包含本 fork 的增强。
+本 fork 的无签名 IPA 发布在 [Releases](https://github.com/boitar/eros_fe/releases/latest)：arm64，主应用无签名，Bundle ID `cn.honjow.fehv`，最低 iOS 15.6。
 
-1. 从 [Releases](https://github.com/erosTeam/eros_fe/releases/latest) 下载最新 ipa。
-2. 使用 [AltStore](https://altstore.io) 之类的工具安装到设备，或使用 [AltStore.json](https://config-feh.vercel.app/AltStore.json)。
+1. 从 [Releases](https://github.com/boitar/eros_fe/releases/latest) 下载最新的 `Eros-FE_*-unsigned_*.ipa`。
+2. 使用 [AltStore](https://altstore.io) 等工具自行签名后安装。与已装应用同一 Bundle ID 时会覆盖，切换前请先备份应用数据。
+
+上游构建见 [erosTeam/eros_fe Releases](https://github.com/erosTeam/eros_fe/releases/latest) 或 [AltStore.json](https://config-feh.vercel.app/AltStore.json)，不包含本 fork 的增强。
 
 ## 功能
 
