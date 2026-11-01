@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/utils/vibrate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -118,6 +119,12 @@ class SettingMenuButton<T> extends StatefulWidget {
 class SettingMenuButtonState<T> extends State<SettingMenuButton<T>> {
   final MenuController _controller = MenuController();
 
+  // Neither menu ticks on its own; a pick answers like the bar's menus.
+  void _pick(T value) {
+    vibrateUtil.selection();
+    widget.onSelected(value);
+  }
+
   Future<void> open() async {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) {
@@ -138,7 +145,7 @@ class SettingMenuButtonState<T> extends State<SettingMenuButton<T>> {
       ],
       onSelected: (index) {
         if (index >= 0 && index < options.length) {
-          widget.onSelected(options[index].value);
+          _pick(options[index].value);
         }
       },
     );
@@ -160,7 +167,7 @@ class SettingMenuButtonState<T> extends State<SettingMenuButton<T>> {
             leading: option.value == widget.selected
                 ? const Icon(CupertinoIcons.checkmark_alt)
                 : null,
-            onPressed: () => widget.onSelected(option.value),
+            onPressed: () => _pick(option.value),
             subtitle: option.subtitle == null ? null : Text(option.subtitle!),
             child: option.child ?? Text(option.label),
           ),

@@ -20,6 +20,9 @@ enum ErosHaptics {
 
     static func selection() {
         selectionGenerator.selectionChanged()
+        // Selection ticks come in runs (scrubbing a rail, a slider); keep the
+        // engine awake for the next one.
+        selectionGenerator.prepare()
     }
 
     static func light() {
@@ -141,8 +144,9 @@ final class ErosHapticsPlugin: NSObject, FlutterPlugin {
 
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
-        case "impact", "light", "medium", "heavy", "success", "error", "tabSwitch":
+        case "selection", "impact", "light", "medium", "heavy", "success", "error", "tabSwitch":
             switch call.method {
+            case "selection": ErosHaptics.selection()
             case "impact": ErosHaptics.impact()
             case "light": ErosHaptics.light()
             case "medium": ErosHaptics.medium()

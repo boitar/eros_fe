@@ -243,8 +243,11 @@ final class ErosNativeNavigationShell: UITabBarController,
         let send: (String) -> Void = { [weak self] id in
             self?.navigationChannel.invokeMethod("action", arguments: id)
         }
+        let opened: (String) -> Void = { [weak self] id in
+            self?.navigationChannel.invokeMethod("menuOpened", arguments: id)
+        }
         let actions = ownBar ? [] : NativeBarAction.list(state["actions"]).map {
-            host.barItem(for: $0, send: send)
+            host.barItem(for: $0, send: send, opened: opened)
         }
         let currentActions = host.navigationItem.rightBarButtonItems ?? []
         if !currentActions.elementsEqual(actions, by: ===) {
@@ -261,7 +264,7 @@ final class ErosNativeNavigationShell: UITabBarController,
             if let lastGroup, lastGroup != action.group {
                 toolbarItems.append(.flexibleSpace())
             }
-            toolbarItems.append(host.barItem(for: action, send: send))
+            toolbarItems.append(host.barItem(for: action, send: send, opened: opened))
             lastGroup = action.group
         }
         host.toolbarItems = toolbarItems
@@ -418,7 +421,8 @@ private extension NativeTabHostController {
     /// page counter neither flickers the bar nor closes an open menu.
     func barItem(
         for action: NativeBarAction,
-        send: @escaping (String) -> Void
+        send: @escaping (String) -> Void,
+        opened: @escaping (String) -> Void
     ) -> UIBarButtonItem {
         if let cached = barItemCache[action.id], cached.signature == action.signature {
             return cached.item
@@ -435,7 +439,18 @@ private extension NativeTabHostController {
                 menu: nil
             )
         } else {
-            let menu = UIMenu(children: action.children.map { $0.menuElement(send: send) })
+            var children = action.children.map { $0.menuElement(send: send) }
+            if !action.primaryWithMenu {
+                // A tap opens this menu without running anything Dart hears
+                // of. UIKit asks an uncached deferred element for its items
+                // each time the menu opens; it reports that and adds nothing.
+                // Long-pressed menus keep UIKit's own feedback instead.
+                children.insert(UIDeferredMenuElement.uncached { completion in
+                    opened(id)
+                    completion([])
+                }, at: 0)
+            }
+            let menu = UIMenu(children: children)
             item = UIBarButtonItem(
                 title: action.title,
                 image: action.image,

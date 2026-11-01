@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../route/eh_observer.dart';
+import '../utils/vibrate.dart';
 
 typedef NativeNavigationTabHandler = Future<void> Function(String route);
 typedef NativeNavigationBackHandler = Future<void> Function();
@@ -231,6 +232,7 @@ class NativeNavigationBridge {
     NativeNavigationTabHandler? onSelectTab,
     NativeNavigationBackHandler? onBack,
     NativeNavigationActionHandler? onAction,
+    NativeNavigationActionHandler? onMenuOpened,
   }) {
     final connection = NativeNavigationConnection._();
     _connection = connection;
@@ -250,6 +252,12 @@ class NativeNavigationBridge {
           final action = call.arguments?.toString();
           if (action != null && onAction != null) {
             await onAction(action);
+          }
+          return;
+        case 'menuOpened':
+          final action = call.arguments?.toString();
+          if (action != null && onMenuOpened != null) {
+            await onMenuOpened(action);
           }
           return;
         default:
@@ -405,8 +413,12 @@ class _NativeNavigationHostState extends State<NativeNavigationHost> {
           await source.onSelectTab(id);
         }
       },
+      // The native bar items give no feedback of their own. The Flutter bars
+      // they replace answered every button with a light tap; a pick from a
+      // menu ticks like any other selection.
       onBack: () async {
         if (!_hasPublishedContext) return;
+        unawaited(vibrateUtil.light());
         final navigator = widget.navigatorKey.currentState;
         if (navigator?.canPop() ?? false) {
           await navigator!.maybePop();
@@ -418,7 +430,18 @@ class _NativeNavigationHostState extends State<NativeNavigationHost> {
         if (!_hasPublishedContext || _overlaid) return;
         final state = _resolve();
         if (!state.navigationBarVisible) return;
-        await state.actionWithId(id)?.onPressed?.call();
+        final action = state.actionWithId(id);
+        if (action == null) return;
+        final button = <NativeNavigationAction>[
+          ...state.actions,
+          ...state.toolbarActions,
+        ].any((item) => identical(item, action));
+        unawaited(button ? vibrateUtil.light() : vibrateUtil.selection());
+        await action.onPressed?.call();
+      },
+      onMenuOpened: (id) async {
+        if (!_hasPublishedContext || _overlaid) return;
+        unawaited(vibrateUtil.light());
       },
     );
     _refreshAvailability();

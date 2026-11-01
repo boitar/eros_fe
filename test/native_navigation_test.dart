@@ -131,6 +131,94 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('native bar buttons, menus and back answer with feedback',
+      (tester) async {
+    const channel = MethodChannel('eros/native-navigation');
+    const vibration = MethodChannel('vibration');
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+        channel, (call) async => call.method == 'getShellState' ? true : null);
+    // Tests run on the Android path: a light tap is one vibrate call, a
+    // selection tick goes through the platform channel.
+    final feedback = <String>[];
+    messenger.setMockMethodCallHandler(vibration, (call) async {
+      if (call.method == 'vibrate') {
+        feedback.add('light');
+      }
+      return call.method.startsWith('has') ? false : null;
+    });
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') {
+        feedback.add('selection');
+      }
+      return null;
+    });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(channel, null);
+      messenger.setMockMethodCallHandler(vibration, null);
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      NativeNavigationBridge.enabled.value = false;
+    });
+    Future<void> native(String method, [Object? arguments]) async {
+      await messenger.handlePlatformMessage(
+          channel.name,
+          const StandardMethodCodec()
+              .encodeMethodCall(MethodCall(method, arguments)),
+          (_) {});
+      await tester.pumpAndSettle();
+    }
+
+    final pressed = <String>[];
+    final observer = EhNavigatorObserver();
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(CupertinoApp(
+      navigatorKey: navigator,
+      navigatorObservers: [observer],
+      builder: (context, child) => NativeNavigationHost(
+        observer: observer,
+        navigatorKey: navigator,
+        child: child!,
+      ),
+      home: NativeNavigationPage(
+        chrome: NativePageChrome(title: 'Gallery', actions: [
+          NativeNavigationAction(
+              id: 'share',
+              title: 'Share',
+              onPressed: () => pressed.add('share')),
+          NativeNavigationAction(id: 'more', title: 'More', children: [
+            NativeNavigationAction(
+                id: 'copy', title: 'Copy', onPressed: () => pressed.add('copy')),
+          ]),
+        ]),
+        child: const SizedBox.expand(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await native('action', 'share');
+    expect(pressed, ['share']);
+    expect(feedback, ['light']);
+    await native('menuOpened', 'more');
+    expect(feedback, ['light', 'light']);
+    await native('action', 'copy');
+    expect(pressed, ['share', 'copy']);
+    expect(feedback, ['light', 'light', 'selection']);
+    // Unknown or stale ids neither run anything nor buzz.
+    await native('action', 'gone');
+    expect(feedback, hasLength(3));
+
+    navigator.currentState!.push(CupertinoPageRoute<void>(
+        builder: (_) => const NativeNavigationPage(
+              chrome: NativePageChrome(title: 'Detail'),
+              child: SizedBox.expand(),
+            )));
+    await tester.pumpAndSettle();
+    await native('goBack');
+    expect(feedback, ['light', 'light', 'selection', 'light']);
+    expect(navigator.currentState!.canPop(), isFalse);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('disposing an old channel lease cannot remove a newer handler',
       (tester) async {
     var oldCalls = 0;

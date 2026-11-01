@@ -75,6 +75,7 @@ void main() {
     await util.success();
     await util.error();
     await util.tabSwitch();
+    await util.selection();
     expect(nativeCalls.map((c) => c.method), [
       'impact',
       'light',
@@ -82,9 +83,12 @@ void main() {
       'heavy',
       'success',
       'error',
-      'tabSwitch'
+      'tabSwitch',
+      'selection'
     ]);
     expect(legacyCalls, isEmpty);
+    // Selection ticks use the app's retained generator, not Flutter's.
+    expect(systemCalls, isEmpty);
   });
 
   test('disabled iOS and Android feedback produce no plugin or platform calls',

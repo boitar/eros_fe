@@ -185,6 +185,7 @@ void main() {
       addTearDown(() => tester.binding.defaultBinaryMessenger
           .setMockMethodCallHandler(_menuChannel, null));
 
+      final ticks = _countTicks(tester);
       final picked = <String>[];
       await tester.pumpWidget(_app([
         SliverCupertinoListSection.listInsetGrouped(
@@ -222,6 +223,7 @@ void main() {
       );
       await tester.pump();
       expect(picked, ['dark']);
+      expect(ticks(), 1);
       expect(find.textContaining('Dark'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -231,12 +233,18 @@ void main() {
       addTearDown(() => tester.binding.defaultBinaryMessenger
           .setMockMethodCallHandler(_menuChannel, null));
 
+      final ticks = _countTicks(tester);
       await tester.pumpWidget(_app([
         SliverCupertinoListSection.listInsetGrouped(children: [_themeRow()]),
       ]));
       await tester.tap(find.text('Theme'));
       await tester.pumpAndSettle();
       expect(find.byType(CupertinoMenuItem), findsNWidgets(3));
+      expect(ticks(), 0);
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+      // A pick ticks once.
+      expect(ticks(), 1);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('choices with previews keep the action sheet', (tester) async {
@@ -351,4 +359,26 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+}
+
+/// Counts haptic ticks on whichever path the shared haptics helper takes in
+/// this test run.
+ValueGetter<int> _countTicks(WidgetTester tester) {
+  var ticks = 0;
+  final messenger = tester.binding.defaultBinaryMessenger;
+  for (final channel in const [
+    MethodChannel('eros/haptics'),
+    MethodChannel('vibration'),
+    SystemChannels.platform,
+  ]) {
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (const ['selection', 'vibrate', 'HapticFeedback.vibrate']
+          .contains(call.method)) {
+        ticks++;
+      }
+      return call.method.startsWith('has') ? false : null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+  }
+  return () => ticks;
 }
