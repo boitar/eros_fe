@@ -4681,6 +4681,69 @@ class L10n {
       args: [],
     );
   }
+
+  String get cf_verify_title {
+    return Intl.message(
+      'Cloudflare Verification',
+      name: 'cf_verify_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_summary {
+    return Intl.message(
+      'Complete the human check in-app when forum requests are blocked',
+      name: 'cf_verify_summary',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_required {
+    return Intl.message(
+      'Forum Verification Required',
+      name: 'cf_verify_required',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_prompt {
+    return Intl.message(
+      'Forum requests are blocked by Cloudflare. Complete the verification in the built-in browser now?',
+      name: 'cf_verify_prompt',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_action {
+    return Intl.message(
+      'Verify',
+      name: 'cf_verify_action',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_success {
+    return Intl.message(
+      'Verification complete',
+      name: 'cf_verify_success',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_still_blocked {
+    return Intl.message(
+      'Verification saved, but the forum is still blocked. Try again later or after switching networks.',
+      name: 'cf_verify_still_blocked',
+      desc: '',
+      args: [],
+    );
+  }
   String get liquid_glass_top_layout {
     return Intl.message(
       'Top category layout',

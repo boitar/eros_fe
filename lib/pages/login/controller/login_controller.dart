@@ -8,6 +8,7 @@ import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/login/view/login_cookie.dart';
 import 'package:eros_fe/pages/login/view/web_login_in.dart';
+import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -81,7 +82,7 @@ class LoginController extends GetxController {
       userController.user(user.copyWith(username: usernameController.text.oN));
       Api.selEhProfile();
 
-      asyncGetUserInfo(user.memberId!);
+      asyncGetUserInfo(memberId: user.memberId!);
     }
 
     Get.back();
@@ -132,7 +133,7 @@ class LoginController extends GetxController {
     userController.user(user);
 
     try {
-      await asyncGetUserInfo(memberId);
+      await asyncGetUserInfo(memberId: memberId);
     } catch (e) {
       loadingLogin = false;
       update();
@@ -193,7 +194,7 @@ class LoginController extends GetxController {
       userController.user(user);
 
       if (memberId.isNotEmpty) {
-        asyncGetUserInfo(memberId);
+        asyncGetUserInfo(memberId: memberId);
         Api.selEhProfile();
       }
 
@@ -201,19 +202,39 @@ class LoginController extends GetxController {
     }
   }
 
-  Future<void> asyncGetUserInfo([String? memberId]) async {
+  /// [interactive] 为 false 时失败只抛出，不弹提示也不引导验证
+  Future<void> asyncGetUserInfo(
+      {String? memberId, bool interactive = true}) async {
     memberId ??= userController.user.value.memberId;
     if (memberId == null) {
       return;
     }
     // 异步获取昵称和头像
     logger.d('异步获取昵称和头像');
-    late User? info;
+    User? info;
     try {
       info = await getUserInfo(memberId);
     } catch (e) {
-      showToast('$e');
-      rethrow;
+      if (!interactive) {
+        rethrow;
+      }
+      if (!isCfBlockedError(e)) {
+        showToast('$e');
+        rethrow;
+      }
+      if (!await promptCfVerification()) {
+        showToast(L10n.current.cf_verify_required);
+        rethrow;
+      }
+      // 验证完成后只重试一次
+      try {
+        info = await getUserInfo(memberId);
+      } catch (retryError) {
+        showToast(isCfBlockedError(retryError)
+            ? L10n.current.cf_verify_still_blocked
+            : '$retryError');
+        rethrow;
+      }
     }
 
     userController.user(userController.user.value.copyWith(

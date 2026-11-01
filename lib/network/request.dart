@@ -889,9 +889,13 @@ Future<User?> getUserInfo(String userId, {bool forceRefresh = true}) async {
 
   if (httpResponse.ok && httpResponse.data is User) {
     return httpResponse.data as User;
-  } else {
-    throw httpResponse.error ?? HttpException('get user info error');
   }
+  final errorData = httpResponse.error?.data;
+  if (errorData is String && isCloudflareChallenge(errorData)) {
+    throw EhError(
+        type: EhErrorType.cfBlocked, error: 'Cloudflare verification required');
+  }
+  throw httpResponse.error ?? HttpException('get user info error');
 }
 
 http_parser.MediaType _avatarMediaType(String filePath) {

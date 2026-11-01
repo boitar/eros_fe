@@ -1,12 +1,74 @@
 import 'dart:io' as io;
 
-import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
-import 'package:eros_fe/generated/l10n.dart';
-import 'package:eros_fe/utils/avatar_upload_retry.dart';
-import 'package:eros_fe/utils/logger.dart';
+import 'package:eros_fe/index.dart';
+import 'package:eros_fe/network/api.dart';
+import 'package:eros_fe/utils/cf_verification.dart';
+import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:get/get.dart';
+
+/// 打开内置 WebView 完成论坛的 Cloudflare 验证；取消时返回 null
+Future<CfVerification?> openCfVerification() async {
+  return Get.to<CfVerification>(() => const CfVerifyWebView());
+}
+
+/// 把验证结果写入 cookie jar 与当前用户，之后的 Dio 请求带上同一组 cookie 与 UA
+Future<void> applyCfVerification(
+  CfVerification verification, {
+  void Function()? checkAccount,
+}) async {
+  final jar = await Api.cookieJar;
+  checkAccount?.call();
+  await jar.saveFromResponse(
+      Uri.parse('https://forums.e-hentai.org/'), verification.cookies);
+  checkAccount?.call();
+  final UserController controller = Get.find();
+  controller.user(controller.user.value.copyWith(
+    cfClearance: verification.value('cf_clearance')?.oN,
+    cfDuid: verification.value('cf_duid')?.oN,
+    userAgent: verification.userAgent?.oN,
+  ));
+}
+
+/// 询问用户是否去验证；验证完成并已保存时返回 true
+Future<bool> promptCfVerification() async {
+  final context = Get.context;
+  if (context == null) {
+    return false;
+  }
+  final l10n = L10n.of(context);
+  final confirmed = await showCupertinoDialog<bool>(
+    context: context,
+    barrierDismissible: true,
+    builder: (dialogContext) => EhAlertDialog(
+      title: Text(l10n.cf_verify_required),
+      content: Text(l10n.cf_verify_prompt),
+      actions: <CupertinoDialogAction>[
+        CupertinoDialogAction(
+          child: Text(l10n.cancel),
+          onPressed: () => Navigator.pop(dialogContext),
+        ),
+        CupertinoDialogAction(
+          isDefaultAction: true,
+          child: Text(l10n.cf_verify_action),
+          onPressed: () => Navigator.pop(dialogContext, true),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) {
+    return false;
+  }
+  final verification = await openCfVerification();
+  if (verification == null || !verification.isComplete) {
+    return false;
+  }
+  await applyCfVerification(verification);
+  return true;
+}
 
 class CfVerifyWebView extends StatefulWidget {
   const CfVerifyWebView({super.key});
@@ -51,10 +113,9 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
       final userAgent = rawUa?.toString().trim();
       final cookies = await _cookieManager.getCookies(
           url: WebUri('https://forums.e-hentai.org/'));
-      final verification = AvatarVerification(
+      final verification = CfVerification(
         cookies
-            .where((cookie) =>
-                <String>{'cf_clearance', 'cf_duid'}.contains(cookie.name))
+            .where((cookie) => CfVerification.cookieNames.contains(cookie.name))
             .map((cookie) => io.Cookie(cookie.name, '${cookie.value}'))
             .toList(),
         userAgent,
@@ -68,7 +129,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
       _done = true;
       Navigator.of(context).pop(verification);
     } catch (error) {
-      logger.e('avatar verification failed: $error');
+      logger.e('cloudflare verification failed: $error');
     } finally {
       _finishing = false;
     }
@@ -77,7 +138,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
   @override
   Widget build(BuildContext context) {
     return SettingScaffold(
-      title: L10n.of(context).avatar_cf_verify_title,
+      title: L10n.of(context).cf_verify_title,
       actions: <NativeNavigationAction>[
         NativeNavigationAction(
           id: 'cfVerify.done',
@@ -94,8 +155,8 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
         child: InAppWebView(
           initialUrlRequest:
               URLRequest(url: WebUri(CfVerifyWebView.kVerifyUrl)),
+          // 不要开 useShouldOverrideUrlLoading：没有回调时 iOS 会取消首个导航，页面一直空白
           initialSettings: InAppWebViewSettings(
-            useShouldOverrideUrlLoading: true,
             mediaPlaybackRequiresUserGesture: false,
             useHybridComposition: true,
           ),

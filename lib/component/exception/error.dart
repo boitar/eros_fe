@@ -40,3 +40,6 @@ class EhError implements Exception {
     return msg;
   }
 }
+
+bool isCfBlockedError(Object? error) =>
+    error is EhError && error.type == EhErrorType.cfBlocked;

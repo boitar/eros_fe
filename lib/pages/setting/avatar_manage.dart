@@ -2,7 +2,6 @@ import 'dart:io' as io;
 
 import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/index.dart';
-import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
 import 'package:eros_fe/utils/avatar_store.dart';
 import 'package:eros_fe/utils/avatar_upload_retry.dart';
@@ -220,26 +219,12 @@ Future<void> _uploadForumWithCfFallback(
         return null;
       }
       controller.checkAvatarAccount(account);
-      return Get.to<AvatarVerification>(() => const CfVerifyWebView());
+      return openCfVerification();
     },
-    synchronize: (verification) async {
-      final jar = await Api.cookieJar;
-      controller.checkAvatarAccount(account);
-      final cookies = verification.cookies
-          .where((cookie) =>
-              <String>{'cf_clearance', 'cf_duid'}.contains(cookie.name))
-          .toList();
-      await jar.saveFromResponse(
-          Uri.parse('https://forums.e-hentai.org/'), cookies);
-      controller.checkAvatarAccount(account);
-      String? value(String name) =>
-          cookies.firstWhereOrNull((cookie) => cookie.name == name)?.value;
-      controller.user(controller.user.value.copyWith(
-        cfClearance: value('cf_clearance')?.oN,
-        cfDuid: value('cf_duid')?.oN,
-        userAgent: verification.userAgent?.oN,
-      ));
-    },
+    synchronize: (verification) => applyCfVerification(
+      verification,
+      checkAccount: () => controller.checkAvatarAccount(account),
+    ),
   );
   if (confirmed) {
     showToast(l10n.avatar_upload_success);
