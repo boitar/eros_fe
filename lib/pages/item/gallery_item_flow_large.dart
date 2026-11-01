@@ -683,7 +683,8 @@ class _MetaRow extends StatelessWidget {
   }
 }
 
-/// Up to two rows of capsules, then "+N". Watched tags keep the colour the
+/// Up to three rows of capsules, four on a narrow card, then "+N". Watched
+/// tags come first, so the count never hides them, and keep the colour the
 /// user gave them in My Tags, as a tint rather than a solid fill.
 class _CardTags extends StatelessWidget {
   const _CardTags({
@@ -696,37 +697,53 @@ class _CardTags extends StatelessWidget {
   final TextStyle overflowStyle;
   final bool hideLanguage;
 
+  /// Narrower than this a row holds about two capsules, so a fourth row keeps
+  /// the count close to a wider card's.
+  static const double narrowWidth = 130;
+
+  static bool _watched(SimpleTag tag) =>
+      ColorsUtil.getTagColor(tag.backgrondColor) != null;
+
   @override
   Widget build(BuildContext context) {
     final EhSettingService settings = Get.find();
     return Obx(() {
-      final source = hideLanguage
-          ? simpleTags
-              ?.where((tag) =>
-                  !EHConst.iso936.containsKey(tag.text?.trim().toLowerCase()))
-              .toList()
-          : simpleTags;
-      final tags = getLimitSimpleTags(source, settings.listViewTagLimit) ?? [];
+      final source = <SimpleTag>[
+        for (final tag in simpleTags ?? const <SimpleTag>[])
+          if (!hideLanguage ||
+              !EHConst.iso936.containsKey(tag.text?.trim().toLowerCase()))
+            tag,
+      ];
+      // Otherwise E-Hentai's own order: language, parody, character, group,
+      // artist, then the content tags.
+      final ordered = <SimpleTag>[
+        ...source.where(_watched),
+        ...source.where((tag) => !_watched(tag)),
+      ];
+      final tags = getLimitSimpleTags(ordered, settings.listViewTagLimit) ?? [];
       if (tags.isEmpty) {
         return const SizedBox.shrink();
       }
       final translate = settings.isTagTranslate;
       return Padding(
         padding: const EdgeInsets.only(top: 8),
-        child: LimitedWrap(
-          spacing: 4,
-          runSpacing: 4,
-          maxRuns: 2,
-          overflowStyle: overflowStyle,
-          overflowPadding: const EdgeInsets.symmetric(horizontal: 3),
-          children: <Widget>[
-            for (final tag in tags)
-              _CardTag(
-                text: (translate ? tag.translat : tag.text) ?? tag.text ?? '',
-                userColor: ColorsUtil.getTagColor(tag.backgrondColor),
-                userTextColor: ColorsUtil.getTagColor(tag.color),
-              ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) => LimitedWrap(
+            spacing: 4,
+            runSpacing: 4,
+            maxRuns: constraints.maxWidth < narrowWidth ? 4 : 3,
+            overflowStyle: overflowStyle,
+            overflowPadding: const EdgeInsets.symmetric(horizontal: 3),
+            children: <Widget>[
+              for (final tag in tags)
+                _CardTag(
+                  text:
+                      (translate ? tag.translat : tag.text) ?? tag.text ?? '',
+                  userColor: ColorsUtil.getTagColor(tag.backgrondColor),
+                  userTextColor: ColorsUtil.getTagColor(tag.color),
+                ),
+            ],
+          ),
         ),
       );
     });
@@ -751,7 +768,7 @@ class _CardTag extends StatelessWidget {
           );
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: ShapeDecoration(
         color: background,
         shape: const StadiumBorder(),

@@ -1,5 +1,6 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/const/const.dart';
+import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/models/gallery_provider.dart';
 import 'package:eros_fe/models/simple_tag.dart';
 import 'package:eros_fe/pages/item/cover_ratio.dart';
@@ -250,6 +251,42 @@ void main() {
         final title = tester.widget<Text>(find.textContaining('extremely'));
         expect(title.maxLines, kTitleMaxLines);
         expect(_wrapRender(tester).hiddenCount, greaterThan(0));
+        await tester.pumpWidget(const SizedBox());
+      });
+    }
+
+    for (final (width, runs) in [(402.0, 3), (300.0, 4)]) {
+      testWidgets('$width wide: $runs rows of tags, watched ones first',
+          (tester) async {
+        tester.view.physicalSize = Size(width, 874);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final watchedLast = gallery.copyWith(
+          simpleTags: [
+            ...gallery.simpleTags!,
+            const SimpleTag(text: 'watched last', backgrondColor: '#3060d0'),
+          ].oN,
+        );
+
+        await tester.pumpWidget(GetMaterialApp(
+          home: CupertinoPageScaffold(
+            child: CustomScrollView(slivers: [
+              EhWaterfallFlow([watchedLast], 'fixture', large: true),
+            ]),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        expect(_wrapRender(tester).maxRuns, runs);
+        // The tags the user follows lead, so the count never hides them.
+        final labels = tester
+            .widgetList<Text>(find.descendant(
+                of: find.byType(LimitedWrap), matching: find.byType(Text)))
+            .map((text) => text.data)
+            .toList();
+        expect(labels.take(2), ['full color', 'watched last']);
         await tester.pumpWidget(const SizedBox());
       });
     }
