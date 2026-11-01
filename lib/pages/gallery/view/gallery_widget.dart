@@ -3,6 +3,8 @@ import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
@@ -158,45 +160,6 @@ class GalleryTitle extends StatelessWidget {
   /// The title in the other language, offered in the full-title sheet.
   final String? alternateTitle;
 
-  /// The navigation bar no longer repeats the title, so the header is where
-  /// people read and copy it in full.
-  void _showFullTitle(BuildContext context) {
-    final titles = <String>{
-      title,
-      if (alternateTitle?.trim().isNotEmpty ?? false) alternateTitle!,
-    }.toList();
-    void copy(BuildContext sheetContext, String text) {
-      Navigator.of(sheetContext).pop();
-      Clipboard.setData(ClipboardData(text: text));
-      showToast(L10n.of(context).copied_to_clipboard);
-    }
-
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (sheetContext) => EhActionSheet(
-        title: Text(L10n.of(context).full_title),
-        message: Text(titles.join('\n\n')),
-        actions: [
-          for (final text in titles)
-            CupertinoActionSheetAction(
-              onPressed: () => copy(sheetContext, text),
-              child: Text(
-                titles.length == 1
-                    ? L10n.of(context).copy
-                    : '${L10n.of(context).copy} · ${text.characters.take(18)}…',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(sheetContext).pop(),
-          child: Text(L10n.of(context).cancel),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     /// 构建标题
@@ -213,7 +176,8 @@ class GalleryTitle extends StatelessWidget {
     return SelectionArea(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => _showFullTitle(context),
+        onTap: () => showGalleryFullTitle(context,
+            title: title, alternateTitle: alternateTitle),
         child: Text(
           title,
           maxLines: 6,
@@ -235,6 +199,49 @@ class GalleryTitle extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The navigation bar no longer repeats the title, so the header is where
+/// people read and copy it in full, in both languages when there are two.
+void showGalleryFullTitle(
+  BuildContext context, {
+  required String title,
+  String? alternateTitle,
+}) {
+  final titles = <String>{
+    title,
+    if (alternateTitle?.trim().isNotEmpty ?? false) alternateTitle!,
+  }.toList();
+  void copy(BuildContext sheetContext, String text) {
+    Navigator.of(sheetContext).pop();
+    Clipboard.setData(ClipboardData(text: text));
+    showToast(L10n.of(context).copied_to_clipboard);
+  }
+
+  showCupertinoModalPopup<void>(
+    context: context,
+    builder: (sheetContext) => EhActionSheet(
+      title: Text(L10n.of(context).full_title),
+      message: Text(titles.join('\n\n')),
+      actions: [
+        for (final text in titles)
+          CupertinoActionSheetAction(
+            onPressed: () => copy(sheetContext, text),
+            child: Text(
+              titles.length == 1
+                  ? L10n.of(context).copy
+                  : '${L10n.of(context).copy} · ${text.characters.take(18)}…',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        onPressed: () => Navigator.of(sheetContext).pop(),
+        child: Text(L10n.of(context).cancel),
+      ),
+    ),
+  );
 }
 
 /// 上传用户
@@ -397,10 +404,15 @@ class TopCommentEx extends StatelessWidget {
     this.comments,
     this.max = 2,
     required this.uploader,
+    this.grouped = false,
   }) : super(key: key);
   final List<GalleryComment>? comments;
   final int max;
   final String? uploader;
+
+  /// Rows inside one grouped surface, the uploader's comment first and
+  /// labelled, instead of separate cards.
+  final bool grouped;
 
   EhSettingService get _ehSettingService => Get.find();
   BlockController get _blockController => Get.find();
@@ -445,7 +457,48 @@ class TopCommentEx extends StatelessWidget {
             );
       });
 
+      if (grouped) {
+        // The uploader's comment is the only one without a score.
+        final all = commentsToShow.toList();
+        final pinned = all.where((comment) => comment.score.isEmpty);
+        commentsToShow = [...pinned, ...all.where((c) => c.score.isNotEmpty)];
+      }
       commentsToShow = commentsToShow.take(max);
+
+      if (grouped) {
+        final separator = CupertinoDynamicColor.resolve(
+            ehTheme.palette.hairline, context);
+        final rows = <Widget>[];
+        for (final comment in commentsToShow) {
+          if (rows.isNotEmpty) {
+            rows.add(Container(
+              height: 0.5,
+              margin: const EdgeInsets.only(left: 16),
+              color: separator,
+            ));
+          }
+          rows.add(Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (comment.score.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Text(
+                    L10n.of(context).uploader,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoDynamicColor.resolve(
+                          EhPalette.accent, context),
+                    ),
+                  ),
+                ),
+              CommentItem(galleryComment: comment, simple: true, grouped: true),
+            ],
+          ));
+        }
+        return rows;
+      }
 
       return commentsToShow
           .map((GalleryComment comment) => CommentItem(
@@ -453,6 +506,13 @@ class TopCommentEx extends StatelessWidget {
                 simple: true,
               ))
           .toList();
+    }
+
+    if (grouped) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: topComment(comments, max: max),
+      );
     }
 
     return Column(
@@ -514,99 +574,248 @@ class MorePreviewButton extends StatelessWidget {
   }
 }
 
+/// The namespace label shown before a tag group.
+String tagNamespaceLabel(String? tagType, {required bool translate}) {
+  final type = tagType?.trim() ?? '';
+  return translate ? EHConst.translateTagType[type] ?? type : type;
+}
+
+/// Width that fits every namespace label of a gallery, so the tag column
+/// starts at one edge for all groups.
+double tagNamespaceColumnWidth(
+  BuildContext context,
+  Iterable<TagGroup> groups, {
+  required bool translate,
+}) {
+  var widest = 34.0;
+  for (final group in groups) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: tagNamespaceLabel(group.tagType, translate: translate),
+        style: TagGroupItem.namespaceStyle,
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    widest = widest < painter.width ? painter.width : widest;
+    painter.dispose();
+  }
+  return widest.ceilToDouble().clamp(34.0, 120.0);
+}
+
 /// 一个标签组 第一个是类型
+///
+/// The namespace is a quiet text column rather than a coloured block; tags
+/// are neutral capsules, so a watched tag is the only one that stands out.
 class TagGroupItem extends StatelessWidget {
   const TagGroupItem({
+    super.key,
     required this.tagGroupData,
+    this.labelWidth = 44,
   });
 
   final TagGroup tagGroupData;
+  final double labelWidth;
 
-  List<Widget> _initTagBtnList(
-    List<GalleryTag> galleryTags,
-    BuildContext context,
-  ) {
-    final EhSettingService ehSettingService = Get.find();
-
-    return galleryTags.map((e) {
-      final tag = e.setColor();
-      return Obx(() => TagButton(
-            text: ehSettingService.isTagTranslate ? tag.tagTranslat : tag.title,
-            color: ColorsUtil.hexStringToColor(tag.backgrondColor),
-            textColor: () {
-              switch (tag.vote) {
-                case 0:
-                  return ColorsUtil.hexStringToColor(tag.color);
-                case 1:
-                  return CupertinoDynamicColor.resolve(
-                      ThemeColors.tagUpColor, context);
-                case -1:
-                  return CupertinoDynamicColor.resolve(
-                      ThemeColors.tagDownColor, context);
-              }
-            }(),
-            onPressed: () {
-              logger.t('search type[${tag.type}] tag[${tag.title}]');
-              NavigatorUtil.goSearchPageWithParam(
-                  simpleSearch: '${tag.type}:${tag.title.trim()}');
-            },
-            onLongPress: () {
-              showTagInfoDialog(
-                context,
-                tag.title,
-                translate: tag.tagTranslat,
-                type: tag.type,
-                vote: tag.vote ?? 0,
-              );
-            },
-          ));
-    }).toList();
-  }
+  static const TextStyle namespaceStyle =
+      TextStyle(fontSize: 13, height: 1.25, fontWeight: FontWeight.w500);
 
   @override
   Widget build(BuildContext context) {
     final EhSettingService ehSettingService = Get.find();
+    final text2 = CupertinoDynamicColor.resolve(ehTheme.palette.text2, context);
 
-    final List<Widget> _tagBtnList =
-        _initTagBtnList(tagGroupData.galleryTags, context);
-    final String? _tagType = tagGroupData.tagType;
-
-    logger.t('tagType $_tagType');
-
-    final Container container = Container(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // tag 分类
-          Container(
-            padding: const EdgeInsets.only(right: 8),
-            child: Obx(() => _tagType != null
-                ? TagButton(
-                    color: CupertinoDynamicColor.resolve(
-                        ThemeColors.tagColorTagType[_tagType.trim()] ??
-                            randomList<Color>(
-                                ThemeColors.tagColorTagType.values),
-                        context),
-                    text: ehSettingService.isTagTranslate
-                        ? EHConst.translateTagType[_tagType.trim()] ?? _tagType
-                        : _tagType,
-                  )
-                : const SizedBox.shrink()),
-          ),
-          Expanded(
-            child: Wrap(
-              spacing: 4, //主轴上子控件的间距
-              runSpacing: 4, //交叉轴上子控件之间的间距
-              children: _tagBtnList, //要显示的子控件集合
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Obx(() {
+        final translate = ehSettingService.isTagTranslate;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: labelWidth,
+              child: Padding(
+                // Optically centre the label on the first row of capsules.
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  tagNamespaceLabel(tagGroupData.tagType, translate: translate),
+                  maxLines: 1,
+                  style: namespaceStyle.copyWith(color: text2),
+                ),
+              ),
             ),
-          )
-        ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final e in tagGroupData.galleryTags)
+                    _detailTag(context, e.setColor(), translate),
+                ],
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _detailTag(BuildContext context, GalleryTag tag, bool translate) {
+    return DetailTagChip(
+      text: translate ? tag.tagTranslat : tag.title,
+      userColor: ColorsUtil.getTagColor(tag.backgrondColor),
+      userTextColor: ColorsUtil.getTagColor(tag.color),
+      vote: tag.vote ?? 0,
+      onPressed: () {
+        logger.t('search type[${tag.type}] tag[${tag.title}]');
+        NavigatorUtil.goSearchPageWithParam(
+            simpleSearch: '${tag.type}:${tag.title.trim()}');
+      },
+      onLongPress: () {
+        showTagInfoDialog(
+          context,
+          tag.title,
+          translate: tag.tagTranslat,
+          type: tag.type,
+          vote: tag.vote ?? 0,
+        );
+      },
+    );
+  }
+}
+
+/// Detail-page tag capsule. A watched tag wears the colours the user gave it
+/// in My Tags, as on the site; a voted tag ends with ↑ or ↓.
+class DetailTagChip extends StatelessWidget {
+  const DetailTagChip({
+    super.key,
+    required this.text,
+    this.userColor,
+    this.userTextColor,
+    this.vote = 0,
+    this.onPressed,
+    this.onLongPress,
+  });
+
+  final String text;
+
+  /// The tag's colour from My Tags, filling the capsule.
+  final Color? userColor;
+
+  /// The text colour the site gives that tag.
+  final Color? userTextColor;
+  final int vote;
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final watched = userColor != null;
+    final (background, foreground) = watched
+        ? ColorsUtil.watchedTag(userColor!, userTextColor)
+        : (
+            CupertinoDynamicColor.resolve(ThemeColors.tagBackground, context),
+            CupertinoDynamicColor.resolve(ThemeColors.tagText, context),
+          );
+    final arrow = switch (vote) {
+      > 0 => (' ↑', ThemeColors.tagUpColor),
+      < 0 => (' ↓', ThemeColors.tagDownColor),
+      _ => null,
+    };
+
+    return GestureDetector(
+      onTap: onPressed,
+      onLongPress: onLongPress,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: ShapeDecoration(
+          color: background,
+          shape: const StadiumBorder(),
+        ),
+        child: Text.rich(
+          TextSpan(
+            text: text,
+            children: [
+              if (arrow != null)
+                TextSpan(
+                  text: arrow.$1,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: CupertinoDynamicColor.resolve(arrow.$2, context),
+                  ),
+                ),
+            ],
+          ),
+          style: TextStyle(
+            fontSize: 13,
+            height: 1.25,
+            fontWeight: watched ? FontWeight.w600 : FontWeight.w400,
+            color: foreground,
+          ),
+        ),
       ),
     );
-
-    return container;
   }
+}
+
+/// Dashed "+ Tags" capsule closing the tag list.
+class AddTagChip extends StatelessWidget {
+  const AddTagChip({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final text2 = CupertinoDynamicColor.resolve(ehTheme.palette.text2, context);
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: CustomPaint(
+          painter: _DashedStadiumPainter(
+            color: CupertinoDynamicColor.resolve(ehTheme.palette.text3, context),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Text(
+              '+ ${L10n.of(context).add_tags}',
+              style: TextStyle(fontSize: 13, height: 1.25, color: text2),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashedStadiumPainter extends CustomPainter {
+  const _DashedStadiumPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const stroke = 1.0;
+    final rect = (Offset.zero & size).deflate(stroke / 2);
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(rect.height / 2)));
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..color = color;
+    for (final metric in path.computeMetrics()) {
+      for (var d = 0.0; d < metric.length; d += 7) {
+        canvas.drawPath(metric.extractPath(d, d + 4), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedStadiumPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 /// 标签按钮

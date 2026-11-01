@@ -1,4 +1,6 @@
 import 'package:blur/blur.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/pages/item/favorite_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +9,6 @@ import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
 import '../../common/service/ehsetting_service.dart';
 import '../../common/service/layout_service.dart';
-import '../../common/service/theme_service.dart';
 import '../../const/theme_colors.dart';
 import '../../index.dart';
 import '../../widget/rating_bar.dart';
@@ -57,15 +58,7 @@ class GalleryItemGrid extends StatelessWidget {
         decoration: BoxDecoration(
           color: ehTheme.itemBackgroundColor,
           borderRadius: BorderRadius.circular(kRadius), //圆角
-          boxShadow: ehTheme.isDarkMode
-              ? null
-              : [
-                  BoxShadow(
-                    color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.systemGrey4, Get.context!),
-                    blurRadius: 10,
-                  )
-                ],
+          boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -224,8 +217,7 @@ class GalleryItemGrid extends StatelessWidget {
             colorLight: ThemeColors.colorRatingMap[
                 galleryProviderController.galleryProvider.colorRating?.trim() ??
                     'ir'],
-            colorDark: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemGrey3, Get.context!),
+            colorDark: ehTheme.palette.text3.resolveFrom(Get.context!),
           ),
         ),
       ],
@@ -292,7 +284,8 @@ class _PostTime extends StatelessWidget {
     return Text(
       postTime ?? '',
       textAlign: TextAlign.right,
-      style: const TextStyle(fontSize: 12, color: CupertinoColors.systemGrey),
+      style: TextStyle(
+          fontSize: 12, color: ehTheme.palette.text2.resolveFrom(context)),
     );
   }
 }
@@ -373,8 +366,7 @@ class _CoverImage extends StatelessWidget {
         Container(
           width: coverImageWidth,
           height: coverImageHeight,
-          color: CupertinoDynamicColor.resolve(
-              CupertinoColors.systemGrey6, context),
+          color: ehTheme.palette.fill.resolveFrom(context),
         ),
         Center(
           child: Hero(

@@ -1,8 +1,8 @@
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
-import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -14,11 +14,8 @@ class DownloadSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).download),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).download,
       child: CustomScrollView(slivers: [
         SliverSafeArea(sliver: DownloadSetting()),
       ]),
@@ -163,43 +160,14 @@ Widget _buildPreloadImageItem(BuildContext context) {
   final String title = L10n.of(context).preload_image;
   final EhSettingService ehSettingService = Get.find();
 
-  List<Widget> getModeList(BuildContext context) {
-    return List<Widget>.from(EHConst.preloadImage.map((int element) {
-      return CupertinoActionSheetAction(
-          onPressed: () {
-            Get.back(result: element);
-          },
-          child: Text('$element'));
-    }).toList());
-  }
-
-  Future<int?> showActionSheet(BuildContext context) {
-    return showCupertinoModalPopup<int>(
-        context: context,
-        builder: (BuildContext context) {
-          final EhActionSheet dialog = EhActionSheet(
-            cancelButton: CupertinoActionSheetAction(
-                onPressed: () {
-                  Get.back();
-                },
-                child: Text(L10n.of(context).cancel)),
-            actions: <Widget>[
-              ...getModeList(context),
-            ],
-          );
-          return dialog;
-        });
-  }
-
-  return Obx(() => EhCupertinoListTile(
-        title: Text(title),
-        trailing: const CupertinoListTileChevron(),
-        additionalInfo: Text(ehSettingService.preloadImage.toString()),
-        onTap: () async {
-          final int? result = await showActionSheet(context);
-          if (result != null) {
-            ehSettingService.preloadImage(result);
-          }
+  return Obx(() => SelectorCupertinoListTile<int>(
+        title: title,
+        actionMap: {
+          for (final int value in EHConst.preloadImage) value: '$value'
+        },
+        initVal: ehSettingService.preloadImage.value,
+        onValueChanged: (int result) async {
+          ehSettingService.preloadImage(result);
         },
       ));
 }
@@ -209,45 +177,16 @@ Widget _buildMultiDownloadItem(BuildContext context) {
   final String title = L10n.of(context).multi_download;
   final EhSettingService ehSettingService = Get.find();
 
-  List<Widget> getModeList(BuildContext context) {
-    return List<Widget>.from(EHConst.multiDownload.map((int element) {
-      return CupertinoActionSheetAction(
-          onPressed: () {
-            Get.back(result: element);
-          },
-          child: Text('$element'));
-    }).toList());
-  }
-
-  Future<int?> showActionSheet(BuildContext context) {
-    return showCupertinoModalPopup<int>(
-        context: context,
-        builder: (BuildContext context) {
-          final EhActionSheet dialog = EhActionSheet(
-            cancelButton: CupertinoActionSheetAction(
-                onPressed: () {
-                  Get.back();
-                },
-                child: Text(L10n.of(context).cancel)),
-            actions: <Widget>[
-              ...getModeList(context),
-            ],
-          );
-          return dialog;
-        });
-  }
-
-  return Obx(() => EhCupertinoListTile(
-        title: Text(title),
-        trailing: const CupertinoListTileChevron(),
-        additionalInfo: Text(ehSettingService.multiDownload.toString()),
-        onTap: () async {
-          final int? result = await showActionSheet(context);
-          if (result != null) {
-            if (ehSettingService.multiDownload != result) {
-              ehSettingService.multiDownload = result;
-              await Get.find<DownloadController>().resetConcurrency();
-            }
+  return Obx(() => SelectorCupertinoListTile<int>(
+        title: title,
+        actionMap: {
+          for (final int value in EHConst.multiDownload) value: '$value'
+        },
+        initVal: ehSettingService.multiDownload,
+        onValueChanged: (int result) async {
+          if (ehSettingService.multiDownload != result) {
+            ehSettingService.multiDownload = result;
+            await Get.find<DownloadController>().resetConcurrency();
           }
         },
       ));
@@ -258,45 +197,16 @@ Widget _buildConcurrentGalleriesItem(BuildContext context) {
   final String title = L10n.of(context).concurrent_galleries;
   final EhSettingService ehSettingService = Get.find();
 
-  List<Widget> getModeList(BuildContext context) {
-    return List<Widget>.from(EHConst.concurrentGalleries.map((int element) {
-      return CupertinoActionSheetAction(
-          onPressed: () {
-            Get.back(result: element);
-          },
-          child: Text('$element'));
-    }).toList());
-  }
-
-  Future<int?> showActionSheet(BuildContext context) {
-    return showCupertinoModalPopup<int>(
-        context: context,
-        builder: (BuildContext context) {
-          final EhActionSheet dialog = EhActionSheet(
-            cancelButton: CupertinoActionSheetAction(
-                onPressed: () {
-                  Get.back();
-                },
-                child: Text(L10n.of(context).cancel)),
-            actions: <Widget>[
-              ...getModeList(context),
-            ],
-          );
-          return dialog;
-        });
-  }
-
-  return Obx(() => EhCupertinoListTile(
-        title: Text(title),
-        trailing: const CupertinoListTileChevron(),
-        additionalInfo: Text(ehSettingService.concurrentGalleries.toString()),
-        onTap: () async {
-          final int? result = await showActionSheet(context);
-          if (result != null) {
-            if (ehSettingService.concurrentGalleries != result) {
-              ehSettingService.concurrentGalleries = result;
-              await Get.find<DownloadController>().resetConcurrency();
-            }
+  return Obx(() => SelectorCupertinoListTile<int>(
+        title: title,
+        actionMap: {
+          for (final int value in EHConst.concurrentGalleries) value: '$value'
+        },
+        initVal: ehSettingService.concurrentGalleries,
+        onValueChanged: (int result) async {
+          if (ehSettingService.concurrentGalleries != result) {
+            ehSettingService.concurrentGalleries = result;
+            await Get.find<DownloadController>().resetConcurrency();
           }
         },
       ));

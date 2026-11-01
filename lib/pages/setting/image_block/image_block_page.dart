@@ -1,5 +1,6 @@
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,11 +14,8 @@ class ImageBlockPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).image_block),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).image_block,
       child: CustomScrollView(
         slivers: [
           SliverSafeArea(

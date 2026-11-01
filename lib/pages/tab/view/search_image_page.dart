@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:blur/blur.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
@@ -30,10 +31,8 @@ class SearchImagePage extends GetView<SearchImageController> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Search image'),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).search_by_image,
       child: Container(
         child: CustomScrollView(
           slivers: [
@@ -117,7 +116,8 @@ class SearchImagePage extends GetView<SearchImageController> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  FaIcon(FontAwesomeIcons.hippo,
+                  FaIcon(
+                    FontAwesomeIcons.hippo,
                     size: 100,
                     color: CupertinoDynamicColor.resolve(
                         CupertinoColors.systemGrey, context),
@@ -202,7 +202,8 @@ class ImagePersistentHeaderDelegate extends SliverPersistentHeaderDelegate {
                 child: Obx(() {
                   return searchImageController.imagePath.isEmpty
                       ? Center(
-                          child: FaIcon(FontAwesomeIcons.circlePlus,
+                          child: FaIcon(
+                            FontAwesomeIcons.circlePlus,
                             // color: CupertinoColors.systemGrey2,
                             color:
                                 CupertinoTheme.of(context).barBackgroundColor,
@@ -232,7 +233,8 @@ class ImagePersistentHeaderDelegate extends SliverPersistentHeaderDelegate {
                 margin: const EdgeInsets.only(right: 12),
                 // color: CupertinoColors.systemGrey3,
                 child: Center(
-                  child: FaIcon(FontAwesomeIcons.magnifyingGlass,
+                  child: FaIcon(
+                    FontAwesomeIcons.magnifyingGlass,
                     color: CupertinoTheme.of(context).barBackgroundColor,
                     size: 40,
                   ),

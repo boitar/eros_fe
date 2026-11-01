@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -16,18 +17,7 @@ class GalleryItemPlaceHolder extends StatelessWidget {
     return Container(
       height: kFixedHeight,
       decoration: BoxDecoration(
-        boxShadow: ehTheme.isDarkMode
-            ? null
-            : [
-                BoxShadow(
-                  color: CupertinoDynamicColor.resolve(
-                          CupertinoColors.systemGrey5, Get.context!)
-                      .withOpacity(1.0),
-                  blurRadius: 10,
-                  // spreadRadius: 2,
-                  offset: const Offset(2, 4),
-                )
-              ],
+        boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
         borderRadius: BorderRadius.circular(kCardRadius),
         color: ehTheme.itemBackgroundColor,
       ),
@@ -44,8 +34,7 @@ class GalleryItemPlaceHolder extends StatelessWidget {
                     borderRadius: BorderRadius.circular(kCardRadius),
                     child: Container(
                       width: coverImageWidth,
-                      color: CupertinoDynamicColor.resolve(
-                          CupertinoColors.systemGrey5, context),
+                      color: ehTheme.palette.fill.resolveFrom(context),
                     ),
                   ),
                 ),

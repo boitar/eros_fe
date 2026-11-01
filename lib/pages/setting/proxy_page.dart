@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/webview/mode.dart';
@@ -16,12 +17,8 @@ class ProxyPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final String _title = L10n.of(context).proxy;
 
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        padding: const EdgeInsetsDirectional.only(start: 0),
-        middle: Text(_title),
-      ),
+    return SettingScaffold(
+      title: _title,
       child: CustomScrollView(
         slivers: [
           SliverSafeArea(

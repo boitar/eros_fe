@@ -57,14 +57,14 @@ class NavigatorUtil {
     if (replace) {
       await Get.offNamed(
         EHRoutes.search,
-        id: primaryNavigatorId,
+        id: listNavigatorId,
         preventDuplicates: false,
         arguments: ownership,
       );
     } else {
       await Get.toNamed(
         EHRoutes.search,
-        id: primaryNavigatorId,
+        id: listNavigatorId,
         preventDuplicates: false,
         arguments: ownership,
       );
@@ -96,7 +96,7 @@ class NavigatorUtil {
 
     await Get.toNamed(
       EHRoutes.search,
-      id: primaryNavigatorId,
+      id: listNavigatorId,
       preventDuplicates: false,
       arguments: ControllerTagSnapshot(
           galleryTag: tags.snapshot.galleryTag, searchTag: tag),

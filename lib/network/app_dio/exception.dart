@@ -14,7 +14,19 @@ class HttpException implements Exception {
 
   @override
   String toString() {
-    return 'HttpException{_message: $_message, _code: $_code, _data: $_data}';
+    return 'HttpException{_message: $_message, _code: $_code, _data: ${_summarize(_data)}}';
+  }
+
+  /// 错误信息会被直接 toast，HTML 等长正文只保留长度
+  static String? _summarize(dynamic data) {
+    if (data is! String) {
+      return data?.toString();
+    }
+    final text = data.trim();
+    if (text.startsWith('<') || text.length > 200) {
+      return '<${text.length} chars>';
+    }
+    return text;
   }
 }
 

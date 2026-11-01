@@ -116,6 +116,9 @@ final class ErosNativeNavigationShell: UITabBarController,
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        // Bars float over colourful covers: keep their symbols and the
+        // selected tab monochrome and let the glass lens mark selection.
+        view.tintColor = .label
         // The bar items move into the vertical bar, but a title keeps a
         // horizontal band that pushes the panes down; refresh on axis changes.
         registerForTraitChanges(
@@ -194,42 +197,74 @@ final class ErosNativeNavigationShell: UITabBarController,
         let canGoBack = state["canGoBack"] as? Bool ?? false
         let title = state["title"] as? String ?? ""
         let titleVisible = state["titleVisible"] as? Bool ?? true
+        // A page with its own Flutter bar takes nothing from this one.
+        let ownBar = state["ownBar"] as? Bool ?? false
+        let showsBack = canGoBack && !ownBar
+        let bar = navigation.navigationBar
+        let barWasHidden = navigation.isNavigationBarHidden
+        let hadBack = host.navigationItem.leftBarButtonItem != nil
+        let previousTitle = host.navigationItem.title
         let usesVerticalBar = traitCollection.verticalBarEdge != .unspecified
+        // Collapsing the vertical bar would reflow the panes sideways, so only
+        // the horizontal bar follows the list's scroll direction.
+        let collapsed = (state["barCollapsed"] as? Bool ?? false) && !usesVerticalBar
+        // Beside the vertical bar an empty bar still keeps its band at the
+        // top, so a page with its own bar starts where its neighbours do and
+        // nothing moves while one slides over the other.
+        let hidden = ownBar
+            ? !usesVerticalBar
+            : !(state["navigationBarVisible"] as? Bool ?? false) || collapsed
+        // Items moving in and out of the vertical bar fade like the system's;
+        // the horizontal bar fades as a whole below.
+        let fadesItems = usesVerticalBar && !barWasHidden && !hidden
+            && !UIAccessibility.isReduceMotionEnabled
         // Root lists already name themselves with the tab and group rail; a
         // title there only splits the top chrome into two separate rows.
         // Pages whose header shows the full title keep only their actions.
         host.setBarTitle(
-            usesVerticalBar || !canGoBack || !titleVisible ? nil : title,
+            usesVerticalBar || !showsBack || !titleVisible ? nil : title,
             monospacedDigits: state["titleMonospacedDigits"] as? Bool ?? false
         )
-        if canGoBack {
+        let backTitle = state["backTitle"] as? String ?? "Back"
+        if !showsBack {
+            host.navigationItem.setLeftBarButton(nil, animated: fadesItems)
+        } else if let back = host.navigationItem.leftBarButtonItem {
+            back.title = backTitle
+        } else {
             let back = UIBarButtonItem(
-                title: state["backTitle"] as? String ?? "Back",
+                title: backTitle,
                 image: UIImage(systemName: "chevron.backward"),
                 target: self,
                 action: #selector(handleBack)
             )
             back.accessibilityIdentifier = "native-back"
-            host.navigationItem.leftBarButtonItem = back
-        } else {
-            host.navigationItem.leftBarButtonItem = nil
+            host.navigationItem.setLeftBarButton(back, animated: fadesItems)
         }
         let send: (String) -> Void = { [weak self] id in
             self?.navigationChannel.invokeMethod("action", arguments: id)
         }
-        let actions = NativeBarAction.list(state["actions"]).map {
-            host.barItem(for: $0, send: send)
+        let opened: (String) -> Void = { [weak self] id in
+            self?.navigationChannel.invokeMethod("menuOpened", arguments: id)
         }
-        host.navigationItem.rightBarButtonItems = actions.isEmpty ? nil : actions
+        let actions = ownBar ? [] : NativeBarAction.list(state["actions"]).map {
+            host.barItem(for: $0, send: send, opened: opened)
+        }
+        let currentActions = host.navigationItem.rightBarButtonItems ?? []
+        if !currentActions.elementsEqual(actions, by: ===) {
+            host.navigationItem.setRightBarButtonItems(
+                actions.isEmpty ? nil : actions,
+                animated: fadesItems
+            )
+        }
         // Toolbar groups are separated by flexible space; the system spaces
         // items inside a group and moves them into the vertical bar.
         var toolbarItems: [UIBarButtonItem] = []
         var lastGroup: String?
-        for action in NativeBarAction.list(state["toolbarActions"]) {
+        for action in ownBar ? [] : NativeBarAction.list(state["toolbarActions"]) {
             if let lastGroup, lastGroup != action.group {
                 toolbarItems.append(.flexibleSpace())
             }
-            toolbarItems.append(host.barItem(for: action, send: send))
+            toolbarItems.append(host.barItem(for: action, send: send, opened: opened))
             lastGroup = action.group
         }
         host.toolbarItems = toolbarItems
@@ -238,17 +273,26 @@ final class ErosNativeNavigationShell: UITabBarController,
         // the app's own brightness.
         navigation.navigationBar.overrideUserInterfaceStyle = dark ? .dark : .unspecified
         navigation.toolbar.overrideUserInterfaceStyle = dark ? .dark : .unspecified
-        // Collapsing the vertical bar would reflow the panes sideways, so only
-        // the horizontal bar follows the list's scroll direction.
-        let collapsed = (state["barCollapsed"] as? Bool ?? false) && !usesVerticalBar
-        let hidden = !(state["navigationBarVisible"] as? Bool ?? false) || collapsed
         let animateBars = (state["animateBars"] as? Bool ?? false)
             && !UIAccessibility.isReduceMotionEnabled
-        navigation.setNavigationBarHidden(
-            hidden,
-            animated: collapsed != lastBarCollapsed
-                || (animateBars && hidden != navigation.isNavigationBarHidden)
-        )
+        let slidesBar = collapsed != lastBarCollapsed
+            || (animateBars && hidden != navigation.isNavigationBarHidden)
+        // A pushed page's bar fades in with the slide instead of popping in
+        // ahead of it. Leaving stays immediate: the bar must go before the
+        // page below lays out, and glass doesn't survive a snapshot to fade.
+        let fadesBar = !slidesBar && !usesVerticalBar
+            && !UIAccessibility.isReduceMotionEnabled
+        navigation.setNavigationBarHidden(hidden, animated: slidesBar)
+        if fadesBar, barWasHidden, !hidden {
+            bar.alpha = 0
+            UIView.animate(withDuration: 0.25) { bar.alpha = 1 }
+        } else if fadesBar, !barWasHidden, !hidden,
+                  hadBack != showsBack || previousTitle != host.navigationItem.title {
+            let fade = CATransition()
+            fade.type = .fade
+            fade.duration = 0.2
+            bar.layer.add(fade, forKey: "eros.chrome")
+        }
         navigation.setToolbarHidden(
             hidden || toolbarItems.isEmpty,
             animated: animateBars
@@ -298,6 +342,7 @@ private struct NativeBarAction {
     let selected: Bool
     let inline: Bool
     let primaryWithMenu: Bool
+    let prominent: Bool
     let priority: String
     let group: String
     let children: [NativeBarAction]
@@ -314,6 +359,7 @@ private struct NativeBarAction {
         selected = value["selected"] as? Bool ?? false
         inline = value["inline"] as? Bool ?? false
         primaryWithMenu = value["primaryWithMenu"] as? Bool ?? false
+        prominent = value["prominent"] as? Bool ?? false
         priority = value["priority"] as? String ?? ""
         group = value["group"] as? String ?? ""
         children = Self.list(value["children"])
@@ -375,7 +421,8 @@ private extension NativeTabHostController {
     /// page counter neither flickers the bar nor closes an open menu.
     func barItem(
         for action: NativeBarAction,
-        send: @escaping (String) -> Void
+        send: @escaping (String) -> Void,
+        opened: @escaping (String) -> Void
     ) -> UIBarButtonItem {
         if let cached = barItemCache[action.id], cached.signature == action.signature {
             return cached.item
@@ -392,7 +439,18 @@ private extension NativeTabHostController {
                 menu: nil
             )
         } else {
-            let menu = UIMenu(children: action.children.map { $0.menuElement(send: send) })
+            var children = action.children.map { $0.menuElement(send: send) }
+            if !action.primaryWithMenu {
+                // A tap opens this menu without running anything Dart hears
+                // of. UIKit asks an uncached deferred element for its items
+                // each time the menu opens; it reports that and adds nothing.
+                // Long-pressed menus keep UIKit's own feedback instead.
+                children.insert(UIDeferredMenuElement.uncached { completion in
+                    opened(id)
+                    completion([])
+                }, at: 0)
+            }
+            let menu = UIMenu(children: children)
             item = UIBarButtonItem(
                 title: action.title,
                 image: action.image,
@@ -404,6 +462,9 @@ private extension NativeTabHostController {
         }
         item.isEnabled = action.enabled
         item.isSelected = action.selected
+        if action.prominent, #available(iOS 26.0, *) {
+            item.style = .prominent
+        }
         item.accessibilityIdentifier = id
         item.accessibilityLabel = action.title
         if #available(iOS 27.0, *) {
@@ -437,6 +498,13 @@ private final class NativeTabHostController: UIViewController {
     fileprivate var barItemCache: [String: (signature: String, item: UIBarButtonItem)] = [:]
     private var visible = false
     private var appearing: Bool?
+    private var canvasObserver: NSObjectProtocol?
+
+    deinit {
+        if let canvasObserver {
+            NotificationCenter.default.removeObserver(canvasObserver)
+        }
+    }
 
     override var shouldAutomaticallyForwardAppearanceMethods: Bool { false }
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
@@ -454,7 +522,15 @@ private final class NativeTabHostController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
+        // Seen behind Flutter while a tab or route transitions.
+        view.backgroundColor = ErosAppearancePlugin.canvasColor
+        canvasObserver = NotificationCenter.default.addObserver(
+            forName: ErosAppearancePlugin.canvasDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.view.backgroundColor = ErosAppearancePlugin.canvasColor
+        }
         edgeAnchorScrollView.isHidden = true
         edgeAnchorScrollView.isUserInteractionEnabled = false
         edgeAnchorScrollView.scrollsToTop = false

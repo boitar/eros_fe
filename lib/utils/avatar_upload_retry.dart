@@ -1,22 +1,11 @@
-import 'dart:io';
-
 import 'package:eros_fe/component/exception/error.dart';
-
-class AvatarVerification {
-  const AvatarVerification(this.cookies, this.userAgent);
-
-  final List<Cookie> cookies;
-  final String? userAgent;
-
-  bool get isComplete => cookies.any(
-      (cookie) => cookie.name == 'cf_clearance' && cookie.value.isNotEmpty);
-}
+import 'package:eros_fe/utils/cf_verification.dart';
 
 /// An explicit completed verification permits exactly one retry.
 Future<bool> uploadAvatarWithVerification({
   required Future<void> Function() upload,
-  required Future<AvatarVerification?> Function() verify,
-  required Future<void> Function(AvatarVerification) synchronize,
+  required Future<CfVerification?> Function() verify,
+  required Future<void> Function(CfVerification) synchronize,
   required void Function() checkAccount,
 }) async {
   checkAccount();

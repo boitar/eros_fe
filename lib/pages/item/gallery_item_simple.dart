@@ -1,4 +1,6 @@
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
@@ -55,8 +57,9 @@ class GalleryItemSimpleWidget extends StatelessWidget {
                 // 上传者
                 Text(
                   galleryProvider.uploader ?? '',
-                  style: const TextStyle(
-                      fontSize: 12, color: CupertinoColors.systemGrey),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: ehTheme.palette.text2.resolveFrom(context)),
                 ),
                 // tag
                 const Spacer(),
@@ -123,8 +126,7 @@ class GalleryItemSimpleWidget extends StatelessWidget {
           Divider(
             height: 0.5,
             indent: kPaddingLeft,
-            color: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemGrey4, context),
+            color: EhPalette.separator.resolveFrom(context),
           ),
         ],
       ),
@@ -164,14 +166,7 @@ class GalleryItemSimpleWidget extends StatelessWidget {
           tag: '${_item.gid}_cover_${tabTag}',
           child: Container(
             decoration: BoxDecoration(
-              boxShadow: [
-                //阴影
-                BoxShadow(
-                  color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.systemGrey5, Get.context!),
-                  blurRadius: 10,
-                ),
-              ],
+              boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
             ),
             child: ClipRRect(
               // 圆角
@@ -200,16 +195,14 @@ class GalleryItemSimpleWidget extends StatelessWidget {
             colorLight: ThemeColors.colorRatingMap[
                 galleryProviderController.galleryProvider.colorRating?.trim() ??
                     'ir'],
-            colorDark: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemGrey3, Get.context!),
+            colorDark: ehTheme.palette.text3.resolveFrom(Get.context!),
           ),
         ),
         Text(
           galleryProviderController.galleryProvider.rating?.toString() ?? '',
           style: TextStyle(
             fontSize: 11,
-            color: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemGrey, Get.context!),
+            color: ehTheme.palette.text2.resolveFrom(Get.context!),
           ),
         ),
       ],
@@ -223,21 +216,23 @@ class GalleryItemSimpleWidget extends StatelessWidget {
           padding: const EdgeInsets.only(right: 4),
           child: Text(
             galleryProviderController.galleryProvider.translated ?? '',
-            style: const TextStyle(
-                fontSize: 11, color: CupertinoColors.systemGrey),
+            style: TextStyle(
+                fontSize: 11,
+                color: ehTheme.palette.text2.resolveFrom(Get.context!)),
           ),
         ),
-        const Icon(
+        Icon(
           Icons.panorama,
           size: 12,
-          color: CupertinoColors.systemGrey,
+          color: ehTheme.palette.text2.resolveFrom(Get.context!),
         ),
         Container(
           padding: const EdgeInsets.only(left: 2),
           child: Text(
             galleryProviderController.galleryProvider.filecount ?? '',
-            style: const TextStyle(
-                fontSize: 11, color: CupertinoColors.systemGrey),
+            style: TextStyle(
+                fontSize: 11,
+                color: ehTheme.palette.text2.resolveFrom(Get.context!)),
           ),
         ),
       ],
@@ -259,7 +254,8 @@ class GalleryItemSimpleWidget extends StatelessWidget {
   Widget _buildPostTime() {
     return Text(
       galleryProviderController.galleryProvider.postTime ?? '',
-      style: const TextStyle(fontSize: 11, color: CupertinoColors.systemGrey),
+      style: TextStyle(
+          fontSize: 11, color: ehTheme.palette.text2.resolveFrom(Get.context!)),
     );
   }
 
@@ -317,8 +313,7 @@ class CoverImg extends StatelessWidget {
                 placeholder: (_, __) {
                   return Container(
                     alignment: Alignment.center,
-                    color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.systemGrey5, context),
+                    color: ehTheme.palette.fill.resolveFrom(context),
                     child: const CupertinoActivityIndicator(),
                   );
                 },

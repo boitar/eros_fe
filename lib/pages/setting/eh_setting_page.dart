@@ -3,12 +3,15 @@ import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
+import 'package:eros_fe/component/exception/error.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/login/controller/login_controller.dart';
 import 'package:eros_fe/pages/setting/avatar_manage.dart';
+import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
 import 'package:eros_fe/widget/user_avatar_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -20,11 +23,8 @@ class EhSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).eh),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).setting_site,
       child: CustomScrollView(slivers: [
         SliverSafeArea(sliver: ListViewEhSetting()),
       ]),
@@ -48,7 +48,22 @@ class ListViewEhSetting extends StatelessWidget {
       getExIgneous();
     }
     Api.selEhProfile();
-    loginController.asyncGetUserInfo();
+  }
+
+  Future<void> _handleCfVerify() async {
+    final verification = await openCfVerification();
+    if (verification == null || !verification.isComplete) {
+      return;
+    }
+    await applyCfVerification(verification);
+    try {
+      await loginController.asyncGetUserInfo(interactive: false);
+      showToast(L10n.current.cf_verify_success);
+    } catch (e) {
+      showToast(isCfBlockedError(e)
+          ? L10n.current.cf_verify_still_blocked
+          : '$e');
+    }
   }
 
   @override
@@ -57,57 +72,60 @@ class ListViewEhSetting extends StatelessWidget {
     Future<EhHome?> futureImageLimits = getEhHome(refresh: true);
 
     return MultiSliver(children: [
+      SliverCupertinoListSection.listInsetGrouped(
+          footer: Text('${L10n.of(context).link_redirect_summary}\n'
+              '${L10n.of(context).redirect_thumb_link_summary}'),
+          children: [
+            if (isLogin)
+              EhCupertinoListTile(
+                title: Text(L10n.of(context).galery_site),
+                trailing: Obx(() {
+                  return CupertinoSlidingSegmentedControl<String>(
+                    groupValue: _ehSettingService.isSiteEx.value
+                        ? EHConst.EX_BASE_HOST
+                        : EHConst.EH_BASE_HOST,
+                    children: const {
+                      EHConst.EH_BASE_HOST: Text(
+                        'E-Hentai',
+                        textScaler: TextScaler.linear(0.9),
+                      ),
+                      EHConst.EX_BASE_HOST: Text(
+                        'ExHentai',
+                        textScaler: TextScaler.linear(0.9),
+                      ),
+                    },
+                    onValueChanged: (String? val) {
+                      if (val != null) {
+                        _handleSiteChanged(val == EHConst.EX_BASE_HOST);
+                      }
+                    },
+                  );
+                }),
+              ),
+            EhCupertinoListTile(
+              title: Text(L10n.of(context).link_redirect),
+              trailing: Obx(() {
+                return CupertinoSwitch(
+                  value: _ehSettingService.linkRedirect,
+                  onChanged: (bool val) {
+                    _ehSettingService.linkRedirect = val;
+                  },
+                );
+              }),
+            ),
+            EhCupertinoListTile(
+              title: Text(L10n.of(context).redirect_thumb_link),
+              trailing: Obx(() {
+                return CupertinoSwitch(
+                  value: _ehSettingService.redirectThumbLink,
+                  onChanged: (bool val) {
+                    _ehSettingService.redirectThumbLink = val;
+                  },
+                );
+              }),
+            ),
+          ]),
       SliverCupertinoListSection.listInsetGrouped(children: [
-        if (isLogin)
-          EhCupertinoListTile(
-            title: Text(L10n.of(context).galery_site),
-            trailing: Obx(() {
-              return CupertinoSlidingSegmentedControl<String>(
-                groupValue: _ehSettingService.isSiteEx.value
-                    ? EHConst.EX_BASE_HOST
-                    : EHConst.EH_BASE_HOST,
-                children: const {
-                  EHConst.EH_BASE_HOST: Text(
-                    'E-Hentai',
-                    textScaler: TextScaler.linear(0.9),
-                  ),
-                  EHConst.EX_BASE_HOST: Text(
-                    'ExHentai',
-                    textScaler: TextScaler.linear(0.9),
-                  ),
-                },
-                onValueChanged: (String? val) {
-                  if (val != null) {
-                    _handleSiteChanged(val == EHConst.EX_BASE_HOST);
-                  }
-                },
-              );
-            }),
-          ),
-        EhCupertinoListTile(
-          title: Text(L10n.of(context).link_redirect),
-          subtitle: Text(L10n.of(context).link_redirect_summary),
-          trailing: Obx(() {
-            return CupertinoSwitch(
-              value: _ehSettingService.linkRedirect,
-              onChanged: (bool val) {
-                _ehSettingService.linkRedirect = val;
-              },
-            );
-          }),
-        ),
-        EhCupertinoListTile(
-          title: Text(L10n.of(context).redirect_thumb_link),
-          subtitle: Text(L10n.of(context).redirect_thumb_link_summary),
-          trailing: Obx(() {
-            return CupertinoSwitch(
-              value: _ehSettingService.redirectThumbLink,
-              onChanged: (bool val) {
-                _ehSettingService.redirectThumbLink = val;
-              },
-            );
-          }),
-        ),
         if (isLogin)
           const EhCupertinoListTile(
             title: Text('Cookie'),
@@ -227,6 +245,13 @@ class ListViewEhSetting extends StatelessWidget {
               showAvatarManageFlow(context);
             },
           ),
+        if (isLogin)
+          EhCupertinoListTile(
+            title: Text(L10n.of(context).cf_verify_title),
+            subtitle: Text(L10n.of(context).cf_verify_summary),
+            trailing: const CupertinoListTileChevron(),
+            onTap: _handleCfVerify,
+          ),
       ]),
 
       // 云服务
@@ -278,36 +303,34 @@ class ListViewEhSetting extends StatelessWidget {
         }
       }),
 
-      SliverCupertinoListSection.listInsetGrouped(children: [
-        EhCupertinoListTile(
-          title: Text(L10n.of(context).one_step_favorite),
-          subtitle: Text(
-            L10n.of(context).one_step_favorite_desc,
-            maxLines: 4,
-          ),
-          trailing: Obx(() {
-            return Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: CupertinoSwitch(
-                value: _ehSettingService.isFavLongTap.value,
-                onChanged: (bool val) =>
-                    _ehSettingService.isFavLongTap.value = val,
-              ),
-            );
-          }),
-        ),
-        EhCupertinoListTile(
-          title: Text(L10n.of(context).clipboard_detection),
-          subtitle: Text(L10n.of(context).clipboard_detection_desc),
-          trailing: Obx(() {
-            return CupertinoSwitch(
-              value: _ehSettingService.isClipboardLink.value,
-              onChanged: (bool val) =>
-                  _ehSettingService.isClipboardLink.value = val,
-            );
-          }),
-        ),
-      ]),
+      SliverCupertinoListSection.listInsetGrouped(
+          footer: Text('${L10n.of(context).one_step_favorite_desc}\n'
+              '${L10n.of(context).clipboard_detection_desc}'),
+          children: [
+            EhCupertinoListTile(
+              title: Text(L10n.of(context).one_step_favorite),
+              trailing: Obx(() {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: CupertinoSwitch(
+                    value: _ehSettingService.isFavLongTap.value,
+                    onChanged: (bool val) =>
+                        _ehSettingService.isFavLongTap.value = val,
+                  ),
+                );
+              }),
+            ),
+            EhCupertinoListTile(
+              title: Text(L10n.of(context).clipboard_detection),
+              trailing: Obx(() {
+                return CupertinoSwitch(
+                  value: _ehSettingService.isClipboardLink.value,
+                  onChanged: (bool val) =>
+                      _ehSettingService.isClipboardLink.value = val,
+                );
+              }),
+            ),
+          ]),
     ]);
   }
 }

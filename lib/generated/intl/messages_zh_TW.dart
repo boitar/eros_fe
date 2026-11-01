@@ -45,6 +45,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds} 秒";
 
+  static String m6(page) => "繼續閱讀 · 第 ${page} 頁";
+
+  static String m7(count) => "${count} 頁";
+
+  static String m8(count) => "${count} 則";
+
+  static String m9(count) => "${count} 欄";
+
+  static String m10(min, max) => "${min}–${max} 欄";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("上傳頭像"),
@@ -59,6 +69,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("頭像已更新"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("需要 Cloudflare 驗證"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("論壇啟用了 Cloudflare 防護，請在內建瀏覽器中完成人機驗證，完成後將自動重試上傳。"),
+        "cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 驗證"),
+        "cf_verify_summary": MessageLookupByLibrary.simpleMessage("論壇請求被攔截時，在應用內重新完成人機驗證"),
+        "cf_verify_required": MessageLookupByLibrary.simpleMessage("論壇需要驗證"),
+        "cf_verify_prompt": MessageLookupByLibrary.simpleMessage("論壇請求被 Cloudflare 攔截，要現在在內建瀏覽器中完成驗證嗎？"),
+        "cf_verify_action": MessageLookupByLibrary.simpleMessage("去驗證"),
+        "cf_verify_success": MessageLookupByLibrary.simpleMessage("驗證完成"),
+        "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("驗證已儲存，但論壇仍被攔截，請稍後或切換網路後再試"),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("頂欄分組佈局"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("兩行展開（預設）"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("操作與分組分行顯示，適合較多分組和長名稱"),
@@ -192,7 +209,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "galery_site": MessageLookupByLibrary.simpleMessage("畫廊站點"),
         "gallery_comments": MessageLookupByLibrary.simpleMessage("畫廊評論"),
         "global_setting": MessageLookupByLibrary.simpleMessage("全域設定"),
-        "gray_black": MessageLookupByLibrary.simpleMessage("灰黑"),
+        "gray_black": MessageLookupByLibrary.simpleMessage("石墨"),
         "group": MessageLookupByLibrary.simpleMessage("分組"),
         "groupName": MessageLookupByLibrary.simpleMessage("分組名稱"),
         "groupType": MessageLookupByLibrary.simpleMessage("類型"),
@@ -615,6 +632,51 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("分組管理"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("選擇收藏夾"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("回到頂部"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("排行週期")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("排行週期"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("全部"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("更多"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("複製連結"),
+        "file_size": MessageLookupByLibrary.simpleMessage("大小"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("詳情頁氛圍背景"),
+        "english_title": MessageLookupByLibrary.simpleMessage("英文標題"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("日文標題"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("目前顯示"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("顯示英文標題"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("顯示日文標題"),
+        "search_title": MessageLookupByLibrary.simpleMessage("搜尋標題"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("複製標題"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("外觀與版面"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("站點"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("瀏覽"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("內容"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("系統"),
+        "add": MessageLookupByLibrary.simpleMessage("新增"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("自動捲動"),
+        "reload": MessageLookupByLibrary.simpleMessage("重新載入"),
+        "card_style": MessageLookupByLibrary.simpleMessage("卡片樣式"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("沉浸"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("封面、標題、資訊與標籤"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("只顯示封面，標題與評分疊在封面上"),
+        "gallery_info": MessageLookupByLibrary.simpleMessage("畫廊資訊"),
+        "search_by_image": MessageLookupByLibrary.simpleMessage("以圖搜圖"),
+        "remove_all": MessageLookupByLibrary.simpleMessage("全部刪除"),
+        "import_export": MessageLookupByLibrary.simpleMessage("匯入與匯出"),
+        "card_size": MessageLookupByLibrary.simpleMessage("卡片大小"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("小"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("較小"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("較大"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("大"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("欄數依清單所在這一欄的實際寬度計算：切換螢幕、旋轉或拖動分隔線都會自動增減。「標準」與原本的自動欄數相同。"),
+        "outer_display": MessageLookupByLibrary.simpleMessage("外螢幕"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("內螢幕"),
+        "portrait": MessageLookupByLibrary.simpleMessage("豎屏"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分欄隨分隔線")
       };
 }

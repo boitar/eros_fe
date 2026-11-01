@@ -45,6 +45,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds} 秒";
 
+  static String m6(page) => "続きから · ${page} ページ";
+
+  static String m7(count) => "${count} ページ";
+
+  static String m8(count) => "${count} 件";
+
+  static String m9(count) => "${count} 列";
+
+  static String m10(min, max) => "${min}〜${max} 列";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
@@ -59,6 +69,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("アバターを更新しました"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 認証が必要です"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("フォーラムは Cloudflare で保護されています。内蔵ブラウザで認証を完了すると、アップロードを自動的に再試行します。"),
+        "cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 認証"),
+        "cf_verify_summary": MessageLookupByLibrary.simpleMessage("フォーラムへのリクエストがブロックされたときにアプリ内で再認証します"),
+        "cf_verify_required": MessageLookupByLibrary.simpleMessage("フォーラムの認証が必要です"),
+        "cf_verify_prompt": MessageLookupByLibrary.simpleMessage("フォーラムへのリクエストが Cloudflare にブロックされました。内蔵ブラウザで今すぐ認証しますか？"),
+        "cf_verify_action": MessageLookupByLibrary.simpleMessage("認証する"),
+        "cf_verify_success": MessageLookupByLibrary.simpleMessage("認証が完了しました"),
+        "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("認証は保存されましたが、フォーラムはまだブロックされています。しばらくしてから、またはネットワークを切り替えてから再試行してください。"),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("上部カテゴリの配置"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("2行（デフォルト）"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("操作とカテゴリを別々の行に表示"),
@@ -655,6 +672,51 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("グループ管理"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("お気に入りフォルダを選択"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("トップへ戻る"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("ランキング期間")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("ランキング期間"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("すべて"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("その他"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("リンクをコピー"),
+        "file_size": MessageLookupByLibrary.simpleMessage("サイズ"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("詳細ページの背景"),
+        "english_title": MessageLookupByLibrary.simpleMessage("英語タイトル"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("日本語タイトル"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("表示中"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("英語タイトルを表示"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("日本語タイトルを表示"),
+        "search_title": MessageLookupByLibrary.simpleMessage("タイトルで検索"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("タイトルをコピー"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("外観とレイアウト"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("サイト"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("閲覧"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("コンテンツ"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("システム"),
+        "add": MessageLookupByLibrary.simpleMessage("追加"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("自動スクロール"),
+        "reload": MessageLookupByLibrary.simpleMessage("再読み込み"),
+        "card_style": MessageLookupByLibrary.simpleMessage("カードスタイル"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("イマーシブ"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("表紙、タイトル、情報、タグ"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("表紙のみ。タイトルと評価を表紙に重ねて表示"),
+        "gallery_info": MessageLookupByLibrary.simpleMessage("ギャラリー情報"),
+        "search_by_image": MessageLookupByLibrary.simpleMessage("画像で検索"),
+        "remove_all": MessageLookupByLibrary.simpleMessage("すべて削除"),
+        "import_export": MessageLookupByLibrary.simpleMessage("インポートとエクスポート"),
+        "card_size": MessageLookupByLibrary.simpleMessage("カードのサイズ"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("小"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("やや小"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("やや大"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("大"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("列数はリストがある欄の実際の幅で決まり、画面の切り替え、回転、仕切りのドラッグに合わせて自動で増減します。「標準」はこれまでの自動の列数と同じです。"),
+        "outer_display": MessageLookupByLibrary.simpleMessage("外側ディスプレイ"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("内側ディスプレイ"),
+        "portrait": MessageLookupByLibrary.simpleMessage("縦向き"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分割・仕切りで変化")
       };
 }

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
@@ -11,46 +13,45 @@ const double _kMarginTop = 22.0;
 const EdgeInsetsDirectional _kDefaultHeaderMargin =
     EdgeInsetsDirectional.fromSTEB(20.0, 0.0, 20.0, 6.0);
 
-// Header margin for inset grouped variant, determined from iOS 14.4 Simulator.
+// Inset grouped headers and footers start where the row text starts: the
+// 16pt section margin plus the 16pt row padding.
 const EdgeInsetsDirectional _kInsetGroupedDefaultHeaderMargin =
-    EdgeInsetsDirectional.fromSTEB(40.0, 16.0, 40.0, 6.0);
+    EdgeInsetsDirectional.fromSTEB(32.0, 20.0, 32.0, 8.0);
 
 // Standard footer margin, determined from SwiftUI's Forms in iOS 14.2 SDK.
 const EdgeInsetsDirectional _kDefaultFooterMargin =
     EdgeInsetsDirectional.fromSTEB(20.0, 0.0, 20.0, 0.0);
 
-// Footer margin for inset grouped variant, determined from iOS 14.4 Simulator.
 const EdgeInsetsDirectional _kInsetGroupedDefaultFooterMargin =
-    EdgeInsetsDirectional.fromSTEB(40.0, 0.0, 40.0, 10.0);
+    EdgeInsetsDirectional.fromSTEB(32.0, 0.0, 32.0, 8.0);
 
 // Margin around children in edge-to-edge variant, determined from iOS 14.4
 // Simulator.
 const EdgeInsets _kDefaultRowsMargin = EdgeInsets.only(bottom: 8.0);
 
-// Used for iOS "Inset Grouped" margin, determined from SwiftUI's Forms in
-// iOS 14.2 SDK.
+// Inset grouped sections sit 16pt from the screen edge, like the system
+// Settings app on iOS 26.
 const EdgeInsetsDirectional _kDefaultInsetGroupedRowsMargin =
-    EdgeInsetsDirectional.fromSTEB(20.0, 20.0, 20.0, 10.0);
+    EdgeInsetsDirectional.fromSTEB(16.0, 16.0, 16.0, 8.0);
 
-// Used for iOS "Inset Grouped" margin, determined from SwiftUI's Forms in
-// iOS 14.2 SDK.
 const EdgeInsetsDirectional _kDefaultInsetGroupedRowsMarginWithHeader =
-    EdgeInsetsDirectional.fromSTEB(20.0, 0.0, 20.0, 10.0);
+    EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 8.0);
 
-// Used for iOS "Inset Grouped" border radius, estimated from SwiftUI's Forms in
-// iOS 14.2 SDK.
-// TODO(edrisian): This should be a rounded rectangle once that shape is added.
+/// Corner radius of an inset grouped section, drawn as a continuous
+/// (superellipse) corner.
+const double kInsetGroupedSectionRadius = 24.0;
+
 const BorderRadius _kDefaultInsetGroupedBorderRadius =
-    BorderRadius.all(Radius.circular(10.0));
+    BorderRadius.all(Radius.circular(kInsetGroupedSectionRadius));
 
 const BorderRadius _kDefaultTopInsetGroupedBorderRadius = BorderRadius.only(
-  topLeft: Radius.circular(10.0),
-  topRight: Radius.circular(10.0),
+  topLeft: Radius.circular(kInsetGroupedSectionRadius),
+  topRight: Radius.circular(kInsetGroupedSectionRadius),
 );
 
 const BorderRadius _kDefaultBottomInsetGroupedBorderRadius = BorderRadius.only(
-  bottomLeft: Radius.circular(10.0),
-  bottomRight: Radius.circular(10.0),
+  bottomLeft: Radius.circular(kInsetGroupedSectionRadius),
+  bottomRight: Radius.circular(kInsetGroupedSectionRadius),
 );
 
 // The margin of divider used in base list section. Estimated from iOS 14.4 SDK
@@ -61,16 +62,14 @@ const double _kBaseDividerMargin = 20.0;
 // leading widgets. Estimated from iOS 14.4 SDK Settings app.
 const double _kBaseAdditionalDividerMargin = 44.0;
 
-// The margin of divider used in inset grouped version of list section.
-// Estimated from iOS 14.4 SDK Reminders app.
-const double _kInsetDividerMargin = 14.0;
+// Inset grouped dividers start where the row text starts. Rows are padded
+// 16pt; one with a leading icon adds the 28pt icon and its 16pt gap. The
+// two parts add up to those insets, so callers passing their own additional
+// margin keep their alignment.
+const double _kInsetDividerMargin = 10.0;
 
-// Additional margin of divider used in inset grouped version of list section.
-// Estimated from iOS 14.4 SDK Reminders app.
-const double _kInsetAdditionalDividerMargin = 42.0;
+const double _kInsetAdditionalDividerMargin = 50.0;
 
-// Additional margin of divider used in inset grouped version of list section
-// when there is no leading widgets. Estimated from iOS 14.4 SDK Notes app.
 const double _kInsetAdditionalDividerMarginWithoutLeading = 6.0;
 
 // Color of header and footer text in edge-to-edge variant.
@@ -101,7 +100,7 @@ class SliverCupertinoListSection extends StatelessWidget {
     this.header,
     this.footer,
     this.margin = _kDefaultRowsMargin,
-    this.backgroundColor = CupertinoColors.systemGroupedBackground,
+    this.backgroundColor,
     this.decoration,
     this.clipBehavior = Clip.none,
     this.dividerMargin = _kBaseDividerMargin,
@@ -125,7 +124,7 @@ class SliverCupertinoListSection extends StatelessWidget {
     this.header,
     this.footer,
     this.margin = _kDefaultRowsMargin,
-    this.backgroundColor = CupertinoColors.systemGroupedBackground,
+    this.backgroundColor,
     this.decoration,
     this.clipBehavior = Clip.hardEdge,
     this.dividerMargin = _kInsetDividerMargin,
@@ -151,7 +150,7 @@ class SliverCupertinoListSection extends StatelessWidget {
     this.header,
     this.footer,
     EdgeInsetsGeometry? margin,
-    this.backgroundColor = CupertinoColors.systemGroupedBackground,
+    this.backgroundColor,
     this.decoration,
     this.clipBehavior = Clip.hardEdge,
     this.dividerMargin = _kInsetDividerMargin,
@@ -180,7 +179,7 @@ class SliverCupertinoListSection extends StatelessWidget {
     this.header,
     this.footer,
     EdgeInsetsGeometry? margin,
-    this.backgroundColor = CupertinoColors.systemGroupedBackground,
+    this.backgroundColor,
     this.decoration,
     this.clipBehavior = Clip.hardEdge,
     this.dividerMargin = _kInsetDividerMargin,
@@ -248,8 +247,7 @@ class SliverCupertinoListSection extends StatelessWidget {
 
   /// Sets the decoration around [children].
   ///
-  /// If null, background color defaults to
-  /// [CupertinoColors.secondarySystemGroupedBackground].
+  /// If null, background color defaults to the palette surface.
   ///
   /// If null, border radius defaults to 10.0 circular radius when constructing
   /// with [SliverCupertinoListSection.insetGrouped]. Defaults to zero radius for the
@@ -258,8 +256,10 @@ class SliverCupertinoListSection extends StatelessWidget {
 
   /// Sets the background color behind the section.
   ///
-  /// Defaults to [CupertinoColors.systemGroupedBackground].
-  final Color backgroundColor;
+  /// Defaults to the theme's scaffold background, the palette canvas. An
+  /// inset grouped section without one is transparent, so the page canvas
+  /// and its grain show around the group.
+  final Color? backgroundColor;
 
   /// {@macro flutter.material.Material.clipBehavior}
   ///
@@ -293,8 +293,13 @@ class SliverCupertinoListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color dividerColor =
-        separatorColor ?? CupertinoColors.separator.resolveFrom(context);
+        separatorColor ?? EhPalette.separator.resolveFrom(context);
     final double dividerHeight = 1.0 / MediaQuery.devicePixelRatioOf(context);
+    final bool insetGrouped =
+        type == SliverCupertinoListSectionType.insetGrouped;
+    final Color headerFooterColor = insetGrouped
+        ? ehTheme.palette.text2.resolveFrom(context)
+        : CupertinoDynamicColor.resolve(_kHeaderFooterColor, context);
 
     SliverChildDelegate? _delegate = delegate;
 
@@ -329,10 +334,7 @@ class SliverCupertinoListSection extends StatelessWidget {
       // );
       headerWidget = DefaultTextStyle(
         style: CupertinoTheme.of(context).textTheme.textStyle.merge(
-              TextStyle(
-                  fontSize: 13.0,
-                  color: CupertinoDynamicColor.resolve(
-                      _kHeaderFooterColor, context)),
+              TextStyle(fontSize: 13.0, color: headerFooterColor),
             ),
         child: header!,
       );
@@ -351,11 +353,9 @@ class SliverCupertinoListSection extends StatelessWidget {
       //   child: footer!,
       // );
       footerWidget = DefaultTextStyle(
-        style: CupertinoTheme.of(context).textTheme.textStyle.merge(TextStyle(
-              fontSize: 13.0,
-              color:
-                  CupertinoDynamicColor.resolve(_kHeaderFooterColor, context),
-            )),
+        style: CupertinoTheme.of(context).textTheme.textStyle.merge(
+              TextStyle(fontSize: 13.0, height: 1.35, color: headerFooterColor),
+            ),
         child: footer!,
       );
     }
@@ -378,7 +378,7 @@ class SliverCupertinoListSection extends StatelessWidget {
           }
         }();
 
-        childrenWithDividers.add(ClipRRect(
+        childrenWithDividers.add(ClipRSuperellipse(
           borderRadius: childrenGroupBorderRadius,
           child: children![i],
         ));
@@ -416,7 +416,7 @@ class SliverCupertinoListSection extends StatelessWidget {
                 }
               }();
 
-              widget = ClipRRect(
+              widget = ClipRSuperellipse(
                 borderRadius: childrenGroupBorderRadius,
                 child: itemBuilder!(context, itemIndex),
               );
@@ -456,15 +456,21 @@ class SliverCupertinoListSection extends StatelessWidget {
         SliverCupertinoListSectionType.base => BorderRadius.zero,
       };
 
+      final Color sectionColor = CupertinoDynamicColor.resolve(
+          decoration?.color ?? ehTheme.palette.surface, context);
       sliverDecoratedChildrenGroup = DecoratedSliver(
         decoration: decoration ??
-            BoxDecoration(
-              color: CupertinoDynamicColor.resolve(
-                  decoration?.color ??
-                      CupertinoColors.secondarySystemGroupedBackground,
-                  context),
-              borderRadius: childrenGroupBorderRadius,
-            ),
+            (insetGrouped
+                ? ShapeDecoration(
+                    color: sectionColor,
+                    shape: const RoundedSuperellipseBorder(
+                      borderRadius: _kDefaultInsetGroupedBorderRadius,
+                    ),
+                  )
+                : BoxDecoration(
+                    color: sectionColor,
+                    borderRadius: childrenGroupBorderRadius,
+                  )),
         sliver: MultiSliver(
           children: [
             if (type == SliverCupertinoListSectionType.base) longDivider,
@@ -487,37 +493,44 @@ class SliverCupertinoListSection extends StatelessWidget {
       );
     }
 
+    final Widget content = MultiSliver(
+      children: <Widget>[
+        if (type == SliverCupertinoListSectionType.base)
+          SizedBox(height: topMargin),
+        if (headerWidget != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Padding(
+              padding: type == SliverCupertinoListSectionType.base
+                  ? _kDefaultHeaderMargin
+                  : _kInsetGroupedDefaultHeaderMargin,
+              child: headerWidget,
+            ),
+          ),
+        if (sliverDecoratedChildrenGroup != null) sliverDecoratedChildrenGroup,
+        if (footerWidget != null)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Padding(
+              padding: type == SliverCupertinoListSectionType.base
+                  ? _kDefaultFooterMargin
+                  : _kInsetGroupedDefaultFooterMargin,
+              child: footerWidget,
+            ),
+          ),
+      ],
+    );
+    if (backgroundColor == null &&
+        type == SliverCupertinoListSectionType.insetGrouped) {
+      return content;
+    }
     return DecoratedSliver(
       decoration: BoxDecoration(
-          color: CupertinoDynamicColor.resolve(backgroundColor, context)),
-      sliver: MultiSliver(
-        children: <Widget>[
-          if (type == SliverCupertinoListSectionType.base)
-            SizedBox(height: topMargin),
-          if (headerWidget != null)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Padding(
-                padding: type == SliverCupertinoListSectionType.base
-                    ? _kDefaultHeaderMargin
-                    : _kInsetGroupedDefaultHeaderMargin,
-                child: headerWidget,
-              ),
-            ),
-          if (sliverDecoratedChildrenGroup != null)
-            sliverDecoratedChildrenGroup,
-          if (footerWidget != null)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Padding(
-                padding: type == SliverCupertinoListSectionType.base
-                    ? _kDefaultFooterMargin
-                    : _kInsetGroupedDefaultFooterMargin,
-                child: footerWidget,
-              ),
-            ),
-        ],
-      ),
+          color: CupertinoDynamicColor.resolve(
+              backgroundColor ??
+                  CupertinoTheme.of(context).scaffoldBackgroundColor,
+              context)),
+      sliver: content,
     );
   }
 }

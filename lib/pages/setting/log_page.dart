@@ -1,5 +1,6 @@
 import 'package:eros_fe/common/controller/log_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/log_view_page.dart';
 import 'package:flutter/cupertino.dart';
@@ -11,19 +12,23 @@ class LogPage extends GetView<LogService> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('Log'),
-        trailing: CupertinoButton(
-          // 清除按钮
-          padding: const EdgeInsets.all(0),
-          minSize: 40,
+    return SettingScaffold(
+      title: 'Log',
+      actions: [
+        NativeNavigationAction(
+          id: 'log.clear',
+          title: L10n.of(context).clear_filter,
+          symbol: 'trash',
           onPressed: controller.removeAll,
-          child: const Icon(
-            CupertinoIcons.trash,
-            size: 24,
-          ),
+        ),
+      ],
+      trailing: CupertinoButton(
+        padding: const EdgeInsets.all(0),
+        minSize: 40,
+        onPressed: controller.removeAll,
+        child: const Icon(
+          CupertinoIcons.trash,
+          size: 24,
         ),
       ),
       child: CustomScrollView(

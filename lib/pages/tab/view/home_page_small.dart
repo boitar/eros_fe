@@ -8,6 +8,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -31,12 +32,19 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
   bool _publicationScheduled = false;
   NativeNavigationSource? _nativeSource;
   final Map<String, Widget> _tabRoots = {};
+
+  /// Each tab's navigators outlive any change in what wraps them, so their
+  /// owner moves along instead of being rebuilt: a new owner would clear the
+  /// pages on record while the old pages stay on screen.
+  final Map<String, GlobalKey> _tabNavigators = {};
   final LayoutServices _layout = Get.find();
   late final TabNavigationRegistry _navigation = _layout.tabNavigation;
 
   @override
   void initState() {
     super.initState();
+    // Warm the haptic engine so the first tab switch isn't late.
+    vibrateUtil.prepareHaptics();
     controller.tabController.addListener(_tabSelectionChanged);
     _navigation.addListener(_publishNativeNavigationState);
     NativeNavigationBridge.chromeRevision
@@ -52,7 +60,11 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     _nativeSource = NativeNavigationBridge.attachSource(
       route: route,
       state: _nativeNavigationState,
-      onSelectTab: (route) async => controller.selectRoute(route),
+      // The system tab bar gives no feedback of its own.
+      onSelectTab: (route) async {
+        vibrateUtil.tabSwitch();
+        await controller.selectRoute(route);
+      },
       onBack: () async {
         if (_layout.isLayoutLarge &&
             (_navigation.selected?.detailObserver.history.length ?? 0) > 1 &&
@@ -96,13 +108,13 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     final details = stack.detailObserver.history;
     final primary = stack.primaryObserver.history;
     if (!_layout.isLayoutLarge && primary.length > 1 && !stack.detailOnTop) {
-      return NativeNavigationBridge.chromeFor(primary.last);
+      return pushedPageChrome(primary.last);
     }
     if (details.length > 1) {
-      return NativeNavigationBridge.chromeFor(details.last);
+      return pushedPageChrome(details.last);
     }
     if (primary.length > 1) {
-      return NativeNavigationBridge.chromeFor(primary.last);
+      return pushedPageChrome(primary.last);
     }
     return NativeNavigationBridge.chromeFor(primary.lastOrNull);
   }
@@ -183,7 +195,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
                   : null,
               items: controller.listBottomNavigationBarItem,
               onTap: (index) {
-                vibrateUtil.light();
+                vibrateUtil.tabSwitch();
                 _handleTabTap(index, useLiquidGlass: useLiquidGlass);
               },
             );
@@ -237,7 +249,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     return offlineDuoNavigationProbe(
         child: ColoredBox(
       color: CupertinoTheme.of(context).scaffoldBackgroundColor,
-      child: Stack(
+      // Shows through the transparent list pages of the glass layout.
+      child: CanvasGrain(
+          child: Stack(
         fit: StackFit.expand,
         children: [
           Positioned.fromRect(
@@ -254,6 +268,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
                         key: ValueKey(entry.key),
                         active: entry.key == selected,
                         child: AdaptiveTabNavigator(
+                          key: _tabNavigators.putIfAbsent(
+                              entry.key, GlobalKey.new),
                           stack: _navigation.stackFor(entry.key),
                           split: widget.split,
                           primaryRoot: entry.value,
@@ -270,7 +286,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
               child: MediaQuery.withNoTextScaling(child: tabBar),
             ),
         ],
-      ),
+      )),
     ));
   }
 }

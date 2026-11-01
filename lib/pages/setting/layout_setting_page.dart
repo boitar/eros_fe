@@ -4,13 +4,15 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/login/controller/login_controller.dart';
+import 'package:eros_fe/pages/setting/card_size_preview.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
+import 'package:eros_fe/pages/tab/view/list/card_size.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
-import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -21,11 +23,8 @@ class LayoutSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).layout),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).appearance_and_layout,
       child: CustomScrollView(slivers: [
         SliverSafeArea(sliver: LayoutSettingList()),
       ]),
@@ -48,27 +47,26 @@ class LayoutSettingList extends StatelessWidget {
       SliverCupertinoListSection.listInsetGrouped(children: [
         _buildThemeItem(context),
 
-        // dark_mode_effect
-        // if (!kReleaseMode)
-        //   EhCupertinoListTile(
-        //     title: Text(L10n.of(context).dark_mode_effect),
-        //     trailing: Obx(() {
-        //       return CupertinoSlidingSegmentedControl<bool>(
-        //         groupValue: _ehSettingService.isPureDarkTheme,
-        //         children: {
-        //           false: Text(L10n.of(context).gray_black,
-        //               textScaler: const TextScaler.linear(0.8)),
-        //           true: Text(L10n.of(context).pure_black,
-        //               textScaler: const TextScaler.linear(0.8))
-        //         },
-        //         onValueChanged: (bool? val) {
-        //           if (val != null) {
-        //             _ehSettingService.isPureDarkTheme = val;
-        //           }
-        //         },
-        //       );
-        //     }),
-        //   ),
+        // dark_mode_effect: graphite or pure black (OLED)
+        EhCupertinoListTile(
+          title: Text(L10n.of(context).dark_mode_effect),
+          trailing: Obx(() {
+            return CupertinoSlidingSegmentedControl<bool>(
+              groupValue: _ehSettingService.isPureDarkTheme,
+              children: {
+                false: Text(L10n.of(context).gray_black,
+                    textScaler: const TextScaler.linear(0.8)),
+                true: Text(L10n.of(context).pure_black,
+                    textScaler: const TextScaler.linear(0.8))
+              },
+              onValueChanged: (bool? val) {
+                if (val != null) {
+                  _ehSettingService.isPureDarkTheme = val;
+                }
+              },
+            );
+          }),
+        ),
 
         if (context.isTablet) _buildTableLayoutItem(context),
 
@@ -85,6 +83,7 @@ class LayoutSettingList extends StatelessWidget {
         ),
       ]),
       SliverCupertinoListSection.listInsetGrouped(
+        footer: Text(L10n.of(context).japanese_title_in_gallery_summary),
         children: [
           if (localeService.isLanguageCodeZh)
             EhCupertinoListTile(
@@ -104,7 +103,6 @@ class LayoutSettingList extends StatelessWidget {
           // japanese_title_in_gallery
           EhCupertinoListTile(
             title: Text(L10n.of(context).japanese_title_in_gallery),
-            subtitle: Text(L10n.of(context).japanese_title_in_gallery_summary),
             trailing: Obx(() {
               return CupertinoSwitch(
                 value: _ehSettingService.jpnTitleInGalleryPage,
@@ -114,7 +112,10 @@ class LayoutSettingList extends StatelessWidget {
               );
             }),
           ),
-
+        ],
+      ),
+      SliverCupertinoListSection.listInsetGrouped(
+        children: [
           // showComments switch
           EhCupertinoListTile(
             title: Text(L10n.of(context).show_comments),
@@ -192,90 +193,71 @@ class LayoutSettingList extends StatelessWidget {
           ),
         ],
       ),
-      SliverCupertinoListSection.listInsetGrouped(children: [
-        if (LiquidGlassPlatform.isSupported)
-          EhCupertinoListTile(
-            title: const Text('iOS 液态玻璃'),
-            subtitle: const Text(
-              'iOS 26+ 使用原生 Liquid Glass；与“滚动隐藏顶栏”独立，支持灵动岛或刘海安全区收束',
+      if (LiquidGlassPlatform.isSupported)
+        SliverCupertinoListSection.listInsetGrouped(
+          footer: Obx(() {
+            return Text(_ehSettingService.liquidGlass
+                ? 'iOS 26+ 使用原生 Liquid Glass；与“滚动隐藏顶栏”独立，支持灵动岛或刘海安全区收束。\n'
+                    '“使用系统 Liquid Glass 外观”开启时使用系统原生 Liquid Glass；关闭时使用传统材质，并遵循辅助功能中的降低透明度。'
+                : 'iOS 26+ 使用原生 Liquid Glass；与“滚动隐藏顶栏”独立，支持灵动岛或刘海安全区收束。');
+          }),
+          children: [
+            EhCupertinoListTile(
+              title: const Text('iOS 液态玻璃'),
+              trailing: Obx(() {
+                return offlineGlassControl(
+                    'enabled',
+                    CupertinoSwitch(
+                      value: _ehSettingService.liquidGlass,
+                      onChanged: (bool val) {
+                        _ehSettingService.liquidGlass = val;
+                      },
+                    ));
+              }),
             ),
-            trailing: Obx(() {
-              return offlineGlassControl(
-                  'enabled',
-                  CupertinoSwitch(
-                    value: _ehSettingService.liquidGlass,
-                    onChanged: (bool val) {
-                      _ehSettingService.liquidGlass = val;
-                    },
-                  ));
+            Obx(() {
+              if (!_ehSettingService.liquidGlass) {
+                return const SizedBox.shrink();
+              }
+              return EhCupertinoListTile(
+                title: const Text('使用系统 Liquid Glass 外观'),
+                trailing: CupertinoSwitch(
+                  value: _ehSettingService.liquidGlassFollowSystemTransparency,
+                  onChanged: (bool val) {
+                    _ehSettingService.liquidGlassFollowSystemTransparency = val;
+                  },
+                ),
+              );
             }),
-          ),
-        if (LiquidGlassPlatform.isSupported)
-          Obx(() {
-            if (!_ehSettingService.liquidGlass) {
-              return const SizedBox.shrink();
-            }
-            return EhCupertinoListTile(
-              title: const Text('使用系统 Liquid Glass 外观'),
-              subtitle: const Text(
-                '开启时使用系统原生 Liquid Glass；关闭时使用传统材质，并遵循辅助功能中的降低透明度',
-              ),
-              trailing: CupertinoSwitch(
-                value: _ehSettingService.liquidGlassFollowSystemTransparency,
-                onChanged: (bool val) {
-                  _ehSettingService.liquidGlassFollowSystemTransparency = val;
+            Obx(() {
+              if (!_ehSettingService.liquidGlass) {
+                return const SizedBox.shrink();
+              }
+              final l10n = L10n.of(context);
+              String name(LiquidGlassTopBarLayout layout) =>
+                  layout == LiquidGlassTopBarLayout.twoRow
+                      ? l10n.liquid_glass_two_row
+                      : l10n.liquid_glass_inline;
+              return SelectorCupertinoListTile<LiquidGlassTopBarLayout>(
+                title: l10n.liquid_glass_top_layout,
+                actionMap: {
+                  for (final layout in LiquidGlassTopBarLayout.values)
+                    layout: name(layout),
                 },
-              ),
-            );
-          }),
-        if (LiquidGlassPlatform.isSupported)
-          Obx(() {
-            if (!_ehSettingService.liquidGlass) {
-              return const SizedBox.shrink();
-            }
-            final l10n = L10n.of(context);
-            final value = _ehSettingService.liquidGlassTopBarLayout;
-            return EhCupertinoListTile(
-              title: Text(l10n.liquid_glass_top_layout),
-              additionalInfo: Text(value == LiquidGlassTopBarLayout.twoRow
-                  ? l10n.liquid_glass_two_row
-                  : l10n.liquid_glass_inline),
-              onTap: () async {
-                final selected =
-                    await showCupertinoModalPopup<LiquidGlassTopBarLayout>(
-                  context: context,
-                  builder: (context) => EhActionSheet(
-                    title: Text(l10n.liquid_glass_top_layout),
-                    actions: [
-                      for (final layout in LiquidGlassTopBarLayout.values)
-                        CupertinoActionSheetAction(
-                          isDefaultAction: value == layout,
-                          onPressed: () => Navigator.of(context).pop(layout),
-                          child: Column(children: [
-                            Text(layout == LiquidGlassTopBarLayout.twoRow
-                                ? l10n.liquid_glass_two_row
-                                : l10n.liquid_glass_inline),
-                            Text(
-                                layout == LiquidGlassTopBarLayout.twoRow
-                                    ? l10n.liquid_glass_two_row_detail
-                                    : l10n.liquid_glass_inline_detail,
-                                style: const TextStyle(fontSize: 13)),
-                          ]),
-                        ),
-                    ],
-                    cancelButton: CupertinoActionSheetAction(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(l10n.cancel),
-                    ),
-                  ),
-                );
-                if (selected != null) {
-                  _ehSettingService.liquidGlassTopBarLayout = selected;
-                }
-              },
-            );
-          }),
-
+                subtitleMap: {
+                  for (final layout in LiquidGlassTopBarLayout.values)
+                    layout: layout == LiquidGlassTopBarLayout.twoRow
+                        ? l10n.liquid_glass_two_row_detail
+                        : l10n.liquid_glass_inline_detail,
+                },
+                initVal: _ehSettingService.liquidGlassTopBarLayout,
+                onValueChanged: (selected) =>
+                    _ehSettingService.liquidGlassTopBarLayout = selected,
+              );
+            }),
+          ],
+        ),
+      SliverCupertinoListSection.listInsetGrouped(children: [
         // hide_top_bar_on_scroll switch
         EhCupertinoListTile(
           title: Text(L10n.of(context).hide_top_bar_on_scroll),
@@ -305,9 +287,40 @@ class LayoutSettingList extends StatelessWidget {
 
         _buildListModeItem(context),
 
-        // custom_width
+        // Card style of the large waterfall
+        Obx(() {
+          if (_ehSettingService.listMode.value != ListModeEnum.waterfallLarge) {
+            return const SizedBox.shrink();
+          }
+          final l10n = L10n.of(context);
+          return SelectorCupertinoListTile<bool>(
+            title: l10n.card_style,
+            actionMap: <bool, String>{
+              false: l10n.card_style_standard,
+              true: l10n.card_style_immersive,
+            },
+            subtitleMap: <bool, String>{
+              false: l10n.card_style_standard_detail,
+              true: l10n.card_style_immersive_detail,
+            },
+            initVal: _ehSettingService.immersiveLargeCards,
+            onValueChanged: (bool value) =>
+                _ehSettingService.immersiveLargeCards = value,
+          );
+        }),
+
+        // card_size
         EhCupertinoListTile(
-          title: Text(L10n.of(context).custom_width),
+          title: Text(L10n.of(context).card_size),
+          additionalInfo: Obx(() {
+            final mode = _ehSettingService.listMode.value;
+            if (!CardSize.modes.contains(mode)) {
+              return const SizedBox.shrink();
+            }
+            final step = CardSize.of(mode, _ehSettingService.getItemConfig(mode),
+                phone: context.isPhone);
+            return Text(CardSizeSlider.labels(L10n.of(context))[step]);
+          }),
           trailing: const CupertinoListTileChevron(),
           onTap: () {
             Get.toNamed(
@@ -334,6 +347,17 @@ class LayoutSettingList extends StatelessWidget {
           }),
         ),
 
+        EhCupertinoListTile(
+          title: Text(L10n.of(context).detail_ambient_background),
+          trailing: Obx(() {
+            return CupertinoSwitch(
+              value: _ehSettingService.detailAmbientBackground,
+              onChanged: (bool val) =>
+                  _ehSettingService.detailAmbientBackground = val,
+            );
+          }),
+        ),
+
         // fixed_height_of_list_items switch
         EhCupertinoListTile(
           title: Text(L10n.of(context).fixed_height_of_list_items),
@@ -349,34 +373,37 @@ class LayoutSettingList extends StatelessWidget {
           }),
         ),
       ]),
-      SliverCupertinoListSection.listInsetGrouped(children: [
-        // to avatar
-        EhCupertinoListTile(
-          title: Text(L10n.of(context).avatar),
-          trailing: const CupertinoListTileChevron(),
-          onTap: () {
-            Get.toNamed(
-              EHRoutes.avatarSetting,
-              id: detailNavigatorId,
-            );
-          },
-        ),
+      SliverCupertinoListSection.listInsetGrouped(
+          footer: localeService.isLanguageCodeZh && GetPlatform.isMobile
+              ? const Text('评论机翻按钮会用机器翻译将评论翻译为简体中文。')
+              : null,
+          children: [
+            // to avatar
+            EhCupertinoListTile(
+              title: Text(L10n.of(context).avatar),
+              trailing: const CupertinoListTileChevron(),
+              onTap: () {
+                Get.toNamed(
+                  EHRoutes.avatarSetting,
+                  id: detailNavigatorId,
+                );
+              },
+            ),
 
-        // commentTrans switch
-        if (localeService.isLanguageCodeZh && GetPlatform.isMobile)
-          EhCupertinoListTile(
-            title: const Text('评论机翻按钮'),
-            subtitle: const Text('用机器翻译将评论翻译为简体中文'),
-            trailing: Obx(() {
-              return CupertinoSwitch(
-                value: _ehSettingService.commentTrans.value,
-                onChanged: (bool val) {
-                  _ehSettingService.commentTrans.value = val;
-                },
-              );
-            }),
-          ),
-      ]),
+            // commentTrans switch
+            if (localeService.isLanguageCodeZh && GetPlatform.isMobile)
+              EhCupertinoListTile(
+                title: const Text('评论机翻按钮'),
+                trailing: Obx(() {
+                  return CupertinoSwitch(
+                    value: _ehSettingService.commentTrans.value,
+                    onChanged: (bool val) {
+                      _ehSettingService.commentTrans.value = val;
+                    },
+                  );
+                }),
+              ),
+          ]),
     ]);
   }
 }
@@ -403,11 +430,10 @@ Widget _buildThemeItem(BuildContext context) {
 }
 
 /// 列表模式切换
-Widget _buildListModeItem(BuildContext context) {
-  final String _title = L10n.of(context).list_mode;
+/// Names of the list modes the user can pick.
+Map<ListModeEnum, String> listModeLabels(BuildContext context) {
   final EhSettingService ehSettingService = Get.find();
-
-  final Map<ListModeEnum, String> modeMap = <ListModeEnum, String>{
+  return <ListModeEnum, String>{
     ListModeEnum.list: L10n.of(context).listmode_medium,
     ListModeEnum.simpleList: L10n.of(context).listmode_small,
     ListModeEnum.waterfall: L10n.of(context).listmode_waterfall,
@@ -417,6 +443,13 @@ Widget _buildListModeItem(BuildContext context) {
     if (!kReleaseMode || ehSettingService.debugMode)
       ListModeEnum.debugSimple: 'debugSimple',
   };
+}
+
+Widget _buildListModeItem(BuildContext context) {
+  final String _title = L10n.of(context).list_mode;
+  final EhSettingService ehSettingService = Get.find();
+
+  final Map<ListModeEnum, String> modeMap = listModeLabels(context);
   return Obx(() {
     return SelectorCupertinoListTile<ListModeEnum>(
       title: _title,

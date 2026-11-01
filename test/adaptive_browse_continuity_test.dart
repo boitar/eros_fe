@@ -1,5 +1,6 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/browse_layout.dart';
+import 'package:eros_fe/adaptive/route_cover.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
@@ -127,6 +128,141 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('a detail page pushed in one column never leaves a blank frame',
+      (tester) async {
+    Get.testMode = true;
+    Get.put<LocaleService>(LocaleService());
+    Get.put<EhSettingService>(_Settings());
+    Get.put<ThemeService>(_Theme());
+    final layout = Get.put<LayoutServices>(_Layout());
+    addTearDown(Get.reset);
+    const size = Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = size;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    layout.layoutMode = LayoutMode.small;
+
+    await tester.pumpWidget(GetCupertinoApp(
+      home: AdaptiveEnvironmentScope(
+        snapshot: const AdaptiveEnvironmentSnapshot(size: size),
+        child: TabHomeLarge(
+          split: false,
+          primaryRoot: CupertinoPageScaffold(
+            child: ListView.builder(
+              itemExtent: 48,
+              itemCount: 100,
+              itemBuilder: (_, index) => Text('Gallery $index'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    Get.nestedKey(detailNavigatorId)!.currentState!.push(
+        CupertinoPageRoute<void>(
+            builder: (_) => const CupertinoPageScaffold(
+                child: Center(child: Text('Gallery detail')))));
+    // The first frame lays the new page out offstage, so it draws nothing
+    // yet; the list must stay on screen under it.
+    await tester.pump();
+    expect(find.text('Gallery 0'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Gallery 0'), findsOneWidget);
+    expect(find.text('Gallery detail'), findsOneWidget);
+
+    // Covered whole, the list stops drawing.
+    await tester.pumpAndSettle();
+    expect(find.text('Gallery 0'), findsNothing);
+    expect(find.text('Gallery detail'), findsOneWidget);
+
+    Get.nestedKey(detailNavigatorId)!.currentState!.pop();
+    await tester.pump();
+    expect(find.text('Gallery 0'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Gallery 0'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('a list page opened from a detail page in one column shows',
+      (tester) async {
+    Get.testMode = true;
+    Get.put<LocaleService>(LocaleService());
+    Get.put<EhSettingService>(_Settings());
+    Get.put<ThemeService>(_Theme());
+    final layout = Get.put<LayoutServices>(_Layout());
+    addTearDown(Get.reset);
+    const size = Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = size;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    layout.layoutMode = LayoutMode.small;
+
+    await tester.pumpWidget(GetCupertinoApp(
+      home: AdaptiveEnvironmentScope(
+        snapshot: const AdaptiveEnvironmentSnapshot(size: size),
+        child: TabHomeLarge(
+          split: false,
+          primaryRoot: CupertinoPageScaffold(
+            child: ListView.builder(
+              itemExtent: 48,
+              itemCount: 100,
+              itemBuilder: (_, index) => Text('Gallery $index'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(listNavigatorId, primaryNavigatorId);
+
+    Rect? listClip() =>
+        RouteCoverClip.debugVisibleRectOf(tester.renderObject(find
+            .ancestor(
+                of: find.byKey(Get.nestedKey(primaryNavigatorId)!,
+                    skipOffstage: false),
+                matching: find.byType(RouteCoverClip, skipOffstage: false))
+            .first));
+    Widget page(String text) =>
+        CupertinoPageScaffold(child: Center(child: Text(text)));
+
+    // Production pages report where they are drawn, so the list can find
+    // the page covering it.
+    Get.nestedKey(detailNavigatorId)!.currentState!.push(
+        CupertinoPageRoute<void>(
+            builder: (context) => RouteSurface(
+                route: ModalRoute.of(context), child: page('Gallery detail'))));
+    await tester.pumpAndSettle();
+    expect(listClip(), Rect.zero);
+
+    // Search from a tag slides over the detail page it was opened from.
+    expect(listNavigatorId, detailNavigatorId);
+    Get.nestedKey(listNavigatorId)!
+        .currentState!
+        .push(CupertinoPageRoute<void>(builder: (_) => page('Tag search')));
+    await tester.pumpAndSettle();
+    expect(find.text('Tag search'), findsOneWidget);
+    Get.nestedKey(listNavigatorId)!.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('Gallery detail'), findsOneWidget);
+
+    // A page pushed onto the list itself brings the list back on top, and
+    // the detail page it no longer shows under must not hide it.
+    Get.nestedKey(primaryNavigatorId)!
+        .currentState!
+        .push(CupertinoPageRoute<void>(builder: (_) => page('Downloads')));
+    await tester.pumpAndSettle();
+    expect(layout.activePaneNavigatorId, primaryNavigatorId);
+    expect(find.text('Downloads'), findsOneWidget);
+    expect(listClip(), isNull);
+
+    layout.layoutMode = LayoutMode.large;
+    expect(listNavigatorId, primaryNavigatorId);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('20 compact/grid/split changes keep routes, scroll and drafts',

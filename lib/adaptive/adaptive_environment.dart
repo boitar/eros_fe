@@ -96,6 +96,9 @@ class AdaptiveEnvironmentSnapshot {
   final int horizontalSizeClass;
   final int verticalSizeClass;
   final List<AdaptiveRegion> reservedRegions;
+
+  /// Where the system bars sit: `left` or `right` for the vertical bar,
+  /// otherwise `top`, `bottom` or empty.
   final String? systemBarEdge;
   final int layoutVersion;
   final bool nativeSupported;
@@ -230,6 +233,10 @@ class AdaptiveEnvironmentSnapshot {
       bottom.clamp(0, size.height),
     );
   }
+
+  /// The bars stand along a side of the display instead of across its top.
+  bool get hasVerticalBar =>
+      systemBarEdge == 'left' || systemBarEdge == 'right';
 
   /// Safe area that ignores app bars appearing and disappearing. Content laid
   /// out against it stays put while a reader toggles its native bars.

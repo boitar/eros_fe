@@ -335,11 +335,8 @@ class _SegmentedRailState extends State<SegmentedRail> {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.systemBackground, context),
+                      CupertinoColors.tertiarySystemFill, context),
                   borderRadius: BorderRadius.circular(height / 2 - inset),
-                  boxShadow: const <BoxShadow>[
-                    BoxShadow(color: Color(0x1F000000), blurRadius: 6),
-                  ],
                 ),
               ),
             ),
@@ -358,8 +355,14 @@ class _SegmentedRailState extends State<SegmentedRail> {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: CupertinoDynamicColor.resolve(
-            CupertinoColors.tertiarySystemFill, context),
+            CupertinoColors.secondarySystemGroupedBackground, context),
         borderRadius: BorderRadius.circular(height / 2),
+        border: Border.all(
+          color: CupertinoDynamicColor.resolve(
+                  CupertinoColors.separator, context)
+              .withValues(alpha: 0.18),
+          width: 0.5,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(height / 2),
@@ -416,15 +419,13 @@ class _SegmentedRailState extends State<SegmentedRail> {
                 item.title,
                 maxLines: 1,
                 overflow: TextOverflow.clip,
+                // One colour and weight for every label, as on the native
+                // rail; the pill marks the selection.
                 style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                       fontSize: 15,
-                      fontWeight:
-                          selected ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: FontWeight.w500,
                       color: CupertinoDynamicColor.resolve(
-                          selected
-                              ? CupertinoColors.activeBlue
-                              : CupertinoColors.label,
-                          context),
+                          CupertinoColors.label, context),
                     ),
               ),
             ),

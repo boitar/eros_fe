@@ -145,6 +145,10 @@ class CustomTabbarController extends DefaultTabViewController {
     linkScrollBarController.dispose();
   }
 
+  /// The page a tap is animating to. The pages it passes on the way there
+  /// are not selections.
+  int? _landingPage;
+
   /// Update the rail immediately and let the PageView animate to the same
   /// destination. Waiting for PageView.onPageChanged made the page and its
   /// Liquid Glass selection visibly lag behind one another.
@@ -164,15 +168,26 @@ class CustomTabbarController extends DefaultTabViewController {
     if (currentPage != null && (currentPage - target).abs() < 0.001) {
       return;
     }
-    await pageController.animateToPage(
-      target,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-    );
+    _landingPage = target;
+    try {
+      await pageController.animateToPage(
+        target,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    } finally {
+      if (_landingPage == target) {
+        _landingPage = null;
+      }
+    }
   }
 
   void onPageChanged(int index) {
     if (_pendingPageSync) {
+      return;
+    }
+    final landing = _landingPage;
+    if (landing != null && index != landing) {
       return;
     }
     final visible = profilesShow;

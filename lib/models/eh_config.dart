@@ -80,6 +80,8 @@ class EhConfig {
     this.pHashThreshold,
     this.pageViewType,
     this.enableSlideOutPage,
+    this.detailAmbientBackground,
+    this.immersiveLargeCards,
   });
 
   final bool? jpnTitleInGalleryPage;
@@ -155,6 +157,8 @@ class EhConfig {
   final int? pHashThreshold;
   final String? pageViewType;
   final bool? enableSlideOutPage;
+  final bool? detailAmbientBackground;
+  final bool? immersiveLargeCards;
 
   factory EhConfig.fromJson(Map<String,dynamic> json) => EhConfig(
     jpnTitleInGalleryPage: json['jpnTitleInGalleryPage'] != null ? bool.tryParse('${json['jpnTitleInGalleryPage']}', caseSensitive: false) ?? false : null,
@@ -229,7 +233,9 @@ class EhConfig {
     horizontalThumbnails: json['horizontalThumbnails'] != null ? bool.tryParse('${json['horizontalThumbnails']}', caseSensitive: false) ?? false : null,
     pHashThreshold: json['pHashThreshold'] != null ? int.tryParse('${json['pHashThreshold']}') ?? 0 : null,
     pageViewType: json['pageViewType']?.toString(),
-    enableSlideOutPage: json['enableSlideOutPage'] != null ? bool.tryParse('${json['enableSlideOutPage']}', caseSensitive: false) ?? false : null
+    enableSlideOutPage: json['enableSlideOutPage'] != null ? bool.tryParse('${json['enableSlideOutPage']}', caseSensitive: false) ?? false : null,
+    detailAmbientBackground: json['detailAmbientBackground'] != null ? bool.tryParse('${json['detailAmbientBackground']}', caseSensitive: false) ?? false : null,
+    immersiveLargeCards: json['immersiveLargeCards'] != null ? bool.tryParse('${json['immersiveLargeCards']}', caseSensitive: false) ?? false : null
   );
   
   Map<String, dynamic> toJson() => {
@@ -305,7 +311,9 @@ class EhConfig {
     'horizontalThumbnails': horizontalThumbnails,
     'pHashThreshold': pHashThreshold,
     'pageViewType': pageViewType,
-    'enableSlideOutPage': enableSlideOutPage
+    'enableSlideOutPage': enableSlideOutPage,
+    'detailAmbientBackground': detailAmbientBackground,
+    'immersiveLargeCards': immersiveLargeCards
   };
 
   EhConfig clone() => EhConfig(
@@ -381,7 +389,9 @@ class EhConfig {
     horizontalThumbnails: horizontalThumbnails,
     pHashThreshold: pHashThreshold,
     pageViewType: pageViewType,
-    enableSlideOutPage: enableSlideOutPage
+    enableSlideOutPage: enableSlideOutPage,
+    detailAmbientBackground: detailAmbientBackground,
+    immersiveLargeCards: immersiveLargeCards
   );
 
 
@@ -458,7 +468,9 @@ class EhConfig {
     Optional<bool?>? horizontalThumbnails,
     Optional<int?>? pHashThreshold,
     Optional<String?>? pageViewType,
-    Optional<bool?>? enableSlideOutPage
+    Optional<bool?>? enableSlideOutPage,
+    Optional<bool?>? detailAmbientBackground,
+    Optional<bool?>? immersiveLargeCards
   }) => EhConfig(
     jpnTitleInGalleryPage: checkOptional(jpnTitleInGalleryPage, () => this.jpnTitleInGalleryPage),
     tagTranslat: checkOptional(tagTranslat, () => this.tagTranslat),
@@ -533,12 +545,14 @@ class EhConfig {
     pHashThreshold: checkOptional(pHashThreshold, () => this.pHashThreshold),
     pageViewType: checkOptional(pageViewType, () => this.pageViewType),
     enableSlideOutPage: checkOptional(enableSlideOutPage, () => this.enableSlideOutPage),
+    detailAmbientBackground: checkOptional(detailAmbientBackground, () => this.detailAmbientBackground),
+    immersiveLargeCards: checkOptional(immersiveLargeCards, () => this.immersiveLargeCards),
   );
 
   @override
   bool operator ==(Object other) => identical(this, other)
-    || other is EhConfig && jpnTitleInGalleryPage == other.jpnTitleInGalleryPage && tagTranslat == other.tagTranslat && tagTranslatVer == other.tagTranslatVer && favoritesOrder == other.favoritesOrder && siteEx == other.siteEx && galleryImgBlur == other.galleryImgBlur && favPicker == other.favPicker && favLongTap == other.favLongTap && lastFavcat == other.lastFavcat && lastShowFavcat == other.lastShowFavcat && lastShowFavTitle == other.lastShowFavTitle && listMode == other.listMode && safeMode == other.safeMode && catFilter == other.catFilter && maxHistory == other.maxHistory && searchBarComp == other.searchBarComp && pureDarkTheme == other.pureDarkTheme && viewModel == other.viewModel && clipboardLink == other.clipboardLink && commentTrans == other.commentTrans && autoLockTimeOut == other.autoLockTimeOut && showPageInterval == other.showPageInterval && orientation == other.orientation && vibrate == other.vibrate && tagIntroImgLv == other.tagIntroImgLv && debugMode == other.debugMode && debugCount == other.debugCount && autoRead == other.autoRead && turnPageInv == other.turnPageInv && toplist == other.toplist && tabletLayout == other.tabletLayout && tabletLayoutValue == other.tabletLayoutValue && liquidGlassTopBarLayout == other.liquidGlassTopBarLayout && enableTagTranslateCDN == other.enableTagTranslateCDN && autoSelectProfile == other.autoSelectProfile && turnPageAnimations == other.turnPageAnimations && selectProfile == other.selectProfile && linkRedirect == other.linkRedirect && viewColumnMode == other.viewColumnMode && fixedHeightOfListItems == other.fixedHeightOfListItems && tagTranslateDataUpdateMode == other.tagTranslateDataUpdateMode && showCommentAvatar == other.showCommentAvatar && avatarType == other.avatarType && boringAvatarsType == other.boringAvatarsType && textAvatarsType == other.textAvatarsType && avatarBorderRadiusType == other.avatarBorderRadiusType && enablePHashCheck == other.enablePHashCheck && enableQRCodeCheck == other.enableQRCodeCheck && viewFullscreen == other.viewFullscreen && blurringOfCoverBackground == other.blurringOfCoverBackground && listViewTagLimit == other.listViewTagLimit && redirectThumbLink == other.redirectThumbLink && volumnTurnPage == other.volumnTurnPage && proxyType == other.proxyType && proxyHost == other.proxyHost && proxyPort == other.proxyPort && proxyUsername == other.proxyUsername && proxyPassword == other.proxyPassword && webDAVMaxConnections == other.webDAVMaxConnections && hideTopBarOnScroll == other.hideTopBarOnScroll && liquidGlassFollowSystemTransparency == other.liquidGlassFollowSystemTransparency && liquidGlass == other.liquidGlass && readViewCompatibleMode == other.readViewCompatibleMode && translateSearchHistory == other.translateSearchHistory && nativeHttpClientAdapter == other.nativeHttpClientAdapter && showComments == other.showComments && showOnlyUploaderComment == other.showOnlyUploaderComment && showGalleryTags == other.showGalleryTags && hideGalleryThumbnails == other.hideGalleryThumbnails && horizontalThumbnails == other.horizontalThumbnails && pHashThreshold == other.pHashThreshold && pageViewType == other.pageViewType && enableSlideOutPage == other.enableSlideOutPage;
+    || other is EhConfig && jpnTitleInGalleryPage == other.jpnTitleInGalleryPage && tagTranslat == other.tagTranslat && tagTranslatVer == other.tagTranslatVer && favoritesOrder == other.favoritesOrder && siteEx == other.siteEx && galleryImgBlur == other.galleryImgBlur && favPicker == other.favPicker && favLongTap == other.favLongTap && lastFavcat == other.lastFavcat && lastShowFavcat == other.lastShowFavcat && lastShowFavTitle == other.lastShowFavTitle && listMode == other.listMode && safeMode == other.safeMode && catFilter == other.catFilter && maxHistory == other.maxHistory && searchBarComp == other.searchBarComp && pureDarkTheme == other.pureDarkTheme && viewModel == other.viewModel && clipboardLink == other.clipboardLink && commentTrans == other.commentTrans && autoLockTimeOut == other.autoLockTimeOut && showPageInterval == other.showPageInterval && orientation == other.orientation && vibrate == other.vibrate && tagIntroImgLv == other.tagIntroImgLv && debugMode == other.debugMode && debugCount == other.debugCount && autoRead == other.autoRead && turnPageInv == other.turnPageInv && toplist == other.toplist && tabletLayout == other.tabletLayout && tabletLayoutValue == other.tabletLayoutValue && liquidGlassTopBarLayout == other.liquidGlassTopBarLayout && enableTagTranslateCDN == other.enableTagTranslateCDN && autoSelectProfile == other.autoSelectProfile && turnPageAnimations == other.turnPageAnimations && selectProfile == other.selectProfile && linkRedirect == other.linkRedirect && viewColumnMode == other.viewColumnMode && fixedHeightOfListItems == other.fixedHeightOfListItems && tagTranslateDataUpdateMode == other.tagTranslateDataUpdateMode && showCommentAvatar == other.showCommentAvatar && avatarType == other.avatarType && boringAvatarsType == other.boringAvatarsType && textAvatarsType == other.textAvatarsType && avatarBorderRadiusType == other.avatarBorderRadiusType && enablePHashCheck == other.enablePHashCheck && enableQRCodeCheck == other.enableQRCodeCheck && viewFullscreen == other.viewFullscreen && blurringOfCoverBackground == other.blurringOfCoverBackground && listViewTagLimit == other.listViewTagLimit && redirectThumbLink == other.redirectThumbLink && volumnTurnPage == other.volumnTurnPage && proxyType == other.proxyType && proxyHost == other.proxyHost && proxyPort == other.proxyPort && proxyUsername == other.proxyUsername && proxyPassword == other.proxyPassword && webDAVMaxConnections == other.webDAVMaxConnections && hideTopBarOnScroll == other.hideTopBarOnScroll && liquidGlassFollowSystemTransparency == other.liquidGlassFollowSystemTransparency && liquidGlass == other.liquidGlass && readViewCompatibleMode == other.readViewCompatibleMode && translateSearchHistory == other.translateSearchHistory && nativeHttpClientAdapter == other.nativeHttpClientAdapter && showComments == other.showComments && showOnlyUploaderComment == other.showOnlyUploaderComment && showGalleryTags == other.showGalleryTags && hideGalleryThumbnails == other.hideGalleryThumbnails && horizontalThumbnails == other.horizontalThumbnails && pHashThreshold == other.pHashThreshold && pageViewType == other.pageViewType && enableSlideOutPage == other.enableSlideOutPage && detailAmbientBackground == other.detailAmbientBackground && immersiveLargeCards == other.immersiveLargeCards;
 
   @override
-  int get hashCode => jpnTitleInGalleryPage.hashCode ^ tagTranslat.hashCode ^ tagTranslatVer.hashCode ^ favoritesOrder.hashCode ^ siteEx.hashCode ^ galleryImgBlur.hashCode ^ favPicker.hashCode ^ favLongTap.hashCode ^ lastFavcat.hashCode ^ lastShowFavcat.hashCode ^ lastShowFavTitle.hashCode ^ listMode.hashCode ^ safeMode.hashCode ^ catFilter.hashCode ^ maxHistory.hashCode ^ searchBarComp.hashCode ^ pureDarkTheme.hashCode ^ viewModel.hashCode ^ clipboardLink.hashCode ^ commentTrans.hashCode ^ autoLockTimeOut.hashCode ^ showPageInterval.hashCode ^ orientation.hashCode ^ vibrate.hashCode ^ tagIntroImgLv.hashCode ^ debugMode.hashCode ^ debugCount.hashCode ^ autoRead.hashCode ^ turnPageInv.hashCode ^ toplist.hashCode ^ tabletLayout.hashCode ^ tabletLayoutValue.hashCode ^ liquidGlassTopBarLayout.hashCode ^ enableTagTranslateCDN.hashCode ^ autoSelectProfile.hashCode ^ turnPageAnimations.hashCode ^ selectProfile.hashCode ^ linkRedirect.hashCode ^ viewColumnMode.hashCode ^ fixedHeightOfListItems.hashCode ^ tagTranslateDataUpdateMode.hashCode ^ showCommentAvatar.hashCode ^ avatarType.hashCode ^ boringAvatarsType.hashCode ^ textAvatarsType.hashCode ^ avatarBorderRadiusType.hashCode ^ enablePHashCheck.hashCode ^ enableQRCodeCheck.hashCode ^ viewFullscreen.hashCode ^ blurringOfCoverBackground.hashCode ^ listViewTagLimit.hashCode ^ redirectThumbLink.hashCode ^ volumnTurnPage.hashCode ^ proxyType.hashCode ^ proxyHost.hashCode ^ proxyPort.hashCode ^ proxyUsername.hashCode ^ proxyPassword.hashCode ^ webDAVMaxConnections.hashCode ^ hideTopBarOnScroll.hashCode ^ liquidGlassFollowSystemTransparency.hashCode ^ liquidGlass.hashCode ^ readViewCompatibleMode.hashCode ^ translateSearchHistory.hashCode ^ nativeHttpClientAdapter.hashCode ^ showComments.hashCode ^ showOnlyUploaderComment.hashCode ^ showGalleryTags.hashCode ^ hideGalleryThumbnails.hashCode ^ horizontalThumbnails.hashCode ^ pHashThreshold.hashCode ^ pageViewType.hashCode ^ enableSlideOutPage.hashCode;
+  int get hashCode => jpnTitleInGalleryPage.hashCode ^ tagTranslat.hashCode ^ tagTranslatVer.hashCode ^ favoritesOrder.hashCode ^ siteEx.hashCode ^ galleryImgBlur.hashCode ^ favPicker.hashCode ^ favLongTap.hashCode ^ lastFavcat.hashCode ^ lastShowFavcat.hashCode ^ lastShowFavTitle.hashCode ^ listMode.hashCode ^ safeMode.hashCode ^ catFilter.hashCode ^ maxHistory.hashCode ^ searchBarComp.hashCode ^ pureDarkTheme.hashCode ^ viewModel.hashCode ^ clipboardLink.hashCode ^ commentTrans.hashCode ^ autoLockTimeOut.hashCode ^ showPageInterval.hashCode ^ orientation.hashCode ^ vibrate.hashCode ^ tagIntroImgLv.hashCode ^ debugMode.hashCode ^ debugCount.hashCode ^ autoRead.hashCode ^ turnPageInv.hashCode ^ toplist.hashCode ^ tabletLayout.hashCode ^ tabletLayoutValue.hashCode ^ liquidGlassTopBarLayout.hashCode ^ enableTagTranslateCDN.hashCode ^ autoSelectProfile.hashCode ^ turnPageAnimations.hashCode ^ selectProfile.hashCode ^ linkRedirect.hashCode ^ viewColumnMode.hashCode ^ fixedHeightOfListItems.hashCode ^ tagTranslateDataUpdateMode.hashCode ^ showCommentAvatar.hashCode ^ avatarType.hashCode ^ boringAvatarsType.hashCode ^ textAvatarsType.hashCode ^ avatarBorderRadiusType.hashCode ^ enablePHashCheck.hashCode ^ enableQRCodeCheck.hashCode ^ viewFullscreen.hashCode ^ blurringOfCoverBackground.hashCode ^ listViewTagLimit.hashCode ^ redirectThumbLink.hashCode ^ volumnTurnPage.hashCode ^ proxyType.hashCode ^ proxyHost.hashCode ^ proxyPort.hashCode ^ proxyUsername.hashCode ^ proxyPassword.hashCode ^ webDAVMaxConnections.hashCode ^ hideTopBarOnScroll.hashCode ^ liquidGlassFollowSystemTransparency.hashCode ^ liquidGlass.hashCode ^ readViewCompatibleMode.hashCode ^ translateSearchHistory.hashCode ^ nativeHttpClientAdapter.hashCode ^ showComments.hashCode ^ showOnlyUploaderComment.hashCode ^ showGalleryTags.hashCode ^ hideGalleryThumbnails.hashCode ^ horizontalThumbnails.hashCode ^ pHashThreshold.hashCode ^ pageViewType.hashCode ^ enableSlideOutPage.hashCode ^ detailAmbientBackground.hashCode ^ immersiveLargeCards.hashCode;
 }

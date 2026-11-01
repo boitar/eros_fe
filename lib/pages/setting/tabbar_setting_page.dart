@@ -1,3 +1,4 @@
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/controller/tab_setting_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
@@ -12,11 +13,8 @@ class TabbarSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).tabbar_setting),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).tabbar_setting,
       child: CustomScrollView(slivers: [
         SliverSafeArea(
           sliver: MultiSliver(children: [

@@ -1,7 +1,8 @@
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
-import '../../common/service/theme_service.dart';
 import 'gallery_grid_tags.dart';
 import 'item_base.dart';
 
@@ -34,15 +35,7 @@ class GalleryItemGridPlaceHolder extends StatelessWidget {
         decoration: BoxDecoration(
           color: ehTheme.itemBackgroundColor,
           borderRadius: BorderRadius.circular(kRadius), //圆角
-          boxShadow: ehTheme.isDarkMode
-              ? null
-              : [
-                  BoxShadow(
-                    color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.systemGrey3, Get.context!),
-                    blurRadius: 10,
-                  )
-                ],
+          boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -58,8 +51,7 @@ class GalleryItemGridPlaceHolder extends StatelessWidget {
                   topRight: Radius.circular(kRadius),
                 ),
                 child: Container(
-                  color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.systemGrey6, context),
+                  color: ehTheme.palette.fill.resolveFrom(context),
                   child: showLoadingIndicator
                       ? const CupertinoActivityIndicator()
                       : null,
@@ -99,8 +91,7 @@ class _GridTagsPlaceholderInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metrics = GalleryGridTagsMetrics.of(context);
-    final color =
-        CupertinoDynamicColor.resolve(CupertinoColors.systemGrey5, context);
+    final color = ehTheme.palette.fill.resolveFrom(context);
     Widget bar(double height) => Container(
           height: height,
           decoration: BoxDecoration(

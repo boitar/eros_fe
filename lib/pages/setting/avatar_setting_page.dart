@@ -1,6 +1,7 @@
 import 'package:english_words/english_words.dart';
 import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/widget/text_avatar.dart';
@@ -25,11 +26,8 @@ class AvatarSettingPage extends StatelessWidget {
         _userController.user.value.memberId ??
         'seed';
 
-    return CupertinoPageScaffold(
-        backgroundColor: CupertinoColors.systemGroupedBackground,
-        navigationBar: CupertinoNavigationBar(
-          middle: Text(L10n.of(context).avatar),
-        ),
+    return SettingScaffold(
+        title: L10n.of(context).avatar,
         child: CustomScrollView(
           slivers: [
             SliverSafeArea(

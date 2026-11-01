@@ -1,5 +1,6 @@
 import 'dart:io' as io;
 
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/utils/logger.dart';
@@ -26,11 +27,8 @@ class WebLoginViewIn extends StatelessWidget {
         useHybridComposition: true,
         allowsInlineMediaPlayback: true);
 
-    final CupertinoPageScaffold cpf = CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(title),
-        transitionBetweenRoutes: false,
-      ),
+    final Widget cpf = SettingScaffold(
+      title: title,
       child: SafeArea(
         child: InAppWebView(
           initialUrlRequest: URLRequest(url: WebUri(EHConst.URL_SIGN_IN)),
@@ -39,9 +37,8 @@ class WebLoginViewIn extends StatelessWidget {
             // 使用 WebView 真实的 UA，保证与 cf_clearance 绑定的 UA 一致
             final String? ua = await webViewController
                 .evaluateJavascript(source: 'navigator.userAgent')
-                .then<String?>((value) => value
-                    ?.trim()
-                    .replaceAll(RegExp(r'^"|"$'), ''))
+                .then<String?>(
+                    (value) => value?.trim().replaceAll(RegExp(r'^"|"$'), ''))
                 .catchError((Object e, StackTrace s) {
               logger.e('getUserAgent error: $e\n$s');
               return null;

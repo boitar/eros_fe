@@ -1,5 +1,6 @@
 import 'package:eros_fe/common/controller/mysql_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -55,11 +56,8 @@ class _MysqlLoginState extends State<MysqlLogin> {
       color: CupertinoColors.placeholderText,
     );
 
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('MySQL Login'),
-      ),
+    return SettingScaffold(
+      title: 'MySQL Login',
       child: CustomScrollView(
         slivers: [
           SliverSafeArea(

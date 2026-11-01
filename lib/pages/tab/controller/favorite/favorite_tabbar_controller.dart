@@ -102,7 +102,15 @@ class FavoriteTabBarController extends DefaultTabViewController {
     await currentPageScrollController?.scrollToTopAndRefresh();
   }
 
+  /// The page a tapped category is animating to. The pages it passes on the
+  /// way there are not selections.
+  int? landingPage;
+
   void onPageChanged(int index) {
+    final landing = landingPage;
+    if (landing != null && index != landing) {
+      return;
+    }
     final favcats = favoriteSelectorController.favcatList;
     if (index < 0 || index >= favcats.length) {
       return;

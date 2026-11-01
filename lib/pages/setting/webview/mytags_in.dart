@@ -1,3 +1,5 @@
+import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/setting/controller/web_setting_controller.dart';
@@ -16,23 +18,23 @@ class InWebMyTags extends StatelessWidget {
   Widget build(BuildContext context) {
     InAppWebViewController? inAppWebViewController;
 
-    final CupertinoPageScaffold cpf = CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        padding: const EdgeInsetsDirectional.only(end: 6),
-        middle: Text(L10n.of(context).ehentai_my_tags),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            CupertinoButton(
-              padding: const EdgeInsets.all(0),
-              child: const FaIcon(FontAwesomeIcons.rotateRight,
-                size: 22,
-              ),
-              onPressed: () async {
-                inAppWebViewController?.reload();
-              },
-            ),
-          ],
+    void reload() => inAppWebViewController?.reload();
+
+    final Widget cpf = SettingScaffold(
+      title: L10n.of(context).ehentai_my_tags,
+      actions: <NativeNavigationAction>[
+        NativeNavigationAction(
+          id: 'webMyTags.reload',
+          title: L10n.of(context).reload,
+          symbol: 'arrow.clockwise',
+          onPressed: reload,
+        ),
+      ],
+      trailing: CupertinoButton(
+        padding: const EdgeInsets.all(0),
+        onPressed: reload,
+        child: const FaIcon(FontAwesomeIcons.rotateRight,
+          size: 22,
         ),
       ),
       child: SafeArea(

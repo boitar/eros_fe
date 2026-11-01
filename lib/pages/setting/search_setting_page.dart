@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -8,11 +9,8 @@ class SearchSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).search),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).search,
       child: CustomScrollView(slivers: [
         SliverSafeArea(
           sliver: SliverCupertinoListSection.listInsetGrouped(children: [

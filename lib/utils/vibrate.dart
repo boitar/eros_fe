@@ -92,7 +92,25 @@ class VibrateUtil {
         }
       });
 
-  Future<void> selection() => _run(HapticFeedback.selectionClick);
+  /// A picker-like tick. On iOS it uses the app's retained generator rather
+  /// than Flutter's, which builds an unprepared one for every tick.
+  Future<void> selection() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('selection');
+        } else {
+          await HapticFeedback.selectionClick();
+        }
+      });
+
+  /// Switching tabs in any tab bar: a crisp glass click on iOS, the light
+  /// pulse elsewhere.
+  Future<void> tabSwitch() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('tabSwitch');
+        } else {
+          await _androidPulse(5, amplitude: 100);
+        }
+      });
 
   Future<void> pullTick(double progress) => _run(() async {
         if (_isIOS) {

@@ -6,6 +6,7 @@ import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/item/gallery_grid_tags.dart';
 import 'package:eros_fe/pages/item/gallery_item_grid.dart';
 import 'package:eros_fe/pages/item/gallery_item_grid_placeholder.dart';
+import 'package:eros_fe/pages/tab/view/list/card_size.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:keframe/keframe.dart';
@@ -102,13 +103,6 @@ class EhGridView extends StatelessWidget {
     );
   }
 
-  double getMaxCrossAxisExtent() {
-    final itemConfig = _ehSettingService.getItemConfig(mode);
-    const defaultMaxCrossAxisExtent = EHConst.gridMaxCrossAxisExtent;
-    if (itemConfig?.enableCustomWidth ?? false) {
-      return itemConfig?.customWidth?.toDouble() ?? defaultMaxCrossAxisExtent;
-    } else {
-      return defaultMaxCrossAxisExtent;
-    }
-  }
+  double getMaxCrossAxisExtent() => CardSize.maxCrossAxisExtent(
+      mode, CardSize.of(mode, _ehSettingService.getItemConfig(mode)));
 }

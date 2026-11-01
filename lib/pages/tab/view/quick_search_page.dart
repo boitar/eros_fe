@@ -1,8 +1,10 @@
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/controller/quicksearch_controller.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/utils/import_export.dart';
 import 'package:eros_fe/utils/share_service.dart';
@@ -24,48 +26,66 @@ class QuickSearchListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        padding: const EdgeInsetsDirectional.only(end: 8),
-        middle: Text(L10n.of(context).quick_search),
-        trailing: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            // 清除按钮
-            CupertinoButton(
-              minSize: 40,
-              padding: const EdgeInsets.all(0),
-              child: const FaIcon(
-                FontAwesomeIcons.solidTrashCan,
-                size: 20,
-              ),
-              onPressed: () {
-                _removeAll();
-              },
-            ),
-            CupertinoButton(
-              minSize: 40,
-              padding: const EdgeInsets.all(0),
-              onPressed: () => _showFile(context),
-              child: const FaIcon(
-                FontAwesomeIcons.solidFileLines,
-                size: 20,
-              ),
-            ),
-            if (Get.find<WebdavController>().syncQuickSearch)
-              CupertinoButton(
-                minSize: 40,
-                padding: const EdgeInsets.all(0),
-                onPressed: quickSearchController.syncQuickSearch,
-                child: const FaIcon(
-                  FontAwesomeIcons.arrowsRotate,
-                  size: 20,
-                ),
-              ),
-          ],
+    final bool sync = Get.find<WebdavController>().syncQuickSearch;
+    return SettingScaffold(
+      title: L10n.of(context).quick_search,
+      actions: [
+        NativeNavigationAction(
+          id: 'quickSearch.removeAll',
+          title: L10n.of(context).remove_all,
+          symbol: 'trash',
+          onPressed: _removeAll,
         ),
+        NativeNavigationAction(
+          id: 'quickSearch.file',
+          title: L10n.of(context).import_export,
+          symbol: 'square.and.arrow.up.on.square',
+          onPressed: () => _showFile(context),
+        ),
+        if (sync)
+          NativeNavigationAction(
+            id: 'quickSearch.sync',
+            title: L10n.of(context).sync_quick_search,
+            symbol: 'arrow.triangle.2.circlepath',
+            onPressed: quickSearchController.syncQuickSearch,
+          ),
+      ],
+      trailing: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          // 清除按钮
+          CupertinoButton(
+            minSize: 40,
+            padding: const EdgeInsets.all(0),
+            child: const FaIcon(
+              FontAwesomeIcons.solidTrashCan,
+              size: 20,
+            ),
+            onPressed: () {
+              _removeAll();
+            },
+          ),
+          CupertinoButton(
+            minSize: 40,
+            padding: const EdgeInsets.all(0),
+            onPressed: () => _showFile(context),
+            child: const FaIcon(
+              FontAwesomeIcons.solidFileLines,
+              size: 20,
+            ),
+          ),
+          if (sync)
+            CupertinoButton(
+              minSize: 40,
+              padding: const EdgeInsets.all(0),
+              onPressed: quickSearchController.syncQuickSearch,
+              child: const FaIcon(
+                FontAwesomeIcons.arrowsRotate,
+                size: 20,
+              ),
+            ),
+        ],
       ),
       child: CustomScrollView(slivers: [
         SliverSafeArea(

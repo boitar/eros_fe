@@ -219,7 +219,19 @@ final class ErosAdaptiveEnvironmentPlugin: NSObject, FlutterPlugin,
         }
         let traits = view.traitCollection
         let edge: String
-        if safe.right > safe.left {
+        if #available(iOS 27.1, *) {
+            // Insets alone can't tell the vertical bar from a notch.
+            let rtl = traits.layoutDirection == .rightToLeft
+            switch traits.verticalBarEdge {
+            case .leading:
+                edge = rtl ? "right" : "left"
+            case .trailing:
+                edge = rtl ? "left" : "right"
+            default:
+                edge = safe.top > safe.bottom ? "top"
+                    : safe.bottom > safe.top ? "bottom" : ""
+            }
+        } else if safe.right > safe.left {
             edge = "right"
         } else if safe.left > safe.right {
             edge = "left"

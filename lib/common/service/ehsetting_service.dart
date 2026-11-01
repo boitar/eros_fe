@@ -47,10 +47,11 @@ class EhSettingService extends ProfileService {
   // RxBool blurredInRecentTasks = true.obs;
   Rx<TagIntroImgLv> tagIntroImgLv = TagIntroImgLv.nonh.obs;
 
+  /// Dark style: graphite (false) or pure black for OLED (true).
   final _isPureDarkTheme = false.obs;
-  // bool get isPureDarkTheme => _isPureDarkTheme.value;
-  bool get isPureDarkTheme => false;
+  bool get isPureDarkTheme => _isPureDarkTheme.value;
   set isPureDarkTheme(bool val) => _isPureDarkTheme.value = val;
+  RxBool get pureDarkThemeObs => _isPureDarkTheme;
 
   final _blurredInRecentTasks = false.obs;
   bool get blurredInRecentTasks => _blurredInRecentTasks.value;
@@ -434,6 +435,16 @@ class EhSettingService extends ProfileService {
   int get pHashThreshold => _pHashThreshold.value;
   set pHashThreshold(int val) => _pHashThreshold.value = val;
 
+  /// Blurred cover behind the gallery detail header.
+  final _detailAmbientBackground = true.obs;
+  bool get detailAmbientBackground => _detailAmbientBackground.value;
+  set detailAmbientBackground(bool val) => _detailAmbientBackground.value = val;
+
+  /// Large waterfall cards show only the cover, with the title on a scrim.
+  final _immersiveLargeCards = false.obs;
+  bool get immersiveLargeCards => _immersiveLargeCards.value;
+  set immersiveLargeCards(bool val) => _immersiveLargeCards.value = val;
+
   // enableSlideOutPage
   final _enableSlideOutPage = true.obs;
   bool get enableSlideOutPage => _enableSlideOutPage.value;
@@ -737,9 +748,7 @@ class EhSettingService extends ProfileService {
     everProfile<bool>(isFavPicker,
         (value) => ehConfig = ehConfig.copyWith(favPicker: value.oN));
 
-    // TODO isPureDarkTheme 暂时禁用
-    // isPureDarkTheme = ehConfig.pureDarkTheme ?? isPureDarkTheme;
-    isPureDarkTheme = false;
+    isPureDarkTheme = ehConfig.pureDarkTheme ?? isPureDarkTheme;
     everProfile<bool>(_isPureDarkTheme,
         (bool value) => ehConfig = ehConfig.copyWith(pureDarkTheme: value.oN));
 
@@ -937,6 +946,17 @@ class EhSettingService extends ProfileService {
     });
 
     // _enableSlideOutPage
+
+    detailAmbientBackground =
+        ehConfig.detailAmbientBackground ?? detailAmbientBackground;
+    everProfile<bool>(_detailAmbientBackground, (value) {
+      ehConfig = ehConfig.copyWith(detailAmbientBackground: value.oN);
+    });
+
+    immersiveLargeCards = ehConfig.immersiveLargeCards ?? immersiveLargeCards;
+    everProfile<bool>(_immersiveLargeCards, (value) {
+      ehConfig = ehConfig.copyWith(immersiveLargeCards: value.oN);
+    });
   }
 
   ///

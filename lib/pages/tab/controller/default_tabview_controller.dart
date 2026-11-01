@@ -7,7 +7,6 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/exception/error.dart';
-import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
@@ -347,8 +346,11 @@ class DefaultTabViewController extends TabViewController {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
               child: Container(
-                color: CupertinoDynamicColor.resolve(
-                    ThemeColors.dialogColor, context),
+                // Popovers sit one level up; the elevated surface keeps the
+                // menu apart from the page under the blur.
+                color: ehTheme.palette.raised
+                    .resolveFrom(context)
+                    .withValues(alpha: 0.82),
                 child: IntrinsicWidth(
                   child: popupMenu,
                 ),

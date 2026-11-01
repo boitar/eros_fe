@@ -1,5 +1,6 @@
 {
   "type": "",
   "enableCustomWidth?": false,
-  "customWidth?": 200
+  "customWidth?": 200,
+  "cardSize?": 2
 }

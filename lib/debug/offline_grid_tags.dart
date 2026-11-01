@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/debug/offline_acceptance.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/pages/tab/view/list/card_size.dart';
 import 'package:eros_fe/store/hive/hive.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
@@ -50,16 +51,16 @@ Widget offlineGridTagsOverlay(Widget child) {
         child: Obx(() {
           final settings = Get.find<EhSettingService>();
           final mode = settings.listMode.value;
-          final config = settings.getItemConfig(mode);
-          final custom = config?.enableCustomWidth ?? false;
+          final size = CardSize.of(mode, settings.getItemConfig(mode));
+          final custom = size != CardSize.standard;
           return Semantics(
-              key: ValueKey<String>('${mode.name}:$custom:${config?.customWidth}'),
+              key: ValueKey<String>('${mode.name}:$size'),
               textDirection: TextDirection.ltr,
               container: true,
               identifier:
                   'offline-grid-ready-${mode.name}-${custom ? "custom" : "default"}',
               label:
-                  'Offline grid mode=${mode.name} custom=$custom width=${config?.customWidth ?? 0}',
+                  'Offline grid mode=${mode.name} custom=$custom size=$size',
               child: const SizedBox(width: 1, height: 1));
         })),
   ]);

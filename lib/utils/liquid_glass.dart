@@ -758,7 +758,7 @@ class _NativeLiquidGlassTabBarState extends State<_NativeLiquidGlassTabBar> {
         case 'dragCommitted':
           final Object? value = call.arguments;
           if (value is num) {
-            liquidGlassFeedback(vibrateUtil.light);
+            liquidGlassFeedback(vibrateUtil.tabSwitch);
             widget.onTap?.call(value.toInt());
           }
           return null;
@@ -913,7 +913,7 @@ class _InteractiveLiquidGlassTabsState
       _settleTarget = target.toDouble();
     });
     if (notify) {
-      liquidGlassFeedback(vibrateUtil.light);
+      liquidGlassFeedback(vibrateUtil.tabSwitch);
       widget.onTap?.call(target);
     }
     if ((start - target).abs() < 0.001) {

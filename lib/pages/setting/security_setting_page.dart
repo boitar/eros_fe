@@ -1,7 +1,8 @@
 import 'package:eros_fe/common/controller/auto_lock_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
-import 'package:eros_fe/widget/liquid_glass_popup.dart';
+import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -13,12 +14,8 @@ class SecuritySettingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _widgetList = _buildList(context);
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        transitionBetweenRoutes: true,
-        middle: Text(L10n.of(context).security),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).security,
       child: CustomScrollView(
         slivers: [
           SliverSafeArea(
@@ -85,34 +82,6 @@ Widget _buildAutoLockItem(BuildContext context) {
     return '$partHours $partMin $partSecond';
   }
 
-  List<Widget> _getTimeOutList(BuildContext context) {
-    return List<Widget>.from(EHConst.autoLockTime.map((int element) {
-      return CupertinoActionSheetAction(
-          onPressed: () {
-            Get.back(result: element);
-          },
-          child: Text(_getTimeText(element)));
-    }).toList());
-  }
-
-  Future<int?> _showActionSheet(BuildContext context) {
-    return showCupertinoModalPopup<int>(
-        context: context,
-        builder: (BuildContext context) {
-          final EhActionSheet dialog = EhActionSheet(
-            cancelButton: CupertinoActionSheetAction(
-                onPressed: () {
-                  Get.back();
-                },
-                child: Text(L10n.of(context).cancel)),
-            actions: <Widget>[
-              ..._getTimeOutList(context),
-            ],
-          );
-          return dialog;
-        });
-  }
-
   void _setAutoLockTimeOut(int timeOut) {
     if (timeOut == ehSettingService.autoLockTimeOut.value) {
       return;
@@ -132,16 +101,13 @@ Widget _buildAutoLockItem(BuildContext context) {
     }
   }
 
-  return Obx(() => EhCupertinoListTile(
-        title: Text(_title),
-        trailing: const CupertinoListTileChevron(),
-        additionalInfo:
-            Text(_getTimeText(ehSettingService.autoLockTimeOut.value)),
-        onTap: () async {
-          final int? _result = await _showActionSheet(context);
-          if (_result != null) {
-            _setAutoLockTimeOut(_result);
-          }
+  return Obx(() => SelectorCupertinoListTile<int>(
+        title: _title,
+        actionMap: {
+          for (final int value in EHConst.autoLockTime)
+            value: _getTimeText(value),
         },
+        initVal: ehSettingService.autoLockTimeOut.value,
+        onValueChanged: _setAutoLockTimeOut,
       ));
 }

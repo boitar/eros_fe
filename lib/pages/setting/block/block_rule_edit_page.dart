@@ -1,5 +1,7 @@
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
@@ -27,27 +29,35 @@ class BlockRuleEditPage extends GetView<BlockController> {
     controller.blockRuleTextEditingController.text = blockRule.ruleText ?? '';
     controller.currentEnableRegex = blockRule.enableRegex ?? false;
 
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(title),
-        trailing: CupertinoButton(
-          padding: const EdgeInsets.all(0),
-          minSize: 40,
-          onPressed: controller.isRegexFormatError
-              ? null
-              : () async {
-                  FocusScope.of(context).requestFocus(FocusNode());
-                  logger.d('blockRule ${blockRule.toJson()}');
-                  Get.back<BlockRule>(
-                    id: detailNavigatorId,
-                    result: blockRule,
-                  );
-                },
-          child: const Icon(
-            CupertinoIcons.check_mark_circled,
-            size: 28,
-          ),
+    final VoidCallback? save = controller.isRegexFormatError
+        ? null
+        : () {
+            FocusScope.of(context).requestFocus(FocusNode());
+            logger.d('blockRule ${blockRule.toJson()}');
+            Get.back<BlockRule>(
+              id: detailNavigatorId,
+              result: blockRule,
+            );
+          };
+
+    return SettingScaffold(
+      title: title,
+      actions: <NativeNavigationAction>[
+        NativeNavigationAction(
+          id: 'blockRule.save',
+          title: L10n.of(context).save,
+          symbol: 'checkmark',
+          enabled: save != null,
+          onPressed: save,
+        ),
+      ],
+      trailing: CupertinoButton(
+        padding: const EdgeInsets.all(0),
+        minSize: 40,
+        onPressed: save,
+        child: const Icon(
+          CupertinoIcons.check_mark_circled,
+          size: 28,
         ),
       ),
       child: CustomScrollView(slivers: [

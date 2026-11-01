@@ -60,6 +60,7 @@ void main() {
     await util.success();
     await util.error();
     await util.selection();
+    await util.tabSwitch();
     await util.prepareHaptics();
     await util.pullTick(.5);
   }
@@ -73,9 +74,21 @@ void main() {
     await util.heavy();
     await util.success();
     await util.error();
-    expect(nativeCalls.map((c) => c.method),
-        ['impact', 'light', 'medium', 'heavy', 'success', 'error']);
+    await util.tabSwitch();
+    await util.selection();
+    expect(nativeCalls.map((c) => c.method), [
+      'impact',
+      'light',
+      'medium',
+      'heavy',
+      'success',
+      'error',
+      'tabSwitch',
+      'selection'
+    ]);
     expect(legacyCalls, isEmpty);
+    // Selection ticks use the app's retained generator, not Flutter's.
+    expect(systemCalls, isEmpty);
   });
 
   test('disabled iOS and Android feedback produce no plugin or platform calls',

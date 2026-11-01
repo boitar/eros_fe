@@ -1,7 +1,9 @@
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/generated/l10n.dart';
@@ -43,25 +45,28 @@ class _AddTagPageState extends State<AddTagPage> {
     }
   }
 
+  void _done() => Get.back(result: controller.tags, id: detailNavigatorId);
+
   @override
   Widget build(BuildContext context) {
     return RetainedDraft(
         controller: controller.tagsTextController,
-        child: CupertinoPageScaffold(
-            navigationBar: CupertinoNavigationBar(
-              middle: Text(L10n.of(context).add_tags),
-              previousPageTitle: L10n.of(context).cancel,
-              trailing: CupertinoButton(
-                minSize: 40,
-                padding: const EdgeInsets.only(left: 4),
-                child: Text(L10n.of(context).done),
-                onPressed: () {
-                  Get.back(
-                    result: controller.tags,
-                    id: detailNavigatorId,
-                  );
-                },
+        child: SettingScaffold(
+            title: L10n.of(context).add_tags,
+            actions: [
+              NativeNavigationAction(
+                id: 'addTag.done',
+                title: L10n.of(context).done,
+                symbol: 'checkmark',
+                prominent: true,
+                onPressed: _done,
               ),
+            ],
+            trailing: CupertinoButton(
+              minSize: 40,
+              padding: const EdgeInsets.only(left: 4),
+              onPressed: _done,
+              child: Text(L10n.of(context).done),
             ),
             child: SafeArea(
               child: Column(
@@ -107,12 +112,7 @@ class _AddTagPageState extends State<AddTagPage> {
                     style: const TextStyle(height: 1.25),
                     // strutStyle:
                     //     const StrutStyle(forceStrutHeight: true, height: 1.2),
-                    onEditingComplete: () {
-                      Get.back(
-                        result: controller.tags,
-                        id: detailNavigatorId,
-                      );
-                    },
+                    onEditingComplete: _done,
                   ).paddingSymmetric(vertical: 8, horizontal: 10),
                   Expanded(
                     child: GestureDetector(

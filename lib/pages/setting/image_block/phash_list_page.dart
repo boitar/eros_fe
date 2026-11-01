@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/controller/image_block_controller.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -8,23 +9,26 @@ class PHashImageListPage extends GetView<ImageBlockController> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        padding: const EdgeInsetsDirectional.only(end: 12),
-        middle: Text(L10n.of(context).phash_block_list),
-        trailing: CupertinoButton(
-          // 清除按钮
-          padding: const EdgeInsets.all(0),
-          minSize: 40,
-          child: const Icon(
-            CupertinoIcons.trash,
-            size: 24,
-          ),
-          onPressed: () {
-            controller.customBlockList.clear();
-          },
+    return SettingScaffold(
+      title: L10n.of(context).phash_block_list,
+      actions: [
+        NativeNavigationAction(
+          id: 'phash.clear',
+          title: L10n.of(context).clear_filter,
+          symbol: 'trash',
+          onPressed: controller.customBlockList.clear,
         ),
+      ],
+      trailing: CupertinoButton(
+        padding: const EdgeInsets.all(0),
+        minSize: 40,
+        child: const Icon(
+          CupertinoIcons.trash,
+          size: 24,
+        ),
+        onPressed: () {
+          controller.customBlockList.clear();
+        },
       ),
       child: CustomScrollView(slivers: [
         SliverSafeArea(

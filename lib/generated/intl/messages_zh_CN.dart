@@ -45,6 +45,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds} 秒";
 
+  static String m6(page) => "继续阅读 · 第 ${page} 页";
+
+  static String m7(count) => "${count} 页";
+
+  static String m8(count) => "${count} 条";
+
+  static String m9(count) => "${count} 列";
+
+  static String m10(min, max) => "${min}–${max} 列";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("上传头像"),
@@ -59,6 +69,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("头像已更新"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("需要 Cloudflare 验证"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("论坛启用了 Cloudflare 防护，请在内置浏览器中完成人机验证，完成后将自动重试上传。"),
+        "cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 验证"),
+        "cf_verify_summary": MessageLookupByLibrary.simpleMessage("论坛请求被拦截时，在应用内重新完成人机验证"),
+        "cf_verify_required": MessageLookupByLibrary.simpleMessage("论坛需要验证"),
+        "cf_verify_prompt": MessageLookupByLibrary.simpleMessage("论坛请求被 Cloudflare 拦截，要现在在内置浏览器中完成验证吗？"),
+        "cf_verify_action": MessageLookupByLibrary.simpleMessage("去验证"),
+        "cf_verify_success": MessageLookupByLibrary.simpleMessage("验证完成"),
+        "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("验证已保存，但论坛仍被拦截，请稍后或切换网络后再试"),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("顶栏分组布局"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("两行展开（默认）"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("操作与分组分行显示，适合较多分组和长名称"),
@@ -192,7 +209,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "galery_site": MessageLookupByLibrary.simpleMessage("画廊站点"),
         "gallery_comments": MessageLookupByLibrary.simpleMessage("画廊评论"),
         "global_setting": MessageLookupByLibrary.simpleMessage("全局设置"),
-        "gray_black": MessageLookupByLibrary.simpleMessage("灰黑"),
+        "gray_black": MessageLookupByLibrary.simpleMessage("石墨"),
         "group": MessageLookupByLibrary.simpleMessage("分组"),
         "groupName": MessageLookupByLibrary.simpleMessage("分组名称"),
         "groupType": MessageLookupByLibrary.simpleMessage("类型"),
@@ -615,6 +632,51 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("分组管理"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("选择收藏夹"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("回到顶部"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("排行周期")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("排行周期"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("全部"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("更多"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("复制链接"),
+        "file_size": MessageLookupByLibrary.simpleMessage("大小"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("详情页氛围背景"),
+        "english_title": MessageLookupByLibrary.simpleMessage("英文标题"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("日文标题"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("当前显示"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("显示英文标题"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("显示日文标题"),
+        "search_title": MessageLookupByLibrary.simpleMessage("搜索标题"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("复制标题"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("外观与布局"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("站点"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("浏览"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("内容"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("系统"),
+        "add": MessageLookupByLibrary.simpleMessage("添加"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("自动滚动"),
+        "reload": MessageLookupByLibrary.simpleMessage("重新载入"),
+        "card_style": MessageLookupByLibrary.simpleMessage("卡片样式"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("标准"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("沉浸"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("封面、标题、信息与标签"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("只显示封面，标题与评分叠在封面上"),
+        "gallery_info": MessageLookupByLibrary.simpleMessage("画廊信息"),
+        "search_by_image": MessageLookupByLibrary.simpleMessage("以图搜图"),
+        "remove_all": MessageLookupByLibrary.simpleMessage("全部删除"),
+        "import_export": MessageLookupByLibrary.simpleMessage("导入与导出"),
+        "card_size": MessageLookupByLibrary.simpleMessage("卡片大小"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("小"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("较小"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("标准"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("较大"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("大"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("列数按这一栏的实际宽度计算：换屏、旋转或拖动分割条都会自动增减。「标准」与原来的自动列数相同。"),
+        "outer_display": MessageLookupByLibrary.simpleMessage("外屏"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("内屏"),
+        "portrait": MessageLookupByLibrary.simpleMessage("竖屏"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分栏随分割条")
       };
 }

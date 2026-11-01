@@ -45,6 +45,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds}초";
 
+  static String m6(page) => "이어 읽기 · ${page}페이지";
+
+  static String m7(count) => "${count}페이지";
+
+  static String m8(count) => "댓글 ${count}개";
+
+  static String m9(count) => "${count}열";
+
+  static String m10(min, max) => "${min}–${max}열";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
@@ -59,6 +69,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("아바타가 업데이트되었습니다"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 인증 필요"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("포럼이 Cloudflare로 보호되어 있습니다. 내장 브라우저에서 인증을 완료하면 업로드가 자동으로 재시도됩니다."),
+        "cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare 인증"),
+        "cf_verify_summary": MessageLookupByLibrary.simpleMessage("포럼 요청이 차단되면 앱 안에서 다시 인증합니다"),
+        "cf_verify_required": MessageLookupByLibrary.simpleMessage("포럼 인증 필요"),
+        "cf_verify_prompt": MessageLookupByLibrary.simpleMessage("포럼 요청이 Cloudflare에 의해 차단되었습니다. 지금 내장 브라우저에서 인증하시겠습니까?"),
+        "cf_verify_action": MessageLookupByLibrary.simpleMessage("인증하기"),
+        "cf_verify_success": MessageLookupByLibrary.simpleMessage("인증 완료"),
+        "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("인증이 저장되었지만 포럼이 여전히 차단되어 있습니다. 잠시 후 또는 네트워크를 바꾼 뒤 다시 시도하세요."),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("상단 카테고리 배치"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("두 줄 (기본값)"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("작업과 카테고리를 별도 줄에 표시"),
@@ -252,7 +269,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "jump_or_seek": MessageLookupByLibrary.simpleMessage("Jump or Seek"),
         "jump_prev": MessageLookupByLibrary.simpleMessage("Prev"),
         "jump_to_page": MessageLookupByLibrary.simpleMessage("페이지로 이동"),
-        "landscape": MessageLookupByLibrary.simpleMessage("Landscape"),
+        "landscape": MessageLookupByLibrary.simpleMessage("가로"),
         "language": MessageLookupByLibrary.simpleMessage("언어"),
         "last_favorites": MessageLookupByLibrary.simpleMessage(
             "최근 즐겨찾기, 길게 눌러 수동으로 선택할 수 있습니다."),
@@ -710,6 +727,51 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("그룹 관리"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("즐겨찾기 폴더 선택"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("맨 위로"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("순위 기간")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("순위 기간"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("모두 보기"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("더 보기"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("링크 복사"),
+        "file_size": MessageLookupByLibrary.simpleMessage("크기"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("상세 페이지 배경"),
+        "english_title": MessageLookupByLibrary.simpleMessage("영어 제목"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("일본어 제목"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("표시 중"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("영어 제목 보기"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("일본어 제목 보기"),
+        "search_title": MessageLookupByLibrary.simpleMessage("제목 검색"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("제목 복사"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("모양 및 레이아웃"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("사이트"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("탐색"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("콘텐츠"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("시스템"),
+        "add": MessageLookupByLibrary.simpleMessage("추가"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("자동 스크롤"),
+        "reload": MessageLookupByLibrary.simpleMessage("새로고침"),
+        "card_style": MessageLookupByLibrary.simpleMessage("카드 스타일"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("표준"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("몰입형"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("표지, 제목, 정보, 태그"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("표지만 표시하고 제목과 평점을 표지 위에 표시"),
+        "gallery_info": MessageLookupByLibrary.simpleMessage("갤러리 정보"),
+        "search_by_image": MessageLookupByLibrary.simpleMessage("이미지로 검색"),
+        "remove_all": MessageLookupByLibrary.simpleMessage("모두 삭제"),
+        "import_export": MessageLookupByLibrary.simpleMessage("가져오기 및 내보내기"),
+        "card_size": MessageLookupByLibrary.simpleMessage("카드 크기"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("작게"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("조금 작게"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("표준"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("조금 크게"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("크게"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("열 수는 목록이 있는 영역의 실제 너비로 계산되므로 화면 전환, 회전, 구분선 드래그에 따라 자동으로 바뀝니다. '표준'은 기존 자동 열 수와 같습니다."),
+        "outer_display": MessageLookupByLibrary.simpleMessage("외부 디스플레이"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("내부 디스플레이"),
+        "portrait": MessageLookupByLibrary.simpleMessage("세로"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("분할 · 구분선에 따름")
       };
 }

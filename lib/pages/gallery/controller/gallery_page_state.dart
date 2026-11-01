@@ -140,6 +140,33 @@ class GalleryPageState {
 
   String firstMainTitle = '';
 
+  /// The header stays on screen in its own column, so the bar never takes
+  /// over the title or the Read action.
+  bool heroPinned = false;
+
+  /// Title language picked in the title sheet for this page only; null
+  /// follows the global setting. Display only: downloads, archives and
+  /// shares keep using [mainTitle].
+  final Rxn<bool> _displayJapanese = Rxn<bool>();
+
+  bool get hasJapaneseTitle =>
+      galleryProvider?.japaneseTitle?.trim().isNotEmpty ?? false;
+
+  bool get hasBothTitles =>
+      hasJapaneseTitle &&
+      (galleryProvider?.englishTitle?.trim().isNotEmpty ?? false);
+
+  bool get showingJapaneseTitle =>
+      hasJapaneseTitle &&
+      (_displayJapanese.value ?? _ehSettingService.jpnTitleInGalleryPage);
+
+  String get displayTitle => showingJapaneseTitle
+      ? galleryProvider?.japaneseTitle ?? ''
+      : galleryProvider?.englishTitle ?? '';
+
+  void toggleDisplayTitleLanguage() =>
+      _displayJapanese.value = !showingJapaneseTitle;
+
   // 根据设置的语言显示的标题
   String get mainTitle {
     if ((_ehSettingService.jpnTitleInGalleryPage) &&

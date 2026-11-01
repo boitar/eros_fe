@@ -1,7 +1,9 @@
 import 'dart:io' as io;
 
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/network/api.dart';
@@ -34,36 +36,46 @@ class InWebMySetting extends StatelessWidget {
 
     logger.d('httpHeaders: $httpHeaders');
 
-    final CupertinoPageScaffold cpf = CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        padding: const EdgeInsetsDirectional.only(end: 6),
-        middle: Text(L10n.of(context).ehentai_settings),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            CupertinoButton(
-              padding: const EdgeInsets.all(0),
-              child: const FaIcon(FontAwesomeIcons.rotateRight,
-                size: 22,
-              ),
-              onPressed: () async {
-                inAppWebViewController?.reload();
-              },
-            ),
-            CupertinoButton(
-              padding: const EdgeInsets.all(0),
-              child: const FaIcon(FontAwesomeIcons.circleCheck,
-                size: 22,
-              ),
-              onPressed: () async {
-                // 保存配置
-                inAppWebViewController?.evaluateJavascript(
-                    source:
-                        'document.querySelector("#apply > input[type=submit]").click();');
-              },
-            ),
-          ],
+    void reload() => inAppWebViewController?.reload();
+    // 保存配置
+    void save() => inAppWebViewController?.evaluateJavascript(
+        source:
+            'document.querySelector("#apply > input[type=submit]").click();');
+
+    final Widget cpf = SettingScaffold(
+      title: L10n.of(context).ehentai_settings,
+      actions: <NativeNavigationAction>[
+        NativeNavigationAction(
+          id: 'webMySettings.reload',
+          title: L10n.of(context).reload,
+          symbol: 'arrow.clockwise',
+          onPressed: reload,
         ),
+        NativeNavigationAction(
+          id: 'webMySettings.save',
+          title: L10n.of(context).save,
+          symbol: 'checkmark.circle',
+          onPressed: save,
+        ),
+      ],
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          CupertinoButton(
+            padding: const EdgeInsets.all(0),
+            onPressed: reload,
+            child: const FaIcon(FontAwesomeIcons.rotateRight,
+              size: 22,
+            ),
+          ),
+          CupertinoButton(
+            padding: const EdgeInsets.all(0),
+            onPressed: save,
+            child: const FaIcon(FontAwesomeIcons.circleCheck,
+              size: 22,
+            ),
+          ),
+        ],
       ),
       child: SafeArea(
         child: InAppWebView(

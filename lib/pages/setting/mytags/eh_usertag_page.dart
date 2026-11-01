@@ -30,59 +30,165 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
     controller.searchNewTags.clear();
   }
 
+  Future<void> _delete(BuildContext context) async {
+    showSimpleEhDiglog(
+      context: context,
+      title: 'Delete Tagset',
+      onOk: () async {
+        if (await controller.deleteTagset()) {
+          Get.back();
+        }
+      },
+    );
+  }
+
+  Future<void> _rename(BuildContext context) async {
+    final currName = controller.curTagSet?.name ?? '';
+    final newName = await showCupertinoDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) {
+          return EhTagSetEditDialog(
+            text: currName,
+            title: L10n.of(context).uc_rename,
+          );
+        });
+    if (newName != null && newName.isNotEmpty && newName != currName) {
+      controller.renameTagSet(newName: newName);
+    }
+  }
+
+  void _cancelSearch() {
+    controller.isSearchUserTags = false;
+    controller.searchTags.clear();
+    controller.searchNewTags.clear();
+  }
+
+  /// With the native bar the search field sits under it, as in system apps.
+  Widget _nativePage(BuildContext context, Widget body) {
+    return Obx(() {
+      final searching = controller.isSearchUserTags;
+      return NativeNavigationPage(
+        chrome: NativePageChrome(
+          title: controller.curTagSet?.name ?? '',
+          actions: searching
+              ? [
+                  NativeNavigationAction(
+                    id: 'userTags.cancelSearch',
+                    title: L10n.of(context).cancel,
+                    symbol: 'xmark',
+                    onPressed: _cancelSearch,
+                  ),
+                ]
+              : [
+                  if (controller.canDelete)
+                    NativeNavigationAction(
+                      id: 'userTags.delete',
+                      title: L10n.of(context).delete,
+                      symbol: 'trash',
+                      onPressed: () => _delete(context),
+                    ),
+                  NativeNavigationAction(
+                    id: 'userTags.rename',
+                    title: L10n.of(context).uc_rename,
+                    symbol: 'pencil',
+                    onPressed: () => _rename(context),
+                  ),
+                  NativeNavigationAction(
+                    id: 'userTags.search',
+                    title: L10n.of(context).search,
+                    symbol: 'magnifyingglass',
+                    onPressed: () => controller.isSearchUserTags = true,
+                  ),
+                ],
+        ),
+        child: CupertinoPageScaffold(
+          child: Column(
+            children: [
+              if (searching)
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: CupertinoSearchTextField(
+                      autofocus: true,
+                      controller: textEditingController,
+                      placeholder: 'Search tags',
+                      onChanged: (value) => controller.inputSearchText = value,
+                    ),
+                  ),
+                ),
+              Expanded(
+                key: const ValueKey('userTags.list'),
+                child: MediaQuery.removePadding(
+                  context: context,
+                  removeTop: searching,
+                  child: body,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final Widget body = Stack(
+      alignment: Alignment.center,
+      children: [
+        const ListViewEhMyTags(),
+        Obx(() {
+          if (controller.isStackLoading) {
+            // loading 提示组件
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque, // 拦截触摸手势
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                child: Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoDynamicColor.resolve(
+                                  CupertinoColors.systemGrey, Get.context!)
+                              .withOpacity(0.1),
+                          offset: const Offset(0, 5),
+                          blurRadius: 10, //阴影模糊程度
+                          spreadRadius: 3, //阴影扩散程度
+                        ),
+                      ],
+                    ),
+                    child: EhPopupSurface(
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        child: const CupertinoActivityIndicator(
+                            radius: kIndicatorRadius),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          } else {
+            return const SizedBox.shrink();
+          }
+        }),
+      ],
+    );
+    if (NativeNavigationScope.isEnabled(context)) {
+      return _nativePage(context, body);
+    }
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         padding: const EdgeInsetsDirectional.only(end: 10),
         middle: _middle(context),
         trailing: _trailing(context),
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const ListViewEhMyTags(),
-          Obx(() {
-            if (controller.isStackLoading) {
-              // loading 提示组件
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque, // 拦截触摸手势
-                child: Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: CupertinoDynamicColor.resolve(
-                                    CupertinoColors.systemGrey, Get.context!)
-                                .withOpacity(0.1),
-                            offset: const Offset(0, 5),
-                            blurRadius: 10, //阴影模糊程度
-                            spreadRadius: 3, //阴影扩散程度
-                          ),
-                        ],
-                      ),
-                      child: EhPopupSurface(
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          child: const CupertinoActivityIndicator(
-                              radius: kIndicatorRadius),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            } else {
-              return const SizedBox.shrink();
-            }
-          }),
-        ],
-      ),
+      child: body,
     );
   }
 
@@ -103,17 +209,7 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
                 CupertinoIcons.trash,
                 size: 26,
               ),
-              onPressed: () async {
-                showSimpleEhDiglog(
-                  context: context,
-                  title: 'Delete Tagset',
-                  onOk: () async {
-                    if (await controller.deleteTagset()) {
-                      Get.back();
-                    }
-                  },
-                );
-              },
+              onPressed: () => _delete(context),
             ),
             crossFadeState: controller.canDelete
                 ? CrossFadeState.showSecond
@@ -149,21 +245,7 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
             CupertinoIcons.pencil_ellipsis_rectangle,
             size: 28,
           ),
-          onPressed: () async {
-            final currName = controller.curTagSet?.name ?? '';
-            final newName = await showCupertinoDialog<String>(
-                context: context,
-                barrierDismissible: true,
-                builder: (context) {
-                  return EhTagSetEditDialog(
-                    text: currName,
-                    title: L10n.of(context).uc_rename,
-                  );
-                });
-            if (newName != null && newName.isNotEmpty && newName != currName) {
-              controller.renameTagSet(newName: newName);
-            }
-          },
+          onPressed: () => _rename(context),
         ),
         CupertinoButton(
           padding: const EdgeInsets.all(0),
@@ -188,11 +270,7 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
-          onTap: () {
-            controller.isSearchUserTags = false;
-            controller.searchTags.clear();
-            controller.searchNewTags.clear();
-          },
+          onTap: _cancelSearch,
           child: Text(
             L10n.of(context).cancel,
             style: _style,

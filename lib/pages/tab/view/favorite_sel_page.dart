@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/request.dart';
@@ -17,11 +18,8 @@ class FavoriteSelectorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).favcat),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).favcat,
       child: CustomScrollView(slivers: [
         SliverSafeArea(
           sliver: favoriteSelectorController.obx(

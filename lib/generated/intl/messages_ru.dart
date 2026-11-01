@@ -45,6 +45,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds} с";
 
+  static String m6(page) => "Продолжить · стр. ${page}";
+
+  static String m7(count) => "${count} стр.";
+
+  static String m8(count) => "Комментарии: ${count}";
+
+  static String m9(count) => "Столбцов: ${count}";
+
+  static String m10(min, max) => "Столбцов: ${min}–${max}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Загрузить аватар"),
@@ -59,6 +69,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("Аватар обновлён"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Требуется проверка Cloudflare"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("Форум защищён Cloudflare. Пройдите проверку во встроенном браузере, после чего загрузка будет повторена автоматически."),
+        "cf_verify_title": MessageLookupByLibrary.simpleMessage("Проверка Cloudflare"),
+        "cf_verify_summary": MessageLookupByLibrary.simpleMessage("Пройти проверку в приложении, если запросы к форуму блокируются"),
+        "cf_verify_required": MessageLookupByLibrary.simpleMessage("Требуется проверка форума"),
+        "cf_verify_prompt": MessageLookupByLibrary.simpleMessage("Запросы к форуму блокирует Cloudflare. Пройти проверку во встроенном браузере сейчас?"),
+        "cf_verify_action": MessageLookupByLibrary.simpleMessage("Пройти"),
+        "cf_verify_success": MessageLookupByLibrary.simpleMessage("Проверка пройдена"),
+        "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("Проверка сохранена, но форум всё ещё блокирует запросы. Повторите позже или после смены сети."),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("Расположение категорий"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("Две строки (по умолчанию)"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("Действия и категории в отдельных строках"),
@@ -279,7 +296,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "jump_prev": MessageLookupByLibrary.simpleMessage("Prev"),
         "jump_to_page":
             MessageLookupByLibrary.simpleMessage("Перейти на страницу"),
-        "landscape": MessageLookupByLibrary.simpleMessage("Landscape"),
+        "landscape": MessageLookupByLibrary.simpleMessage("Альбомная"),
         "language": MessageLookupByLibrary.simpleMessage("Язык"),
         "last_favorites": MessageLookupByLibrary.simpleMessage(
             "Последнее использованное избранное, долгий тап чтобы выбрать вручную"),
@@ -793,6 +810,51 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("Управление группами"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("Выбрать папку избранного"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("Наверх"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("Период рейтинга")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("Период рейтинга"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("Все"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("Ещё"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("Копировать ссылку"),
+        "file_size": MessageLookupByLibrary.simpleMessage("Размер"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("Фон страницы галереи"),
+        "english_title": MessageLookupByLibrary.simpleMessage("Название (EN)"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("Название (JP)"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("Показано"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("Показать английское"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("Показать японское"),
+        "search_title": MessageLookupByLibrary.simpleMessage("Искать по названию"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("Копировать название"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("Вид и макет"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("Сайт"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("Просмотр"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("Контент"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("Система"),
+        "add": MessageLookupByLibrary.simpleMessage("Добавить"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("Автопрокрутка"),
+        "reload": MessageLookupByLibrary.simpleMessage("Обновить"),
+        "card_style": MessageLookupByLibrary.simpleMessage("Стиль карточек"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("Обычный"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("Погружение"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("Обложка, название, сведения и теги"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("Только обложка, название и оценка поверх неё"),
+        "gallery_info": MessageLookupByLibrary.simpleMessage("Сведения о галерее"),
+        "search_by_image": MessageLookupByLibrary.simpleMessage("Поиск по изображению"),
+        "remove_all": MessageLookupByLibrary.simpleMessage("Удалить все"),
+        "import_export": MessageLookupByLibrary.simpleMessage("Импорт и экспорт"),
+        "card_size": MessageLookupByLibrary.simpleMessage("Размер карточек"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("Мелкие"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("Поменьше"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("Стандарт"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("Покрупнее"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("Крупные"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("Число столбцов считается по ширине панели со списком, поэтому меняется при смене экрана, повороте или перетаскивании разделителя. «Стандарт» совпадает с прежним автоматическим числом."),
+        "outer_display": MessageLookupByLibrary.simpleMessage("Внешний экран"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("Внутренний экран"),
+        "portrait": MessageLookupByLibrary.simpleMessage("Портретная"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("разделение по разделителю")
       };
 }

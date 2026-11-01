@@ -35,6 +35,10 @@ class GridTagsFixtureSettings extends GetxService implements EhSettingService {
   @override
   final isGalleryImgBlur = false.obs;
   @override
+  final vibrate = false.obs;
+  @override
+  bool get immersiveLargeCards => false;
+  @override
   ItemConfig? getItemConfig([ListModeEnum? mode]) =>
       configs[mode ?? listMode.value];
   @override

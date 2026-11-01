@@ -45,6 +45,16 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(seconds) => "${seconds} s";
 
+  static String m6(page) => "Continue · Page ${page}";
+
+  static String m7(count) => "${count} pages";
+
+  static String m8(count) => "${count} comments";
+
+  static String m9(count) => "${count} columns";
+
+  static String m10(min, max) => "${min}–${max} columns";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
@@ -59,6 +69,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "avatar_local_success": MessageLookupByLibrary.simpleMessage("Avatar updated"),
         "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare Verification Required"),
         "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("The forum is protected by Cloudflare. Complete the verification in the built-in browser; the upload will retry automatically afterwards."),
+        "cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare Verification"),
+        "cf_verify_summary": MessageLookupByLibrary.simpleMessage("Complete the human check in-app when forum requests are blocked"),
+        "cf_verify_required": MessageLookupByLibrary.simpleMessage("Forum Verification Required"),
+        "cf_verify_prompt": MessageLookupByLibrary.simpleMessage("Forum requests are blocked by Cloudflare. Complete the verification in the built-in browser now?"),
+        "cf_verify_action": MessageLookupByLibrary.simpleMessage("Verify"),
+        "cf_verify_success": MessageLookupByLibrary.simpleMessage("Verification complete"),
+        "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("Verification saved, but the forum is still blocked. Try again later or after switching networks."),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("Top category layout"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("Two rows (default)"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("Actions and categories on separate rows"),
@@ -234,7 +251,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Gallery Comments"),
         "global_setting":
             MessageLookupByLibrary.simpleMessage("Global Setting"),
-        "gray_black": MessageLookupByLibrary.simpleMessage("Gray black"),
+        "gray_black": MessageLookupByLibrary.simpleMessage("Graphite"),
         "group": MessageLookupByLibrary.simpleMessage("Group"),
         "groupName": MessageLookupByLibrary.simpleMessage("Group Name"),
         "groupType": MessageLookupByLibrary.simpleMessage("Group Type"),
@@ -758,6 +775,51 @@ class MessageLookup extends MessageLookupByLibrary {
         "group_management": MessageLookupByLibrary.simpleMessage("Manage Groups"),
         "choose_favcat": MessageLookupByLibrary.simpleMessage("Choose Favorites Folder"),
         "back_to_top": MessageLookupByLibrary.simpleMessage("Back to Top"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("Ranking Period")
+        "ranking_period": MessageLookupByLibrary.simpleMessage("Ranking Period"),
+        "continue_reading_page": m6,
+        "see_all": MessageLookupByLibrary.simpleMessage("See All"),
+        "page_count": m7,
+        "comment_count": m8,
+        "more_actions": MessageLookupByLibrary.simpleMessage("More"),
+        "copy_link": MessageLookupByLibrary.simpleMessage("Copy Link"),
+        "file_size": MessageLookupByLibrary.simpleMessage("Size"),
+        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("Ambient Background in Gallery"),
+        "english_title": MessageLookupByLibrary.simpleMessage("English Title"),
+        "japanese_title": MessageLookupByLibrary.simpleMessage("Japanese Title"),
+        "title_showing": MessageLookupByLibrary.simpleMessage("Showing"),
+        "show_english_title": MessageLookupByLibrary.simpleMessage("Show English Title"),
+        "show_japanese_title": MessageLookupByLibrary.simpleMessage("Show Japanese Title"),
+        "search_title": MessageLookupByLibrary.simpleMessage("Search Title"),
+        "copy_title": MessageLookupByLibrary.simpleMessage("Copy Title"),
+        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("Appearance & Layout"),
+        "setting_site": MessageLookupByLibrary.simpleMessage("Site"),
+        "setting_group_browse": MessageLookupByLibrary.simpleMessage("Browsing"),
+        "setting_group_content": MessageLookupByLibrary.simpleMessage("Content"),
+        "setting_group_system": MessageLookupByLibrary.simpleMessage("System"),
+        "add": MessageLookupByLibrary.simpleMessage("Add"),
+        "auto_scroll": MessageLookupByLibrary.simpleMessage("Auto Scroll"),
+        "reload": MessageLookupByLibrary.simpleMessage("Reload"),
+        "card_style": MessageLookupByLibrary.simpleMessage("Card Style"),
+        "card_style_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+        "card_style_immersive": MessageLookupByLibrary.simpleMessage("Immersive"),
+        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("Cover, title, details and tags"),
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("Cover only, with the title and rating on it"),
+        "gallery_info": MessageLookupByLibrary.simpleMessage("Gallery info"),
+        "search_by_image": MessageLookupByLibrary.simpleMessage("Search by image"),
+        "remove_all": MessageLookupByLibrary.simpleMessage("Remove all"),
+        "import_export": MessageLookupByLibrary.simpleMessage("Import and export"),
+        "card_size": MessageLookupByLibrary.simpleMessage("Card Size"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("Small"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("Smaller"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("Larger"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("Large"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("Columns are counted from the width of the pane the list is in, so they change when you switch displays, rotate or drag the divider. Standard matches the previous automatic columns."),
+        "outer_display": MessageLookupByLibrary.simpleMessage("Outer Display"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("Inner Display"),
+        "portrait": MessageLookupByLibrary.simpleMessage("Portrait"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("Split, set by divider")
       };
 }

@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/setting/controller/eh_mysettings_controller.dart';
@@ -17,13 +18,8 @@ class ExcludedLanguagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).uc_exc_lang),
-      ),
-      backgroundColor: !ehTheme.isDarkMode
-          ? CupertinoColors.secondarySystemBackground
-          : null,
+    return SettingScaffold(
+      title: L10n.of(context).uc_exc_lang,
       child: const CustomScrollView(
         physics: AlwaysScrollableScrollPhysics(),
         slivers: [

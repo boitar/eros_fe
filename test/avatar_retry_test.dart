@@ -3,10 +3,11 @@ import 'dart:io';
 
 import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/utils/avatar_upload_retry.dart';
+import 'package:eros_fe/utils/cf_verification.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final proof = AvatarVerification(
+  final proof = CfVerification(
       [Cookie('cf_clearance', 'offline-only')], 'offline-UA');
   for (final canceled in [true, false]) {
     test('canceled or incomplete verification never retries: $canceled',
@@ -19,7 +20,7 @@ void main() {
           throw EhError(type: EhErrorType.cfBlocked);
         },
         verify: () async =>
-            canceled ? null : const AvatarVerification([], null),
+            canceled ? null : const CfVerification([], null),
         synchronize: (_) async {
           syncs++;
         },

@@ -550,10 +550,10 @@ class L10n {
     );
   }
 
-  /// `Gray black`
+  /// `Graphite`
   String get gray_black {
     return Intl.message(
-      'Gray black',
+      'Graphite',
       name: 'gray_black',
       desc: '',
       args: [],
@@ -4681,6 +4681,69 @@ class L10n {
       args: [],
     );
   }
+
+  String get cf_verify_title {
+    return Intl.message(
+      'Cloudflare Verification',
+      name: 'cf_verify_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_summary {
+    return Intl.message(
+      'Complete the human check in-app when forum requests are blocked',
+      name: 'cf_verify_summary',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_required {
+    return Intl.message(
+      'Forum Verification Required',
+      name: 'cf_verify_required',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_prompt {
+    return Intl.message(
+      'Forum requests are blocked by Cloudflare. Complete the verification in the built-in browser now?',
+      name: 'cf_verify_prompt',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_action {
+    return Intl.message(
+      'Verify',
+      name: 'cf_verify_action',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_success {
+    return Intl.message(
+      'Verification complete',
+      name: 'cf_verify_success',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get cf_verify_still_blocked {
+    return Intl.message(
+      'Verification saved, but the forum is still blocked. Try again later or after switching networks.',
+      name: 'cf_verify_still_blocked',
+      desc: '',
+      args: [],
+    );
+  }
   String get liquid_glass_top_layout {
     return Intl.message(
       'Top category layout',
@@ -4989,6 +5052,456 @@ class L10n {
     return Intl.message(
       'Ranking Period',
       name: 'ranking_period',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Continue · Page {page}`
+  String continue_reading_page(Object page) {
+    return Intl.message(
+      'Continue · Page $page',
+      name: 'continue_reading_page',
+      desc: '',
+      args: [page],
+    );
+  }
+
+  /// `See All`
+  String get see_all {
+    return Intl.message(
+      'See All',
+      name: 'see_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} pages`
+  String page_count(Object count) {
+    return Intl.message(
+      '$count pages',
+      name: 'page_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count} comments`
+  String comment_count(Object count) {
+    return Intl.message(
+      '$count comments',
+      name: 'comment_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `More`
+  String get more_actions {
+    return Intl.message(
+      'More',
+      name: 'more_actions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy Link`
+  String get copy_link {
+    return Intl.message(
+      'Copy Link',
+      name: 'copy_link',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Size`
+  String get file_size {
+    return Intl.message(
+      'Size',
+      name: 'file_size',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ambient Background in Gallery`
+  String get detail_ambient_background {
+    return Intl.message(
+      'Ambient Background in Gallery',
+      name: 'detail_ambient_background',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `English Title`
+  String get english_title {
+    return Intl.message(
+      'English Title',
+      name: 'english_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Japanese Title`
+  String get japanese_title {
+    return Intl.message(
+      'Japanese Title',
+      name: 'japanese_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Showing`
+  String get title_showing {
+    return Intl.message(
+      'Showing',
+      name: 'title_showing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show English Title`
+  String get show_english_title {
+    return Intl.message(
+      'Show English Title',
+      name: 'show_english_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show Japanese Title`
+  String get show_japanese_title {
+    return Intl.message(
+      'Show Japanese Title',
+      name: 'show_japanese_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search Title`
+  String get search_title {
+    return Intl.message(
+      'Search Title',
+      name: 'search_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy Title`
+  String get copy_title {
+    return Intl.message(
+      'Copy Title',
+      name: 'copy_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Appearance & Layout`
+  String get appearance_and_layout {
+    return Intl.message(
+      'Appearance & Layout',
+      name: 'appearance_and_layout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Site`
+  String get setting_site {
+    return Intl.message(
+      'Site',
+      name: 'setting_site',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Browsing`
+  String get setting_group_browse {
+    return Intl.message(
+      'Browsing',
+      name: 'setting_group_browse',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Content`
+  String get setting_group_content {
+    return Intl.message(
+      'Content',
+      name: 'setting_group_content',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `System`
+  String get setting_group_system {
+    return Intl.message(
+      'System',
+      name: 'setting_group_system',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add`
+  String get add {
+    return Intl.message(
+      'Add',
+      name: 'add',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Auto Scroll`
+  String get auto_scroll {
+    return Intl.message(
+      'Auto Scroll',
+      name: 'auto_scroll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reload`
+  String get reload {
+    return Intl.message(
+      'Reload',
+      name: 'reload',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Card Style`
+  String get card_style {
+    return Intl.message(
+      'Card Style',
+      name: 'card_style',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Standard`
+  String get card_style_standard {
+    return Intl.message(
+      'Standard',
+      name: 'card_style_standard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Immersive`
+  String get card_style_immersive {
+    return Intl.message(
+      'Immersive',
+      name: 'card_style_immersive',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cover, title, details and tags`
+  String get card_style_standard_detail {
+    return Intl.message(
+      'Cover, title, details and tags',
+      name: 'card_style_standard_detail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cover only, with the title and rating on it`
+  String get card_style_immersive_detail {
+    return Intl.message(
+      'Cover only, with the title and rating on it',
+      name: 'card_style_immersive_detail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Gallery info`
+  String get gallery_info {
+    return Intl.message(
+      'Gallery info',
+      name: 'gallery_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search by image`
+  String get search_by_image {
+    return Intl.message(
+      'Search by image',
+      name: 'search_by_image',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove all`
+  String get remove_all {
+    return Intl.message(
+      'Remove all',
+      name: 'remove_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Import and export`
+  String get import_export {
+    return Intl.message(
+      'Import and export',
+      name: 'import_export',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Card Size`
+  String get card_size {
+    return Intl.message(
+      'Card Size',
+      name: 'card_size',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Small`
+  String get card_size_small {
+    return Intl.message(
+      'Small',
+      name: 'card_size_small',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Smaller`
+  String get card_size_smaller {
+    return Intl.message(
+      'Smaller',
+      name: 'card_size_smaller',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Standard`
+  String get card_size_standard {
+    return Intl.message(
+      'Standard',
+      name: 'card_size_standard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Larger`
+  String get card_size_larger {
+    return Intl.message(
+      'Larger',
+      name: 'card_size_larger',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Large`
+  String get card_size_large {
+    return Intl.message(
+      'Large',
+      name: 'card_size_large',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Columns are counted from the width of the pane the list is in, so they change when you switch displays, rotate or drag the divider. Standard matches the previous automatic columns.`
+  String get card_size_footer {
+    return Intl.message(
+      'Columns are counted from the width of the pane the list is in, so they change when you switch displays, rotate or drag the divider. Standard matches the previous automatic columns.',
+      name: 'card_size_footer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Outer Display`
+  String get outer_display {
+    return Intl.message(
+      'Outer Display',
+      name: 'outer_display',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Inner Display`
+  String get inner_display {
+    return Intl.message(
+      'Inner Display',
+      name: 'inner_display',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Portrait`
+  String get portrait {
+    return Intl.message(
+      'Portrait',
+      name: 'portrait',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} columns`
+  String column_count(Object count) {
+    return Intl.message(
+      '$count columns',
+      name: 'column_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{min}–{max} columns`
+  String column_range(Object min, Object max) {
+    return Intl.message(
+      '$min–$max columns',
+      name: 'column_range',
+      desc: '',
+      args: [min, max],
+    );
+  }
+
+  /// `Split, set by divider`
+  String get split_follows_divider {
+    return Intl.message(
+      'Split, set by divider',
+      name: 'split_follows_divider',
       desc: '',
       args: [],
     );
