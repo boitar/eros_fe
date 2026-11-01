@@ -744,6 +744,10 @@ class MessageLookup extends MessageLookupByLibrary {
         "card_style_standard": MessageLookupByLibrary.simpleMessage("표준"),
         "card_style_immersive": MessageLookupByLibrary.simpleMessage("몰입형"),
         "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("표지, 제목, 정보, 태그"),
-        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("표지만 표시하고 제목과 평점을 표지 위에 표시")
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("표지만 표시하고 제목과 평점을 표지 위에 표시"),
+        "gallery_info": MessageLookupByLibrary.simpleMessage("갤러리 정보"),
+        "search_by_image": MessageLookupByLibrary.simpleMessage("이미지로 검색"),
+        "remove_all": MessageLookupByLibrary.simpleMessage("모두 삭제"),
+        "import_export": MessageLookupByLibrary.simpleMessage("가져오기 및 내보내기")
       };
 }

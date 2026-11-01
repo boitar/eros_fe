@@ -164,10 +164,15 @@ class _GalleryPageState extends State<GalleryPage> {
         final cover = heroCoverSize(
             heroCoverSource(logic.gState.galleryRepository?.item, provider));
         return GalleryAmbientBackdrop(
-          imageUrl: provider?.imgUrl ?? '',
+          // The cover keeps the list's image after the detail loads; so
+          // does the backdrop, instead of reloading another address.
+          imageUrl: logic.gState.galleryRepository?.item?.imgUrl ??
+              provider?.imgUrl ??
+              '',
           category: provider?.category,
           height: topInset + 8 + cover.height + 48,
           scrollOffset: offset,
+          coverWidth: cover.width,
         );
       },
     );

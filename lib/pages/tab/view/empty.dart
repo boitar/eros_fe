@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:flutter/cupertino.dart';
@@ -11,6 +12,11 @@ class EmptyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Sharing one column, the list shows through while a page slides over it.
+    final pane = context.dependOnInheritedWidgetOfExactType<BrowsePaneScope>();
+    if (pane != null && !pane.split) {
+      return const SizedBox.expand();
+    }
     logger.t('isDarkMode ${ehTheme.isDarkMode}');
     return Obx(() {
       return AnnotatedRegion<SystemUiOverlayStyle>(

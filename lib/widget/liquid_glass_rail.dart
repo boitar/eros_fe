@@ -402,14 +402,13 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     double slotWidth,
   ) {
     final selected = index == widget.selectedIndex;
+    // Glass bars stay monochrome over colourful covers. Every label keeps
+    // one colour and weight; the pill alone marks the selection, so nothing
+    // reflows while it moves.
     final textStyle = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
           fontSize: 15.0,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          // Glass bars stay monochrome over colourful covers; the lens and
-          // weight carry the selection.
-          color: CupertinoDynamicColor.resolve(
-              selected ? CupertinoColors.label : CupertinoColors.secondaryLabel,
-              context),
+          fontWeight: FontWeight.w500,
+          color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
         );
     return Semantics(
       button: true,
@@ -912,6 +911,16 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
   }
 
   void _progress() {
+    final controller = widget.pageController;
+    if (controller == null || !controller.hasClients) {
+      return;
+    }
+    // Only a swipe drives the lens. A selection made by tapping animates it
+    // natively, and following the page animation too would move it twice.
+    if (controller.position.userScrollDirection == ScrollDirection.idle) {
+      _scrubTicker.update(controller);
+      return;
+    }
     if (_scheduled) {
       return;
     }

@@ -122,7 +122,7 @@ class DownloadGalleryButton extends StatelessWidget {
       );
 
       final toDownloadPage =
-          () => Get.toNamed(EHRoutes.download, id: primaryNavigatorId);
+          () => Get.toNamed(EHRoutes.download, id: listNavigatorId);
 
       final Map<TaskStatus, Widget> iconMap = {
         // 下载完成
@@ -302,7 +302,10 @@ class GalleryObxSliver extends StatelessWidget {
       onError: showLoading
           ? (err) {
               logger.e('$err ');
+              // Grows past a short remaining space, as in a landscape pane,
+              // instead of overflowing it.
               return SliverFillRemaining(
+                hasScrollBody: false,
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(vertical: 50, horizontal: 40),

@@ -1,3 +1,5 @@
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/component/setting/setting_menu.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
@@ -227,6 +229,45 @@ void main() {
       expect(find.byType(SettingGlassBar), findsNothing);
     });
 
+    testWidgets('a page with its own bar starts where the native bar leaves it',
+        (tester) async {
+      _phone(tester);
+      tester.view.padding = const FakeViewPadding(top: 70);
+      addTearDown(tester.view.resetPadding);
+      SettingGlassBar.debugActive = true;
+      NativeNavigationBridge.enabled.value = true;
+      addTearDown(() => NativeNavigationBridge.enabled.value = false);
+      Widget group(String barEdge) => NativeNavigationScope(
+            child: AdaptiveEnvironmentScope(
+              snapshot: AdaptiveEnvironmentSnapshot(
+                size: const Size(402, 874),
+                safeArea: const EdgeInsets.only(top: 70),
+                windowSafeArea: const EdgeInsets.only(top: 20),
+                systemBarEdge: barEdge,
+              ),
+              child: const SettingScaffold(
+                title: 'Group',
+                nativeChrome: false,
+                child: SizedBox.expand(),
+              ),
+            ),
+          );
+
+      // Across the top the shell's bar is still there while this page
+      // slides in; the page starts under the window's own inset at once.
+      await pushSetting(tester, group('top'));
+      expect(tester.getCenter(find.text('Group')).dy,
+          20 + SettingGlassBar.barHeight / 2);
+      final route = ModalRoute.of(tester.element(find.text('Group')))!;
+      expect(NativeNavigationBridge.chromeFor(route)!.ownBar, isTrue);
+
+      // Beside the vertical bar the shell keeps its empty band for the
+      // page, so it follows the live inset like its neighbours.
+      await pushSetting(tester, group('right'));
+      expect(tester.getCenter(find.text('Group')).dy,
+          70 + SettingGlassBar.barHeight / 2);
+    });
+
     testWidgets('a root page has no back button', (tester) async {
       _phone(tester);
       await tester.pumpWidget(_settings(Brightness.light, const []));
@@ -268,13 +309,32 @@ void main() {
               child: const CanvasGrain(child: SizedBox.expand()),
             ),
           );
-      Finder painter() => find.descendant(
-          of: find.byType(CanvasGrain), matching: find.byType(CustomPaint));
+      CustomPainter? painter() => tester
+          .widget<CustomPaint>(find.descendant(
+              of: find.byType(CanvasGrain),
+              matching: find.byType(CustomPaint)))
+          .painter;
 
       await tester.pumpWidget(grain(highContrast: false));
-      expect(painter(), findsOneWidget);
+      expect(painter(), isNotNull);
       await tester.pumpWidget(grain(highContrast: true));
-      expect(painter(), findsNothing);
+      expect(painter(), isNull);
+    });
+
+    testWidgets('keeps what it covers when the canvas turns pure black',
+        (tester) async {
+      var mounts = 0;
+      Widget grain(EhPalette palette) => CupertinoTheme(
+            data: palette.themeData(Brightness.dark, ehTextTheme),
+            child: CanvasGrain(child: _MountCounter(onMount: () => mounts++)),
+          );
+
+      await tester.pumpWidget(grain(EhPalette.graphite));
+      await tester.pumpWidget(grain(EhPalette.oled));
+      await tester.pumpWidget(grain(EhPalette.graphite));
+      // The tabs' navigators sit under the grain; rebuilding them drops the
+      // pages' routes from their records.
+      expect(mounts, 1);
     });
   });
 
@@ -345,4 +405,24 @@ void main() {
       });
     }
   });
+}
+
+class _MountCounter extends StatefulWidget {
+  const _MountCounter({required this.onMount});
+
+  final VoidCallback onMount;
+
+  @override
+  State<_MountCounter> createState() => _MountCounterState();
+}
+
+class _MountCounterState extends State<_MountCounter> {
+  @override
+  void initState() {
+    super.initState();
+    widget.onMount();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.expand();
 }

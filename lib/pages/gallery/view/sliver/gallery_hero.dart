@@ -50,6 +50,11 @@ Size heroCoverSize(GalleryProvider? provider) {
   return Size(width.roundToDouble(), (width / ratio).roundToDouble());
 }
 
+/// Pixels the header cover decodes at. The backdrop asks for the same, so
+/// both share one decode and appear in the same frame.
+int heroCoverDecodeWidth(BuildContext context, double coverWidth) =>
+    (coverWidth * MediaQuery.devicePixelRatioOf(context)).ceil();
+
 bool _hasCoverSize(GalleryProvider? provider) =>
     (provider?.imgWidth ?? 0) > 0 && (provider?.imgHeight ?? 0) > 0;
 
@@ -201,8 +206,7 @@ class _HeroCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
-    final decodeWidth =
-        (size.width * MediaQuery.devicePixelRatioOf(context)).ceil();
+    final decodeWidth = heroCoverDecodeWidth(context, size.width);
     return Hero(
       tag: heroTag,
       // Animates once if a linked gallery learns its real shape on load.
@@ -237,7 +241,12 @@ class _HeroCover extends StatelessWidget {
                   alignment: Alignment.topCenter,
                   decodeWidth: decodeWidth,
                   fadeInDuration: const Duration(milliseconds: 180),
-                  placeholder: (_) => const SizedBox.expand(),
+                  // The list card's copy fills the first frames.
+                  placeholder: (_) => ShownImage(
+                    imageUrl,
+                    alignment: Alignment.topCenter,
+                  ),
+                  placeholderWhileDecoding: true,
                 ),
             ],
           ),
@@ -759,12 +768,18 @@ class GalleryAmbientBackdrop extends StatelessWidget {
     required this.category,
     required this.height,
     required this.scrollOffset,
+    required this.coverWidth,
   });
 
   final String imageUrl;
   final String? category;
   final double height;
   final ValueListenable<double> scrollOffset;
+
+  /// Width of the header cover. The backdrop decodes the very same image,
+  /// so it is ready in the frame the cover is, instead of fading in over
+  /// the canvas while a new page slides in.
+  final double coverWidth;
 
   /// Saturation matrix; 1 keeps the colours.
   static List<double> saturation(double s) {
@@ -811,9 +826,13 @@ class GalleryAmbientBackdrop extends StatelessWidget {
               child: EhNetworkImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                // A 64px source is all a 40pt blur needs.
-                decodeWidth: 64,
-                placeholder: (_, __) => const SizedBox.expand(),
+                blurHash: privacy,
+                decodeWidth: heroCoverDecodeWidth(context, coverWidth),
+                fadeInDuration: const Duration(milliseconds: 180),
+                // The list card's copy fills the first frames; blurred, the
+                // swap to the cover's own copy can't be seen.
+                placeholder: (_, __) => ShownImage(imageUrl),
+                placeholderWhileDecoding: true,
               ),
             ),
           ),

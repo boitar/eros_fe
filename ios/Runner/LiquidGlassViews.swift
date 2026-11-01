@@ -476,6 +476,9 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
     FlutterPlatformView, UIGestureRecognizerDelegate, UIScrollViewDelegate {
     private let root: ErosLiquidGlassRootView
     private let shell = ErosPassthroughGlassView()
+    /// The selection at rest: a plain pill in the track.
+    private let fill = UIView()
+    /// The selection on the move: clear glass lifted off the track.
     private let lens = ErosPassthroughGlassView()
     private let controls = ErosCategoryScrollView()
     private var ids: [String] = []
@@ -497,6 +500,18 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
     /// Segment widths laid out by Dart, which owns the shared rail geometry.
     private var segmentWidths: [CGFloat] = []
     private let lensInset: CGFloat = 3
+    /// Bumped by every lens move, so a superseded move doesn't settle.
+    private var lensMove = 0
+    private var lensMoving = false
+    /// A tap selects at once, and its page then scrolls past the pages in
+    /// between; until it lands those are not selections.
+    private var committedIndex = -1
+    private var commitDeadline: CFTimeInterval = 0
+    private var revealAnimated = false
+    /// Labels dissolve into an edge that has more to scroll to, so an
+    /// overflowing rail reads as scrollable instead of cut off.
+    private let edgeFade = CAGradientLayer()
+    private let edgeFadeWidth: CGFloat = 32
 
     init(frame: CGRect, viewId: Int64, arguments: Any?, messenger: FlutterBinaryMessenger) {
         root = ErosLiquidGlassRootView(frame: frame)
@@ -519,7 +534,11 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         controls.canCancelContentTouches = true
         controls.delegate = self
         root.addSubview(controls)
+        fill.isUserInteractionEnabled = false
+        fill.accessibilityElementsHidden = true
+        controls.addSubview(fill)
         lens.removeFromSuperview()
+        lens.alpha = 0
         controls.addSubview(lens)
         root.onLayout = { [weak self] in self?.layout() }
         channel.setMethodCallHandler { [weak self] call, result in
@@ -577,9 +596,14 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
             followSystem = nextFollow
             updateEffects()
         }
-        let nextIndex = ids.firstIndex(of: arguments["selectedId"] as? String ?? "") ?? -1
+        var nextIndex = ids.firstIndex(of: arguments["selectedId"] as? String ?? "") ?? -1
+        if !rebuild, nextIndex != committedIndex, committedIndex >= 0,
+           CACurrentMediaTime() < commitDeadline {
+            nextIndex = selectedIndex
+        }
         let selectionChanged = nextIndex != selectedIndex
         if selectionChanged || rebuild { needsReveal = true }
+        if selectionChanged && !rebuild { revealAnimated = true }
         selectedIndex = nextIndex
         if rebuild {
             buttons.forEach { $0.removeFromSuperview() }
@@ -598,12 +622,30 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
                 controls.addSubview(button)
                 return button
             }
+            // Labels stay sharp above the lens and the pill; glass over them
+            // would smear them.
+            controls.sendSubviewToBack(lens)
+            controls.sendSubviewToBack(fill)
             previewIndex = selectedIndex
             layout()
         }
-        updateLabels()
-        layout()
-        if selectionChanged { showSelection(selectedIndex, animated: true) }
+        guard selectionChanged else {
+            updateLabels()
+            layout()
+            return
+        }
+        // A swipe that crosses into the next page already carries the pill
+        // there. Any other change lifts the lens across.
+        if let progress = pageProgress, abs(progress - CGFloat(selectedIndex)) < 1 {
+            previewIndex = selectedIndex
+            updateLabels()
+            layout()
+        } else {
+            pageProgress = nil
+            updateLabels()
+            layout()
+            showSelection(selectedIndex, animated: true)
+        }
     }
 
     @objc private func updateEffects() {
@@ -623,6 +665,7 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
             shell.backgroundColor = .clear
             lens.backgroundColor = .clear
         }
+        fill.backgroundColor = .tertiarySystemFill
         effectsConfigured = true
     }
 
@@ -663,13 +706,51 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
             // A remount after collapse preserves deliberate browsing away from selection.
             if initialOffset > 0 { needsReveal = false }
         }
-        lens.frame = selectionFrame(previewIndex)
-        lens.layer.cornerRadius = max(0, root.bounds.height / 2 - lensInset)
-        lens.isHidden = !titles.indices.contains(previewIndex)
+        fill.layer.cornerRadius = max(0, root.bounds.height / 2 - lensInset)
+        if !lensMoving {
+            fill.frame = selectionFrame(previewIndex)
+            fill.isHidden = !titles.indices.contains(previewIndex)
+            lens.frame = fill.frame
+            lens.layer.cornerRadius = fill.layer.cornerRadius
+        }
         if let _ = pageProgress { updateProgress() }
         if (needsReveal || sizeChanged), buttons.indices.contains(selectedIndex), root.bounds.width > 0 {
-            controls.scrollRectToVisible(buttons[selectedIndex].frame, animated: false)
+            reveal(selectedIndex, animated: revealAnimated && !sizeChanged)
             needsReveal = false
+            revealAnimated = false
+        }
+        updateEdgeFade()
+    }
+
+    private func updateEdgeFade() {
+        let width = controls.bounds.width
+        let overflow = controls.contentSize.width - width
+        guard width > 0, overflow > 0.5 else {
+            controls.layer.mask = nil
+            return
+        }
+        let fade = min(edgeFadeWidth, width / 4)
+        let offset = controls.contentOffset.x
+        // Each side fades in over the first `fade` points it can scroll.
+        let leading = min(1, max(0, offset / fade))
+        let trailing = min(1, max(0, (overflow - offset) / fade))
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        // The mask lives in the scroll view's bounds, so it follows the offset.
+        edgeFade.frame = controls.bounds
+        edgeFade.startPoint = CGPoint(x: 0, y: 0.5)
+        edgeFade.endPoint = CGPoint(x: 1, y: 0.5)
+        edgeFade.colors = [
+            UIColor(white: 0, alpha: 1 - leading).cgColor,
+            UIColor.black.cgColor,
+            UIColor.black.cgColor,
+            UIColor(white: 0, alpha: 1 - trailing).cgColor,
+        ]
+        let edge = Double(fade / width)
+        edgeFade.locations = [0, NSNumber(value: edge), NSNumber(value: 1 - edge), 1]
+        CATransaction.commit()
+        if controls.layer.mask !== edgeFade {
+            controls.layer.mask = edgeFade
         }
     }
 
@@ -679,13 +760,47 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         let lower = Int(floor(page)), upper = Int(ceil(page))
         let t = page - CGFloat(lower)
         let a = selectionFrame(lower), b = selectionFrame(upper)
-        lens.layer.removeAllAnimations()
-        lens.isHidden = false
-        lens.frame = CGRect(x: a.minX + (b.minX - a.minX) * t, y: a.minY,
+        // A swipe moves the content, not the control: the pill follows it
+        // flat, without lifting.
+        if lensMoving { settleLens() }
+        fill.isHidden = false
+        fill.frame = CGRect(x: a.minX + (b.minX - a.minX) * t, y: a.minY,
                             width: a.width + (b.width - a.width) * t, height: a.height)
     }
 
+    /// Scrolls [index] clear of the edge fades, centring it when it has to
+    /// move at all.
+    private func reveal(_ index: Int, animated: Bool) {
+        let width = controls.bounds.width
+        guard buttons.indices.contains(index), width > 0 else { return }
+        let frame = buttons[index].frame
+        let offset = controls.contentOffset.x
+        let maxOffset = max(0, controls.contentSize.width - width)
+        let margin = min(edgeFadeWidth, width / 4)
+        let clearOfLeading = offset <= 0.5 || frame.minX >= offset + margin - 0.5
+        let clearOfTrailing = offset >= maxOffset - 0.5
+            || frame.maxX <= offset + width - margin + 0.5
+        if clearOfLeading && clearOfTrailing { return }
+        let target = min(maxOffset, max(0, frame.midX - width / 2))
+        controls.setContentOffset(CGPoint(x: target, y: 0), animated: animated)
+    }
+
+    /// The lens a little larger than the pill, filling the track's padding.
+    private func lifted(_ rect: CGRect) -> CGRect {
+        rect.insetBy(dx: -max(4, rect.width * 0.06), dy: -lensInset)
+    }
+
+    private func settleLens() {
+        lensMove += 1
+        lensMoving = false
+        lens.layer.removeAllAnimations()
+        fill.layer.removeAllAnimations()
+        lens.alpha = 0
+        fill.alpha = 1
+    }
+
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        updateEdgeFade()
         channel.invokeMethod("offset", arguments: Double(scrollView.contentOffset.x))
     }
 
@@ -694,33 +809,66 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         return buttons[index].frame.insetBy(dx: lensInset, dy: lensInset)
     }
 
+    /// Every label keeps one colour and weight; the pill marks the
+    /// selection, so nothing reflows or flickers as it moves.
     private func updateLabels() {
         for (index, button) in buttons.enumerated() {
             let selected = index == previewIndex
             button.isSelected = selected
-            button.setTitleColor(selected ? .label : .secondaryLabel, for: .normal)
-            button.titleLabel?.font = .systemFont(ofSize: fontSize,
-                                                  weight: selected ? .semibold : .regular)
+            button.setTitleColor(.label, for: .normal)
+            button.titleLabel?.font = .systemFont(ofSize: fontSize, weight: .medium)
             button.accessibilityTraits = selected ? [.button, .selected] : [.button]
         }
     }
 
+    /// Like the system's segmented controls, the selection lifts off the
+    /// track as clear glass, slides to its new place and settles back into
+    /// a pill there.
     private func showSelection(_ index: Int, animated: Bool) {
-        let wasHidden = lens.isHidden
+        // A lens still on its way carries on from where it is.
+        let start: CGRect? = lensMoving
+            ? lens.layer.presentation()?.frame ?? lens.frame
+            : fill.isHidden ? nil : lifted(fill.layer.presentation()?.frame ?? fill.frame)
         previewIndex = index
         updateLabels()
-        lens.isHidden = !titles.indices.contains(index)
+        let shown = titles.indices.contains(index)
         let target = selectionFrame(index)
-        guard animated, !wasHidden, !lens.isHidden,
+        settleLens()
+        guard animated, shown, let start, start != lifted(target),
               !UIAccessibility.isReduceMotionEnabled else {
-            lens.layer.removeAllAnimations()
+            fill.isHidden = !shown
+            fill.frame = target
             lens.frame = target
             return
         }
-        UIView.animate(withDuration: 0.30, delay: 0,
-                       usingSpringWithDamping: 0.86, initialSpringVelocity: 0,
+        let move = lensMove
+        lensMoving = true
+        UIView.performWithoutAnimation {
+            lens.frame = start
+            lens.layer.cornerRadius = start.height / 2
+        }
+        UIView.animate(withDuration: 0.12, delay: 0,
                        options: [.beginFromCurrentState, .allowUserInteraction]) {
-            self.lens.frame = target
+            self.fill.alpha = 0
+            self.lens.alpha = 1
+        }
+        UIView.animate(withDuration: 0.34, delay: 0,
+                       usingSpringWithDamping: 0.82, initialSpringVelocity: 0,
+                       options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.lens.frame = self.lifted(target)
+        } completion: { _ in
+            guard move == self.lensMove else { return }
+            self.fill.frame = target
+            UIView.animate(withDuration: 0.16, delay: 0,
+                           options: [.beginFromCurrentState, .allowUserInteraction]) {
+                self.lens.frame = target
+                self.lens.layer.cornerRadius = self.fill.layer.cornerRadius
+                self.lens.alpha = 0
+                self.fill.alpha = 1
+            } completion: { _ in
+                guard move == self.lensMove else { return }
+                self.lensMoving = false
+            }
         }
     }
 
@@ -731,8 +879,14 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
 
     private func commit(_ index: Int) {
         guard titles.indices.contains(index) else { return }
+        // The tap takes over from the last swipe, whose position would
+        // otherwise pull the lens back on the next layout.
+        pageProgress = nil
         selectedIndex = index
+        committedIndex = index
+        commitDeadline = CACurrentMediaTime() + 0.6
         showSelection(index, animated: true)
+        reveal(index, animated: true)
         channel.invokeMethod("select", arguments: ids[index])
     }
 

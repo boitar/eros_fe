@@ -1,9 +1,11 @@
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/controller/history_controller.dart';
 import 'package:eros_fe/debug/offline_history.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/tab/controller/history_view_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
+import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/utils/cust_lib/persistent_header_builder.dart';
 import 'package:eros_fe/utils/cust_lib/sliver/sliver_persistent_header.dart';
 import 'package:eros_fe/utils/logger.dart';
@@ -95,7 +97,8 @@ class _HistoryTabState extends State<HistoryTab> {
           CupertinoButton(
             minSize: 40,
             padding: const EdgeInsets.all(0),
-            child: const FaIcon(FontAwesomeIcons.solidTrashCan,
+            child: const FaIcon(
+              FontAwesomeIcons.solidTrashCan,
               size: 20,
             ),
             onPressed: () {
@@ -105,17 +108,24 @@ class _HistoryTabState extends State<HistoryTab> {
         ],
       ),
     );
+    // The native bar replaces the Flutter one and already pads the page.
+    final bool nativeBar = NativeNavigationScope.isEnabled(context);
     final Widget customScrollView = CustomScrollView(
       slivers: <Widget>[
-        SliverFloatingPinnedPersistentHeader(
-          delegate: SliverFloatingPinnedPersistentHeaderBuilder(
-            minExtentProtoType: SizedBox(
-              height: context.mediaQueryPadding.top,
+        if (nativeBar)
+          SliverToBoxAdapter(
+            child: SizedBox(height: context.mediaQueryPadding.top),
+          )
+        else
+          SliverFloatingPinnedPersistentHeader(
+            delegate: SliverFloatingPinnedPersistentHeaderBuilder(
+              minExtentProtoType: SizedBox(
+                height: context.mediaQueryPadding.top,
+              ),
+              maxExtentProtoType: navigationBar,
+              builder: (_, __, ___) => navigationBar,
             ),
-            maxExtentProtoType: navigationBar,
-            builder: (_, __, ___) => navigationBar,
           ),
-        ),
         // CupertinoSliverNavigationBar(
         //   largeTitle: GestureDetector(
         //       onTap: () => controller.scrollToTop(context),
@@ -143,8 +153,25 @@ class _HistoryTabState extends State<HistoryTab> {
       ],
     );
 
-    return CupertinoPageScaffold(
-      child: CanvasGrain(child: SizeCacheWidget(child: customScrollView)),
+    // A tab of its own names the tabs it hides, as the other root lists do.
+    final bool isTab = ModalRoute.of(context)?.isFirst ?? true;
+    return NativeNavigationPage(
+      tabId: EHRoutes.history,
+      chrome: NativePageChrome(
+        title: _title,
+        actions: [
+          if (isTab) ...Get.find<TabHomeController>().nativeHiddenTabActions,
+          NativeNavigationAction(
+            id: 'history.clear',
+            title: L10n.of(context).t_Clear_all_history,
+            symbol: 'trash',
+            onPressed: controller.clearHistory,
+          ),
+        ],
+      ),
+      child: CupertinoPageScaffold(
+        child: CanvasGrain(child: SizeCacheWidget(child: customScrollView)),
+      ),
     );
   }
 }

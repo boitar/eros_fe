@@ -521,5 +521,9 @@
   "card_style_standard": "Обычный",
   "card_style_immersive": "Погружение",
   "card_style_standard_detail": "Обложка, название, сведения и теги",
-  "card_style_immersive_detail": "Только обложка, название и оценка поверх неё"
+  "card_style_immersive_detail": "Только обложка, название и оценка поверх неё",
+  "gallery_info": "Сведения о галерее",
+  "search_by_image": "Поиск по изображению",
+  "remove_all": "Удалить все",
+  "import_export": "Импорт и экспорт"
 }

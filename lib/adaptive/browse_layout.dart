@@ -29,6 +29,7 @@ class AdaptiveBrowseLayout extends StatelessWidget {
     required this.environment,
     required this.split,
     required this.detailActive,
+    this.detailMoving = false,
     required this.primary,
     required this.detail,
     this.sideProportion = 0,
@@ -38,6 +39,10 @@ class AdaptiveBrowseLayout extends StatelessWidget {
   final AdaptiveEnvironmentSnapshot environment;
   final bool split;
   final bool detailActive;
+
+  /// A detail page is sliding over or off the list in a single column, so
+  /// both stay on screen until it settles.
+  final bool detailMoving;
   final Widget primary;
   final Widget detail;
   final double sideProportion;
@@ -97,11 +102,13 @@ class AdaptiveBrowseLayout extends StatelessWidget {
       children: [
         Positioned.fromRect(
           rect: primaryRect,
-          child: pane(primary, primaryRect, split || !detailActive),
+          child: pane(
+              primary, primaryRect, split || !detailActive || detailMoving),
         ),
         Positioned.fromRect(
           rect: detailRect,
-          child: pane(detail, detailRect, split || detailActive),
+          child:
+              pane(detail, detailRect, split || detailActive || detailMoving),
         ),
         if (!separator.isEmpty)
           Positioned.fromRect(

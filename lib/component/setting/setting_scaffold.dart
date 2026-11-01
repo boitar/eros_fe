@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -17,6 +18,7 @@ class SettingScaffold extends StatefulWidget {
     required this.child,
     this.actions = const <NativeNavigationAction>[],
     this.trailing,
+    this.nativeChrome = true,
   });
 
   final String title;
@@ -29,6 +31,11 @@ class SettingScaffold extends StatefulWidget {
 
   /// The same buttons for the Flutter bar.
   final Widget? trailing;
+
+  /// False keeps the Flutter bar under the native shell too, for pages that
+  /// sit beside another page with its own buttons; the native shell has only
+  /// one bar. The native bar then stays empty for this page.
+  final bool nativeChrome;
 
   @override
   State<SettingScaffold> createState() => _SettingScaffoldState();
@@ -51,31 +58,73 @@ class _SettingScaffoldState extends State<SettingScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final bool nativeBar = NativeNavigationScope.isEnabled(context);
+    final bool nativeBar =
+        widget.nativeChrome && NativeNavigationScope.isEnabled(context);
     final Widget child = CanvasGrain(child: widget.child);
+    final Widget page = nativeBar
+        ? CupertinoPageScaffold(child: child)
+        : SettingGlassBar.observe(() => CupertinoPageScaffold(
+              navigationBar: SettingGlassBar.isActive
+                  ? SettingGlassBar(
+                      title: widget.title,
+                      edgeVisible: _scrolled,
+                      trailing: widget.trailing,
+                    )
+                  : CupertinoNavigationBar(
+                      padding: widget.trailing == null
+                          ? null
+                          : const EdgeInsetsDirectional.only(end: 8),
+                      middle: Text(widget.title),
+                      trailing: widget.trailing,
+                    ),
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _onScroll,
+                child: child,
+              ),
+            ));
+    if (!widget.nativeChrome) {
+      return NativeNavigationPage(
+        chrome: NativePageChrome(
+          title: widget.title,
+          navigationBarVisible: false,
+          ownBar: true,
+        ),
+        child: _OwnBarInsets(child: page),
+      );
+    }
     return NativeNavigationPage(
       chrome: NativePageChrome(title: widget.title, actions: widget.actions),
-      child: nativeBar
-          ? CupertinoPageScaffold(child: child)
-          : SettingGlassBar.observe(() => CupertinoPageScaffold(
-                navigationBar: SettingGlassBar.isActive
-                    ? SettingGlassBar(
-                        title: widget.title,
-                        edgeVisible: _scrolled,
-                        trailing: widget.trailing,
-                      )
-                    : CupertinoNavigationBar(
-                        padding: widget.trailing == null
-                            ? null
-                            : const EdgeInsetsDirectional.only(end: 8),
-                        middle: Text(widget.title),
-                        trailing: widget.trailing,
-                      ),
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: _onScroll,
-                  child: child,
-                ),
-              )),
+      child: page,
+    );
+  }
+}
+
+/// Across the top the native bar hides for a page with its own bar only once
+/// that page is on its way in, and returns as soon as it leaves. Laid out
+/// against the window's own inset, the page doesn't follow it mid-slide.
+/// Beside the vertical bar the native bar's band stays put anyway.
+class _OwnBarInsets extends StatelessWidget {
+  const _OwnBarInsets({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final environment = AdaptiveEnvironment.maybeOf(context);
+    final double? top = environment == null ||
+            environment.hasVerticalBar ||
+            !NativeNavigationScope.isEnabled(context)
+        ? null
+        : environment.stableSafeArea.top;
+    return MediaQuery(
+      data: top == null
+          ? media
+          : media.copyWith(
+              padding: media.padding.copyWith(top: top),
+              viewPadding: media.viewPadding.copyWith(top: top),
+            ),
+      child: child,
     );
   }
 }
@@ -276,7 +325,14 @@ class _GlassCapsule extends StatelessWidget {
           followSystemTransparency: followSystemTransparency,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Center(widthFactor: 1, child: child),
+            // Glass bars stay monochrome like the native ones; buttons
+            // otherwise take the accent colour.
+            child: CupertinoTheme(
+              data: CupertinoTheme.of(context).copyWith(
+                primaryColor: ehTheme.palette.text1.resolveFrom(context),
+              ),
+              child: Center(widthFactor: 1, child: child),
+            ),
           ),
         ),
       ),

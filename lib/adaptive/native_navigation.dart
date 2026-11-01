@@ -26,6 +26,7 @@ class NativeNavigationState {
     this.titleMonospacedDigits = false,
     this.barStyle = NativeBarStyle.system,
     this.animateBars = false,
+    this.ownBar = false,
     this.backTitle = 'Back',
   });
 
@@ -46,7 +47,8 @@ class NativeNavigationState {
         titleVisible = chrome?.titleVisible ?? true,
         titleMonospacedDigits = chrome?.titleMonospacedDigits ?? false,
         barStyle = chrome?.barStyle ?? NativeBarStyle.system,
-        animateBars = chrome?.animateBars ?? false;
+        animateBars = chrome?.animateBars ?? false,
+        ownBar = chrome?.ownBar ?? false;
 
   final String tabId;
   final String selectedTabId;
@@ -63,6 +65,9 @@ class NativeNavigationState {
   final bool titleMonospacedDigits;
   final NativeBarStyle barStyle;
   final bool animateBars;
+
+  /// The page draws its own bar; see [NativePageChrome.ownBar].
+  final bool ownBar;
   final String backTitle;
 
   /// Finds an enabled action by id among bar items, toolbar items and menus.
@@ -87,6 +92,7 @@ class NativeNavigationState {
         'titleMonospacedDigits': titleMonospacedDigits,
         'barStyle': barStyle.name,
         'animateBars': animateBars,
+        'ownBar': ownBar,
         'backTitle': backTitle,
       };
 }
@@ -128,6 +134,7 @@ class NativeNavigationAction {
     this.checked,
     this.selected = false,
     this.primaryWithMenu = false,
+    this.prominent = false,
     this.priority = NativeBarItemPriority.standard,
     this.group = '',
   });
@@ -152,6 +159,9 @@ class NativeNavigationAction {
 
   /// Tapping runs [onPressed]; a long press opens [children].
   final bool primaryWithMenu;
+
+  /// The tinted look of a confirming action such as Done.
+  final bool prominent;
   final NativeBarItemPriority priority;
 
   /// Toolbar items with different groups are separated by flexible space.
@@ -178,6 +188,7 @@ class NativeNavigationAction {
         if (checked != null) 'checked': checked!,
         if (selected) 'selected': true,
         if (primaryWithMenu) 'primaryWithMenu': true,
+        if (prominent) 'prominent': true,
         if (priority != NativeBarItemPriority.standard)
           'priority': priority.name,
         if (group.isNotEmpty) 'group': group,
@@ -358,8 +369,20 @@ class _NativeNavigationHostState extends State<NativeNavigationHost> {
   NativeNavigationSource? _publishedSource;
   String? _publishedTab;
 
-  Route<dynamic>? get _route =>
-      widget.observer.history.isEmpty ? null : widget.observer.history.last;
+  /// The page whose bar the shell shows. A dialog or sheet floats over that
+  /// page without a bar of its own; taking it for the top page would hide
+  /// the bar and, with it, shift every page by the bar's band and back.
+  Route<dynamic>? get _route {
+    final history = widget.observer.history;
+    for (var i = history.length - 1; i >= 0; i--) {
+      if (history[i] is! PopupRoute) return history[i];
+    }
+    return null;
+  }
+
+  /// A dialog or sheet is up; the bar stays but its buttons wait for it.
+  bool get _overlaid => widget.observer.history.lastOrNull is PopupRoute;
+
   NativeNavigationSource? get _source =>
       NativeNavigationBridge._sources[_route];
   bool get _hasPublishedContext =>
@@ -376,7 +399,7 @@ class _NativeNavigationHostState extends State<NativeNavigationHost> {
     NativeNavigationBridge.rootBarCollapsed.addListener(_schedule);
     _connection = NativeNavigationBridge.initialize(
       onSelectTab: (id) async {
-        if (!_hasPublishedContext) return;
+        if (!_hasPublishedContext || _overlaid) return;
         final source = _source;
         if (source != null && source.state().tabs.any((tab) => tab.id == id)) {
           await source.onSelectTab(id);
@@ -392,7 +415,7 @@ class _NativeNavigationHostState extends State<NativeNavigationHost> {
         }
       },
       onAction: (id) async {
-        if (!_hasPublishedContext) return;
+        if (!_hasPublishedContext || _overlaid) return;
         final state = _resolve();
         if (!state.navigationBarVisible) return;
         await state.actionWithId(id)?.onPressed?.call();
@@ -499,6 +522,7 @@ class NativePageChrome {
     this.titleMonospacedDigits = false,
     this.barStyle = NativeBarStyle.system,
     this.animateBars = false,
+    this.ownBar = false,
   });
 
   final String title;
@@ -513,6 +537,11 @@ class NativePageChrome {
   final NativeBarStyle barStyle;
   final bool animateBars;
 
+  /// The page draws its own Flutter bar, so the native one shows no title,
+  /// back button or items for it. Beside the vertical bar it keeps its empty
+  /// band, so the page starts where its neighbours do.
+  final bool ownBar;
+
   String get signature => jsonEncode(<String, Object>{
         'title': title,
         'navigationBarVisible': navigationBarVisible,
@@ -520,10 +549,24 @@ class NativePageChrome {
         'titleMonospacedDigits': titleMonospacedDigits,
         'barStyle': barStyle.name,
         'animateBars': animateBars,
+        'ownBar': ownBar,
         'actions': actions.map((e) => e.toMap()).toList(),
         'toolbarActions': toolbarActions.map((e) => e.toMap()).toList(),
       });
 }
+
+/// What the bar shows for a page pushed over a tab's root. A page that
+/// publishes nothing, such as one still on its first frame, is taken to draw
+/// its own bar: beside the vertical bar the native band then stays, so the
+/// page doesn't move by the band's height when the bar would otherwise hide.
+NativePageChrome pushedPageChrome(Route<dynamic> route) =>
+    NativeNavigationBridge.chromeFor(route) ?? _withoutChrome;
+
+const NativePageChrome _withoutChrome = NativePageChrome(
+  title: '',
+  navigationBarVisible: false,
+  ownBar: true,
+);
 
 class NativeNavigationScope extends InheritedNotifier<ValueNotifier<bool>> {
   NativeNavigationScope({super.key, required super.child})

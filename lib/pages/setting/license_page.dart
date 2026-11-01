@@ -93,12 +93,8 @@ class _LicensePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(
-          currentPackage,
-        ),
-      ),
+    return SettingScaffold(
+      title: currentPackage,
       child: ListView.separated(
         itemCount: packageLicenses.length,
         itemBuilder: (context, index) {

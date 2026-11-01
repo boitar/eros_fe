@@ -689,6 +689,10 @@ class MessageLookup extends MessageLookupByLibrary {
         "card_style_standard": MessageLookupByLibrary.simpleMessage("標準"),
         "card_style_immersive": MessageLookupByLibrary.simpleMessage("イマーシブ"),
         "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("表紙、タイトル、情報、タグ"),
-        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("表紙のみ。タイトルと評価を表紙に重ねて表示")
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("表紙のみ。タイトルと評価を表紙に重ねて表示"),
+        "gallery_info": MessageLookupByLibrary.simpleMessage("ギャラリー情報"),
+        "search_by_image": MessageLookupByLibrary.simpleMessage("画像で検索"),
+        "remove_all": MessageLookupByLibrary.simpleMessage("すべて削除"),
+        "import_export": MessageLookupByLibrary.simpleMessage("インポートとエクスポート")
       };
 }

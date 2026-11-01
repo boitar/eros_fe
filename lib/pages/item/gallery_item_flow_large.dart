@@ -724,6 +724,7 @@ class _CardTags extends StatelessWidget {
               _CardTag(
                 text: (translate ? tag.translat : tag.text) ?? tag.text ?? '',
                 userColor: ColorsUtil.getTagColor(tag.backgrondColor),
+                userTextColor: ColorsUtil.getTagColor(tag.color),
               ),
           ],
         ),
@@ -733,21 +734,21 @@ class _CardTags extends StatelessWidget {
 }
 
 class _CardTag extends StatelessWidget {
-  const _CardTag({required this.text, this.userColor});
+  const _CardTag({required this.text, this.userColor, this.userTextColor});
 
   final String text;
   final Color? userColor;
+  final Color? userTextColor;
 
   @override
   Widget build(BuildContext context) {
-    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
     final watched = userColor != null;
-    final background = watched
-        ? userColor!.withValues(alpha: dark ? 0.28 : 0.18)
-        : CupertinoDynamicColor.resolve(ThemeColors.tagBackground, context);
-    final foreground = watched
-        ? CupertinoDynamicColor.resolve(ehTheme.palette.text1, context)
-        : CupertinoDynamicColor.resolve(ThemeColors.tagText, context);
+    final (background, foreground) = watched
+        ? ColorsUtil.watchedTag(userColor!, userTextColor)
+        : (
+            CupertinoDynamicColor.resolve(ThemeColors.tagBackground, context),
+            CupertinoDynamicColor.resolve(ThemeColors.tagText, context),
+          );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),

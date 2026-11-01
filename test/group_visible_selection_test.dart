@@ -157,6 +157,32 @@ void main() {
     expect(find.text('d'), findsOneWidget);
   });
 
+  testWidgets('a tapped group stays selected while its page passes others',
+      (tester) async {
+    final controller = await mount(tester, useBar: true);
+    await tester.pumpWidget(CupertinoApp(
+      home: Obx(() => PageView(
+            controller: controller.pageController,
+            onPageChanged: controller.onPageChanged,
+            children: controller.profilesShow
+                .map((profile) => Center(child: Text(profile.uuid)))
+                .toList(),
+          )),
+    ));
+    await tester.pumpAndSettle();
+    expect(controller.index, 0);
+    final selection = controller.selectPage(2);
+    expect(controller.index, 2);
+    for (var frame = 0; frame < 30; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(controller.index, 2, reason: 'frame $frame');
+    }
+    await tester.pumpAndSettle();
+    await selection;
+    expect(controller.currProfileUuid, 'd');
+    expect(controller.pageController.page, 2);
+  });
+
   testWidgets('a visible page index skips a hidden middle group',
       (tester) async {
     final controller = await mount(tester);

@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/controller/webdav_controller.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/debug/offline_group_index.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
@@ -109,75 +110,47 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
         controller.reorderable = false;
         return true;
       },
-      child: CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(
-          middle: Text(L10n.of(context).group),
-          padding: const EdgeInsetsDirectional.only(end: 8),
-          trailing: Obx(() {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 同步按钮
-                AnimatedOpacity(
-                  opacity: Get.find<WebdavController>().syncGroupProfile &&
-                          !controller.reorderable
-                      ? 1
-                      : 0,
-                  duration: const Duration(milliseconds: 300),
-                  child: CupertinoButton(
-                    minSize: 40,
-                    padding: const EdgeInsets.all(0),
-                    child: const Icon(
-                      CupertinoIcons.refresh_thick,
-                      size: 26,
-                    ),
-                    onPressed: () async {
-                      await controller.syncProfiles();
-                    },
-                  ),
-                ),
-                offlineGroupControl(
-                    'reorder',
-                    AnimatedCrossFade(
-                      crossFadeState: controller.reorderable
-                          ? CrossFadeState.showFirst
-                          : CrossFadeState.showSecond,
-                      duration: const Duration(milliseconds: 300),
-                      firstChild: CupertinoButton(
-                        padding: const EdgeInsets.all(0),
-                        minSize: 40,
-                        child: const Icon(
-                          CupertinoIcons.sort_down_circle_fill,
-                          size: 28,
-                        ),
-                        onPressed: () =>
-                            controller.reorderable = !controller.reorderable,
-                      ),
-                      secondChild: CupertinoButton(
-                        padding: const EdgeInsets.all(0),
-                        minSize: 40,
-                        child: const Icon(
-                          CupertinoIcons.sort_down_circle,
-                          size: 28,
-                        ),
-                        onPressed: () =>
-                            controller.reorderable = !controller.reorderable,
-                      ),
-                    )),
+      child: SettingScaffold(
+        title: L10n.of(context).group,
+        // Beside an open group the list keeps its own buttons.
+        nativeChrome: false,
+        trailing: Obx(() {
+          final reorderable = controller.reorderable;
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (Get.find<WebdavController>().syncGroupProfile && !reorderable)
                 CupertinoButton(
-                  padding: const EdgeInsets.all(0),
                   minSize: 40,
-                  child: const Icon(
-                    // FontAwesomeIcons.plus,
-                    CupertinoIcons.plus_circle,
-                    size: 28,
-                  ),
-                  onPressed: controller.toEditPage,
+                  padding: EdgeInsets.zero,
+                  onPressed: controller.syncProfiles,
+                  child:
+                      const Icon(CupertinoIcons.arrow_2_circlepath, size: 22),
                 ),
-              ],
-            );
-          }),
-        ),
+              offlineGroupControl(
+                'reorder',
+                CupertinoButton(
+                  minSize: 40,
+                  padding: EdgeInsets.zero,
+                  onPressed: () => controller.reorderable = !reorderable,
+                  child: Icon(
+                    reorderable
+                        ? CupertinoIcons.checkmark
+                        : CupertinoIcons.arrow_up_arrow_down,
+                    size: 22,
+                  ),
+                ),
+              ),
+              if (!reorderable)
+                CupertinoButton(
+                  minSize: 40,
+                  padding: EdgeInsets.zero,
+                  onPressed: controller.toEditPage,
+                  child: const Icon(CupertinoIcons.add, size: 22),
+                ),
+            ],
+          );
+        }),
         child: CustomScrollView(
           slivers: [
             SliverSafeArea(

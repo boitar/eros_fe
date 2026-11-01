@@ -32,6 +32,11 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
   bool _publicationScheduled = false;
   NativeNavigationSource? _nativeSource;
   final Map<String, Widget> _tabRoots = {};
+
+  /// Each tab's navigators outlive any change in what wraps them, so their
+  /// owner moves along instead of being rebuilt: a new owner would clear the
+  /// pages on record while the old pages stay on screen.
+  final Map<String, GlobalKey> _tabNavigators = {};
   final LayoutServices _layout = Get.find();
   late final TabNavigationRegistry _navigation = _layout.tabNavigation;
 
@@ -97,13 +102,13 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     final details = stack.detailObserver.history;
     final primary = stack.primaryObserver.history;
     if (!_layout.isLayoutLarge && primary.length > 1 && !stack.detailOnTop) {
-      return NativeNavigationBridge.chromeFor(primary.last);
+      return pushedPageChrome(primary.last);
     }
     if (details.length > 1) {
-      return NativeNavigationBridge.chromeFor(details.last);
+      return pushedPageChrome(details.last);
     }
     if (primary.length > 1) {
-      return NativeNavigationBridge.chromeFor(primary.last);
+      return pushedPageChrome(primary.last);
     }
     return NativeNavigationBridge.chromeFor(primary.lastOrNull);
   }
@@ -257,6 +262,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
                         key: ValueKey(entry.key),
                         active: entry.key == selected,
                         child: AdaptiveTabNavigator(
+                          key: _tabNavigators.putIfAbsent(
+                              entry.key, GlobalKey.new),
                           stack: _navigation.stackFor(entry.key),
                           split: widget.split,
                           primaryRoot: entry.value,

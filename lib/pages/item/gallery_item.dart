@@ -624,6 +624,7 @@ class CoverImg extends StatelessWidget {
     this.decodeWidth,
     this.fadeInDuration,
     this.placeholder,
+    this.placeholderWhileDecoding = false,
   });
 
   final String imgUrl;
@@ -644,6 +645,9 @@ class CoverImg extends StatelessWidget {
 
   /// Shown while loading; an activity indicator when null.
   final WidgetBuilder? placeholder;
+
+  /// See [EhCachedNetworkImage.placeholderWhileDecoding].
+  final bool placeholderWhileDecoding;
 
   @override
   Widget build(BuildContext context) {
@@ -669,6 +673,7 @@ class CoverImg extends StatelessWidget {
             alignment: alignment,
             decodeWidth: decodeWidth,
             fadeInDuration: fadeInDuration,
+            placeholderWhileDecoding: placeholderWhileDecoding,
           );
         });
       } else {

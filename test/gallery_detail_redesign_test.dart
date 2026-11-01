@@ -1,11 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_widget.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/gallery_hero.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/slivers.dart';
+import 'package:eros_fe/pages/tab/view/gallery_base.dart';
+import 'package:eros_fe/widget/image/eh_cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
@@ -30,6 +35,16 @@ Widget _host(Widget child, {double scale = 1}) => CupertinoApp(
       ),
     );
 
+/// A transparent 1×1 PNG.
+final _onePixelPng = Uint8List.fromList(const <int>[
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, //
+  0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, //
+  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, //
+  0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, //
+  0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, //
+  0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+]);
+
 void main() {
   setUp(registerWaterfallFixture);
   tearDown(Get.reset);
@@ -46,18 +61,32 @@ void main() {
       expect(find.text('plain', findRichText: true), findsOneWidget);
     });
 
-    testWidgets('a watched tag keeps its own colour as a tint', (tester) async {
+    testWidgets('a watched tag wears its My Tags colours as on the site',
+        (tester) async {
       const red = Color(0xFFD03030);
-      await tester.pumpWidget(_host(const DetailTagChip(
-        text: 'watched',
-        userColor: red,
-      )));
-      final box = tester.widget<Container>(find.descendant(
-          of: find.byType(DetailTagChip), matching: find.byType(Container)));
-      final decoration = box.decoration! as ShapeDecoration;
-      expect(decoration.color, red.withValues(alpha: 0.18));
-      final text = tester.widget<Text>(find.byType(Text));
-      expect(text.style?.fontWeight, FontWeight.w600);
+      const ink = Color(0xFFF1F1F1);
+      Future<(Color?, Color?)> chip(Color fill, Color? text) async {
+        await tester.pumpWidget(_host(DetailTagChip(
+          text: 'watched',
+          userColor: fill,
+          userTextColor: text,
+        )));
+        final box = tester.widget<Container>(find.descendant(
+            of: find.byType(DetailTagChip), matching: find.byType(Container)));
+        final label = tester.widget<Text>(find.byType(Text));
+        return (
+          (box.decoration! as ShapeDecoration).color,
+          label.style?.color,
+        );
+      }
+
+      expect(await chip(red, ink), (red, ink));
+      // Without the site's text colour, the label still reads on the fill.
+      expect(await chip(red, null), (red, const Color(0xFFFFFFFF)));
+      expect(await chip(const Color(0xFFFFE066), null),
+          (const Color(0xFFFFE066), const Color(0xFF000000)));
+      expect(tester.widget<Text>(find.byType(Text)).style?.fontWeight,
+          FontWeight.w600);
     });
 
     testWidgets('taps and long presses reach their callbacks', (tester) async {
@@ -204,6 +233,49 @@ void main() {
       expect(GalleryDetailColumns.resolve(width: 900, environment: tabletop),
           const GalleryDetailColumns(leading: 320, gap: 0));
     });
+  });
+
+  group('ShownImages', () {
+    testWidgets('a detail page draws the cover its list card already drew',
+        (tester) async {
+      const url = 'https://ehgt.org/t/00/00/shown-cover.jpg';
+      await tester.pumpWidget(_host(const SizedBox(
+        height: 100,
+        child: ShownImage(url),
+      )));
+      // Nothing drawn yet: an empty box, not a spinner.
+      expect(find.byType(Image), findsNothing);
+
+      final drawn = MemoryImage(_onePixelPng);
+      ShownImages.remember(url, drawn);
+      await tester.pumpWidget(_host(const SizedBox(
+        height: 101,
+        child: ShownImage(url),
+      )));
+      expect(tester.widget<Image>(find.byType(Image)).image, same(drawn));
+    });
+
+    test('keeps the most recently drawn images', () {
+      final first = MemoryImage(Uint8List.fromList(const <int>[1]));
+      ShownImages.remember('https://ehgt.org/t/first.jpg', first);
+      for (var i = 0; i < 48; i++) {
+        ShownImages.remember('https://ehgt.org/t/$i.jpg',
+            MemoryImage(Uint8List.fromList(<int>[i])));
+      }
+      expect(ShownImages.of('https://ehgt.org/t/first.jpg'), isNull);
+      expect(ShownImages.of('https://ehgt.org/t/47.jpg'), isNotNull);
+    });
+  });
+
+  testWidgets('an error page keeps its face while it rebuilds',
+      (tester) async {
+    final error = ['5', '03'].join();
+    final faces = <IconData?>{};
+    for (var build = 0; build < 5; build++) {
+      await tester.pumpWidget(_host(GalleryErrorPage(error: error)));
+      faces.add(tester.widget<FaIcon>(find.byType(FaIcon)).icon);
+    }
+    expect(faces, hasLength(1));
   });
 
   test('saturation matrix keeps grey and amplifies colour', () {

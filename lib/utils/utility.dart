@@ -659,6 +659,14 @@ class ColorsUtil {
   static bool isLight(Color color) {
     return ThemeData.estimateBrightnessForColor(color) == Brightness.light;
   }
+
+  /// A watched tag's fill and text, as the site shows it: the colour the
+  /// user gave it in My Tags and the site's text colour for it, or else
+  /// black or white, whichever reads on that fill.
+  static (Color, Color) watchedTag(Color fill, Color? text) => (
+        fill,
+        text ?? (isLight(fill) ? const Color(0xFF000000) : const Color(0xFFFFFFFF)),
+      );
 }
 
 class WidgetUtil {

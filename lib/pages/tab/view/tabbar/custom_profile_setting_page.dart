@@ -4,6 +4,7 @@ import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/filter/filter.dart';
@@ -68,32 +69,32 @@ class _CustomProfileSettingPageState extends State<CustomProfileSettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        trailing: CupertinoButton(
-          padding: const EdgeInsets.all(0),
-          minSize: 40,
-          child: const Icon(
-            CupertinoIcons.check_mark_circled,
-            size: 28,
-          ),
-          onPressed: () async {
-            FocusScope.of(context).requestFocus(FocusNode());
-            logger.d('_customProfile ${jsonEncode(_customProfile)}');
+    Future<void> save() async {
+      FocusScope.of(context).requestFocus(FocusNode());
+      logger.d('_customProfile ${jsonEncode(_customProfile)}');
 
-            if (_customProfile.name.trim().isEmpty) {
-              showToast('Name is empty');
-              return;
-            }
+      if (_customProfile.name.trim().isEmpty) {
+        showToast('Name is empty');
+        return;
+      }
 
-            Get.back(
-              id: detailNavigatorId,
-              result: _customProfile.copyWith(
-                lastEditTime: DateTime.now().millisecondsSinceEpoch.oN,
-              ),
-            );
-          },
+      Get.back(
+        id: detailNavigatorId,
+        result: _customProfile.copyWith(
+          lastEditTime: DateTime.now().millisecondsSinceEpoch.oN,
         ),
+      );
+    }
+
+    return SettingScaffold(
+      title: '',
+      // Beside the group list, which keeps its own buttons.
+      nativeChrome: false,
+      trailing: CupertinoButton(
+        minSize: 40,
+        padding: EdgeInsets.zero,
+        onPressed: save,
+        child: const Icon(CupertinoIcons.checkmark, size: 22),
       ),
       child: CustomScrollView(
         slivers: [

@@ -362,6 +362,12 @@ class TabHomeController extends GetxController {
     }
 
     final route = tabs[index];
+    // Like UITabBarController, reselecting a tab first returns to its root;
+    // the next reselect scrolls or refreshes it.
+    if (_popSelectedTabToRoot()) {
+      resetTabTapSequence();
+      return;
+    }
     if (route == EHRoutes.setting) {
       resetTabTapSequence();
       return;
@@ -409,6 +415,31 @@ class TabHomeController extends GetxController {
       default:
         scrollControllerList[index]?.scrollToTop();
     }
+  }
+
+  /// Pops the selected tab's pages that cover its root. A split layout shows
+  /// the detail pane beside the root, so only the primary column pops there.
+  bool _popSelectedTabToRoot() {
+    if (!usesAdaptiveNavigation) {
+      return false;
+    }
+    final layout = Get.find<LayoutServices>();
+    final stack = layout.tabNavigation.selected;
+    if (stack == null) {
+      return false;
+    }
+    final ids = layout.isLayoutLarge
+        ? <int>[stack.primaryId]
+        : <int>[stack.detailId, stack.primaryId];
+    var popped = false;
+    for (final id in ids) {
+      final navigator = Get.nestedKey(id)?.currentState;
+      if (navigator != null && navigator.canPop()) {
+        navigator.popUntil((route) => route.isFirst);
+        popped = true;
+      }
+    }
+    return popped;
   }
 
   void resetIndex() {

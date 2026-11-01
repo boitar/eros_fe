@@ -666,6 +666,7 @@ class TagGroupItem extends StatelessWidget {
     return DetailTagChip(
       text: translate ? tag.tagTranslat : tag.title,
       userColor: ColorsUtil.getTagColor(tag.backgrondColor),
+      userTextColor: ColorsUtil.getTagColor(tag.color),
       vote: tag.vote ?? 0,
       onPressed: () {
         logger.t('search type[${tag.type}] tag[${tag.title}]');
@@ -685,34 +686,39 @@ class TagGroupItem extends StatelessWidget {
   }
 }
 
-/// Detail-page tag capsule. A watched tag keeps the colour the user gave it
-/// in My Tags, as a tint; a voted tag ends with ↑ or ↓.
+/// Detail-page tag capsule. A watched tag wears the colours the user gave it
+/// in My Tags, as on the site; a voted tag ends with ↑ or ↓.
 class DetailTagChip extends StatelessWidget {
   const DetailTagChip({
     super.key,
     required this.text,
     this.userColor,
+    this.userTextColor,
     this.vote = 0,
     this.onPressed,
     this.onLongPress,
   });
 
   final String text;
+
+  /// The tag's colour from My Tags, filling the capsule.
   final Color? userColor;
+
+  /// The text colour the site gives that tag.
+  final Color? userTextColor;
   final int vote;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
-    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
     final watched = userColor != null;
-    final background = watched
-        ? userColor!.withValues(alpha: dark ? 0.28 : 0.18)
-        : CupertinoDynamicColor.resolve(ThemeColors.tagBackground, context);
-    final foreground = watched
-        ? CupertinoDynamicColor.resolve(ehTheme.palette.text1, context)
-        : CupertinoDynamicColor.resolve(ThemeColors.tagText, context);
+    final (background, foreground) = watched
+        ? ColorsUtil.watchedTag(userColor!, userTextColor)
+        : (
+            CupertinoDynamicColor.resolve(ThemeColors.tagBackground, context),
+            CupertinoDynamicColor.resolve(ThemeColors.tagText, context),
+          );
     final arrow = switch (vote) {
       > 0 => (' ↑', ThemeColors.tagUpColor),
       < 0 => (' ↓', ThemeColors.tagDownColor),

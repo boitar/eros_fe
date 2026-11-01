@@ -827,6 +827,10 @@ class MessageLookup extends MessageLookupByLibrary {
         "card_style_standard": MessageLookupByLibrary.simpleMessage("Обычный"),
         "card_style_immersive": MessageLookupByLibrary.simpleMessage("Погружение"),
         "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("Обложка, название, сведения и теги"),
-        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("Только обложка, название и оценка поверх неё")
+        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("Только обложка, название и оценка поверх неё"),
+        "gallery_info": MessageLookupByLibrary.simpleMessage("Сведения о галерее"),
+        "search_by_image": MessageLookupByLibrary.simpleMessage("Поиск по изображению"),
+        "remove_all": MessageLookupByLibrary.simpleMessage("Удалить все"),
+        "import_export": MessageLookupByLibrary.simpleMessage("Импорт и экспорт")
       };
 }

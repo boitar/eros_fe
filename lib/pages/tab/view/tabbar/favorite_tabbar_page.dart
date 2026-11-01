@@ -111,11 +111,21 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
   Future<void> _selectFavoriteCategory(int index) async {
     await _scrollToInitialContentAnchor();
     if (pageController.hasClients) {
-      await pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
+      // Selected at once, like a gallery group, so the rail answers the tap
+      // instead of following the page through every category on the way.
+      controller.onPageChanged(index);
+      controller.landingPage = index;
+      try {
+        await pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      } finally {
+        if (controller.landingPage == index) {
+          controller.landingPage = null;
+        }
+      }
     }
     await WidgetsBinding.instance.endOfFrame;
     if (_useLiquidGlass) {

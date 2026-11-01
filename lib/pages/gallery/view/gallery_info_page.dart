@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/service/controller_tag_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
@@ -15,10 +16,8 @@ class GalleryInfoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Gallery info'),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).gallery_info,
       child: SafeArea(
         bottom: false,
         child: SingleChildScrollView(

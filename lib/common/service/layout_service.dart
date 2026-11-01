@@ -29,6 +29,19 @@ int? get detailNavigatorId => usesAdaptiveNavigation
     ? Get.find<LayoutServices>().tabNavigation.selected?.detailId ?? 2
     : null;
 
+/// Where a list page such as search opens. A split keeps it in the list
+/// column; a single column shows only the stack on top, so a list page
+/// opened from a detail page goes over that page rather than under it.
+int? get listNavigatorId {
+  if (!usesAdaptiveNavigation) return null;
+  final layout = Get.find<LayoutServices>();
+  final stack = layout.tabNavigation.selected;
+  if (!layout.isLayoutLarge && stack != null && stack.detailOnTop) {
+    return stack.detailId;
+  }
+  return primaryNavigatorId;
+}
+
 EhLayoutHelper ehLayoutHelper = EhLayoutHelper();
 
 class EhLayoutHelper {

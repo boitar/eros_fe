@@ -11,6 +11,54 @@ import 'package:http/http.dart' as http;
 import 'package:http/retry.dart' as retry;
 import 'package:octo_image/octo_image.dart';
 
+/// Images already drawn somewhere, by address. A page that opens on the
+/// same picture, like a gallery's detail opened from its list card, can show
+/// it in its first frame while its own copy is still decoding.
+abstract final class ShownImages {
+  static const int _capacity = 48;
+  static final Map<String, ImageProvider> _providers = <String, ImageProvider>{};
+
+  static void remember(String url, ImageProvider provider) {
+    _providers.remove(url);
+    _providers[url] = provider;
+    if (_providers.length > _capacity) {
+      _providers.remove(_providers.keys.first);
+    }
+  }
+
+  static ImageProvider? of(String url) => _providers[url];
+}
+
+/// [url] as it is already drawn elsewhere, or nothing.
+class ShownImage extends StatelessWidget {
+  const ShownImage(
+    this.url, {
+    super.key,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+  });
+
+  final String url;
+  final BoxFit fit;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = ShownImages.of(url.handleUrl);
+    if (provider == null) {
+      return const SizedBox.expand();
+    }
+    return Image(
+      image: provider,
+      fit: fit,
+      alignment: alignment,
+      width: double.infinity,
+      height: double.infinity,
+      gaplessPlayback: true,
+    );
+  }
+}
+
 class EhCachedNetworkImage extends StatelessWidget {
   EhCachedNetworkImage({
     super.key,
@@ -32,6 +80,7 @@ class EhCachedNetworkImage extends StatelessWidget {
     this.alignment = Alignment.center,
     this.decodeWidth,
     this.fadeInDuration,
+    this.placeholderWhileDecoding = false,
   });
 
   final String imageUrl;
@@ -64,7 +113,25 @@ class EhCachedNetworkImage extends StatelessWidget {
   /// Placeholder-to-image fade; the package default (500ms) when null.
   final Duration? fadeInDuration;
 
+  /// Keeps [placeholder] up until the image has decoded, not only until its
+  /// file is found. Otherwise nothing is drawn in between, for a frame or
+  /// more, and the image pops in.
+  ///
+  /// The placeholder is taken to be a [ShownImage] of the same address.
+  /// When that picture is already drawn somewhere, the image goes in under
+  /// it at once and only the placeholder fades: fading both ways would let
+  /// the background show through halfway, a dip that reads as a flicker.
+  final bool placeholderWhileDecoding;
+
   final ImageBlockController imageHideController = Get.find();
+
+  bool get _holdsPlaceholder => placeholderWhileDecoding && placeholder != null;
+
+  /// The fade of the image under the placeholder.
+  Duration? get _imageFadeIn =>
+      _holdsPlaceholder && ShownImages.of(imageUrl.handleUrl) != null
+          ? Duration.zero
+          : fadeInDuration;
 
   Future<bool> _future() async {
     // if (checkPHashHide && checkQRCodeHide) {
@@ -114,12 +181,29 @@ class EhCachedNetworkImage extends StatelessWidget {
           );
         }
 
+        final shown = imageProvider;
+        final remembers =
+            sourceRect == null && !checkPHashHide && !checkQRCodeHide;
+        final holdsPlaceholder = _holdsPlaceholder;
         final octoImage = OctoImage(
-          image: imageProvider,
+          image: shown,
           width: width,
           height: height,
           fit: fit,
           alignment: alignment,
+          // Called once the picture is drawn, so only decoded images are
+          // offered to other pages.
+          imageBuilder: remembers
+              ? (context, child) {
+                  ShownImages.remember(imageUrl.handleUrl, shown);
+                  return child;
+                }
+              : null,
+          placeholderBuilder: holdsPlaceholder
+              ? (context) => placeholder!(context, imageUrl)
+              : null,
+          fadeInDuration: holdsPlaceholder ? _imageFadeIn : null,
+          fadeOutDuration: holdsPlaceholder ? fadeInDuration : null,
         );
         if (checkPHashHide || checkQRCodeHide) {
           return FutureBuilder<bool>(
@@ -179,7 +263,7 @@ class EhCachedNetworkImage extends StatelessWidget {
       placeholder: placeholder,
       errorWidget: errorWidget,
       progressIndicatorBuilder: progressIndicatorBuilder,
-      fadeInDuration: fadeInDuration ?? const Duration(milliseconds: 500),
+      fadeInDuration: _imageFadeIn ?? const Duration(milliseconds: 500),
     );
 
     return image;

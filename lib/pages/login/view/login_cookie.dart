@@ -1,4 +1,4 @@
-import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -17,13 +17,8 @@ class LoginCookie extends GetView<LoginController> {
       color: CupertinoColors.placeholderText,
     );
 
-    return CupertinoPageScaffold(
-      backgroundColor: !ehTheme.isDarkMode
-          ? CupertinoColors.secondarySystemBackground
-          : null,
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Cookie Login'),
-      ),
+    return SettingScaffold(
+      title: 'Cookie Login',
       child: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,
@@ -33,7 +28,8 @@ class LoginCookie extends GetView<LoginController> {
               child: Column(
                 children: [
                   const SizedBox(height: 50),
-                  const FaIcon(FontAwesomeIcons.cookieBite,
+                  const FaIcon(
+                    FontAwesomeIcons.cookieBite,
                     size: 120,
                     color: CupertinoColors.activeBlue,
                   ),
@@ -90,7 +86,8 @@ class LoginCookie extends GetView<LoginController> {
                     onPressed: controller.readCookieFromClipboard,
                     child: Column(
                       children: [
-                        const FaIcon(FontAwesomeIcons.clipboard,
+                        const FaIcon(
+                          FontAwesomeIcons.clipboard,
                           size: 30,
                         ),
                         Text(L10n.of(context).read_from_clipboard,

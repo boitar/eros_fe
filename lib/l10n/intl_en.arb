@@ -521,5 +521,9 @@
   "card_style_standard": "Standard",
   "card_style_immersive": "Immersive",
   "card_style_standard_detail": "Cover, title, details and tags",
-  "card_style_immersive_detail": "Cover only, with the title and rating on it"
+  "card_style_immersive_detail": "Cover only, with the title and rating on it",
+  "gallery_info": "Gallery info",
+  "search_by_image": "Search by image",
+  "remove_all": "Remove all",
+  "import_export": "Import and export"
 }

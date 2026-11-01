@@ -2,13 +2,16 @@ import 'dart:math';
 
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/browse_layout.dart';
+import 'package:eros_fe/adaptive/route_cover.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/route/app_pages.dart';
+import 'package:eros_fe/route/eh_observer.dart';
 import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/pages/gallery/controller/taginfo_controller.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'home_page_small.dart';
 
@@ -86,6 +89,10 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
   late final Widget _primary;
   late final Widget _detail;
 
+  /// Follows the detail page that slides over the list while the two share
+  /// one column.
+  final ProxyAnimation _detailCover = ProxyAnimation(kAlwaysDismissedAnimation);
+
   @override
   void initState() {
     super.initState();
@@ -103,7 +110,7 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
               settings.name == EHRoutes.root) {
             return _primaryRootRoute();
           }
-          return _generateRoute(settings);
+          return _generateRoute(settings, _stack.primaryObserver);
         },
       ),
     );
@@ -113,30 +120,68 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
         key: Get.nestedKey(_stack.detailId),
         observers: [_stack.detailObserver],
         initialRoute: EHRoutes.empty,
-        onGenerateInitialRoutes: (_, __) => [
-          _generateRoute(const RouteSettings(name: EHRoutes.empty)),
-        ],
-        onGenerateRoute: _generateRoute,
+        onGenerateInitialRoutes: (_, __) {
+          final root = _generateRoute(
+              const RouteSettings(name: EHRoutes.empty), _stack.detailObserver);
+          _detailCover.parent = _stack.detailObserver.coverOf(root);
+          return [root];
+        },
+        onGenerateRoute: (settings) =>
+            _generateRoute(settings, _stack.detailObserver),
       ),
     );
+    _detailCover.addStatusListener(_detailCoverChanged);
+  }
+
+  /// A detail page is sliding over or off the list. One pushed a moment ago
+  /// counts too: it spends its first frame offstage, drawing nothing, while
+  /// its animation reads as finished.
+  bool get _detailMoving {
+    if (_detailCover.isAnimating) return true;
+    final cover = _detailCover.parent;
+    final route = cover is RouteCoverAnimation ? cover.route : null;
+    return route is ModalRoute && route.offstage;
+  }
+
+  /// The list stays under a detail page while it slides in or out.
+  void _detailCoverChanged(AnimationStatus status) {
+    if (!mounted) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      setState(() {});
+    }
   }
 
   Route<dynamic> _primaryRootRoute() => GetPageRoute(
         settings: const RouteSettings(name: EHRoutes.home),
-        page: () => widget.primaryRoot,
+        page: () => CoveredPage(
+            observer: _stack.primaryObserver, child: widget.primaryRoot),
         showCupertinoParallax: false,
       );
 
-  Route<dynamic> _generateRoute(RouteSettings settings) {
+  Route<dynamic> _generateRoute(
+      RouteSettings settings, EhNavigatorObserver observer) {
     final tags = Get.isRegistered<ControllerTagService>()
         ? Get.find<ControllerTagService>().snapshotFor(_stack.id)
         : const ControllerTagSnapshot();
     final route =
         AppPages.routes.firstWhereOrNull((e) => e.name == settings.name);
     if (route == null) return AppPages.onGenerateRoute(settings)!;
+    // GetX runs pages for 300 ms and eases them before the Cupertino
+    // transition eases them again, so a page lands almost at once. Slides
+    // keep the platform's duration and its single curve.
+    final slides =
+        (route.transition ?? Get.defaultTransition) == Transition.cupertino;
     return GetPageRoute(
       settings: settings,
-      page: () => ControllerTagScope(snapshot: tags, child: route.page()),
+      page: () => CoveredPage(
+        observer: observer,
+        child: ControllerTagScope(snapshot: tags, child: route.page()),
+      ),
       binding: settings.name == EHRoutes.addTag
           ? BindingsBuilder(() => Get.lazyPut(
               () => TagInfoController(galleryTag: tags.galleryTag),
@@ -144,6 +189,10 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
           : route.binding,
       bindings: route.bindings,
       transition: route.transition,
+      transitionDuration: slides
+          ? CupertinoRouteTransitionMixin.kTransitionDuration
+          : route.transitionDuration ?? Get.defaultTransitionDuration,
+      curve: slides ? Curves.linear : null,
       showCupertinoParallax: false,
       popGesture: settings.name != EHRoutes.empty,
     );
@@ -159,14 +208,25 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
         animation: Listenable.merge(
             [_stack.primaryObserver.revision, _stack.detailObserver.revision]),
         builder: (context, _) {
+          final split = widget.split && environment.isSplit;
+          final moving = !split && _detailMoving;
+          // A page opened in the list column puts the list back on top while
+          // the detail page still sits where it covered the list; it covers
+          // nothing once it no longer shows.
+          final cover =
+              split || !(_stack.detailOnTop || moving) ? null : _detailCover;
           return TabNavigationScope(
             stack: _stack,
             child: AdaptiveBrowseLayout(
               environment: environment,
-              split: widget.split && environment.isSplit,
+              split: split,
               sideProportion: proportion,
               detailActive: _stack.detailOnTop,
-              primary: _primary,
+              detailMoving: moving,
+              primary: RouteCoverClip(
+                cover: cover,
+                child: CoveredInsets(cover: cover, child: _primary),
+              ),
               detail: _detail,
               divider: const SideControllerbar(child: SizedBox(width: 28)),
             ),
@@ -178,6 +238,7 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
 
   @override
   void dispose() {
+    _detailCover.removeStatusListener(_detailCoverChanged);
     _stack.reset();
     _primaryHero.dispose();
     _detailHero.dispose();

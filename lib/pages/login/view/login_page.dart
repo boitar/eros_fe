@@ -1,4 +1,4 @@
-import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -17,13 +17,8 @@ class LoginPage extends GetView<LoginController> {
       color: CupertinoColors.placeholderText,
     );
 
-    return CupertinoPageScaffold(
-      backgroundColor: !ehTheme.isDarkMode
-          ? CupertinoColors.secondarySystemBackground
-          : null,
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(L10n.of(context).user_login),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).user_login,
       child: SafeArea(
         bottom: false,
         child: Align(

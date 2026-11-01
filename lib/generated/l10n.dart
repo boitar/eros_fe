@@ -5274,6 +5274,46 @@ class L10n {
     );
   }
 
+  /// `Gallery info`
+  String get gallery_info {
+    return Intl.message(
+      'Gallery info',
+      name: 'gallery_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search by image`
+  String get search_by_image {
+    return Intl.message(
+      'Search by image',
+      name: 'search_by_image',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove all`
+  String get remove_all {
+    return Intl.message(
+      'Remove all',
+      name: 'remove_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Import and export`
+  String get import_export {
+    return Intl.message(
+      'Import and export',
+      name: 'import_export',
+      desc: '',
+      args: [],
+    );
+  }
+
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

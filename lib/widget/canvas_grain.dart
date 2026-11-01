@@ -31,15 +31,17 @@ class CanvasGrain extends StatelessWidget {
         theme.scaffoldBackgroundColor;
     final double opacity = opacityFor(canvas, dark: dark);
     // Increased contrast asks for flat surfaces.
-    if (opacity <= 0 || MediaQuery.highContrastOf(context)) {
-      return child;
-    }
+    final bool flat = opacity <= 0 || MediaQuery.highContrastOf(context);
+    // The same widgets with or without grain: switching to pure black must
+    // not rebuild what sits below, such as the tabs' navigators and lists.
     return CustomPaint(
-      painter: _GrainPainter(
-        tint: dark ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
-        opacity: opacity,
-        texel: 1 / MediaQuery.devicePixelRatioOf(context),
-      ),
+      painter: flat
+          ? null
+          : _GrainPainter(
+              tint: dark ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
+              opacity: opacity,
+              texel: 1 / MediaQuery.devicePixelRatioOf(context),
+            ),
       // Scrolling content repaints on its own layer, not over the grain.
       child: RepaintBoundary(child: child),
     );

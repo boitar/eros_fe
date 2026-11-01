@@ -1,4 +1,5 @@
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/route/eh_observer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,6 +74,61 @@ void main() {
     expect(publications.single['navigationBarVisible'], isFalse);
     expect(publications.single['canGoBack'], isTrue);
     expect(publications.single.keys, isNot(contains('routes')));
+  });
+
+  testWidgets('a dialog over a page leaves the page its bar', (tester) async {
+    const channel = MethodChannel('eros/native-navigation');
+    final publications = <Map<Object?, Object?>>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      (call) async {
+        if (call.method == 'getShellState') return true;
+        if (call.method == 'publishState') {
+          publications.add(Map<Object?, Object?>.from(call.arguments as Map));
+        }
+        return null;
+      },
+    );
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+      NativeNavigationBridge.enabled.value = false;
+    });
+    final observer = EhNavigatorObserver();
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(CupertinoApp(
+      navigatorKey: navigator,
+      navigatorObservers: [observer],
+      builder: (context, child) => NativeNavigationHost(
+        observer: observer,
+        navigatorKey: navigator,
+        child: child!,
+      ),
+      home: const NativeNavigationPage(
+        chrome: NativePageChrome(title: 'Gallery'),
+        child: SizedBox.expand(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(publications.last['title'], 'Gallery');
+    expect(publications.last['navigationBarVisible'], isTrue);
+
+    final published = publications.length;
+    showCupertinoDialog<void>(
+      context: tester.element(find.byType(SizedBox)),
+      builder: (_) => const CupertinoAlertDialog(title: Text('Favorites')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Favorites'), findsOneWidget);
+    // The bar keeps its place: hiding it would shift the page by its band.
+    expect(publications.length, greaterThan(published));
+    expect(publications.last['title'], 'Gallery');
+    expect(publications.last['navigationBarVisible'], isTrue);
+
+    navigator.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(publications.last['navigationBarVisible'], isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('disposing an old channel lease cannot remove a newer handler',
@@ -226,5 +282,18 @@ void main() {
         tabId: '/gallery', selectedTabId: '/gallery', fallbackTitle: 'Tab');
     expect(fallback.title, 'Tab');
     expect(fallback.navigationBarVisible, isFalse);
+    expect(fallback.toMap()['ownBar'], isFalse);
+    final ownBar = NativeNavigationState.withChrome(
+      const NativePageChrome(
+        title: 'Group',
+        navigationBarVisible: false,
+        ownBar: true,
+      ),
+      tabId: '/gallery',
+      selectedTabId: '/gallery',
+      fallbackTitle: 'Tab',
+      canGoBack: true,
+    );
+    expect(ownBar.toMap()['ownBar'], isTrue);
   });
 }

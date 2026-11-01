@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/all_thumbnails_controller.dart';
@@ -37,59 +38,82 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
     }
   }
 
+  Future<void> _jump(BuildContext context) async {
+    final rult = await controller.showJumpDialog(context);
+    if (rult is int) {
+      logger.d('jump to page $rult');
+      controller.scrollToTop();
+      controller.fetchThumbnailsFromPage(rult);
+    }
+  }
+
+  /// The same buttons as the Flutter bar, for the native one.
+  List<NativeNavigationAction> _nativeActions(BuildContext context) => [
+        if (controller.canShowJumpDialog && controller.currPage > 1)
+          NativeNavigationAction(
+            id: 'thumbnails.first',
+            title: L10n.of(context).back_to_top,
+            symbol: 'arrow.up.circle',
+            onPressed: () => controller.fetchThumbnailsFromPage(1),
+          ),
+        if (controller.canShowJumpDialog)
+          NativeNavigationAction(
+            id: 'thumbnails.jump',
+            title: L10n.of(context).jump_to_page,
+            symbol: 'arrow.uturn.down.circle',
+            onPressed: () => _jump(context),
+          ),
+      ];
+
   @override
   Widget build(BuildContext context) {
     final int _count = int.parse(controller.fileCount);
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: GestureDetector(
-          onTap: controller.scrollToTop,
-          child: Text(L10n.of(context).all_thumbnails),
-        ),
-        previousPageTitle: L10n.of(context).back,
-        trailing: controller.canShowJumpDialog
-            ? GetBuilder<AllThumbnailsPageController>(
-                tag: _tag,
-                id: 'trailing',
-                builder: (logic) {
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (logic.currPage > 1)
-                        CupertinoButton(
-                          padding: const EdgeInsets.all(0),
-                          minSize: 38,
-                          child: const Icon(
-                            CupertinoIcons.arrow_up_circle,
-                            size: 26,
-                          ),
-                          onPressed: () async {
-                            // controller.fetchPriviewsPrevious();
-                            logic.fetchThumbnailsFromPage(1);
-                          },
-                        ),
-                      CupertinoButton(
-                        padding: const EdgeInsets.all(0),
-                        minSize: 38,
-                        child: const Icon(
-                          CupertinoIcons.arrow_uturn_down_circle,
-                          size: 26,
-                        ),
-                        onPressed: () async {
-                          final rult = await controller.showJumpDialog(context);
-                          if (rult is int) {
-                            logger.d('jump to page $rult');
-                            controller.scrollToTop();
-                            controller.fetchThumbnailsFromPage(rult);
-                          }
-                        },
-                      ),
-                    ],
-                  );
-                },
-              )
-            : const SizedBox(),
-      ),
+    final bool nativeBar = NativeNavigationScope.isEnabled(context);
+    final page = CupertinoPageScaffold(
+      navigationBar: nativeBar
+          ? null
+          : CupertinoNavigationBar(
+              middle: GestureDetector(
+                onTap: controller.scrollToTop,
+                child: Text(L10n.of(context).all_thumbnails),
+              ),
+              previousPageTitle: L10n.of(context).back,
+              trailing: controller.canShowJumpDialog
+                  ? GetBuilder<AllThumbnailsPageController>(
+                      tag: _tag,
+                      id: 'trailing',
+                      builder: (logic) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (logic.currPage > 1)
+                              CupertinoButton(
+                                padding: const EdgeInsets.all(0),
+                                minSize: 38,
+                                child: const Icon(
+                                  CupertinoIcons.arrow_up_circle,
+                                  size: 26,
+                                ),
+                                onPressed: () async {
+                                  // controller.fetchPriviewsPrevious();
+                                  logic.fetchThumbnailsFromPage(1);
+                                },
+                              ),
+                            CupertinoButton(
+                              padding: const EdgeInsets.all(0),
+                              minSize: 38,
+                              child: const Icon(
+                                CupertinoIcons.arrow_uturn_down_circle,
+                                size: 26,
+                              ),
+                              onPressed: () => _jump(context),
+                            ),
+                          ],
+                        );
+                      },
+                    )
+                  : const SizedBox(),
+            ),
       child: CupertinoScrollbar(
         controller: controller.scrollController,
         child: controller.obx(
@@ -106,7 +130,9 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
                   SliverPadding(
                     padding: EdgeInsets.only(
                         top: context.mediaQueryPadding.top +
-                            kMinInteractiveDimensionCupertino),
+                            (nativeBar
+                                ? 0
+                                : kMinInteractiveDimensionCupertino)),
                     sliver: CupertinoSliverRefreshControl(
                       onRefresh: controller.fetchPreviewsPrevious,
                     ),
@@ -263,6 +289,18 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
             ),
           ),
         ),
+      ),
+    );
+    // Only the bar follows the page number; the grid stays as built.
+    return GetBuilder<AllThumbnailsPageController>(
+      tag: _tag,
+      id: 'trailing',
+      builder: (_) => NativeNavigationPage(
+        chrome: NativePageChrome(
+          title: L10n.of(context).all_thumbnails,
+          actions: _nativeActions(context),
+        ),
+        child: page,
       ),
     );
   }
