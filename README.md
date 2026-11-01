@@ -1,137 +1,195 @@
 # Eros-FE
 English | [简体中文](./README_cn.md)
 
-## Introduction
+An unofficial E-Hentai app built with Flutter. This repository is a personal fork of
+[erosTeam/eros_fe](https://github.com/erosTeam/eros_fe). The `custom` branch focuses on iOS/iPadOS
+and iPhone Duo: it redesigns the main screens, adopts native Liquid Glass navigation, and fixes
+downloads, favorites, sharing, history, avatars, haptics and Cloudflare verification.
 
-An unofficial E-Hentai app built with Flutter.
+The version remains `1.9.2+566`. The iOS Bundle ID is `cn.honjow.fehv`.
 
-## Fork enhancements over master
+## Screenshots
 
-This fork builds on Eros-FE master and focuses on iOS/iPadOS: native Liquid Glass
-navigation, grid tags, and improvements to download recovery, favorites, sharing,
-history, avatars, haptics and action accessibility.
+Captured on the iOS 27.1 Simulator (iPhone Duo outer display, dark Graphite theme). All galleries
+shown are in the Non-H category.
 
-`custom` starts at fixed master `2fe86b737`, retains version `1.9.2+566`, and
-integrates all eleven independently deliverable modules:
+| Home (large waterfall cards) | Search | Gallery detail |
+| :---: | :---: | :---: |
+| <img width="220" src="./screenshot/outer-home.png"> | <img width="220" src="./screenshot/outer-search.png"> | <img width="220" src="./screenshot/outer-detail.png"> |
+| **Thumbnails** | **Reader** | **Settings** |
+| <img width="220" src="./screenshot/outer-thumbnails.png"> | <img width="220" src="./screenshot/outer-reader.png"> | <img width="220" src="./screenshot/outer-settings.png"> |
+| **Site settings and Cloudflare verification** | | |
+| <img width="220" src="./screenshot/outer-site.png"> | | |
 
-| Module | Use | Independent branch |
-| --- | --- | --- |
-| Waterfall stability | Settings > Layout > Waterfall / Waterfall - Large; stable cover dimensions, return scrolling and pagination/controller reuse | `codex/custom-waterfall` |
-| Downloads | Pause/continue or restore a moved folder, then recheck existing files before missing images are queued | `codex/custom-downloads` |
-| Favorites | Traditional/glass forms, confirmed server results, account isolation and protected note edits | `codex/custom-favorites-verified` |
-| Sharing | Native iOS/iPadOS links, images, files and exports with modal/anchor handling | `codex/custom-sharing` |
-| History | Shared initialization, serialized local persistence/clear and awaited sync | `codex/custom-history` |
-| Visible group index | Stable visible UUID/page mapping, reorder/delete and restart restoration | `codex/custom-group-index` |
-| Action accessibility | Labels for existing traditional controls; decorative no-op prefix excluded | `codex/custom-accessibility` |
-| Haptics | Native bridge, progressive pulls, application switch and operation feedback | `codex/custom-haptics` |
-| Avatar | Album/Files/URL, verified upload retry, local preview and container recovery | `codex/custom-avatar` |
-| Grid tags | Aligned cards, two-row horizontal tags, independent width and restoration | `codex/custom-grid-tags` |
-| Liquid Glass | Settings > Style: native navigation, two-row/inline top bars, popups, safe areas and scroll synchronization; repairs traditional navigation regressions introduced by glass integration | `codex/custom-liquid-glass-verified` |
+## Enhancements over upstream
 
-Each canonical business branch contains one complete commit directly on fixed
-master. The original ten ordered non-fast-forward merges are preserved, followed
-by an explicit favorites repair merge and the final glass merge. All eleven
-canonical independent commit IDs are retained. The canonical module branches,
-the integrated `custom` branch and their annotated tags are published in
-`boitar/eros_fe`. The former favorites and glass branches and tags are preserved
-locally for traceability, not published as current delivery branches; use the
-verified branches listed above. For grid tags, the current independent tag is
-`2026-10-15-custom-grid-tags-independent-verifier`, not the older
-`2026-10-15-custom-grid-tags-independent`.
+**Redesigned interface**
+- One palette with Light, Graphite and Pure Black backgrounds, increased-contrast variants and an
+  optional accent color for switches; the Graphite canvas has a fine grain texture.
+- Large waterfall cards: continuous corners, category capsule, rating and date on one row, and up to
+  3–4 rows of tags with watched tags first in their My Tags colors.
+- Card size: five steps per list style, with the column count computed from the actual column width
+  and previewed for portrait and landscape in Settings.
+- Gallery detail: blurred cover ambience, equal-area cover, parsed title with circle and artist,
+  grouped tags and comments; two columns on wide layouts and on an open iPhone Duo.
+- Settings: grouped home page (Browse / Content / System), native pull-down menus and one shared
+  sub-page shell.
 
-The integration keeps account/revision guards for favorites and avatars,
-download recovery protections, visible group UUID mapping and serialized history
-operations while adapting their shared glass surfaces. Account initialization completes
-before widgets subscribe to favorite state, including a cold launch with glass restored.
+**iPhone Duo and native navigation**
+- Uses iOS 27.1 reserved regions and hinge geometry to choose one or two columns from the space
+  available; the gallery detail can split across the fold.
+- iOS 27.1+ uses a native shell (native top bar, vertical bar and tab bar); iOS 26–27.0 uses a glass
+  fallback bar. Transitions, detail flicker and sub-page top bars were checked page by page.
+- The reader improves single/double pages, continuous reading, the thumbnail strip, system bars and
+  safe areas.
 
-The complete integration passed all 486 tests on 2026-10-16; analysis found zero
-errors and zero diagnostics added to the same-toolchain master baseline. Seven
-production `lib/main.dart` ARM64 Debug-SimulatorUI variants built successfully, including
-builds with and without offline definitions. On the highest installed available
-iOS 27.0 (24A434), iPhone 18 Pro and iPad Pro 11-inch (M5) passed 10 navigation/form
-checks, 30 glass combinations with favorites, avatars, visible group indexes,
-haptics and downloads, and two traditional cold-start settings-before-favorites
-checks: 42 native cases in total. Phone uses light/default text and iPad uses
-dark/accessibility-medium text. Every combination proves actual native glass
-activation; restart phases read persisted application state.
+**Fixes and features**
+- Cloudflare verification: switching between E-Hentai and ExHentai no longer requests the forum.
+  When the forum is blocked, the app offers in-app verification, and Settings › Site has a new
+  "Cloudflare verification" entry. Errors no longer show a full HTML page.
+- Favorites: URL-encoded forms avoid HTTP 403, and saves and removals are confirmed by reading the
+  server back.
+- Downloads: pause, continue or a restored folder rechecks existing files before missing images are
+  queued.
+- Saving images: save the current or the original image, reusing the cache first; iOS imports
+  through PhotoKit and keeps format, transparency and animation.
+- Stability fixes for sharing, history, the visible group index, avatar upload and action labels.
+- Haptics: tab switches, native bar buttons, menus and Back now give feedback, and selection ticks
+  use a pre-warmed native channel.
 
-Before publication on 2026-10-17, four additional native smoke checks passed on
-iPhone 18 Pro and iPad Pro 11-inch (M5), using the same iOS 27.0 runtime and
-source-matched formal builds. They cover a cold launch opening settings before
-favorites and native category selection after switching navigation modes on
-both devices; they are not a new run of the full 486-test suite.
+## Changelog
 
-The complete verified favorites branch passed 121 tests, two formal main builds
-and six cold-start/form/restart native cases. Account initialization belongs to
-this independently usable module and is carried into custom by the repair merge.
-The independent glass module passed 194 tests and 10 native checks on the final
-source, including native category selection immediately after a mode switch.
-The regression tests cover traditional reselection timing,
-cached/current page selection, actual scroll positions, refresh counts, mode
-changes, unsupported-platform fallback and disposal. Ordinary gallery cards now
-expand for scaled text. Module branches document their own earlier acceptance.
+### 2026-11-01: Cloudflare verification and UI polish (builds 79–93)
 
-### 2026-10-18: save gallery images to Photos
+Tags: `2026-11-01-cf-verification`, `2026-11-01-custom-ui-refresh`.
 
-Version remains `1.9.2+566`. The fix tag is `2026-10-18-gallery-save-cache`;
-the `custom` integration tag is `2026-10-18-custom-gallery-save-cache`.
+- **Cloudflare verification.** The forum (forums.e-hentai.org) is behind Cloudflare. Switching sites
+  used to request the forum as a side effect; when blocked, the whole "Just a moment..." HTML page was
+  shown as an error.
+  - Switching sites now only sets the site, fetches igneous and selects the profile; it no longer
+    requests the forum.
+  - A blocked forum request is recognized as a Cloudflare block. The app asks whether to verify in
+    the built-in browser and retries once after verification.
+  - Settings › Site has a new "Cloudflare verification" entry.
+  - Network errors report only the body length instead of the full HTML.
+  - The built-in verification page no longer stays blank, which also restores verification during
+    avatar upload.
+- **Large waterfall tags.** Cards show 3 rows of tags (4 on narrow cards) instead of 2. Watched
+  tags come first and are never folded into "+N".
+- **Haptics.**
+  - Tab switches use a crisp glass-like tap.
+  - Native bar buttons, vertical bar buttons, opening menus and Back give a light tap.
+  - Selection ticks use the app's own native channel.
+- **Card size.** "Custom width" became five steps per list style, with the column count computed
+  from the actual column width.
+- **Native shell polish.**
+  - Tapping the current tab again first pops to the root page.
+  - In single-column layouts, the primary column stays visible during the detail transition.
+  - The detail background uses the same image as the cover, so switching galleries no longer
+    flickers.
+  - The native bar keeps the page title while a dialog is open.
+  - Every pushed page provides its top-bar configuration to the native shell, guarded by a source
+    test.
+- **Graphite grain.** Fixed the grid seams in the background grain.
+- **Verification.**
+  - All 841 Flutter tests passed; `flutter analyze lib test` reported 0 errors.
+  - On the highest installed runtime, iOS 27.1 (24A94425), the iPhone Duo Simulator confirmed that
+    switching sites shows no popup, and that the Cloudflare page loads and reports success.
+  - Unsigned IPA build 93 was made locally for device testing only and was not uploaded to the
+    repository or Releases.
+  - Behavior on a physical device is still pending.
 
-- Long-press and toolbar menus offer "Save current image" and "Save original image".
-  Current-image saves reuse local files, temporary files or the viewer's exact cache key,
-  requiring no network when cached. Original saves reuse only a confirmed original or
-  download through the original-image endpoint; the image preference alone is not proof of quality.
-- Menu selection captures the image source before navigation. Duplicate original options
-  are omitted when the endpoint is missing or both sources are confirmed identical.
-  Downloads isolate image identity and quality, checking status, length and image contents
-  before publishing a completed file instead of selecting arbitrary shared temporary files.
-- iOS imports encoded files through PhotoKit with add-only authorization, preserving
-  supported formats, transparency and animation. Permission, invalid-file, download,
-  unsupported-format and write failures remain distinct. Success follows the completed
-  import, and concurrent saves are blocked.
-- All 511 tests and the final 38 focused tests passed, with no added analysis diagnostics
-  against the same-source baseline. On the highest installed available iOS 27.0 (24A434),
-  iPhone 18 Pro verified zero-download cached saves, original downloads and reuse,
-  denied add-only permission without library writes, and HTML/HTTP error classification.
-  Imported PNG, JPEG and GIF files match their source SHA-256 hashes.
-- Production `lib/main.dart` Simulator and unsigned Release arm64 builds passed, including
-  local IPA package 67 integrity checks. That IPA was delivered locally, not uploaded to
-  the repository or GitHub Releases; the version number is unchanged. LiveContainer host
-  permissions and in-container saves, plus physical Android devices, still require
-  acceptance testing; Simulator results do not substitute for those checks.
+### 2026-10-30: fix black screen on device launch
+
+Tag: `2026-10-29-ui-refresh-blackscreen-fix`.
+
+- The canvas color is applied only to the app's own windows (with a root view controller at normal
+  window level). System text and keyboard windows stay transparent, which fixes a fully black screen
+  after launch on device.
+
+### 2026-10-29: UI redesign (P1–P5)
+
+Tags: `2026-10-29-ui-refresh-p1-palette` through `2026-10-29-ui-refresh-p5-unification`.
+
+- **P1 palette.** Semantic color tokens (canvas, surface, field, hairline, text1–3 and more) cover
+  light, dark, increased contrast and elevated: eight variants in total.
+  - Restores the dark mode effect setting (Graphite / Pure Black).
+  - The native side syncs window and tab-bar host colors.
+- **P2 large waterfall.** Rewrites the card look, cover ratio and decoding, the info area and the
+  two-row tags.
+  - The column count adapts to the list's actual width.
+  - On an open iPhone Duo the list spans the fold.
+- **P3 gallery detail.** Rebuilds the first screen: ambience, equal-area cover, title parsing and
+  a title sheet.
+  - Adds a native "Share + …" menu and redesigns tags, comments and thumbnails.
+  - Two columns at ≥ 700pt width or on an open iPhone Duo.
+- **P4 settings.** Grouped home page, profile row, native pull-down menus, one grouped list style
+  and a shared sub-page shell.
+- **P5 unification.**
+  - Switches follow the accent color.
+  - Adds a glass fallback bar for iOS 26–27.0.
+  - Inline notes move to section footers.
+  - Adds immersive large cards and canvas grain.
+
+### 2026-10-28: iPhone Duo adaptation and reader update
+
+Tags: `2026-10-28-iphone-duo-adaptive`, `2026-10-28-custom-iphone-duo`.
+
+- Bridges iOS 27.1 reserved regions and hinge geometry, chooses the adaptive layout from available
+  space, and keeps a fallback for older systems.
+- Each tab keeps its own navigation, gallery and search state. Updates the native top bar, segmented
+  category bar, scroll fade and localized strings.
+- The reader improves single/double pages, continuous reading, thumbnails, system bars and safe
+  areas, and fixes controller lifecycle and image request locks on re-entry.
 
 ### 2026-10-26: favorite form compatibility and confirmed saves
 
-Version remains `1.9.2+566`. The fix tag is `2026-10-26-favorite-form-fix`;
-the `custom` integration and release tag is `2026-10-26-custom-favorite-form-fix`.
+Tags: `2026-10-26-favorite-form-fix`, `2026-10-26-custom-favorite-form-fix`.
 
-- Favorite submissions use URL-encoded text forms after anonymous EH/EX controls
-  identified administrative HTTP 403 responses to multipart text forms. Archive
-  downloads (local and H@H), My Tags, site settings/profile and comments use the
-  same verified encoding correction; forum login and file uploads retain their encoding.
-- A save updates shared state only after fresh server reads confirm the requested
-  category and exact note. Deletion requires an explicit not-favorited result;
-  the popup's default category 0 is never accepted as proof of success.
-- Each operation sends one POST. Uncertain outcomes use bounded readbacks without
-  repeating the write. Login redirects, challenges and HTTP rejections show short
-  errors, while account/revision guards prevent stale state updates.
-- All 554 Flutter tests passed, with zero analysis errors or warnings. Eight
-  traditional/Liquid Glass native cases passed on iPhone 18 Pro and iPad Pro
-  11-inch (M5), iOS 27.0 (24A434), covering categories 0/7, note editing/clearing,
-  list refresh, process restart, removal and HTTP 403 rejection. Normal-entry
-  clean installation, startup and process-survival checks also passed. Before
-  publication, four additional cases passed on the highest installed available
-  iOS 27.1 (24A94425) / iPhone Duo, covering both styles and restart/rejection.
-  The UI driver presses the visible upper card area to avoid the native tab bar.
-- The release reuses verified unsigned arm64 IPA package 68, built on 2026-10-23
-  from the same application source with the public configuration template and no
-  acceptance definitions. Real-account LiveContainer acceptance remains pending;
-  anonymous protocol controls and synthetic UI tests do not establish that result.
+- Favorites submit URL-encoded forms, avoiding the HTTP 403 triggered by multipart text forms.
+  Archive downloads, My Tags, site settings and comments got the same fix.
+- A save must be confirmed by reading back the category and note; a removal must confirm the
+  gallery is no longer favorited. Each operation sends one POST, with bounded readbacks when the
+  outcome is uncertain.
+- All 554 Flutter tests passed. Twelve native cases passed on iPhone 18 Pro, iPad Pro 11-inch (M5)
+  and iPhone Duo.
 
-### Build and verify
+### 2026-10-18: save gallery images to Photos
 
-Use Flutter 3.47.1 and Xcode 27.0; the minimum Flutter version is 3.47.0 for the
-public native gesture policy. The iOS Bundle ID is `cn.honjow.fehv`. In a new
-checkout, prepare the upstream public configuration template, then run:
+Tags: `2026-10-18-gallery-save-cache`, `2026-10-18-custom-gallery-save-cache`.
+
+- Menus offer "Save current image" and "Save original image". The current image reuses the cache
+  first. The original reuses only a file confirmed to be the original.
+- iOS imports through PhotoKit with add-only access and keeps format, transparency and animation.
+  Permission, download, format and write errors stay distinct.
+- All 511 tests passed. PNG, JPEG and GIF files in Photos match their source SHA-256 hashes.
+
+### 2026-10-16: eleven modules integrated into custom
+
+`custom` starts at fixed master `2fe86b737` and merges eleven independently deliverable modules in
+order. Each module branch holds one complete commit directly on master:
+
+| Module | Use | Independent branch |
+| --- | --- | --- |
+| Waterfall stability | Settings › Layout › Waterfall / Waterfall - Large | `codex/custom-waterfall` |
+| Downloads | Recheck existing files after pause, continue or folder restore | `codex/custom-downloads` |
+| Favorites | Traditional/glass forms, server confirmation, account isolation | `codex/custom-favorites-verified` |
+| Sharing | Native iOS/iPadOS links, images, files and exports | `codex/custom-sharing` |
+| History | Shared initialization, serialized writes, awaited sync | `codex/custom-history` |
+| Visible group index | Stable visible UUID/page mapping and restart restoration | `codex/custom-group-index` |
+| Action accessibility | Labels for traditional controls | `codex/custom-accessibility` |
+| Haptics | Native bridge, progressive pulls and operation feedback | `codex/custom-haptics` |
+| Avatar | Album/Files/URL, verified retry and local preview | `codex/custom-avatar` |
+| Grid tags | Aligned cards and two-row horizontal tags | `codex/custom-grid-tags` |
+| Liquid Glass | Settings › Style: native navigation, top bars, popups and safe areas | `codex/custom-liquid-glass-verified` |
+
+The integration passed all 486 tests. iPhone 18 Pro and iPad Pro 11-inch (M5) passed 42 native
+cases. The current grid tags tag is `2026-10-15-custom-grid-tags-independent-verifier`.
+
+## Build and verify
+
+Use Flutter 3.47.1 (minimum 3.47.0) and Xcode 27. In a new checkout, prepare the local
+configuration, then run:
 
 ```sh
 cp lib/config/config.dart.sample lib/config/config.dart
@@ -143,158 +201,77 @@ dart analyze --format=machine
 flutter test --no-pub
 ```
 
-Native reproductions use production `lib/main.dart` and debug-only neutral offline
-fixtures. Boot an isolated iOS 27 Simulator, keep output outside the checkout and
-choose unique run names. Run the verifiers serially:
+Simulator builds use the `Debug-SimulatorUI` configuration, which omits MLKit and the legacy archive
+downloader registration. Native verifiers live in `benchmark/*_ui_tests/run-native.sh`. They take
+the device UUID, an output directory outside the checkout and a unique run name, for example:
 
 ```sh
-mkdir -p "$OUTPUT_DIRECTORY/harness"
-bash benchmark/waterfall_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" waterfall
-bash benchmark/downloads_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" downloads
-bash benchmark/downloads_ui_tests/run-recovery.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" recovery
 bash benchmark/favorites_ui_tests/run-native.sh \
   "$DEVICE_UUID" "$OUTPUT_DIRECTORY" favorites
-bash benchmark/sharing_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" sharing
-bash benchmark/history_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" history
-bash benchmark/group_index_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" group-index
-bash benchmark/accessibility_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" accessibility
-bash benchmark/haptics_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" haptics
-bash benchmark/avatar_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" avatar
-bash benchmark/grid_tags_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" grid-tags
-bash benchmark/glass_ui_tests/run-native.sh \
-  "$DEVICE_UUID" "$OUTPUT_DIRECTORY" glass
 ```
 
-For glass combinations, prefix the favorites, avatar, group-index, haptics or
-downloads runner with `EROS_VERIFY_GLASS=1`. This enables glass through real
-settings and asserts native navigation without mixing glass seed data into the
-business fixture. `EROS_CROSS_GLASS_ACTIVE` in each case log proves activation.
-To repeat the additional cold-start regression on a fresh installed favorites
-fixture, run `benchmark/favorites_ui_tests/verify-installed.sh` with the device,
-external output directory, a unique run name and the fourth argument `bootstrap`;
-leave `EROS_VERIFY_GLASS` unset for this traditional entry path.
+For glass combinations, prefix the favorites, avatar, group-index, haptics or downloads runner with
+`EROS_VERIFY_GLASS=1`.
 
-Real forum uploads and live Cloudflare remain unverified; local HTTP coverage
-includes authentication, multipart requests, errors, 403 and verification retry.
-Action labels remain Chinese. Simulator semantics do not establish physical
-VoiceOver speech/focus. Accepted native haptic calls do not establish physical
-vibration or intensity; inherited Flutter refresh feedback remains separate from
-the enhanced application switch.
+**Not yet verified:**
+- Physical-device VoiceOver and vibration strength
+- Android hardware
+- OCR and legacy archive downloads
+- LiveContainer
+- Real-network Cloudflare blocks and forum uploads
 
-`Debug-SimulatorUI` omits MLKit and legacy archive-downloader registration.
-Physical devices, Android SAF hardware, OCR, legacy archive downloads,
-LiveContainer, Release and other untested platforms remain outside acceptance.
-Master's traditional category header still overflows by about 22px in the narrow
-iPad pane at accessibility-medium, and fixed-height waterfall tags retain
-clipping limitations. Its unscaled group rail can miss right-side
-label taps at accessibility sizes, where mapping was checked by PageView gestures.
-The unchanged history card retains a 29px overflow in the narrow iPad pane at
-accessibility-medium. The legacy debug download-task metadata writer remains
-unimplemented in both master and source.
-
-## 🔍 Translations Wanted 🔍
-Please submit a pull request if you want to help with translation.
-
-App Strings: `lib/l10n/{lang}.arb`
+Simulator results do not substitute for these checks.
 
 ## Installation for iOS
 
-This fork publication contains source code, not a fork IPA. The Releases link
-below points to upstream builds and does not provide these custom enhancements.
+This fork publishes source code only, not an IPA. The Releases link below points to upstream builds
+and does not include these enhancements.
 
 1. Get the ipa file from [Releases](https://github.com/erosTeam/eros_fe/releases/latest).
-2. Use some software like [AltStore](https://altstore.io) to install the ipa file on your device. Or [AltStore.json](https://config-feh.vercel.app/AltStore.json)
+2. Install it with a tool such as [AltStore](https://altstore.io), or use
+   [AltStore.json](https://config-feh.vercel.app/AltStore.json).
 
-## Descriptions
+## Features
 
-The main reference for UI is [E-HentaiViewer](https://github.com/kayanouriko/E-HentaiViewer)
+- [x] Popular, Watched, Home, Favorites
+- [x] Custom groups combining multiple conditions, each with its own style
+- [x] List, waterfall and grid views
+- [x] Light and dark mode
+- [x] Gallery information and image viewer, automatic page turning
+- [x] E-Hentai / ExHentai switch
+- [x] Search, advanced search and image search
+- [x] Tag translation and tag suggestions while searching
+- [x] Login and biometric lock
+- [x] Post, vote on and translate comments; forum avatars and quick replies
+- [x] EH settings and My Tags sync; long-press a tag for quick settings
+- [x] Downloads, original images, archive downloads and reading downloaded galleries
+- [x] WebDAV sync for history, quick search, reading progress and group configuration
+- [x] Hide images with QR codes and similar ad images by pHash
 
-Current Issues:
+## Translations
 
-- List sliding may have a small lag. Not as smooth as native apps
-- Does miss some essential features (still under development)
+Pull requests are welcome. App strings are in `lib/l10n/{lang}.arb`.
 
 ## Thanks
 
-The code and logic of the following projects are used and referenced for development
+The UI mainly follows [E-HentaiViewer](https://github.com/kayanouriko/E-HentaiViewer). Code and logic
+from these projects were used and referenced:
 
 - [E-HentaiViewer](https://github.com/kayanouriko/E-HentaiViewer)
 - [EhViewer](https://github.com/seven332/EhViewer)
+- [EhTagTranslation/Database](https://github.com/EhTagTranslation/Database) (tag translations)
 
-EhTagTranslation
+Translation contributors:
 
-- [EhTagTranslation/Database](https://github.com/EhTagTranslation/Database)
+- [KeepSOBP](https://github.com/KeepSOBP): Korean
+- [pursel](https://github.com/pursel), [Gigas002](https://github.com/Gigas002): Russian
+- [cristal-node](https://github.com/cristal-node): Japanese
 
-Translation
-- [KeepSOBP](https://github.com/KeepSOBP) Korean translation
-- [pursel](https://github.com/pursel), [Gigas002](https://github.com/Gigas002) -- Russian translation
-- [cristal-node](https://github.com/cristal-node) -- Japanese translation
+## Dependencies (partial)
 
-## Screenshot
-
-### Home Page List
-
-<img width="200" src="./screenshot/home.png" > 
-
-### Settings
-
-<img width="200" src="./screenshot/setting.png" >
-
-### Gallery
-
-<img width="200" src="./screenshot/gallery1.png" > <img width="200" src="./screenshot/gallery2.png" > 
-
-### Search
-
-<img width="200" src="./screenshot/search1.png" > <img width="200" src="./screenshot/search2.png" >
-
-### Read
-
-<img width="200" src="./screenshot/read1.png" > <img width="200" src="./screenshot/read2.png" >
-
-## Function
-
-- [x] Popula,Watch,Home,Favorites
-- [x] List View,Waterfall View Switch
-- [x] Gallery information view
-- [x] Gallery Image view
-- [x] Automatically turn pages
-- [x] eh/ex switch
-- [x] Tag search
-- [x] Login
-- [x] Search
-- [x] Search term matching tag
-- [x] Advanced search
-- [x] Save and share images
-- [x] Cache optimization
-- [x] Advanced settings
-- [x] post comments, vote up ，vote down
-- [x] watched and user tag
-- [x] Download
-
-## TODO
-
-
-## Dependency projects/plugins (partial)
-
-- network: [dio](https://pub.dev/packages/dio)
-- Status Management: [getx](https://pub.dev/packages/get)
-- db: [sqflite](https://pub.dev/packages/sqflite)
-- Data Persistence: [shared_preferences](https://pub.dev/packages/shared_preferences)
-- intl: [intl](https://pub.dev/packages/intl)
-- Image: [cached_network_image](https://pub.dev/packages/cached_network_image)、[extended_image](https://pub.dev/packages/extended_image)
-
-## About compiling
-
-Use the validated Flutter/Xcode versions and configuration steps in
-[Build and verify](#build-and-verify), rather than an unspecified latest SDK.
+- Network: [dio](https://pub.dev/packages/dio)
+- State management: [getx](https://pub.dev/packages/get)
+- Database: [sqflite](https://pub.dev/packages/sqflite)
+- Persistence: [shared_preferences](https://pub.dev/packages/shared_preferences)
+- Internationalization: [intl](https://pub.dev/packages/intl)
+- Images: [cached_network_image](https://pub.dev/packages/cached_network_image), [extended_image](https://pub.dev/packages/extended_image)
