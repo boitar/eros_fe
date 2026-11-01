@@ -94,6 +94,16 @@ class VibrateUtil {
 
   Future<void> selection() => _run(HapticFeedback.selectionClick);
 
+  /// Switching tabs in any tab bar: a crisp glass click on iOS, the light
+  /// pulse elsewhere.
+  Future<void> tabSwitch() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('tabSwitch');
+        } else {
+          await _androidPulse(5, amplitude: 100);
+        }
+      });
+
   Future<void> pullTick(double progress) => _run(() async {
         if (_isIOS) {
           final p = progress.clamp(0.0, 1.0).toDouble();

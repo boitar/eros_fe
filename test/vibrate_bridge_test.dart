@@ -60,6 +60,7 @@ void main() {
     await util.success();
     await util.error();
     await util.selection();
+    await util.tabSwitch();
     await util.prepareHaptics();
     await util.pullTick(.5);
   }
@@ -73,8 +74,16 @@ void main() {
     await util.heavy();
     await util.success();
     await util.error();
-    expect(nativeCalls.map((c) => c.method),
-        ['impact', 'light', 'medium', 'heavy', 'success', 'error']);
+    await util.tabSwitch();
+    expect(nativeCalls.map((c) => c.method), [
+      'impact',
+      'light',
+      'medium',
+      'heavy',
+      'success',
+      'error',
+      'tabSwitch'
+    ]);
     expect(legacyCalls, isEmpty);
   });
 

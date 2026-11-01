@@ -30,7 +30,8 @@ void main() {
   late LayoutServices layout;
   late ValueNotifier<AdaptiveEnvironmentSnapshot> geometry;
 
-  Future<void> mount(WidgetTester tester, Size size) async {
+  Future<void> mount(WidgetTester tester, Size size,
+      {bool shell = true}) async {
     Get.testMode = true;
     Get.put<LocaleService>(LocaleService());
     Get.put<EhSettingService>(_Settings());
@@ -42,7 +43,7 @@ void main() {
     Get.put(ControllerTagService());
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       _channel,
-      (call) async => call.method == 'getShellState' ? true : null,
+      (call) async => call.method == 'getShellState' ? shell : null,
     );
     geometry = ValueNotifier(AdaptiveEnvironmentSnapshot(size: size));
     tester.view.devicePixelRatio = 1;
@@ -86,6 +87,24 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Haptics in tests take the Android path, which ends in one vibrate call.
+  List<MethodCall> recordPulses(WidgetTester tester) {
+    const vibration = MethodChannel('vibration');
+    final pulses = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      vibration,
+      (call) async {
+        if (call.method == 'vibrate') {
+          pulses.add(call);
+        }
+        return call.method.startsWith('has') ? false : null;
+      },
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(vibration, null));
+    return pulses;
+  }
+
   Future<void> push(WidgetTester tester, String title, int? id) async {
     Get.to<void>(
       () => CupertinoPageScaffold(child: Center(child: Text(title))),
@@ -113,6 +132,35 @@ void main() {
     await _selectTab(tester, EHRoutes.setting);
     expect(find.text('${EHRoutes.setting} root'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('every tap in the native tab bar answers with a haptic',
+      (tester) async {
+    final pulses = recordPulses(tester);
+    await mount(tester, const Size(390, 844));
+    expect(pulses, isEmpty);
+
+    await _selectTab(tester, EHRoutes.favorite);
+    expect(pulses, hasLength(1));
+    // Reselecting is still a tap on the bar.
+    await _selectTab(tester, EHRoutes.favorite);
+    expect(pulses, hasLength(2));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('without the native shell the Flutter tab bar answers the same',
+      (tester) async {
+    final pulses = recordPulses(tester);
+    await mount(tester, const Size(390, 844), shell: false);
+    final bar = find.byType(CupertinoTabBar);
+    expect(bar, findsOneWidget);
+    final rect = tester.getRect(bar);
+    await tester.tapAt(Offset(rect.left + rect.width * .75, rect.center.dy));
+    await tester.pumpAndSettle();
+    expect(pulses, hasLength(1));
+    expect(tester.takeException(), isNull);
+    // Let the host finish asking for the shell that never comes.
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('reselecting a list tab pops its pushed pages first',

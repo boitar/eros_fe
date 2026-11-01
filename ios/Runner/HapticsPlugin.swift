@@ -14,6 +14,7 @@ enum ErosHaptics {
     private static let lightImpactGenerator = UIImpactFeedbackGenerator(style: .light)
     private static let mediumImpactGenerator = UIImpactFeedbackGenerator(style: .medium)
     private static let heavyImpactGenerator = UIImpactFeedbackGenerator(style: .heavy)
+    private static let rigidImpactGenerator = UIImpactFeedbackGenerator(style: .rigid)
     private static let notificationGenerator = UINotificationFeedbackGenerator()
     private static var hapticEngine: CHHapticEngine?
 
@@ -38,12 +39,8 @@ enum ErosHaptics {
     /// Used by the pull-to-refresh ticks, which ramp intensity with pull
     /// distance so the motor feels progressive instead of binary.
     static func tick(intensity: Double, sharpness: Double) {
-        if hapticEngine == nil {
-            prepareEngine()
-        }
-        guard let hapticEngine else { return }
-        do {
-            let event = CHHapticEvent(
+        play([
+            CHHapticEvent(
                 eventType: .hapticTransient,
                 parameters: [
                     CHHapticEventParameter(
@@ -56,13 +53,57 @@ enum ErosHaptics {
                     ),
                 ],
                 relativeTime: 0
-            )
-            let pattern = try CHHapticPattern(events: [event], parameters: [])
+            ),
+        ])
+    }
+
+    /// Switching tabs: a hard, bright strike followed by a faint ring that
+    /// dies away within 60 ms, so the bar answers like a fingertip tapping
+    /// glass instead of the soft thud of an impact. The rigid impact stands
+    /// in wherever Core Haptics can't play.
+    static func tabSwitch() {
+        let played = play([
+            CHHapticEvent(
+                eventType: .hapticTransient,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.68),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 1),
+                ],
+                relativeTime: 0
+            ),
+            CHHapticEvent(
+                eventType: .hapticContinuous,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.2),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.96),
+                    CHHapticEventParameter(parameterID: .attackTime, value: 0),
+                    CHHapticEventParameter(parameterID: .decayTime, value: 0.05),
+                    CHHapticEventParameter(parameterID: .sustained, value: 0),
+                ],
+                relativeTime: 0.01,
+                duration: 0.06
+            ),
+        ])
+        if !played {
+            rigidImpactGenerator.impactOccurred(intensity: 0.8)
+        }
+    }
+
+    @discardableResult
+    private static func play(_ events: [CHHapticEvent]) -> Bool {
+        if hapticEngine == nil {
+            prepareEngine()
+        }
+        guard let hapticEngine else { return false }
+        do {
+            let pattern = try CHHapticPattern(events: events, parameters: [])
             let player = try hapticEngine.makePlayer(with: pattern)
             try hapticEngine.start()
             try player.start(atTime: CHHapticTimeImmediate)
+            return true
         } catch {
-            // Engine hiccups must never surface; the next tick retries lazily.
+            // Engine hiccups must never surface; the next event retries lazily.
+            return false
         }
     }
 
@@ -100,7 +141,7 @@ final class ErosHapticsPlugin: NSObject, FlutterPlugin {
 
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
-        case "impact", "light", "medium", "heavy", "success", "error":
+        case "impact", "light", "medium", "heavy", "success", "error", "tabSwitch":
             switch call.method {
             case "impact": ErosHaptics.impact()
             case "light": ErosHaptics.light()
@@ -108,6 +149,7 @@ final class ErosHapticsPlugin: NSObject, FlutterPlugin {
             case "heavy": ErosHaptics.heavy()
             case "success": ErosHaptics.success()
             case "error": ErosHaptics.error()
+            case "tabSwitch": ErosHaptics.tabSwitch()
             default: break
             }
             #if DEBUG

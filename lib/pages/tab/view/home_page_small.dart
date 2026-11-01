@@ -43,6 +43,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
   @override
   void initState() {
     super.initState();
+    // Warm the haptic engine so the first tab switch isn't late.
+    vibrateUtil.prepareHaptics();
     controller.tabController.addListener(_tabSelectionChanged);
     _navigation.addListener(_publishNativeNavigationState);
     NativeNavigationBridge.chromeRevision
@@ -58,7 +60,11 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     _nativeSource = NativeNavigationBridge.attachSource(
       route: route,
       state: _nativeNavigationState,
-      onSelectTab: (route) async => controller.selectRoute(route),
+      // The system tab bar gives no feedback of its own.
+      onSelectTab: (route) async {
+        vibrateUtil.tabSwitch();
+        await controller.selectRoute(route);
+      },
       onBack: () async {
         if (_layout.isLayoutLarge &&
             (_navigation.selected?.detailObserver.history.length ?? 0) > 1 &&
@@ -189,7 +195,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
                   : null,
               items: controller.listBottomNavigationBarItem,
               onTap: (index) {
-                vibrateUtil.light();
+                vibrateUtil.tabSwitch();
                 _handleTabTap(index, useLiquidGlass: useLiquidGlass);
               },
             );
