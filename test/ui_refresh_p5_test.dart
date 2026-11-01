@@ -16,6 +16,7 @@ import 'package:eros_fe/widget/cupertino/list_tile.dart';
 import 'package:eros_fe/widget/cupertino/sliver_list_section.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -335,6 +336,61 @@ void main() {
       // The tabs' navigators sit under the grain; rebuilding them drops the
       // pages' routes from their records.
       expect(mounts, 1);
+    });
+
+    testWidgets('shades the canvas evenly, across every tile seam',
+        (tester) async {
+      tester.view.physicalSize = const Size(300, 300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final boundary = GlobalKey();
+      for (final brightness in Brightness.values) {
+        final dark = brightness == Brightness.dark;
+        final canvas = dark
+            ? EhPalette.graphite.canvas.darkColor
+            : EhPalette.graphite.canvas.color;
+        await tester.pumpWidget(RepaintBoundary(
+          key: boundary,
+          child: CupertinoTheme(
+            data: EhPalette.graphite.themeData(brightness, ehTextTheme),
+            child: ColoredBox(
+              color: canvas,
+              child: const CanvasGrain(child: SizedBox.expand()),
+            ),
+          ),
+        ));
+        // The noise tile decodes outside the frame.
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 50)));
+        await tester.pump();
+        final pixels = (await tester.runAsync(() async {
+          final image = await (boundary.currentContext!.findRenderObject()!
+                  as RenderRepaintBoundary)
+              .toImage();
+          return image.toByteData();
+        }))!;
+        final base = (canvas.r * 255).round();
+        // White grain over graphite, black grain over light: on average half
+        // the strength of a full-alpha texel.
+        final opacity = CanvasGrain.opacityFor(canvas, dark: dark);
+        final expected =
+            (dark ? 255 - base : base) * opacity * 0.5 * (dark ? 1 : -1);
+        final columns = List<double>.filled(300, 0);
+        final rows = List<double>.filled(300, 0);
+        for (var y = 0; y < 300; y++) {
+          for (var x = 0; x < 300; x++) {
+            final shift = pixels.getUint8((y * 300 + x) * 4) - base;
+            columns[x] += shift / 300;
+            rows[y] += shift / 300;
+          }
+        }
+        // A seam left bare, or a texture of the wrong strength, puts a whole
+        // line of pixels outside this band.
+        for (final line in [...columns, ...rows]) {
+          expect(line / expected, inInclusiveRange(.5, 1.5),
+              reason: '$brightness');
+        }
+      }
     });
   });
 

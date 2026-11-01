@@ -38,7 +38,7 @@ class CanvasGrain extends StatelessWidget {
       painter: flat
           ? null
           : _GrainPainter(
-              tint: dark ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
+              onDark: dark,
               opacity: opacity,
               texel: 1 / MediaQuery.devicePixelRatioOf(context),
             ),
@@ -50,12 +50,13 @@ class CanvasGrain extends StatelessWidget {
 
 class _GrainPainter extends CustomPainter {
   _GrainPainter({
-    required this.tint,
+    required this.onDark,
     required this.opacity,
     required this.texel,
-  }) : super(repaint: _GrainTexture.image);
+  }) : super(repaint: _GrainTexture.of(onDark));
 
-  final Color tint;
+  /// Light grain on a dark canvas, dark grain on a light one.
+  final bool onDark;
   final double opacity;
 
   /// Logical size of one noise sample: one physical pixel.
@@ -63,9 +64,9 @@ class _GrainPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final image = _GrainTexture.image.value;
+    final image = _GrainTexture.of(onDark).value;
     if (image == null) {
-      _GrainTexture.ensure();
+      _GrainTexture.ensure(onDark);
       return;
     }
     final matrix = Matrix4.diagonal3Values(texel, texel, 1);
@@ -79,49 +80,54 @@ class _GrainPainter extends CustomPainter {
           matrix.storage,
           filterQuality: FilterQuality.none,
         )
-        // Tints the noise and scales its alpha to [opacity] in one pass.
-        ..colorFilter = ColorFilter.matrix(<double>[
-          0, 0, 0, 0, tint.r * 255, //
-          0, 0, 0, 0, tint.g * 255, //
-          0, 0, 0, 0, tint.b * 255, //
-          0, 0, 0, opacity, 0, //
-        ]),
+        // The paint's alpha fades the tile as it repeats. A colour filter
+        // here made Impeller filter the tile into a copy that lost its edge
+        // texels, which left a bare line along every seam.
+        ..color = Color.fromRGBO(0, 0, 0, opacity),
     );
   }
 
   @override
   bool shouldRepaint(_GrainPainter oldDelegate) =>
-      oldDelegate.tint != tint ||
+      oldDelegate.onDark != onDark ||
       oldDelegate.opacity != opacity ||
       oldDelegate.texel != texel;
 }
 
-/// One shared tile of white noise, decoded once.
+/// The shared noise tiles, one per tint, each built once.
 abstract final class _GrainTexture {
   static const int _size = 128;
-  static final ValueNotifier<ui.Image?> image = ValueNotifier<ui.Image?>(null);
-  static bool _started = false;
+  static final Map<bool, ValueNotifier<ui.Image?>> _images = {
+    true: ValueNotifier<ui.Image?>(null),
+    false: ValueNotifier<ui.Image?>(null),
+  };
 
-  static void ensure() {
-    if (_started) {
+  static ValueNotifier<ui.Image?> of(bool onDark) => _images[onDark]!;
+
+  static final Set<bool> _started = {};
+
+  static void ensure(bool onDark) {
+    if (!_started.add(onDark)) {
       return;
     }
-    _started = true;
     // A fixed seed keeps the texture identical between launches.
     final random = math.Random(0x5eed);
     final pixels = Uint8List(_size * _size * 4);
     for (int i = 0; i < pixels.length; i += 4) {
-      pixels[i] = 0xFF;
-      pixels[i + 1] = 0xFF;
-      pixels[i + 2] = 0xFF;
-      pixels[i + 3] = random.nextInt(256);
+      final alpha = random.nextInt(256);
+      // Premultiplied: white noise carries its alpha in every channel.
+      final value = onDark ? alpha : 0;
+      pixels[i] = value;
+      pixels[i + 1] = value;
+      pixels[i + 2] = value;
+      pixels[i + 3] = alpha;
     }
     ui.decodeImageFromPixels(
       pixels,
       _size,
       _size,
       ui.PixelFormat.rgba8888,
-      (decoded) => image.value = decoded,
+      (decoded) => of(onDark).value = decoded,
     );
   }
 }
