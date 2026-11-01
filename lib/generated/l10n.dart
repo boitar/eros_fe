@@ -5314,6 +5314,136 @@ class L10n {
     );
   }
 
+  /// `Card Size`
+  String get card_size {
+    return Intl.message(
+      'Card Size',
+      name: 'card_size',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Small`
+  String get card_size_small {
+    return Intl.message(
+      'Small',
+      name: 'card_size_small',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Smaller`
+  String get card_size_smaller {
+    return Intl.message(
+      'Smaller',
+      name: 'card_size_smaller',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Standard`
+  String get card_size_standard {
+    return Intl.message(
+      'Standard',
+      name: 'card_size_standard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Larger`
+  String get card_size_larger {
+    return Intl.message(
+      'Larger',
+      name: 'card_size_larger',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Large`
+  String get card_size_large {
+    return Intl.message(
+      'Large',
+      name: 'card_size_large',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Columns are counted from the width of the pane the list is in, so they change when you switch displays, rotate or drag the divider. Standard matches the previous automatic columns.`
+  String get card_size_footer {
+    return Intl.message(
+      'Columns are counted from the width of the pane the list is in, so they change when you switch displays, rotate or drag the divider. Standard matches the previous automatic columns.',
+      name: 'card_size_footer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Outer Display`
+  String get outer_display {
+    return Intl.message(
+      'Outer Display',
+      name: 'outer_display',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Inner Display`
+  String get inner_display {
+    return Intl.message(
+      'Inner Display',
+      name: 'inner_display',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Portrait`
+  String get portrait {
+    return Intl.message(
+      'Portrait',
+      name: 'portrait',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} columns`
+  String column_count(Object count) {
+    return Intl.message(
+      '$count columns',
+      name: 'column_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{min}–{max} columns`
+  String column_range(Object min, Object max) {
+    return Intl.message(
+      '$min–$max columns',
+      name: 'column_range',
+      desc: '',
+      args: [min, max],
+    );
+  }
+
+  /// `Split, set by divider`
+  String get split_follows_divider {
+    return Intl.message(
+      'Split, set by divider',
+      name: 'split_follows_divider',
+      desc: '',
+      args: [],
+    );
+  }
+
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

@@ -51,6 +51,10 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m8(count) => "${count} 則";
 
+  static String m9(count) => "${count} 欄";
+
+  static String m10(min, max) => "${min}–${max} 欄";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("上傳頭像"),
@@ -653,6 +657,19 @@ class MessageLookup extends MessageLookupByLibrary {
         "gallery_info": MessageLookupByLibrary.simpleMessage("畫廊資訊"),
         "search_by_image": MessageLookupByLibrary.simpleMessage("以圖搜圖"),
         "remove_all": MessageLookupByLibrary.simpleMessage("全部刪除"),
-        "import_export": MessageLookupByLibrary.simpleMessage("匯入與匯出")
+        "import_export": MessageLookupByLibrary.simpleMessage("匯入與匯出"),
+        "card_size": MessageLookupByLibrary.simpleMessage("卡片大小"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("小"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("較小"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("較大"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("大"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("欄數依清單所在這一欄的實際寬度計算：切換螢幕、旋轉或拖動分隔線都會自動增減。「標準」與原本的自動欄數相同。"),
+        "outer_display": MessageLookupByLibrary.simpleMessage("外螢幕"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("內螢幕"),
+        "portrait": MessageLookupByLibrary.simpleMessage("豎屏"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分欄隨分隔線")
       };
 }

@@ -525,5 +525,18 @@
   "gallery_info": "畫廊資訊",
   "search_by_image": "以圖搜圖",
   "remove_all": "全部刪除",
-  "import_export": "匯入與匯出"
+  "import_export": "匯入與匯出",
+  "card_size": "卡片大小",
+  "card_size_small": "小",
+  "card_size_smaller": "較小",
+  "card_size_standard": "標準",
+  "card_size_larger": "較大",
+  "card_size_large": "大",
+  "card_size_footer": "欄數依清單所在這一欄的實際寬度計算：切換螢幕、旋轉或拖動分隔線都會自動增減。「標準」與原本的自動欄數相同。",
+  "outer_display": "外螢幕",
+  "inner_display": "內螢幕",
+  "portrait": "豎屏",
+  "column_count": "{count} 欄",
+  "column_range": "{min}–{max} 欄",
+  "split_follows_divider": "分欄隨分隔線"
 }

@@ -51,6 +51,10 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m8(count) => "${count} comments";
 
+  static String m9(count) => "${count} columns";
+
+  static String m10(min, max) => "${min}–${max} columns";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
@@ -796,6 +800,19 @@ class MessageLookup extends MessageLookupByLibrary {
         "gallery_info": MessageLookupByLibrary.simpleMessage("Gallery info"),
         "search_by_image": MessageLookupByLibrary.simpleMessage("Search by image"),
         "remove_all": MessageLookupByLibrary.simpleMessage("Remove all"),
-        "import_export": MessageLookupByLibrary.simpleMessage("Import and export")
+        "import_export": MessageLookupByLibrary.simpleMessage("Import and export"),
+        "card_size": MessageLookupByLibrary.simpleMessage("Card Size"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("Small"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("Smaller"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("Larger"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("Large"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("Columns are counted from the width of the pane the list is in, so they change when you switch displays, rotate or drag the divider. Standard matches the previous automatic columns."),
+        "outer_display": MessageLookupByLibrary.simpleMessage("Outer Display"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("Inner Display"),
+        "portrait": MessageLookupByLibrary.simpleMessage("Portrait"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("Split, set by divider")
       };
 }

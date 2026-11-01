@@ -525,5 +525,18 @@
   "gallery_info": "Gallery info",
   "search_by_image": "Search by image",
   "remove_all": "Remove all",
-  "import_export": "Import and export"
+  "import_export": "Import and export",
+  "card_size": "Card Size",
+  "card_size_small": "Small",
+  "card_size_smaller": "Smaller",
+  "card_size_standard": "Standard",
+  "card_size_larger": "Larger",
+  "card_size_large": "Large",
+  "card_size_footer": "Columns are counted from the width of the pane the list is in, so they change when you switch displays, rotate or drag the divider. Standard matches the previous automatic columns.",
+  "outer_display": "Outer Display",
+  "inner_display": "Inner Display",
+  "portrait": "Portrait",
+  "column_count": "{count} columns",
+  "column_range": "{min}–{max} columns",
+  "split_follows_divider": "Split, set by divider"
 }

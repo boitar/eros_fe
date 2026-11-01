@@ -411,7 +411,7 @@
   "latest_version": "Последняя версия",
   "update_to_version": "Обновиться до {version}",
   "volume_key_turn_page": "Переключение страниц кнопкой громкости",
-  "landscape": "Landscape",
+  "landscape": "Альбомная",
   "automatic": "Automatic",
   "never": "Никогда",
   "proxy": "Прокси",
@@ -525,5 +525,18 @@
   "gallery_info": "Сведения о галерее",
   "search_by_image": "Поиск по изображению",
   "remove_all": "Удалить все",
-  "import_export": "Импорт и экспорт"
+  "import_export": "Импорт и экспорт",
+  "card_size": "Размер карточек",
+  "card_size_small": "Мелкие",
+  "card_size_smaller": "Поменьше",
+  "card_size_standard": "Стандарт",
+  "card_size_larger": "Покрупнее",
+  "card_size_large": "Крупные",
+  "card_size_footer": "Число столбцов считается по ширине панели со списком, поэтому меняется при смене экрана, повороте или перетаскивании разделителя. «Стандарт» совпадает с прежним автоматическим числом.",
+  "outer_display": "Внешний экран",
+  "inner_display": "Внутренний экран",
+  "portrait": "Портретная",
+  "column_count": "Столбцов: {count}",
+  "column_range": "Столбцов: {min}–{max}",
+  "split_follows_divider": "разделение по разделителю"
 }

@@ -63,42 +63,25 @@ final class GridTagsEntryTests: XCTestCase {
         _ = state("grid")
         findSettingsRow("列表样式").tap(); tap("网格 - 标签")
         _ = state()
-        findSettingsRow("自定义宽度").tap()
-        let toggle = app.switches.firstMatch
-        XCTAssertTrue(toggle.waitForExistence(timeout: 20), app.debugDescription)
-        if toggle.value as? String == "0" {
-            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        }
-        XCTAssertEqual(toggle.value as? String, "1", app.debugDescription)
-        let previous = state(custom: true).label
-        let slider = app.descendants(matching: .any).matching(
-            NSPredicate(format: "value MATCHES %@", "[0-9]+%")).firstMatch
-        XCTAssertTrue(slider.waitForExistence(timeout: 20), app.debugDescription)
-        let width = Int(previous.components(separatedBy: "width=").last ?? "") ?? 150
-        let start = Double((slider.value as? String ?? "17%").replacingOccurrences(of: "%", with: ""))! / 100
-        slider.coordinate(withNormalizedOffset: CGVector(dx: start, dy: 0.5))
-            .press(forDuration: 0.1, thenDragTo: slider.coordinate(
-                withNormalizedOffset: CGVector(dx: width > 250 ? 0.35 : 0.65, dy: 0.5)))
+        findSettingsRow("卡片大小").tap()
+        let previous = state().label
+        let size = Int(previous.components(separatedBy: "size=").last ?? "") ?? 2
+        // Any step but the one already chosen, and never back to standard.
+        let pick = size == 3 ? "较小" : "较大"
+        let expected = size == 3 ? "1" : "3"
+        tap(pick)
         let current = state(custom: true)
-        expectation(for: NSPredicate(format: "label != %@", previous), evaluatedWith: current)
-        waitForExpectations(timeout: 15)
-        let widthField = app.textFields.firstMatch
-        XCTAssertTrue(widthField.waitForExistence(timeout: 15), app.debugDescription)
-        let finalWidth = widthField.value as? String ?? ""
-        XCTAssertNotNil(Int(finalWidth))
-        expectation(for: NSPredicate(format: "label ENDSWITH %@", "width=" + finalWidth),
+        expectation(for: NSPredicate(format: "label ENDSWITH %@", "size=" + expected),
                     evaluatedWith: current)
         waitForExpectations(timeout: 15)
-        XCTAssertFalse(current.label.contains("width=0"), current.label)
-        print("EROS_GRID_EXPECTED_WIDTH=" + finalWidth)
-        record("grid-tags-real-width-slider-and-preview")
+        print("EROS_GRID_EXPECTED_WIDTH=" + expected)
+        record("grid-tags-card-size-and-preview")
     }
     func testProductionRestoredModeAndWidth() {
         let current = state(custom: true)
-        XCTAssertFalse(current.label.contains("width=0"), current.label)
-        let width = current.label.components(separatedBy: "width=").last ?? ""
-        XCTAssertNotNil(Int(width))
-        print("EROS_GRID_RESTORED_WIDTH=" + width)
+        let size = current.label.components(separatedBy: "size=").last ?? ""
+        XCTAssertNotNil(Int(size), current.label)
+        print("EROS_GRID_RESTORED_WIDTH=" + size)
         let first = app.descendants(matching: .any)["offline-gallery-9100000"]
         XCTAssertTrue(first.waitForExistence(timeout: 30), app.debugDescription)
         record("grid-tags-production-settings-restored")

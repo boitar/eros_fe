@@ -99,15 +99,13 @@ void main() {
       }
     });
 
-    test('a custom width stays a maximum column width', () {
+    test('the card size sets the narrowest column, never below two', () {
       expect(
-          LargeWaterfallDelegate.columnsFor(378,
-              gap: gap, customColumnWidth: 120),
+          LargeWaterfallDelegate.columnsFor(378, gap: gap, minColumnWidth: 102),
           3);
       expect(
-          LargeWaterfallDelegate.columnsFor(378,
-              gap: gap, customColumnWidth: 400),
-          1);
+          LargeWaterfallDelegate.columnsFor(378, gap: gap, minColumnWidth: 250),
+          2);
     });
 
     test('even columns put a gap on the centre line', () {
@@ -115,9 +113,9 @@ void main() {
           LargeWaterfallDelegate.columnsFor(1000, gap: gap, evenColumns: true),
           4);
       expect(
-          LargeWaterfallDelegate.columnsFor(378,
-              gap: gap, customColumnWidth: 400, evenColumns: true),
-          2);
+          LargeWaterfallDelegate.columnsFor(1000,
+              gap: gap, minColumnWidth: 132, evenColumns: true),
+          6);
     });
   });
 

@@ -525,5 +525,18 @@
   "gallery_info": "画廊信息",
   "search_by_image": "以图搜图",
   "remove_all": "全部删除",
-  "import_export": "导入与导出"
+  "import_export": "导入与导出",
+  "card_size": "卡片大小",
+  "card_size_small": "小",
+  "card_size_smaller": "较小",
+  "card_size_standard": "标准",
+  "card_size_larger": "较大",
+  "card_size_large": "大",
+  "card_size_footer": "列数按这一栏的实际宽度计算：换屏、旋转或拖动分割条都会自动增减。「标准」与原来的自动列数相同。",
+  "outer_display": "外屏",
+  "inner_display": "内屏",
+  "portrait": "竖屏",
+  "column_count": "{count} 列",
+  "column_range": "{min}–{max} 列",
+  "split_follows_divider": "分栏随分割条"
 }

@@ -9,7 +9,9 @@ import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/login/controller/login_controller.dart';
+import 'package:eros_fe/pages/setting/card_size_preview.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
+import 'package:eros_fe/pages/tab/view/list/card_size.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -307,9 +309,18 @@ class LayoutSettingList extends StatelessWidget {
           );
         }),
 
-        // custom_width
+        // card_size
         EhCupertinoListTile(
-          title: Text(L10n.of(context).custom_width),
+          title: Text(L10n.of(context).card_size),
+          additionalInfo: Obx(() {
+            final mode = _ehSettingService.listMode.value;
+            if (!CardSize.modes.contains(mode)) {
+              return const SizedBox.shrink();
+            }
+            final step = CardSize.of(mode, _ehSettingService.getItemConfig(mode),
+                phone: context.isPhone);
+            return Text(CardSizeSlider.labels(L10n.of(context))[step]);
+          }),
           trailing: const CupertinoListTileChevron(),
           onTap: () {
             Get.toNamed(

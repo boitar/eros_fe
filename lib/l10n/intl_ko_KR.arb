@@ -411,7 +411,7 @@
   "latest_version": "Latest version",
   "update_to_version": "Update to {version}",
   "volume_key_turn_page": "Volume key to turn page",
-  "landscape": "Landscape",
+  "landscape": "가로",
   "automatic": "Automatic",
   "never": "Never",
   "proxy": "Proxy",
@@ -525,5 +525,18 @@
   "gallery_info": "갤러리 정보",
   "search_by_image": "이미지로 검색",
   "remove_all": "모두 삭제",
-  "import_export": "가져오기 및 내보내기"
+  "import_export": "가져오기 및 내보내기",
+  "card_size": "카드 크기",
+  "card_size_small": "작게",
+  "card_size_smaller": "조금 작게",
+  "card_size_standard": "표준",
+  "card_size_larger": "조금 크게",
+  "card_size_large": "크게",
+  "card_size_footer": "열 수는 목록이 있는 영역의 실제 너비로 계산되므로 화면 전환, 회전, 구분선 드래그에 따라 자동으로 바뀝니다. '표준'은 기존 자동 열 수와 같습니다.",
+  "outer_display": "외부 디스플레이",
+  "inner_display": "내부 디스플레이",
+  "portrait": "세로",
+  "column_count": "{count}열",
+  "column_range": "{min}–{max}열",
+  "split_follows_divider": "분할 · 구분선에 따름"
 }

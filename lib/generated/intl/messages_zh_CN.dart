@@ -51,6 +51,10 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m8(count) => "${count} 条";
 
+  static String m9(count) => "${count} 列";
+
+  static String m10(min, max) => "${min}–${max} 列";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("上传头像"),
@@ -653,6 +657,19 @@ class MessageLookup extends MessageLookupByLibrary {
         "gallery_info": MessageLookupByLibrary.simpleMessage("画廊信息"),
         "search_by_image": MessageLookupByLibrary.simpleMessage("以图搜图"),
         "remove_all": MessageLookupByLibrary.simpleMessage("全部删除"),
-        "import_export": MessageLookupByLibrary.simpleMessage("导入与导出")
+        "import_export": MessageLookupByLibrary.simpleMessage("导入与导出"),
+        "card_size": MessageLookupByLibrary.simpleMessage("卡片大小"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("小"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("较小"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("标准"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("较大"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("大"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("列数按这一栏的实际宽度计算：换屏、旋转或拖动分割条都会自动增减。「标准」与原来的自动列数相同。"),
+        "outer_display": MessageLookupByLibrary.simpleMessage("外屏"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("内屏"),
+        "portrait": MessageLookupByLibrary.simpleMessage("竖屏"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分栏随分割条")
       };
 }

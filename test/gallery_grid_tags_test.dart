@@ -246,6 +246,12 @@ void main() {
     final tile = find.byWidgetPredicate((widget) =>
         widget is GalleryItemGrid || widget is GalleryItemGridPlaceHolder);
     expect(tester.getSize(tile.first).width, closeTo(122, .01));
+    settings.configs[ListModeEnum.gridTags] =
+        const ItemConfig(type: 'gridTags', cardSize: 4);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.getSize(tile.first).width, closeTo(186, .01));
+    // A width from the old setting lands on the nearest card size.
     settings.configs[ListModeEnum.gridTags] = const ItemConfig(
         type: 'gridTags', enableCustomWidth: true, customWidth: 220);
     await tester.pump();
@@ -255,34 +261,23 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('new mode retains its own width preview and configuration',
-      (tester) async {
-    settings.configs[ListModeEnum.grid] = const ItemConfig(
-        type: 'grid', enableCustomWidth: true, customWidth: 300);
-    expect(const EhGridView([], 'test').getMaxCrossAxisExtent(), 300);
+  testWidgets('each mode keeps its own card size', (tester) async {
+    settings.configs[ListModeEnum.grid] =
+        const ItemConfig(type: 'grid', cardSize: 0);
+    expect(const EhGridView([], 'test').getMaxCrossAxisExtent(),
+        closeTo(150 * 102 / 168, .01));
     expect(
         const EhGridView([], 'test', mode: ListModeEnum.gridTags)
             .getMaxCrossAxisExtent(),
         150);
-    await mount(tester, home: const ItemWidthSettingPage());
+    await mount(tester,
+        home: const ItemWidthSettingPage(screen: Size(390, 844)));
     // The value shares one text run with its pull-down chevron.
     expect(find.textContaining('网格 - 标签'), findsOneWidget);
-    expect(find.byType(GalleryGridTagsSliver), findsOneWidget);
-    await tester.tap(find.byType(CupertinoSwitch));
-    await tester.pump();
-    expect(settings.configs[ListModeEnum.gridTags]?.enableCustomWidth, isTrue);
-    expect(settings.configs[ListModeEnum.gridTags]?.customWidth, 150);
-    final sliderFinder = find.byType(CupertinoSlider);
-    final slider = tester.widget<CupertinoSlider>(sliderFinder);
-    final size = tester.getSize(sliderFinder);
-    final fraction = (slider.value - slider.min) / (slider.max - slider.min);
-    final thumb = tester.getTopLeft(sliderFinder) +
-        Offset(18 + (size.width - 36) * fraction, size.height / 2);
-    await tester.dragFrom(thumb, const Offset(60, 0));
-    await tester.pump();
-    expect(
-        settings.configs[ListModeEnum.gridTags]?.customWidth, greaterThan(150));
-    expect(settings.configs[ListModeEnum.grid]?.customWidth, 300);
+    await tester.tap(find.text('较大'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(settings.configs[ListModeEnum.gridTags]?.cardSize, 3);
+    expect(settings.configs[ListModeEnum.grid]?.cardSize, 0);
     expect(tester.takeException(), isNull);
   });
 
@@ -293,16 +288,16 @@ void main() {
         uuid: 'fixture', name: 'Tagged', listModeValue: 'gridTags');
     expect(CustomProfile.fromJson(profile.toJson()).listMode,
         ListModeEnum.gridTags);
-    const width =
-        ItemConfig(type: 'gridTags', enableCustomWidth: true, customWidth: 220);
-    final restored = ItemConfig.fromJson(width.toJson());
+    const size = ItemConfig(type: 'gridTags', cardSize: 4);
+    final restored = ItemConfig.fromJson(size.toJson());
+    expect(restored, size);
     settings.configs[
             EnumToString.fromString(ListModeEnum.values, restored.type)!] =
         restored;
     expect(
         const EhGridView([], 'test', mode: ListModeEnum.gridTags)
             .getMaxCrossAxisExtent(),
-        220);
+        closeTo(150 * 250 / 168, .01));
     expect(const EhGridView([], 'test').getMaxCrossAxisExtent(), 150);
   });
 }

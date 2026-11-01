@@ -51,6 +51,10 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m8(count) => "댓글 ${count}개";
 
+  static String m9(count) => "${count}열";
+
+  static String m10(min, max) => "${min}–${max}열";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
@@ -258,7 +262,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "jump_or_seek": MessageLookupByLibrary.simpleMessage("Jump or Seek"),
         "jump_prev": MessageLookupByLibrary.simpleMessage("Prev"),
         "jump_to_page": MessageLookupByLibrary.simpleMessage("페이지로 이동"),
-        "landscape": MessageLookupByLibrary.simpleMessage("Landscape"),
+        "landscape": MessageLookupByLibrary.simpleMessage("가로"),
         "language": MessageLookupByLibrary.simpleMessage("언어"),
         "last_favorites": MessageLookupByLibrary.simpleMessage(
             "최근 즐겨찾기, 길게 눌러 수동으로 선택할 수 있습니다."),
@@ -748,6 +752,19 @@ class MessageLookup extends MessageLookupByLibrary {
         "gallery_info": MessageLookupByLibrary.simpleMessage("갤러리 정보"),
         "search_by_image": MessageLookupByLibrary.simpleMessage("이미지로 검색"),
         "remove_all": MessageLookupByLibrary.simpleMessage("모두 삭제"),
-        "import_export": MessageLookupByLibrary.simpleMessage("가져오기 및 내보내기")
+        "import_export": MessageLookupByLibrary.simpleMessage("가져오기 및 내보내기"),
+        "card_size": MessageLookupByLibrary.simpleMessage("카드 크기"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("작게"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("조금 작게"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("표준"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("조금 크게"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("크게"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("열 수는 목록이 있는 영역의 실제 너비로 계산되므로 화면 전환, 회전, 구분선 드래그에 따라 자동으로 바뀝니다. '표준'은 기존 자동 열 수와 같습니다."),
+        "outer_display": MessageLookupByLibrary.simpleMessage("외부 디스플레이"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("내부 디스플레이"),
+        "portrait": MessageLookupByLibrary.simpleMessage("세로"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("분할 · 구분선에 따름")
       };
 }

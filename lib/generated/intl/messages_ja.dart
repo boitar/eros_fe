@@ -51,6 +51,10 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m8(count) => "${count} 件";
 
+  static String m9(count) => "${count} 列";
+
+  static String m10(min, max) => "${min}〜${max} 列";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
@@ -693,6 +697,19 @@ class MessageLookup extends MessageLookupByLibrary {
         "gallery_info": MessageLookupByLibrary.simpleMessage("ギャラリー情報"),
         "search_by_image": MessageLookupByLibrary.simpleMessage("画像で検索"),
         "remove_all": MessageLookupByLibrary.simpleMessage("すべて削除"),
-        "import_export": MessageLookupByLibrary.simpleMessage("インポートとエクスポート")
+        "import_export": MessageLookupByLibrary.simpleMessage("インポートとエクスポート"),
+        "card_size": MessageLookupByLibrary.simpleMessage("カードのサイズ"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("小"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("やや小"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("標準"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("やや大"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("大"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("列数はリストがある欄の実際の幅で決まり、画面の切り替え、回転、仕切りのドラッグに合わせて自動で増減します。「標準」はこれまでの自動の列数と同じです。"),
+        "outer_display": MessageLookupByLibrary.simpleMessage("外側ディスプレイ"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("内側ディスプレイ"),
+        "portrait": MessageLookupByLibrary.simpleMessage("縦向き"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分割・仕切りで変化")
       };
 }

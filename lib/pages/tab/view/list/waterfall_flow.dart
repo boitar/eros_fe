@@ -7,6 +7,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/item/gallery_item_flow.dart';
 import 'package:eros_fe/pages/item/gallery_item_flow_large.dart';
+import 'package:eros_fe/pages/tab/view/list/card_size.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
@@ -60,9 +61,8 @@ class EhWaterfallFlow extends StatelessWidget {
       split: BrowsePaneScope.isSplit(context),
     );
     return LargeWaterfallDelegate(
-      customColumnWidth: (itemConfig?.enableCustomWidth ?? false)
-          ? itemConfig?.customWidth?.toDouble()
-          : null,
+      minColumnWidth: CardSize.largeColumnWidth(
+          CardSize.of(ListModeEnum.waterfallLarge, itemConfig)),
       evenColumns: foldGap != null,
       crossAxisSpacing: foldGap ??
           (immersive
@@ -166,15 +166,12 @@ class EhWaterfallFlow extends StatelessWidget {
   }
 
   double getMaxCrossAxisExtent() {
-    final itemConfig = _ehSettingService.getItemConfig(ListModeEnum.waterfall);
-    final defaultMaxCrossAxisExtent = Get.context!.isPhone
-        ? EHConst.waterfallFlowMaxCrossAxisExtent
-        : EHConst.waterfallFlowMaxCrossAxisExtentTablet;
-    if (itemConfig?.enableCustomWidth ?? false) {
-      return itemConfig?.customWidth?.toDouble() ?? defaultMaxCrossAxisExtent;
-    } else {
-      return defaultMaxCrossAxisExtent;
-    }
+    final phone = Get.context!.isPhone;
+    final step = CardSize.of(ListModeEnum.waterfall,
+        _ehSettingService.getItemConfig(ListModeEnum.waterfall),
+        phone: phone);
+    return CardSize.maxCrossAxisExtent(ListModeEnum.waterfall, step,
+        phone: phone);
   }
 }
 
@@ -182,12 +179,11 @@ class EhWaterfallFlow extends StatelessWidget {
 /// width at layout time, so rotation, split panes and Stage Manager windows
 /// all get a count that fits rather than one guessed from the device.
 ///
-/// Without a custom width: `max(2, ⌊(width + gap) ÷ (168 + gap)⌋)`.
-/// A custom width keeps its old meaning of a maximum column width.
+/// `max(2, ⌊(width + gap) ÷ (column + gap)⌋)`, where the narrowest column
+/// is 168 at the standard card size.
 class LargeWaterfallDelegate extends SliverWaterfallFlowDelegate {
   const LargeWaterfallDelegate({
     this.minColumnWidth = EHConst.waterfallFlowLargeMinColumnWidth,
-    this.customColumnWidth,
     this.evenColumns = false,
     super.mainAxisSpacing,
     super.crossAxisSpacing,
@@ -195,7 +191,6 @@ class LargeWaterfallDelegate extends SliverWaterfallFlowDelegate {
   });
 
   final double minColumnWidth;
-  final double? customColumnWidth;
 
   /// Keeps the middle gap on the centre line, where a fold runs.
   final bool evenColumns;
@@ -204,13 +199,9 @@ class LargeWaterfallDelegate extends SliverWaterfallFlowDelegate {
     double width, {
     required double gap,
     double minColumnWidth = EHConst.waterfallFlowLargeMinColumnWidth,
-    double? customColumnWidth,
     bool evenColumns = false,
   }) {
-    var count = customColumnWidth != null && customColumnWidth > 0
-        ? (width / (customColumnWidth + gap)).ceil()
-        : math.max(2, ((width + gap) / (minColumnWidth + gap)).floor());
-    count = math.max(1, count);
+    var count = math.max(2, ((width + gap) / (minColumnWidth + gap)).floor());
     if (evenColumns && count.isOdd) {
       count = count == 1 ? 2 : count - 1;
     }
@@ -222,7 +213,6 @@ class LargeWaterfallDelegate extends SliverWaterfallFlowDelegate {
         constraints.crossAxisExtent,
         gap: crossAxisSpacing,
         minColumnWidth: minColumnWidth,
-        customColumnWidth: customColumnWidth,
         evenColumns: evenColumns,
       );
 
@@ -230,7 +220,6 @@ class LargeWaterfallDelegate extends SliverWaterfallFlowDelegate {
   bool shouldRelayout(SliverWaterfallFlowDelegate oldDelegate) {
     return oldDelegate is! LargeWaterfallDelegate ||
         oldDelegate.minColumnWidth != minColumnWidth ||
-        oldDelegate.customColumnWidth != customColumnWidth ||
         oldDelegate.evenColumns != evenColumns ||
         super.shouldRelayout(oldDelegate);
   }

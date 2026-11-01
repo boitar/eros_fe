@@ -51,6 +51,10 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m8(count) => "Комментарии: ${count}";
 
+  static String m9(count) => "Столбцов: ${count}";
+
+  static String m10(min, max) => "Столбцов: ${min}–${max}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Загрузить аватар"),
@@ -285,7 +289,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "jump_prev": MessageLookupByLibrary.simpleMessage("Prev"),
         "jump_to_page":
             MessageLookupByLibrary.simpleMessage("Перейти на страницу"),
-        "landscape": MessageLookupByLibrary.simpleMessage("Landscape"),
+        "landscape": MessageLookupByLibrary.simpleMessage("Альбомная"),
         "language": MessageLookupByLibrary.simpleMessage("Язык"),
         "last_favorites": MessageLookupByLibrary.simpleMessage(
             "Последнее использованное избранное, долгий тап чтобы выбрать вручную"),
@@ -831,6 +835,19 @@ class MessageLookup extends MessageLookupByLibrary {
         "gallery_info": MessageLookupByLibrary.simpleMessage("Сведения о галерее"),
         "search_by_image": MessageLookupByLibrary.simpleMessage("Поиск по изображению"),
         "remove_all": MessageLookupByLibrary.simpleMessage("Удалить все"),
-        "import_export": MessageLookupByLibrary.simpleMessage("Импорт и экспорт")
+        "import_export": MessageLookupByLibrary.simpleMessage("Импорт и экспорт"),
+        "card_size": MessageLookupByLibrary.simpleMessage("Размер карточек"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("Мелкие"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("Поменьше"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("Стандарт"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("Покрупнее"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("Крупные"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("Число столбцов считается по ширине панели со списком, поэтому меняется при смене экрана, повороте или перетаскивании разделителя. «Стандарт» совпадает с прежним автоматическим числом."),
+        "outer_display": MessageLookupByLibrary.simpleMessage("Внешний экран"),
+        "inner_display": MessageLookupByLibrary.simpleMessage("Внутренний экран"),
+        "portrait": MessageLookupByLibrary.simpleMessage("Портретная"),
+        "column_count": m9,
+        "column_range": m10,
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("разделение по разделителю")
       };
 }

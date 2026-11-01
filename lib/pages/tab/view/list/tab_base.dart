@@ -17,6 +17,7 @@ import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:get/get.dart';
 import 'package:keframe/keframe.dart';
 
+import 'card_size.dart';
 import 'grid.dart';
 import 'sliver_list.dart';
 import 'waterfall_flow.dart';
@@ -493,7 +494,7 @@ Widget getGallerySliverList(
           for (var index = 0; index < (galleryProviders?.length ?? 0); index++)
             galleryProviders![index].gid ?? '$index',
         ],
-        layout: (mod, itemConfig?.enableCustomWidth, itemConfig?.customWidth),
+        layout: (mod, CardSize.of(mod, itemConfig)),
         sliver: sliver,
       );
     }),
