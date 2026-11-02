@@ -41,7 +41,7 @@ class ListViewAdvancedSetting extends StatelessWidget {
 
     return MultiSliver(
       children: [
-        CupertinoListSection.insetGrouped(
+        SliverCupertinoListSection.listInsetGrouped(
           children: [_buildLanguageItem(context)],
         ),
 
