@@ -285,19 +285,31 @@ class TabHomeController extends GetxController {
         );
       }).toList();
 
+  List<String> get hiddenTabRoutes {
+    // Read all three observables even in safe mode or with an empty list, so
+    // an Obx caller continues to follow changes to the complete configuration.
+    final safeMode = isSafeMode;
+    final routes = tabNameList.toList();
+    final visibility = Map<String, bool>.of(tabMap);
+    if (safeMode) {
+      return const [];
+    }
+    return routes.where((route) => !(visibility[route] ?? false)).toList();
+  }
+
+  Future<void> openHiddenTab(String route) async {
+    await Get.toNamed<void>(route, id: primaryNavigatorId);
+  }
+
   List<NativeNavigationAction> get nativeHiddenTabActions {
-    if (isSafeMode) return const [];
     return [
-      for (final route in tabNameList)
-        if (!(tabMap[route] ?? false))
-          NativeNavigationAction(
-            id: 'destination:$route',
-            title: tabPages.tabTitles[route] ?? route,
-            symbol: tabPages.liquidGlassFallbackSymbols[route],
-            onPressed: () async {
-              await Get.toNamed<void>(route, id: primaryNavigatorId);
-            },
-          ),
+      for (final route in hiddenTabRoutes)
+        NativeNavigationAction(
+          id: 'destination:$route',
+          title: tabPages.tabTitles[route] ?? route,
+          symbol: tabPages.liquidGlassFallbackSymbols[route],
+          onPressed: () => openHiddenTab(route),
+        ),
     ];
   }
 

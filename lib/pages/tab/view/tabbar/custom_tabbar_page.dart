@@ -2,7 +2,6 @@ import 'package:blur/blur.dart';
 import 'package:english_words/english_words.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
-import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/debug/offline_group_index.dart';
@@ -10,6 +9,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_sublist_controller.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
+import 'package:eros_fe/pages/tab/view/hidden_tabs_rail_action.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
@@ -495,52 +495,48 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
     LiquidGlassTopLayout layout,
     double fadeProgress,
   ) {
-    return LiquidGlassRail(
-      layout: _ehSettingService.liquidGlassTopBarLayout,
-      pageController: controller.pageController,
-      title: L10n.of(context).tab_gallery,
-      safeTop: layout.safeTop,
-      fadeProgress: fadeProgress,
-      selectedIndex: controller.index,
-      followSystemTransparency:
-          _ehSettingService.liquidGlassFollowSystemTransparency,
-      leading: LiquidGlassRailAction(
-        icon: CupertinoIcons.time,
-        label: '浏览历史',
-        onPressed: () {
-          Get.toNamed(EHRoutes.history, id: primaryNavigatorId);
-        },
+    return Obx(
+      () => LiquidGlassRail(
+        layout: _ehSettingService.liquidGlassTopBarLayout,
+        pageController: controller.pageController,
+        title: L10n.of(context).tab_gallery,
+        safeTop: layout.safeTop,
+        fadeProgress: fadeProgress,
+        selectedIndex: controller.index,
+        followSystemTransparency:
+            _ehSettingService.liquidGlassFollowSystemTransparency,
+        leading: hiddenTabsRailAction(context),
+        trailing: <LiquidGlassRailAction>[
+          LiquidGlassRailAction(
+            icon: CupertinoIcons.arrow_uturn_down_circle,
+            label: '跳转/搜寻',
+            onPressed: () => controller.showJumpDialog(context),
+          ),
+        ],
+        categoryTrailing: <LiquidGlassRailAction>[
+          LiquidGlassRailAction(
+            icon: CupertinoIcons.line_horizontal_3,
+            label: '分组管理',
+            onPressed: controller.pressedBar,
+          ),
+        ],
+        categories: controller.profilesShow
+            .map(
+              (profile) => LiquidGlassRailCategory(
+                id: profile.uuid,
+                title: profile.name,
+                onLongPress: () =>
+                    showGroupActionSheet(context, controller, profile),
+                onTap: () async {
+                  final index = controller.profilesShow.indexOf(profile);
+                  await _selectProfile(index);
+                },
+              ),
+            )
+            .toList(),
+        onTitleTap: _scrollToInitialContentAnchor,
+        refreshing: controller.isBackgroundRefresh,
       ),
-      trailing: <LiquidGlassRailAction>[
-        LiquidGlassRailAction(
-          icon: CupertinoIcons.arrow_uturn_down_circle,
-          label: '跳转/搜寻',
-          onPressed: () => controller.showJumpDialog(context),
-        ),
-      ],
-      categoryTrailing: <LiquidGlassRailAction>[
-        LiquidGlassRailAction(
-          icon: CupertinoIcons.line_horizontal_3,
-          label: '分组管理',
-          onPressed: controller.pressedBar,
-        ),
-      ],
-      categories: controller.profilesShow
-          .map(
-            (profile) => LiquidGlassRailCategory(
-              id: profile.uuid,
-              title: profile.name,
-              onLongPress: () =>
-                  showGroupActionSheet(context, controller, profile),
-              onTap: () async {
-                final index = controller.profilesShow.indexOf(profile);
-                await _selectProfile(index);
-              },
-            ),
-          )
-          .toList(),
-      onTitleTap: _scrollToInitialContentAnchor,
-      refreshing: controller.isBackgroundRefresh,
     );
   }
 
