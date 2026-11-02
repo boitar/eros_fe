@@ -72,8 +72,34 @@ The native vertical bars sit on the right edge.
 - Stability fixes for sharing, history, the visible group index, avatar upload and action labels.
 - Haptics: tab switches, native bar buttons, menus and Back now give feedback, and selection ticks
   use a pre-warmed native channel.
+- Hidden tab entry: tabs hidden from the tab bar get a matching entry in both the iOS 27.1 native
+  shell and the older glass top bar (one hidden tab opens directly; several open a picker).
 
 ## Changelog
+
+### 2026-11-03: hidden tab entry and language section fixes (builds 94–95)
+
+Tags: `2026-11-02-hidden-tab-entry`, `2026-11-02-language-section-fix`,
+`2026-11-03-custom-hidden-tab-language`.
+
+- **Hidden tab entry on the older glass top bar** (reported upstream in
+  [erosTeam/eros_fe#24](https://github.com/erosTeam/eros_fe/issues/24#issuecomment-6528333971)).
+  Below iOS 27.1 with Liquid Glass on, the entry at the left of the gallery, favorites, toplist and
+  download top bars always opened History, whichever tab was hidden in Tab Bar Settings.
+  - One hidden tab now shows that tab's icon and opens it directly.
+  - Several hidden tabs show ⋯, which opens a picker in the order set in Settings.
+  - No hidden tabs means no entry; pages opened from the entry show Back; safe mode shows no entry.
+  - The data is shared with the iOS 27.1 native shell.
+- **Language section colors.** In dark mode, Settings › Advanced showed a pure-black, square block
+  around "Language", and its card was narrower, greyer and less rounded than the other groups. That
+  group still used Flutter's own `CupertinoListSection.insetGrouped`; it now uses the shared
+  `SliverCupertinoListSection.listInsetGrouped`, and a test keeps Flutter's section out of `lib/`.
+- Verification: 870 Flutter tests pass, and the new tests fail when the fix is reverted. On the
+  newest installed runtime, iOS 27.1 (24A94425), the iPhone Duo simulator shows the language card
+  matching the other groups with a working language menu; the glass top-bar entry passed its full
+  matrix on the iPhone 18 Pro Max / iOS 27.0 simulator. The unsigned IPA (build 95) is on this fork's
+  [Releases](https://github.com/boitar/eros_fe/releases/latest). Physical-device behavior is still
+  unconfirmed.
 
 ### 2026-11-01: Cloudflare verification and UI polish (builds 79–93)
 
@@ -111,7 +137,7 @@ Tags: `2026-11-01-cf-verification`, `2026-11-01-custom-ui-refresh`.
   - All 841 Flutter tests passed; `flutter analyze lib test` reported 0 errors.
   - On the highest installed runtime, iOS 27.1 (24A94425), the iPhone Duo Simulator confirmed that
     switching sites shows no popup, and that the Cloudflare page loads and reports success.
-  - Unsigned IPA build 93 is published on this fork's [Releases](https://github.com/boitar/eros_fe/releases/latest).
+  - Unsigned IPA build 93 is published on this fork's [Releases](https://github.com/boitar/eros_fe/releases/tag/2026-11-01-custom-readme-refresh).
   - Behavior on a physical device is still pending.
 
 ### 2026-10-30: fix black screen on device launch

@@ -54,8 +54,17 @@
 - 图片保存：保存当前图片／原图，优先复用缓存，iOS 通过 PhotoKit 保留格式、透明度与动画。
 - 分享、历史、可见分组索引、头像上传、操作语义标签等模块的稳定性修复。
 - 触感：标签切换、原生栏按钮、菜单与返回补齐震动，选择类轻点走预热的原生通道。
+- 隐藏栏目入口：底栏隐藏的栏目在 iOS 27.1 原生导航与旧版玻璃顶栏中都按实际设置显示入口（1 项直接打开，多项弹出选择面板）。
 
 ## 更新记录
+
+### 2026-11-03：顶栏隐藏入口与语言设置着色修复（包 94–95）
+
+关联 tag：`2026-11-02-hidden-tab-entry`、`2026-11-02-language-section-fix`、`2026-11-03-custom-hidden-tab-language`。
+
+- **旧版玻璃顶栏的隐藏栏目入口**（原仓库 [erosTeam/eros_fe#24 的反馈](https://github.com/erosTeam/eros_fe/issues/24#issuecomment-6528333971)）：iOS 27.1 以下开启液态玻璃时，无论在「主页栏位设置」关闭哪一项，画廊、收藏、排行、下载顶栏左侧的入口都固定是「浏览历史」。现在按实际隐藏项显示：只隐藏 1 项时显示该项并直接打开，隐藏多项时显示 ⋯ 选择面板（顺序跟随设置），没有隐藏项时不显示；从入口打开的页面显示返回按钮；安全模式下不显示。与 iOS 27.1 原生导航共用同一份隐藏项数据。
+- **语言设置分组着色**：深色模式下 设置 › 高级 的「语言设置」外层有一整块纯黑直角底，卡片更窄、偏灰、圆角更小。原因是该分组仍用 Flutter 原生 `CupertinoListSection.insetGrouped`，现已改为与其他分组相同的 `SliverCupertinoListSection.listInsetGrouped`，并加测试防止原生分组再次出现在 `lib/`。
+- 验证：Flutter 全量 870 项通过；新增测试在回退修复时会失败。本机最高 runtime iOS 27.1（24A94425）／iPhone Duo 模拟器验证语言分组与其他分组一致、语言菜单正常；旧玻璃顶栏入口在 iPhone 18 Pro Max／iOS 27.0 模拟器完整矩阵通过。无签名 IPA（包 95）已发布到本 fork 的 [Releases](https://github.com/boitar/eros_fe/releases/latest)。真机效果仍待确认。
 
 ### 2026-11-01：Cloudflare 验证与 UI 打磨（包 79–93）
 
@@ -67,7 +76,7 @@
 - **卡片大小**：「自定义宽度」改为每种列表样式 5 档，列数按实际栏宽计算。
 - **原生壳打磨**：再次点当前标签先退回根页面；单栏详情转场主栏保持可见；详情背景与封面同图，消除切换画廊时的闪烁；对话框打开时原生栏保持标题；所有推入页统一向原生壳提供顶栏配置，并加源码守卫测试。
 - **石墨颗粒**：修复背景颗粒的方格接缝。
-- 验证：Flutter 全量 841 项通过，`flutter analyze lib test` 0 error。本机最高 runtime iOS 27.1（24A94425）／iPhone Duo 模拟器验证站点来回切换无弹窗、Cloudflare 验证页正常加载并提示「验证完成」。无签名 IPA（包 93）已发布到本 fork 的 [Releases](https://github.com/boitar/eros_fe/releases/latest)。真机效果仍待确认。
+- 验证：Flutter 全量 841 项通过，`flutter analyze lib test` 0 error。本机最高 runtime iOS 27.1（24A94425）／iPhone Duo 模拟器验证站点来回切换无弹窗、Cloudflare 验证页正常加载并提示「验证完成」。无签名 IPA（包 93）已发布到本 fork 的 [Releases](https://github.com/boitar/eros_fe/releases/tag/2026-11-01-custom-readme-refresh)。真机效果仍待确认。
 
 ### 2026-10-30：修复真机启动黑屏
 
