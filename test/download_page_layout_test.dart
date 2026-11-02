@@ -31,6 +31,8 @@ void main() {
     double scale = 1,
     bool dark = false,
     bool export = false,
+    LiquidGlassRailAction? leading,
+    String title = 'Downloads',
     ValueChanged<String>? onTaskTap,
     VoidCallback? onExport,
   }) async {
@@ -54,6 +56,8 @@ void main() {
         ),
         child: _Downloads(
           layout: layout,
+          leading: leading,
+          title: title,
           onTaskTap: onTaskTap,
           onExport: export ? onExport ?? () {} : null,
         ),
@@ -61,6 +65,82 @@ void main() {
     ));
     await tester.pumpAndSettle();
   }
+
+  for (final hasLeading in [false, true]) {
+    for (final hasExport in [false, true]) {
+      testWidgets(
+          'two-row title reserves symmetric space, leading=$hasLeading export=$hasExport',
+          (tester) async {
+        const title = 'A deliberately long download page title';
+        await mount(
+          tester,
+          size: const Size(320, 600),
+          layout: LiquidGlassTopBarLayout.twoRow,
+          title: title,
+          leading: hasLeading
+              ? LiquidGlassRailAction(
+                  icon: CupertinoIcons.chevron_back,
+                  label: 'Back',
+                  onPressed: () {},
+                )
+              : null,
+          export: hasExport,
+        );
+        final titleFinder = find.text(title);
+        final position = tester.widget<Positioned>(find
+            .ancestor(of: titleFinder, matching: find.byType(Positioned))
+            .first);
+        final expectedInset = hasLeading || hasExport ? 60.0 : 16.0;
+        expect(position.left, expectedInset);
+        expect(position.right, expectedInset);
+        final titleRect = tester.getRect(titleFinder);
+        expect(titleRect.center.dx, closeTo(160, 0.5));
+        if (hasLeading) {
+          expect(
+              titleRect.left,
+              greaterThan(tester
+                  .getRect(find.byIcon(CupertinoIcons.chevron_back))
+                  .right));
+        }
+        if (hasExport) {
+          expect(
+              titleRect.right,
+              lessThan(tester
+                  .getRect(find.byIcon(CupertinoIcons.arrow_up_arrow_down))
+                  .left));
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+  testWidgets('inline categories avoid the leading and trailing actions',
+      (tester) async {
+    await mount(
+      tester,
+      size: const Size(320, 600),
+      layout: LiquidGlassTopBarLayout.inline,
+      leading: LiquidGlassRailAction(
+        icon: CupertinoIcons.chevron_back,
+        label: 'Back',
+        onPressed: () {},
+      ),
+      export: true,
+    );
+    final categories = tester.getRect(
+        find.byKey(const ValueKey<String>('liquid-glass-category-selection')));
+    expect(
+        categories.left,
+        greaterThan(
+            tester.getRect(find.byIcon(CupertinoIcons.chevron_back)).right));
+    expect(
+        categories.right,
+        lessThan(tester
+            .getRect(find.byIcon(CupertinoIcons.arrow_up_arrow_down))
+            .left));
+    expect(find.text('Downloads'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final layout in LiquidGlassTopBarLayout.values) {
     for (final size in const [
@@ -202,11 +282,19 @@ void main() {
 }
 
 class _Downloads extends StatefulWidget {
-  const _Downloads({required this.layout, this.onTaskTap, this.onExport});
+  const _Downloads({
+    required this.layout,
+    this.onTaskTap,
+    this.onExport,
+    this.leading,
+    this.title = 'Downloads',
+  });
 
   final LiquidGlassTopBarLayout layout;
   final ValueChanged<String>? onTaskTap;
   final VoidCallback? onExport;
+  final LiquidGlassRailAction? leading;
+  final String title;
 
   @override
   State<_Downloads> createState() => _DownloadsState();
@@ -225,7 +313,7 @@ class _DownloadsState extends State<_Downloads> {
   @override
   Widget build(BuildContext context) => DownloadGlassScaffold(
         header: DownloadGlassHeader(
-          title: 'Downloads',
+          title: widget.title,
           galleryLabel: 'Gallery',
           archiverLabel: 'Archive',
           safeTop: MediaQuery.paddingOf(context).top,
@@ -234,6 +322,7 @@ class _DownloadsState extends State<_Downloads> {
           pageController: pages,
           onSelected: pages.jumpToPage,
           onExport: widget.onExport,
+          leading: widget.leading,
         ),
         child: PageView.builder(
           key: const PageStorageKey<String>('download-pages'),

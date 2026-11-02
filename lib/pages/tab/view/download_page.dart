@@ -9,6 +9,7 @@ import 'package:eros_fe/pages/item/download_gallery_item.dart';
 import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/view/constants.dart';
+import 'package:eros_fe/pages/tab/view/hidden_tabs_rail_action.dart';
 import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
@@ -164,6 +165,7 @@ class _DownloadTabState extends State<DownloadTab> {
             pageController: pageController,
             followSystemTransparency:
                 settings.liquidGlassFollowSystemTransparency,
+            leading: hiddenTabsRailAction(context),
             onSelected: select,
             onExport: !kReleaseMode ? _showExportDialog : null,
           ),
@@ -366,6 +368,7 @@ class DownloadGlassHeader extends StatelessWidget {
     required this.onSelected,
     this.pageController,
     this.followSystemTransparency = true,
+    this.leading,
     this.onExport,
   });
 
@@ -378,6 +381,7 @@ class DownloadGlassHeader extends StatelessWidget {
   final ValueChanged<int> onSelected;
   final PageController? pageController;
   final bool followSystemTransparency;
+  final LiquidGlassRailAction? leading;
   final VoidCallback? onExport;
 
   @override
@@ -392,6 +396,7 @@ class DownloadGlassHeader extends StatelessWidget {
             pageController: pageController,
             followSystemTransparency: followSystemTransparency,
             fadeProgress: 0,
+            leading: leading,
             categories: [
               LiquidGlassRailCategory(
                 id: 'gallery',
@@ -416,8 +421,8 @@ class DownloadGlassHeader extends StatelessWidget {
           if (layout == LiquidGlassTopBarLayout.twoRow)
             Positioned(
               top: safeTop,
-              left: onExport == null ? 16 : 60,
-              right: onExport == null ? 16 : 60,
+              left: leading != null || onExport != null ? 60 : 16,
+              right: leading != null || onExport != null ? 60 : 16,
               height: 44,
               child: Center(
                 child: Semantics(

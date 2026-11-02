@@ -8,6 +8,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
+import 'package:eros_fe/pages/tab/view/hidden_tabs_rail_action.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
@@ -326,70 +327,66 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
     double fadeProgress,
     LiquidGlassTopLayout layout,
   ) {
-    return LiquidGlassRail(
-      layout: _ehSettingService.liquidGlassTopBarLayout,
-      pageController: pageController,
-      title: L10n.of(context).tab_favorite,
-      safeTop: layout.safeTop,
-      fadeProgress: fadeProgress,
-      selectedIndex: controller.index,
-      followSystemTransparency:
-          _ehSettingService.liquidGlassFollowSystemTransparency,
-      leading: LiquidGlassRailAction(
-        icon: CupertinoIcons.time,
-        label: '浏览历史',
-        onPressed: () {
-          Get.toNamed(EHRoutes.history, id: primaryNavigatorId);
-        },
-      ),
-      trailing: <LiquidGlassRailAction>[
-        LiquidGlassRailAction(
-          icon: CupertinoIcons.sort_down,
-          label: '收藏排序',
-          onPressed: () => controller.setOrder(context),
-        ),
-        LiquidGlassRailAction(
-          icon: CupertinoIcons.arrow_uturn_down_circle,
-          label: '跳转/搜寻',
-          onPressed: () => controller.showJumpDialog(context),
-        ),
-      ],
-      categoryTrailing: controller.showBarsBtn
-          ? <LiquidGlassRailAction>[
-              LiquidGlassRailAction(
-                icon: CupertinoIcons.line_horizontal_3,
-                label: '选择收藏夹',
-                onPressed: () async {
-                  final result = await Get.toNamed(
-                    EHRoutes.selFavorite,
-                    id: primaryNavigatorId,
-                  );
-                  if (result != null && result is Favcat) {
-                    final index = controller.favcatList.indexWhere(
-                      (element) => element.favId == result.favId,
+    return Obx(
+      () => LiquidGlassRail(
+        layout: _ehSettingService.liquidGlassTopBarLayout,
+        pageController: pageController,
+        title: L10n.of(context).tab_favorite,
+        safeTop: layout.safeTop,
+        fadeProgress: fadeProgress,
+        selectedIndex: controller.index,
+        followSystemTransparency:
+            _ehSettingService.liquidGlassFollowSystemTransparency,
+        leading: hiddenTabsRailAction(context),
+        trailing: <LiquidGlassRailAction>[
+          LiquidGlassRailAction(
+            icon: CupertinoIcons.sort_down,
+            label: '收藏排序',
+            onPressed: () => controller.setOrder(context),
+          ),
+          LiquidGlassRailAction(
+            icon: CupertinoIcons.arrow_uturn_down_circle,
+            label: '跳转/搜寻',
+            onPressed: () => controller.showJumpDialog(context),
+          ),
+        ],
+        categoryTrailing: controller.showBarsBtn
+            ? <LiquidGlassRailAction>[
+                LiquidGlassRailAction(
+                  icon: CupertinoIcons.line_horizontal_3,
+                  label: '选择收藏夹',
+                  onPressed: () async {
+                    final result = await Get.toNamed(
+                      EHRoutes.selFavorite,
+                      id: primaryNavigatorId,
                     );
-                    if (index >= 0) {
-                      await _selectFavoriteCategory(index);
+                    if (result != null && result is Favcat) {
+                      final index = controller.favcatList.indexWhere(
+                        (element) => element.favId == result.favId,
+                      );
+                      if (index >= 0) {
+                        await _selectFavoriteCategory(index);
+                      }
                     }
-                  }
+                  },
+                ),
+              ]
+            : const <LiquidGlassRailAction>[],
+        categories: controller.favcatList
+            .map(
+              (favcat) => LiquidGlassRailCategory(
+                id: favcat.favId,
+                title: favcat.favTitle,
+                onTap: () async {
+                  final index = controller.favcatList.indexOf(favcat);
+                  await _selectFavoriteCategory(index);
                 },
               ),
-            ]
-          : const <LiquidGlassRailAction>[],
-      categories: controller.favcatList
-          .map(
-            (favcat) => LiquidGlassRailCategory(
-              id: favcat.favId,
-              title: favcat.favTitle,
-              onTap: () async {
-                final index = controller.favcatList.indexOf(favcat);
-                await _selectFavoriteCategory(index);
-              },
-            ),
-          )
-          .toList(),
-      onTitleTap: _scrollToInitialContentAnchor,
-      refreshing: controller.isBackgroundRefresh,
+            )
+            .toList(),
+        onTitleTap: _scrollToInitialContentAnchor,
+        refreshing: controller.isBackgroundRefresh,
+      ),
     );
   }
 

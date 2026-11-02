@@ -1,10 +1,10 @@
 import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
-import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/controller/toplist_controller.dart';
+import 'package:eros_fe/pages/tab/view/hidden_tabs_rail_action.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/utils/cust_lib/persistent_header_builder.dart';
 import 'package:eros_fe/utils/cust_lib/sliver/sliver_persistent_header.dart';
@@ -167,49 +167,45 @@ class _ToplistTabState extends State<ToplistTab> {
     await controller.setToplist(context, type: type);
   }
 
-  LiquidGlassRail _buildGlassRail(
+  Widget _buildGlassRail(
     BuildContext context,
     LiquidGlassTopLayout layout,
     double fadeProgress,
   ) {
     final periodTitles = _periodTitles(context);
-    return LiquidGlassRail(
-      layout: _ehSettingService.liquidGlassTopBarLayout,
-      title: controller.getTopListTitle,
-      safeTop: layout.safeTop,
-      fadeProgress: fadeProgress,
-      selectedIndex: _selectedPeriod,
-      followSystemTransparency:
-          _ehSettingService.liquidGlassFollowSystemTransparency,
-      leading: LiquidGlassRailAction(
-        icon: CupertinoIcons.time,
-        label: L10n.of(context).tab_history,
-        onPressed: () {
-          Get.toNamed(EHRoutes.history, id: primaryNavigatorId);
-        },
-      ),
-      trailing: <LiquidGlassRailAction>[
-        LiquidGlassRailAction(
-          icon: CupertinoIcons.sort_down,
-          label: L10n.of(context).ranking_period,
-          onPressed: () => _setToplist(),
-        ),
-        LiquidGlassRailAction(
-          icon: CupertinoIcons.arrow_uturn_down_circle,
-          label: L10n.of(context).jump_or_seek,
-          onPressed: () => controller.showJumpDialog(context),
-        ),
-      ],
-      categories: <LiquidGlassRailCategory>[
-        for (int index = 0; index < periodTitles.length; index++)
-          LiquidGlassRailCategory(
-            id: ToplistType.values[index].name,
-            title: periodTitles[index],
-            onTap: () => _setToplist(type: ToplistType.values[index]),
+    return Obx(
+      () => LiquidGlassRail(
+        layout: _ehSettingService.liquidGlassTopBarLayout,
+        title: controller.getTopListTitle,
+        safeTop: layout.safeTop,
+        fadeProgress: fadeProgress,
+        selectedIndex: _selectedPeriod,
+        followSystemTransparency:
+            _ehSettingService.liquidGlassFollowSystemTransparency,
+        leading: hiddenTabsRailAction(context),
+        trailing: <LiquidGlassRailAction>[
+          LiquidGlassRailAction(
+            icon: CupertinoIcons.sort_down,
+            label: L10n.of(context).ranking_period,
+            onPressed: () => _setToplist(),
           ),
-      ],
-      onTitleTap: _scrollToInitialContentAnchor,
-      refreshing: controller.isBackgroundRefresh,
+          LiquidGlassRailAction(
+            icon: CupertinoIcons.arrow_uturn_down_circle,
+            label: L10n.of(context).jump_or_seek,
+            onPressed: () => controller.showJumpDialog(context),
+          ),
+        ],
+        categories: <LiquidGlassRailCategory>[
+          for (int index = 0; index < periodTitles.length; index++)
+            LiquidGlassRailCategory(
+              id: ToplistType.values[index].name,
+              title: periodTitles[index],
+              onTap: () => _setToplist(type: ToplistType.values[index]),
+            ),
+        ],
+        onTitleTap: _scrollToInitialContentAnchor,
+        refreshing: controller.isBackgroundRefresh,
+      ),
     );
   }
 
