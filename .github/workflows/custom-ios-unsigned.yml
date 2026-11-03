@@ -1,0 +1,104 @@
+name: Custom iOS Unsigned IPA
+
+# fork 专用：custom 分支推送或手动触发时构建无签名 IPA。
+# fork 没有 git-crypt 密钥，加密的 FeConfig 用 config.dart.sample 代替，与本地打包一致。
+on:
+  push:
+    branches:
+      - 'custom'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  PACKAGE_NAME: Eros-FE
+  FLUTTER_VERSION: '3.47.1'
+  # 原生代码使用 iOS 27.1 SDK API，需要 Xcode 27.1+（仅 xcode-27 预览镜像提供）
+  XCODE_PATH: /Applications/Xcode_27.1.app
+
+jobs:
+  build_ios_unsigned:
+    name: Build unsigned IPA
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "$XCODE_PATH"
+          xcodebuild -version
+
+      - name: Get app version
+        shell: bash
+        run: |
+          app_version=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')
+          echo "app_version=${app_version}" >> "$GITHUB_ENV"
+          echo "build_date=$(TZ=Asia/Shanghai date +%Y%m%d)" >> "$GITHUB_ENV"
+          echo "short_sha=${GITHUB_SHA::9}" >> "$GITHUB_ENV"
+
+      - name: Use sample FeConfig (no git-crypt key)
+        run: cp lib/config/config.dart.sample lib/config/config.dart
+
+      - name: Flutter action
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          architecture: arm64
+          cache: true
+
+      - name: Flutter version
+        run: |
+          flutter --version
+          flutter config --no-enable-swift-package-manager
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      # 沿用 Podfile.lock，保持与本地构建的 Pod 版本一致
+      - name: Pod install
+        run: cd ios && pod install
+
+      # GoogleService-Info.plist 仍是 git-crypt 密文，Release 需排除（项目未初始化 Firebase）
+      - name: Build ios app
+        env:
+          FLUTTER_XCODE_EXCLUDED_SOURCE_FILE_NAMES: GoogleService-Info.plist
+        run: flutter build ios --release --no-codesign --no-pub
+
+      - name: Thin app
+        run: sh scripts/thin-payload.sh build/ios/iphoneos/*.app
+
+      - name: Build ipa file
+        shell: bash
+        run: |
+          ipa_name="${PACKAGE_NAME}_${app_version}-unsigned_${build_date}_ci${GITHUB_RUN_NUMBER}-custom.ipa"
+          cd build
+          mkdir -p Payload
+          mv ios/iphoneos/*.app Payload/
+          zip -qry9 "$ipa_name" Payload
+          app_dir=$(ls -d Payload/*.app)
+          bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_dir/Info.plist")
+          echo "App: $app_dir  Bundle ID: $bundle_id"
+          test "$bundle_id" = "cn.honjow.fehv"
+          ipa_size=$(stat -f%z "$ipa_name")
+          if [ "$ipa_size" -lt 10000000 ]; then
+            echo "IPA too small: $ipa_size bytes"
+            exit 1
+          fi
+          ls -lh "$ipa_name"
+          shasum -a 256 "$ipa_name"
+          echo "ipa_name=${ipa_name}" >> "$GITHUB_ENV"
+
+      - name: Publish Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_NAME }}_${{ env.app_version }}-unsigned_ci${{ github.run_number }}-${{ env.short_sha }}
+          path: build/${{ env.ipa_name }}
+          if-no-files-found: error
+          compression-level: 0

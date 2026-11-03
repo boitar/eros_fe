@@ -21,7 +21,7 @@ foreachThin(){
   done
 }
 
-if [ $# eq 0 ]; then
+if [ $# -eq 0 ]; then
   echo "no argument"
 else
   foreachThin $1
