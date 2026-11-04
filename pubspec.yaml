@@ -5,10 +5,12 @@ publish_to: 'none'
 version: 1.9.2+566
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.13.0 <4.0.0'
   flutter: '>=3.47.0'
 
 dependencies:
+  # Also required by the pinned macOS Flutter SDK; retain it in both SDK lock graphs.
+  listen: 1.0.1
   liquid_glass_widgets: 1.16.1
   flutter:
     sdk: flutter
@@ -247,6 +249,11 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 dependency_overrides:
+  # Keep one lockfile for stable tests and the temporary macOS main SDK.
+  # Remove alongside the macOS SDK pin once stable contains flutter/flutter#191575.
+  test_api: 0.7.12
+  system_network_proxy_macos:
+    path: third_party/system_network_proxy_macos
 #  analyzer: ^8.0.0
 #  isar_community:
 #    git:

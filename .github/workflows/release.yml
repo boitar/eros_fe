@@ -139,10 +139,25 @@ jobs:
 
       # 安装 Flutter
       - name: Flutter action
+        if: matrix.target != 'macos'
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ matrix.flutter_version }}
           channel: ${{ matrix.flutter_channel }}
+
+      # flutter/flutter#191575: windowing _Rect crashes during macOS AOT on 3.47.1.
+      # Return to the shared stable version once a stable release includes the fix.
+      - name: Install pinned Flutter for macOS
+        if: matrix.target == 'macos'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_dir="$RUNNER_TEMP/flutter-sdk"
+          git init "$sdk_dir"
+          git -C "$sdk_dir" remote add origin https://github.com/flutter/flutter.git
+          git -C "$sdk_dir" fetch --depth=1 origin a1a503eac850e6e3218c200a5eafc3d26ef4ed6f
+          git -C "$sdk_dir" checkout --detach FETCH_HEAD
+          echo "$sdk_dir/bin" >> "$GITHUB_PATH"
 
       - name: Flutter version
         run: flutter --version
@@ -184,13 +199,10 @@ jobs:
           flutter pub run build_runner build --delete-conflicting-outputs
           flutter pub run intl_utils:generate
 
-      - name: Fix system_network_proxy desktop registrants
-        if: matrix.target == 'macos' || matrix.target == 'windows'
+      - name: Fix system_network_proxy Windows registrant
+        if: matrix.target == 'windows'
         shell: bash
         run: |
-          if [ "${{ matrix.target }}" = "macos" ]; then
-            sed -i.bak 's/none.register(with: registry.registrar(forPlugin: "none"))/SystemNetworkProxyMacosPlugin.register(with: registry.registrar(forPlugin: "SystemNetworkProxyMacosPlugin"))/' macos/Flutter/GeneratedPluginRegistrant.swift
-          fi
           if [ "${{ matrix.target }}" = "windows" ]; then
             sed -i.bak 's|#include <system_network_proxy_windows/none.h>|#include <system_network_proxy_windows/system_network_proxy_windows_plugin.h>|' windows/flutter/generated_plugin_registrant.cc
             sed -i.bak 's/noneRegisterWithRegistrar/SystemNetworkProxyWindowsPluginRegisterWithRegistrar/' windows/flutter/generated_plugin_registrant.cc
