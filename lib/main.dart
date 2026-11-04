@@ -20,6 +20,7 @@ import 'package:eros_fe/debug/offline_haptics.dart';
 import 'package:eros_fe/debug/offline_history.dart';
 import 'package:eros_fe/debug/offline_sharing.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/appkit_glass.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/system_ui_overlay.dart';
 import 'package:flutter/cupertino.dart';
@@ -41,6 +42,7 @@ Future<void> main() async {
   // BindingBase.debugZoneErrorsAreFatal = true;
   // runZonedGuarded<Future<void>>(() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppKitGlassRuntime.initialize();
   await FlutterGlassRuntime.initialize();
   await initializeOfflineAcceptance();
   final dsn = await getSentryDsn();

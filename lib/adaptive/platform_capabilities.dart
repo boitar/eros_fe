@@ -35,22 +35,29 @@ abstract final class PlatformCapabilities {
     return null;
   }
 
-  /// AppKit remains unavailable until its platform-view plugin is installed.
+  /// Set only after the real macOS plugin confirms OS and view-factory support.
+  static final ValueNotifier<bool> appKitAvailable = ValueNotifier(false);
+  static bool appKitMenuAvailable = false;
+  static bool get appKitGlass =>
+      nativeGlassBackend == NativeGlassBackend.appKit;
+
+  /// AppKit is runtime negotiated; a theme override never enables a plugin.
   static NativeGlassBackend get nativeGlassBackend =>
       hostPlatform == TargetPlatform.iOS
-          ? NativeGlassBackend.uiKit
-          : NativeGlassBackend.none;
+      ? NativeGlassBackend.uiKit
+      : hostPlatform == TargetPlatform.macOS && appKitAvailable.value
+      ? NativeGlassBackend.appKit
+      : NativeGlassBackend.none;
 
   static bool get nativeGlass => nativeGlassBackend != NativeGlassBackend.none;
   static bool get uiKitGlass => nativeGlassBackend == NativeGlassBackend.uiKit;
   static bool get glassStyle => switch (hostPlatform) {
-        TargetPlatform.iOS ||
-        TargetPlatform.android ||
-        TargetPlatform.macOS ||
-        TargetPlatform.windows =>
-          true,
-        _ => false,
-      };
+    TargetPlatform.iOS ||
+    TargetPlatform.android ||
+    TargetPlatform.macOS ||
+    TargetPlatform.windows => true,
+    _ => false,
+  };
 
   /// iOS keeps its existing opt-in default; other supported platforms opt in.
   static bool get defaultGlassStyle => glassStyle && !uiKitGlass;
@@ -62,8 +69,10 @@ enum GlassMode {
   off;
 
   /// [performanceAllowsGlass] is the future automatic degradation hook.
-  static GlassMode resolve(
-      {required bool enabled, bool performanceAllowsGlass = true}) {
+  static GlassMode resolve({
+    required bool enabled,
+    bool performanceAllowsGlass = true,
+  }) {
     if (!enabled ||
         !performanceAllowsGlass ||
         !PlatformCapabilities.glassStyle) {
@@ -72,21 +81,47 @@ enum GlassMode {
     return PlatformCapabilities.nativeGlass ? native : flutter;
   }
 
-  static GlassMode of(BuildContext context,
-          {bool? enabled, bool performanceAllowsGlass = true}) =>
-      resolve(
-          enabled: enabled ?? GlassPreference.of(context),
-          performanceAllowsGlass: performanceAllowsGlass);
+  static GlassMode of(
+    BuildContext context, {
+    bool? enabled,
+    bool performanceAllowsGlass = true,
+  }) => _resolveContext(context, enabled, performanceAllowsGlass);
+
+  static GlassMode _resolveContext(
+    BuildContext context,
+    bool? enabled,
+    bool performanceAllowsGlass,
+  ) {
+    context.dependOnInheritedWidgetOfExactType<GlassCapabilityScope>();
+    return resolve(
+      enabled: enabled ?? GlassPreference.of(context),
+      performanceAllowsGlass: performanceAllowsGlass,
+    );
+  }
 
   /// Components without a Flutter renderer must retain their existing UI.
-  GlassMode forComponent({bool flutterImplemented = false}) =>
-      this == flutter && !flutterImplemented ? off : this;
+  GlassMode forComponent({
+    bool flutterImplemented = false,
+    Set<NativeGlassBackend> nativeBackends = const {NativeGlassBackend.uiKit},
+  }) {
+    if (this == off) {
+      return off;
+    }
+    if (this == native &&
+        nativeBackends.contains(PlatformCapabilities.nativeGlassBackend)) {
+      return native;
+    }
+    return flutterImplemented ? flutter : off;
+  }
 }
 
 /// Optional inherited preference keeps the capability layer independent of DI.
 class GlassPreference extends InheritedWidget {
-  const GlassPreference(
-      {super.key, required this.enabled, required super.child});
+  const GlassPreference({
+    super.key,
+    required this.enabled,
+    required super.child,
+  });
   final bool enabled;
   static bool of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<GlassPreference>()?.enabled ??
@@ -94,4 +129,10 @@ class GlassPreference extends InheritedWidget {
   @override
   bool updateShouldNotify(GlassPreference oldWidget) =>
       enabled != oldWidget.enabled;
+}
+
+/// Rebuilds component decisions when the negotiated native backend fails or changes.
+class GlassCapabilityScope extends InheritedNotifier<ValueNotifier<bool>> {
+  GlassCapabilityScope({super.key, required super.child})
+    : super(notifier: PlatformCapabilities.appKitAvailable);
 }

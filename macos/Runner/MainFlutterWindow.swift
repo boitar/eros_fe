@@ -14,6 +14,7 @@ class MainFlutterWindow: BitsdojoWindow {
     self.setFrame(windowFrame, display: true)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
+    AppKitGlassPlugin.register(with: flutterViewController.registrar(forPlugin: "AppKitGlassPlugin"))
 
     super.awakeFromNib()
   }

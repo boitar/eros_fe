@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/appkit_glass.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -557,11 +558,48 @@ class LiquidGlassTabBar extends CupertinoTabBar {
 
   @override
   Widget build(BuildContext context) {
-    final mode = GlassMode.of(context).forComponent(flutterImplemented: true);
+    final mode = GlassMode.of(context).forComponent(
+      flutterImplemented: true,
+      nativeBackends: const {
+        NativeGlassBackend.uiKit,
+        NativeGlassBackend.appKit,
+      },
+    );
+    if (mode == GlassMode.native &&
+        PlatformCapabilities.appKitGlass &&
+        nativeItems != null &&
+        nativeItems!.length == items.length) {
+      return SizedBox(
+        height: height + MediaQuery.viewPaddingOf(context).bottom,
+        child: AppKitGlassView(
+          kind: 'tabs',
+          configuration: {
+            'items': [for (final item in nativeItems!) item.toMap()],
+            'selectedIndex': currentIndex,
+            'searchLabel': searchLabel,
+            'search': onSearch != null,
+            'dark': CupertinoTheme.brightnessOf(context) == Brightness.dark,
+            'followSystemTransparency': followSystemTransparency,
+          },
+          onAction: (method, index) {
+            if (method == 'select' &&
+                index != null &&
+                index >= 0 &&
+                index < items.length) {
+              onTap?.call(index);
+            }
+            if (method == 'search') {
+              onSearch?.call();
+            }
+          },
+        ),
+      );
+    }
     if (mode == GlassMode.off) {
       return super.build(context);
     }
-    if (mode == GlassMode.flutter && FlutterGlassRuntime.available) {
+    if ((mode == GlassMode.flutter || PlatformCapabilities.appKitGlass) &&
+        FlutterGlassRuntime.available) {
       return LayoutBuilder(
           builder: (context, constraints) => SizedBox(
               width: constraints.hasBoundedWidth

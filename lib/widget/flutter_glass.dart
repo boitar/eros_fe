@@ -26,12 +26,12 @@ abstract final class FlutterGlassRuntime {
   static Widget wrap(Widget child, {bool enabled = true}) =>
       PlatformCapabilities.uiKitGlass
           ? child
-          : GlassPreference(
+          : GlassCapabilityScope(child: GlassPreference(
               enabled: enabled,
               child: available
                   ? LiquidGlassWidgets.wrap(
                       child: child, adaptiveQuality: false)
-                  : child);
+                  : child));
 }
 
 /// One refractive surface per local control group. Selection indicators inside

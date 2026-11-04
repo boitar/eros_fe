@@ -4,6 +4,7 @@ import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/appkit_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
@@ -271,13 +272,46 @@ class SettingGlassBar extends StatelessWidget
 
   // Keep the scroll-edge effect outside the clipped glass toolbar.
   Widget _toolbarSurface(BuildContext context, Widget child) {
-    if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
-        GlassMode.flutter) {
+    final mode = GlassMode.of(context).forComponent(
+      flutterImplemented: true,
+      nativeBackends: const {
+        NativeGlassBackend.uiKit,
+        NativeGlassBackend.appKit,
+      },
+    );
+    if (mode == GlassMode.native && PlatformCapabilities.appKitGlass) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ExcludeSemantics(
+                child: AppKitGlassView(
+                  kind: 'surface',
+                  configuration: {
+                    'dark':
+                        CupertinoTheme.brightnessOf(context) == Brightness.dark,
+                    'followSystemTransparency':
+                        !Get.isRegistered<EhSettingService>() ||
+                        Get.find<EhSettingService>()
+                            .liquidGlassFollowSystemTransparency,
+                  },
+                ),
+              ),
+            ),
+          ),
+          // AppKit owns this bar's material; controls must not add another
+          // Flutter refraction layer above it.
+          GlassPreference(enabled: false, child: child),
+        ],
+      );
+    }
+    if (mode == GlassMode.flutter) {
       return LiquidGlassSurface(
-          enabled: true,
-          useNativeGlass: false,
-          borderRadius: BorderRadius.zero,
-          child: child);
+        enabled: true,
+        useNativeGlass: false,
+        borderRadius: BorderRadius.zero,
+        child: child,
+      );
     }
     return child;
   }
