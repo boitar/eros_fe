@@ -469,6 +469,8 @@
   "refresh_igneous": "重新整理Igneous",
   "download_files_unavailable": "檔案暫時無法使用",
   "check_download_files_and_continue": "核對檔案並繼續",
+  "liquid_glass_style": "液態玻璃風格",
+  "liquid_glass_description": "為導覽列和控制項使用玻璃風格，實際外觀因平台而異。",
   "liquid_glass_top_layout": "頂欄分組佈局",
   "liquid_glass_two_row": "兩行展開（預設）",
   "liquid_glass_two_row_detail": "操作與分組分行顯示，適合較多分組和長名稱",

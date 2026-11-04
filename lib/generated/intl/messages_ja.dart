@@ -76,6 +76,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "cf_verify_action": MessageLookupByLibrary.simpleMessage("認証する"),
         "cf_verify_success": MessageLookupByLibrary.simpleMessage("認証が完了しました"),
         "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("認証は保存されましたが、フォーラムはまだブロックされています。しばらくしてから、またはネットワークを切り替えてから再試行してください。"),
+        "liquid_glass_style": MessageLookupByLibrary.simpleMessage("リキッドガラスのスタイル"),
+        "liquid_glass_description": MessageLookupByLibrary.simpleMessage("ナビゲーションとコントロールにガラス風の外観を使用します。外観はプラットフォームにより異なります。"),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("上部カテゴリの配置"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("2行（デフォルト）"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("操作とカテゴリを別々の行に表示"),

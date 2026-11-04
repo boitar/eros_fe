@@ -4744,6 +4744,24 @@ class L10n {
       args: [],
     );
   }
+  String get liquid_glass_style {
+    return Intl.message(
+      'Liquid glass style',
+      name: 'liquid_glass_style',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get liquid_glass_description {
+    return Intl.message(
+      'Use a glass style for navigation and controls. The appearance varies by platform.',
+      name: 'liquid_glass_description',
+      desc: '',
+      args: [],
+    );
+  }
+
   String get liquid_glass_top_layout {
     return Intl.message(
       'Top category layout',

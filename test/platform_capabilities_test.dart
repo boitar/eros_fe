@@ -10,13 +10,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 class _Settings extends GetxService implements EhSettingService {
-  _Settings(this.liquidGlass);
+  _Settings(bool initial) : _glass = initial.obs;
+  final RxBool _glass;
   @override
-  final bool liquidGlass;
+  bool get liquidGlass => _glass.value;
   @override
   bool get isPureDarkTheme => false;
+  @override
+  bool get liquidGlassFollowSystemTransparency => true;
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -118,7 +122,7 @@ void main() {
         });
         expect(feedbackCalled, isFalse);
         expect(calls, isEmpty);
-        expect(SettingGlassBar.isActive, isFalse);
+        expect(SettingGlassBar.isActive, enabled);
         expect(liquidGlassPopupsEnabled, enabled);
         debugDefaultTargetPlatformOverride = null;
       });
@@ -196,7 +200,7 @@ void main() {
           home: LiquidGlassSurface(
               enabled: true, child: SizedBox(width: 100, height: 50))));
       expect(find.byType(UiKitView), findsNothing);
-      expect(find.byType(BackdropFilter), findsOneWidget);
+      expect(find.byType(GlassContainer), findsOneWidget);
       expect(tester.takeException(), isNull);
       debugDefaultTargetPlatformOverride = null;
     });

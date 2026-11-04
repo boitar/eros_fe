@@ -165,7 +165,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
 
     return Obx(() {
       final useLiquidGlass = ehSettingService.liquidGlass &&
-          (GlassMode.resolve(enabled: true).forComponent() == GlassMode.native);
+          (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+              GlassMode.off);
       controller.setNavigationMode(useLiquidGlass: useLiquidGlass);
       _publishNativeNavigationState();
       final tabBar = useLiquidGlass

@@ -51,6 +51,9 @@ abstract final class PlatformCapabilities {
           true,
         _ => false,
       };
+
+  /// iOS keeps its existing opt-in default; other supported platforms opt in.
+  static bool get defaultGlassStyle => glassStyle && !uiKitGlass;
 }
 
 enum GlassMode {

@@ -1,11 +1,15 @@
 import 'package:eros_fe/pages/tab/view/download_page.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // Keep the existing contrast and blur assertions for the lightweight fallback.
+  setUp(() => FlutterGlassRuntime.debugAvailable = false);
+  tearDown(() => FlutterGlassRuntime.debugAvailable = null);
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(

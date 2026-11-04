@@ -312,7 +312,8 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
   Widget build(BuildContext context) {
     final bool useLiquidGlass = Get.isRegistered<EhSettingService>() &&
         Get.find<EhSettingService>().liquidGlass &&
-        (GlassMode.resolve(enabled: true).forComponent() == GlassMode.native);
+        (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+            GlassMode.off);
 
     final indicator = AnimatedContainer(
       height: widget.indicatorHeight,
@@ -543,8 +544,8 @@ class _InnerLinkTabItemState extends State<InnerLinkTabItem> {
       return Obx(() => _buildItem(
             context,
             Get.find<EhSettingService>().liquidGlass &&
-                (GlassMode.resolve(enabled: true).forComponent() ==
-                    GlassMode.native),
+                (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+                    GlassMode.off),
             Get.find<EhSettingService>().liquidGlassFollowSystemTransparency,
           ));
     }

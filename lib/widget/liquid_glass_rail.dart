@@ -273,7 +273,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
         Widget fitSurface(Widget child) => widget.compactCategories
             ? Align(child: SizedBox(width: surfaceWidth, child: child))
             : child;
-        if (GlassMode.resolve(enabled: true).forComponent() ==
+        if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
             GlassMode.native) {
           return fitSurface(NativeCategoryRail(
             categories: categories,
@@ -1016,11 +1016,25 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
 
   @override
   Widget build(BuildContext context) {
-    if (!PlatformCapabilities.uiKitGlass) {
+    if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
+        GlassMode.flutter) {
+      return SegmentedRail(
+          interactive: widget.interactive,
+          initialOffset: widget.initialOffset,
+          onOffset: widget.onOffset,
+          items: widget.categories,
+          selectedIndex: widget.selectedIndex,
+          pageController: widget.pageController,
+          opacity: widget.opacity,
+          followSystemTransparency: widget.followSystemTransparency);
+    }
+    if (!PlatformCapabilities.uiKitGlass ||
+        GlassMode.of(context) == GlassMode.off) {
       return Wrap(children: [
         for (final category in widget.categories)
           CupertinoButton(
-              onPressed: category.onTap, child: Text(category.title)),
+              onPressed: widget.interactive ? category.onTap : null,
+              child: Text(category.title)),
       ]);
     }
     return SizedBox(

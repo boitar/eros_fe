@@ -152,10 +152,10 @@ void main() {
       (tester) async {
     final pulses = recordPulses(tester);
     await mount(tester, const Size(390, 844), shell: false);
-    final bar = find.byType(CupertinoTabBar);
+    final bar = find.byWidgetPredicate((widget) => widget is CupertinoTabBar);
     expect(bar, findsOneWidget);
-    final rect = tester.getRect(bar);
-    await tester.tapAt(Offset(rect.left + rect.width * .75, rect.center.dy));
+    final label = tester.widget<CupertinoTabBar>(bar).items[1].label!;
+    await tester.tap(find.descendant(of: bar, matching: find.text(label)).last);
     await tester.pumpAndSettle();
     expect(pulses, hasLength(1));
     expect(tester.takeException(), isNull);

@@ -89,7 +89,8 @@ class _ToplistTabState extends State<ToplistTab> {
 
   bool get _useLiquidGlass =>
       _ehSettingService.liquidGlass &&
-      (GlassMode.resolve(enabled: true).forComponent() == GlassMode.native) &&
+      (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+          GlassMode.off) &&
       !NativeNavigationBridge.enabled.value;
 
   List<String> _periodTitles(BuildContext context) {
@@ -325,8 +326,8 @@ class _ToplistTabState extends State<ToplistTab> {
     final native = NativeNavigationScope.isEnabled(context);
     return Obx(() {
       final useLiquidGlass = _ehSettingService.liquidGlass &&
-          (GlassMode.resolve(enabled: true).forComponent() ==
-              GlassMode.native) &&
+          (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+              GlassMode.off) &&
           !native;
       final hideTopBarOnScroll = _ehSettingService.hideTopBarOnScroll;
       final mediaQuery = MediaQuery.of(context);

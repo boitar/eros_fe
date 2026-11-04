@@ -76,6 +76,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "cf_verify_action": MessageLookupByLibrary.simpleMessage("去驗證"),
         "cf_verify_success": MessageLookupByLibrary.simpleMessage("驗證完成"),
         "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("驗證已儲存，但論壇仍被攔截，請稍後或切換網路後再試"),
+        "liquid_glass_style": MessageLookupByLibrary.simpleMessage("液態玻璃風格"),
+        "liquid_glass_description": MessageLookupByLibrary.simpleMessage("為導覽列和控制項使用玻璃風格，實際外觀因平台而異。"),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("頂欄分組佈局"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("兩行展開（預設）"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("操作與分組分行顯示，適合較多分組和長名稱"),

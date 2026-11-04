@@ -76,6 +76,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "cf_verify_action": MessageLookupByLibrary.simpleMessage("인증하기"),
         "cf_verify_success": MessageLookupByLibrary.simpleMessage("인증 완료"),
         "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("인증이 저장되었지만 포럼이 여전히 차단되어 있습니다. 잠시 후 또는 네트워크를 바꾼 뒤 다시 시도하세요."),
+        "liquid_glass_style": MessageLookupByLibrary.simpleMessage("리퀴드 글래스 스타일"),
+        "liquid_glass_description": MessageLookupByLibrary.simpleMessage("탐색 막대와 컨트롤에 유리 스타일을 적용합니다. 모양은 플랫폼에 따라 다릅니다."),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("상단 카테고리 배치"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("두 줄 (기본값)"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("작업과 카테고리를 별도 줄에 표시"),

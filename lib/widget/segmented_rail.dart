@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -133,6 +134,9 @@ class SegmentedRail extends StatefulWidget {
     this.compact = false,
     this.followSystemTransparency = true,
     this.opacity = 1,
+    this.interactive = true,
+    this.initialOffset = 0,
+    this.onOffset,
   });
 
   static const double margin = 16;
@@ -149,6 +153,13 @@ class SegmentedRail extends StatefulWidget {
   final bool compact;
   final bool followSystemTransparency;
   final double opacity;
+  final bool interactive;
+
+  /// Restored after layout, clamped to the available horizontal range.
+  final double initialOffset;
+
+  /// Reports both restored offsets and subsequent user scrolling.
+  final ValueChanged<double>? onOffset;
 
   static double trackHeightFor(TextScaler scaler) =>
       math.max(36.0, scaler.scale(15) * 1.2 + 14);
@@ -161,11 +172,32 @@ class _SegmentedRailState extends State<SegmentedRail> {
   final ScrollController _scroll = ScrollController();
   double _nativeOffset = 0;
   bool _reveal = true;
+  double? _pendingOffset;
+
+  @override
+  void initState() {
+    super.initState();
+    _nativeOffset = widget.initialOffset;
+    if (widget.initialOffset != 0) {
+      _pendingOffset = widget.initialOffset;
+      _reveal = false;
+    }
+    _scroll.addListener(_reportOffset);
+  }
+
+  void _reportOffset() {
+    _nativeOffset = _scroll.offset;
+    widget.onOffset?.call(_nativeOffset);
+  }
 
   @override
   void didUpdateWidget(covariant SegmentedRail oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedIndex != widget.selectedIndex ||
+    if (oldWidget.initialOffset != widget.initialOffset) {
+      _nativeOffset = widget.initialOffset;
+      _pendingOffset = widget.initialOffset;
+      _reveal = false;
+    } else if (oldWidget.selectedIndex != widget.selectedIndex ||
         !listEquals(_ids(oldWidget.items), _ids(widget.items))) {
       _reveal = true;
     }
@@ -173,6 +205,7 @@ class _SegmentedRailState extends State<SegmentedRail> {
 
   @override
   void dispose() {
+    _scroll.removeListener(_reportOffset);
     _scroll.dispose();
     super.dispose();
   }
@@ -188,7 +221,7 @@ class _SegmentedRailState extends State<SegmentedRail> {
     return Opacity(
       opacity: widget.opacity,
       child: IgnorePointer(
-        ignoring: widget.opacity < 0.5,
+        ignoring: !widget.interactive || widget.opacity < 0.5,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: SegmentedRail.margin),
           child: Row(
@@ -208,7 +241,8 @@ class _SegmentedRailState extends State<SegmentedRail> {
                     child: SizedBox(
                       width: layout.trackWidth,
                       height: trackHeight,
-                      child: (GlassMode.resolve(enabled: true).forComponent() ==
+                      child: (GlassMode.of(context)
+                                  .forComponent(flutterImplemented: true) ==
                               GlassMode.native)
                           ? NativeCategoryRail(
                               categories: widget.items,
@@ -220,9 +254,13 @@ class _SegmentedRailState extends State<SegmentedRail> {
                                   MediaQuery.textScalerOf(context).scale(15),
                               layout: LiquidGlassTopBarLayout.inline,
                               initialOffset: _nativeOffset,
-                              onOffset: (value) => _nativeOffset = value,
+                              onOffset: (value) {
+                                _nativeOffset = value;
+                                widget.onOffset?.call(value);
+                              },
                               opacity: 1,
-                              interactive: widget.opacity >= 0.5,
+                              interactive:
+                                  widget.interactive && widget.opacity >= 0.5,
                               pageController: widget.pageController,
                               segmentWidths: layout.widths,
                               height: trackHeight,
@@ -284,11 +322,32 @@ class _SegmentedRailState extends State<SegmentedRail> {
   Widget _fallbackTrack(
       BuildContext context, SegmentedRailLayout layout, double height) {
     final items = widget.items;
-    if (items.isEmpty) return const SizedBox.shrink();
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    if (_pendingOffset != null) {
+      final requested = _pendingOffset!;
+      _pendingOffset = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scroll.hasClients) {
+          return;
+        }
+        final target = requested.isFinite
+            ? requested.clamp(0.0, _scroll.position.maxScrollExtent).toDouble()
+            : 0.0;
+        if (_scroll.offset == target) {
+          widget.onOffset?.call(target);
+        } else {
+          _scroll.jumpTo(target);
+        }
+      });
+    }
     if (_reveal) {
       _reveal = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_scroll.hasClients) return;
+        if (!mounted || !_scroll.hasClients) {
+          return;
+        }
         final index = widget.selectedIndex.clamp(0, items.length - 1);
         final left = layout.offsetOf(index);
         final right = left + layout.widths[index];
@@ -353,18 +412,9 @@ class _SegmentedRailState extends State<SegmentedRail> {
       );
     }
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: CupertinoDynamicColor.resolve(
-            CupertinoColors.secondarySystemGroupedBackground, context),
-        borderRadius: BorderRadius.circular(height / 2),
-        border: Border.all(
-          color:
-              CupertinoDynamicColor.resolve(CupertinoColors.separator, context)
-                  .withValues(alpha: 0.18),
-          width: 0.5,
-        ),
-      ),
+    return _trackSurface(
+      context,
+      height: height,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(height / 2),
         child: SingleChildScrollView(
@@ -379,6 +429,31 @@ class _SegmentedRailState extends State<SegmentedRail> {
                 ),
         ),
       ),
+    );
+  }
+
+  Widget _trackSurface(BuildContext context,
+      {required double height, required Widget child}) {
+    if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
+            GlassMode.flutter &&
+        FlutterGlassRuntime.available &&
+        !MediaQuery.highContrastOf(context)) {
+      return FlutterGlassPanel(
+          borderRadius: BorderRadius.circular(height / 2), child: child);
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: CupertinoDynamicColor.resolve(
+            CupertinoColors.secondarySystemGroupedBackground, context),
+        borderRadius: BorderRadius.circular(height / 2),
+        border: Border.all(
+          color:
+              CupertinoDynamicColor.resolve(CupertinoColors.separator, context)
+                  .withValues(alpha: 0.18),
+          width: 0.5,
+        ),
+      ),
+      child: child,
     );
   }
 
@@ -400,13 +475,13 @@ class _SegmentedRailState extends State<SegmentedRail> {
       button: true,
       selected: selected,
       label: item.title,
-      onTap: tap,
-      onLongPress: longPress,
+      onTap: widget.interactive ? tap : null,
+      onLongPress: widget.interactive ? longPress : null,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: tap,
-        onLongPress: longPress,
+        onTap: widget.interactive ? tap : null,
+        onLongPress: widget.interactive ? longPress : null,
         child: SizedBox(
           key: ValueKey<String>('segmented-rail-segment-$index'),
           width: width,

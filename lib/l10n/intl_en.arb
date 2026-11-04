@@ -469,6 +469,8 @@
   "refresh_igneous": "Refresh Igneous",
   "download_files_unavailable": "Files temporarily unavailable",
   "check_download_files_and_continue": "Check files and continue",
+  "liquid_glass_style": "Liquid glass style",
+  "liquid_glass_description": "Use a glass style for navigation and controls. The appearance varies by platform.",
   "liquid_glass_top_layout": "Top category layout",
   "liquid_glass_two_row": "Two rows (default)",
   "liquid_glass_two_row_detail": "Actions and categories on separate rows",

@@ -4,10 +4,12 @@ import 'dart:ui' as ui;
 
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart' as glass;
 
 /// Basic feedback is optional and must not interrupt navigation or previews.
 /// Use the existing utility without depending on the enhanced haptics module.
@@ -255,6 +257,23 @@ class LiquidGlassSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mode = GlassMode.of(context).forComponent(flutterImplemented: true);
+    if (!enabled || mode == GlassMode.off) {
+      return child ?? const SizedBox.expand();
+    }
+    if (mode == GlassMode.flutter && MediaQuery.highContrastOf(context)) {
+      return _buildSurface(context, reduceTransparency: true);
+    }
+    if (mode == GlassMode.flutter && FlutterGlassRuntime.available) {
+      final panel = FlutterGlassPanel(
+          borderRadius: borderRadius, child: child ?? const SizedBox.expand());
+      final alpha = opacity.clamp(0.0, 1.0).toDouble();
+      return alpha >= 1 ? panel : Opacity(opacity: alpha, child: panel);
+    }
+    return _buildLegacy(context);
+  }
+
+  Widget _buildLegacy(BuildContext context) {
     final bool usesFlutterFallback = enabled &&
         !(useNativeGlass && GlassMode.of(context) == GlassMode.native);
     final bool readsNativeTransparency =
@@ -538,6 +557,47 @@ class LiquidGlassTabBar extends CupertinoTabBar {
 
   @override
   Widget build(BuildContext context) {
+    final mode = GlassMode.of(context).forComponent(flutterImplemented: true);
+    if (mode == GlassMode.off) {
+      return super.build(context);
+    }
+    if (mode == GlassMode.flutter && FlutterGlassRuntime.available) {
+      return LayoutBuilder(
+          builder: (context, constraints) => SizedBox(
+              width: constraints.hasBoundedWidth
+                  ? constraints.maxWidth
+                  : MediaQuery.sizeOf(context).width,
+              height: height + MediaQuery.viewPaddingOf(context).bottom,
+              child: glass.GlassTabBar.bottom(
+                tabs: [
+                  for (final item in items)
+                    glass.GlassTab(
+                        icon: item.icon,
+                        activeIcon: item.activeIcon,
+                        label: item.label)
+                ],
+                selectedIndex: _clampTabIndex(currentIndex, items.length),
+                onTabSelected: (index) {
+                  // Retain the feedback of the previous non-native Cupertino bar.
+                  vibrateUtil.tabSwitch();
+                  onTap?.call(index);
+                },
+                horizontalPadding: 8,
+                verticalPadding: 6,
+                barHeight: height - 12,
+                selectedIconColor: activeColor,
+                unselectedIconColor: inactiveColor,
+                selectedLabelColor: activeColor,
+                unselectedLabelColor: inactiveColor,
+                extraButton: onSearch == null
+                    ? null
+                    : glass.GlassTabBarExtraButton(
+                        icon: const Icon(CupertinoIcons.search),
+                        onTap: onSearch!,
+                        label: searchLabel,
+                        size: height - 12),
+              )));
+    }
     if (PlatformCapabilities.uiKitGlass && nativeItems != null) {
       return _buildNativeBar(context);
     }

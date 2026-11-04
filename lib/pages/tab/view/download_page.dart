@@ -153,8 +153,8 @@ class _DownloadTabState extends State<DownloadTab> {
         );
       }
       if (settings.liquidGlass &&
-          (GlassMode.resolve(enabled: true).forComponent() ==
-              GlassMode.native)) {
+          (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+              GlassMode.off)) {
         final layout = settings.liquidGlassTopBarLayout;
         final safeTop = MediaQuery.paddingOf(context).top;
         return DownloadGlassScaffold(

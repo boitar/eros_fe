@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:enum_to_string/enum_to_string.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/base_service.dart';
 import 'package:eros_fe/const/storages.dart';
@@ -349,7 +350,7 @@ class EhSettingService extends ProfileService {
       _liquidGlassTopBarLayout.value = value;
 
   // liquidGlass
-  final _liquidGlass = false.obs;
+  final _liquidGlass = PlatformCapabilities.defaultGlassStyle.obs;
   bool get liquidGlass => _liquidGlass.value;
   set liquidGlass(bool val) => _liquidGlass.value = val;
 
@@ -545,11 +546,7 @@ class EhSettingService extends ProfileService {
       ehConfig = ehConfig.copyWith(liquidGlassTopBarLayout: value.name.oN);
     });
 
-    // liquidGlass
-    liquidGlass = ehConfig.liquidGlass ?? liquidGlass;
-    everProfile<bool>(_liquidGlass, (value) {
-      ehConfig = ehConfig.copyWith(liquidGlass: value.oN);
-    });
+    initLiquidGlassPreference();
 
     liquidGlassFollowSystemTransparency =
         ehConfig.liquidGlassFollowSystemTransparency ??
@@ -956,6 +953,16 @@ class EhSettingService extends ProfileService {
     immersiveLargeCards = ehConfig.immersiveLargeCards ?? immersiveLargeCards;
     everProfile<bool>(_immersiveLargeCards, (value) {
       ehConfig = ehConfig.copyWith(immersiveLargeCards: value.oN);
+    });
+  }
+
+  @visibleForTesting
+  void initLiquidGlassPreference() {
+    // A stored value is always a preference, including a legacy false value.
+    liquidGlass =
+        ehConfig.liquidGlass ?? PlatformCapabilities.defaultGlassStyle;
+    everProfile<bool>(_liquidGlass, (value) {
+      ehConfig = ehConfig.copyWith(liquidGlass: value.oN);
     });
   }
 

@@ -19,6 +19,80 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
+/// The same preference controls the glass style on each supported platform.
+class LiquidGlassSettingsSection extends StatelessWidget {
+  const LiquidGlassSettingsSection({super.key, required this.settings});
+
+  final EhSettingService settings;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!PlatformCapabilities.glassStyle) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+    return SliverCupertinoListSection.listInsetGrouped(
+      footer: Text(L10n.of(context).liquid_glass_description),
+      children: [
+        EhCupertinoListTile(
+          title: Text(L10n.of(context).liquid_glass_style),
+          trailing: Obx(() {
+            return offlineGlassControl(
+                'enabled',
+                CupertinoSwitch(
+                  key: const ValueKey('liquid-glass-style-switch'),
+                  value: settings.liquidGlass,
+                  onChanged: (bool val) {
+                    settings.liquidGlass = val;
+                  },
+                ));
+          }),
+        ),
+        if (PlatformCapabilities.uiKitGlass)
+          Obx(() {
+            if (!settings.liquidGlass) {
+              return const SizedBox.shrink();
+            }
+            return EhCupertinoListTile(
+              title: const Text('使用系统 Liquid Glass 外观'),
+              trailing: CupertinoSwitch(
+                value: settings.liquidGlassFollowSystemTransparency,
+                onChanged: (bool val) {
+                  settings.liquidGlassFollowSystemTransparency = val;
+                },
+              ),
+            );
+          }),
+        Obx(() {
+          if (!settings.liquidGlass) {
+            return const SizedBox.shrink();
+          }
+          final l10n = L10n.of(context);
+          String name(LiquidGlassTopBarLayout layout) =>
+              layout == LiquidGlassTopBarLayout.twoRow
+                  ? l10n.liquid_glass_two_row
+                  : l10n.liquid_glass_inline;
+          return SelectorCupertinoListTile<LiquidGlassTopBarLayout>(
+            title: l10n.liquid_glass_top_layout,
+            actionMap: {
+              for (final layout in LiquidGlassTopBarLayout.values)
+                layout: name(layout),
+            },
+            subtitleMap: {
+              for (final layout in LiquidGlassTopBarLayout.values)
+                layout: layout == LiquidGlassTopBarLayout.twoRow
+                    ? l10n.liquid_glass_two_row_detail
+                    : l10n.liquid_glass_inline_detail,
+            },
+            initVal: settings.liquidGlassTopBarLayout,
+            onValueChanged: (selected) =>
+                settings.liquidGlassTopBarLayout = selected,
+          );
+        }),
+      ],
+    );
+  }
+}
+
 class LayoutSettingPage extends StatelessWidget {
   const LayoutSettingPage({super.key});
 
@@ -194,70 +268,7 @@ class LayoutSettingList extends StatelessWidget {
           ),
         ],
       ),
-      if (PlatformCapabilities.nativeGlass)
-        SliverCupertinoListSection.listInsetGrouped(
-          footer: Obx(() {
-            return Text(_ehSettingService.liquidGlass
-                ? 'iOS 26+ 使用原生 Liquid Glass；与“滚动隐藏顶栏”独立，支持灵动岛或刘海安全区收束。\n'
-                    '“使用系统 Liquid Glass 外观”开启时使用系统原生 Liquid Glass；关闭时使用传统材质，并遵循辅助功能中的降低透明度。'
-                : 'iOS 26+ 使用原生 Liquid Glass；与“滚动隐藏顶栏”独立，支持灵动岛或刘海安全区收束。');
-          }),
-          children: [
-            EhCupertinoListTile(
-              title: const Text('iOS 液态玻璃'),
-              trailing: Obx(() {
-                return offlineGlassControl(
-                    'enabled',
-                    CupertinoSwitch(
-                      value: _ehSettingService.liquidGlass,
-                      onChanged: (bool val) {
-                        _ehSettingService.liquidGlass = val;
-                      },
-                    ));
-              }),
-            ),
-            Obx(() {
-              if (!_ehSettingService.liquidGlass) {
-                return const SizedBox.shrink();
-              }
-              return EhCupertinoListTile(
-                title: const Text('使用系统 Liquid Glass 外观'),
-                trailing: CupertinoSwitch(
-                  value: _ehSettingService.liquidGlassFollowSystemTransparency,
-                  onChanged: (bool val) {
-                    _ehSettingService.liquidGlassFollowSystemTransparency = val;
-                  },
-                ),
-              );
-            }),
-            Obx(() {
-              if (!_ehSettingService.liquidGlass) {
-                return const SizedBox.shrink();
-              }
-              final l10n = L10n.of(context);
-              String name(LiquidGlassTopBarLayout layout) =>
-                  layout == LiquidGlassTopBarLayout.twoRow
-                      ? l10n.liquid_glass_two_row
-                      : l10n.liquid_glass_inline;
-              return SelectorCupertinoListTile<LiquidGlassTopBarLayout>(
-                title: l10n.liquid_glass_top_layout,
-                actionMap: {
-                  for (final layout in LiquidGlassTopBarLayout.values)
-                    layout: name(layout),
-                },
-                subtitleMap: {
-                  for (final layout in LiquidGlassTopBarLayout.values)
-                    layout: layout == LiquidGlassTopBarLayout.twoRow
-                        ? l10n.liquid_glass_two_row_detail
-                        : l10n.liquid_glass_inline_detail,
-                },
-                initVal: _ehSettingService.liquidGlassTopBarLayout,
-                onValueChanged: (selected) =>
-                    _ehSettingService.liquidGlassTopBarLayout = selected,
-              );
-            }),
-          ],
-        ),
+      LiquidGlassSettingsSection(settings: _ehSettingService),
       SliverCupertinoListSection.listInsetGrouped(children: [
         // hide_top_bar_on_scroll switch
         EhCupertinoListTile(
