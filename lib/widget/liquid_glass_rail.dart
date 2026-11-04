@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
@@ -272,7 +273,8 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
         Widget fitSurface(Widget child) => widget.compactCategories
             ? Align(child: SizedBox(width: surfaceWidth, child: child))
             : child;
-        if (LiquidGlassPlatform.isSupported) {
+        if (GlassMode.resolve(enabled: true).forComponent() ==
+            GlassMode.native) {
           return fitSurface(NativeCategoryRail(
             categories: categories,
             selectedIndex: widget.selectedIndex,
@@ -1014,6 +1016,13 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
 
   @override
   Widget build(BuildContext context) {
+    if (!PlatformCapabilities.uiKitGlass) {
+      return Wrap(children: [
+        for (final category in widget.categories)
+          CupertinoButton(
+              onPressed: category.onTap, child: Text(category.title)),
+      ]);
+    }
     return SizedBox(
       height: widget.height ??
           widget.layout.categoryHeight(MediaQuery.textScalerOf(context)),

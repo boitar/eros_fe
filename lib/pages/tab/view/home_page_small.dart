@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
@@ -163,8 +164,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     final EhSettingService ehSettingService = Get.find();
 
     return Obx(() {
-      final useLiquidGlass =
-          ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+      final useLiquidGlass = ehSettingService.liquidGlass &&
+          (GlassMode.resolve(enabled: true).forComponent() == GlassMode.native);
       controller.setNavigationMode(useLiquidGlass: useLiquidGlass);
       _publishNativeNavigationState();
       final tabBar = useLiquidGlass

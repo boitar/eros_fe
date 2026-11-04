@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
@@ -189,8 +190,7 @@ class _SegmentedRailState extends State<SegmentedRail> {
       child: IgnorePointer(
         ignoring: widget.opacity < 0.5,
         child: Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: SegmentedRail.margin),
+          padding: const EdgeInsets.symmetric(horizontal: SegmentedRail.margin),
           child: Row(
             children: <Widget>[
               Expanded(
@@ -208,15 +208,16 @@ class _SegmentedRailState extends State<SegmentedRail> {
                     child: SizedBox(
                       width: layout.trackWidth,
                       height: trackHeight,
-                      child: LiquidGlassPlatform.isSupported
+                      child: (GlassMode.resolve(enabled: true).forComponent() ==
+                              GlassMode.native)
                           ? NativeCategoryRail(
                               categories: widget.items,
                               selectedIndex: widget.selectedIndex,
                               followSystemTransparency:
                                   widget.followSystemTransparency,
                               brightness: CupertinoTheme.brightnessOf(context),
-                              fontSize: MediaQuery.textScalerOf(context)
-                                  .scale(15),
+                              fontSize:
+                                  MediaQuery.textScalerOf(context).scale(15),
                               layout: LiquidGlassTopBarLayout.inline,
                               initialOffset: _nativeOffset,
                               onOffset: (value) => _nativeOffset = value,
@@ -343,8 +344,8 @@ class _SegmentedRailState extends State<SegmentedRail> {
             Row(
               children: <Widget>[
                 for (var i = 0; i < items.length; i++)
-                  _fallbackSegment(context, items[i], i, layout.widths[i],
-                      height),
+                  _fallbackSegment(
+                      context, items[i], i, layout.widths[i], height),
               ],
             ),
           ],
@@ -358,9 +359,9 @@ class _SegmentedRailState extends State<SegmentedRail> {
             CupertinoColors.secondarySystemGroupedBackground, context),
         borderRadius: BorderRadius.circular(height / 2),
         border: Border.all(
-          color: CupertinoDynamicColor.resolve(
-                  CupertinoColors.separator, context)
-              .withValues(alpha: 0.18),
+          color:
+              CupertinoDynamicColor.resolve(CupertinoColors.separator, context)
+                  .withValues(alpha: 0.18),
           width: 0.5,
         ),
       ),
@@ -369,9 +370,7 @@ class _SegmentedRailState extends State<SegmentedRail> {
         child: SingleChildScrollView(
           controller: _scroll,
           scrollDirection: Axis.horizontal,
-          physics: layout.scrolls
-              ? null
-              : const NeverScrollableScrollPhysics(),
+          physics: layout.scrolls ? null : const NeverScrollableScrollPhysics(),
           child: widget.pageController == null
               ? contents()
               : AnimatedBuilder(

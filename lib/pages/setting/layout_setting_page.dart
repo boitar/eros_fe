@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -193,7 +194,7 @@ class LayoutSettingList extends StatelessWidget {
           ),
         ],
       ),
-      if (LiquidGlassPlatform.isSupported)
+      if (PlatformCapabilities.nativeGlass)
         SliverCupertinoListSection.listInsetGrouped(
           footer: Obx(() {
             return Text(_ehSettingService.liquidGlass
@@ -317,7 +318,8 @@ class LayoutSettingList extends StatelessWidget {
             if (!CardSize.modes.contains(mode)) {
               return const SizedBox.shrink();
             }
-            final step = CardSize.of(mode, _ehSettingService.getItemConfig(mode),
+            final step = CardSize.of(
+                mode, _ehSettingService.getItemConfig(mode),
                 phone: context.isPhone);
             return Text(CardSizeSlider.labels(L10n.of(context))[step]);
           }),

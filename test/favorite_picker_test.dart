@@ -15,6 +15,8 @@ class PickerSettings extends GetxService implements EhSettingService {
   @override
   bool get isPureDarkTheme => false;
   @override
+  bool get liquidGlass => false;
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -28,24 +30,33 @@ class PickerTheme extends GetxService implements ThemeService {
 void main() {
   tearDown(() => Get.reset());
   for (final index in [0, 9]) {
-    testWidgets('picker visible category $index equals submitted category', (tester) async {
+    testWidgets('picker visible category $index equals submitted category',
+        (tester) async {
       Get.put<EhSettingService>(PickerSettings());
       Get.put<ThemeService>(PickerTheme());
       await tester.pumpWidget(const GetCupertinoApp(
         locale: Locale('en'),
-        localizationsDelegates: [L10n.delegate,
-          GlobalCupertinoLocalizations.delegate, GlobalWidgetsLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate],
+        localizationsDelegates: [
+          L10n.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate
+        ],
         home: CupertinoPageScaffold(child: Text('test')),
       ));
       await tester.pumpAndSettle();
       final controller = FavController();
-      final categories = [const Favcat(favId:'a', favTitle:'All'),
-        for (var i = 0; i < 10; i++) Favcat(favId:'$i', favTitle:'Category $i'),
-        const Favcat(favId:'l', favTitle:'Local')];
-      final result = controller.showFavListDialog(tester.element(find.text('test')), categories);
+      final categories = [
+        const Favcat(favId: 'a', favTitle: 'All'),
+        for (var i = 0; i < 10; i++)
+          Favcat(favId: '$i', favTitle: 'Category $i'),
+        const Favcat(favId: 'l', favTitle: 'Local')
+      ];
+      final result = controller.showFavListDialog(
+          tester.element(find.text('test')), categories);
       await tester.pumpAndSettle();
-      final picker = tester.widget<CupertinoPicker>(find.byType(CupertinoPicker));
+      final picker =
+          tester.widget<CupertinoPicker>(find.byType(CupertinoPicker));
       picker.scrollController!.jumpToItem(index);
       await tester.pumpAndSettle();
       await tester.tap(find.byType(CupertinoDialogAction).last);

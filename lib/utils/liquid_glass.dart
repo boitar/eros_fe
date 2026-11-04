@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -12,7 +12,7 @@ import 'package:flutter/services.dart';
 /// Basic feedback is optional and must not interrupt navigation or previews.
 /// Use the existing utility without depending on the enhanced haptics module.
 void liquidGlassFeedback(Future<void> Function() action) {
-  if (!LiquidGlassPlatform.isSupported) {
+  if (!PlatformCapabilities.nativeGlass) {
     return;
   }
   unawaited(action().catchError((Object _) {}));
@@ -128,7 +128,7 @@ class LiquidGlassPlatform {
   /// so a Dart version parser must not hide the user's switch or disable the
   /// whole feature path.
   static bool get isSupported {
-    return Platform.isIOS;
+    return PlatformCapabilities.nativeGlass;
   }
 }
 
@@ -179,7 +179,7 @@ class LiquidGlassAccessibilitySettings {
   static ValueListenable<bool?> get reduceTransparency => _reduceTransparency;
 
   static void watch() {
-    if (_subscription != null) {
+    if (!PlatformCapabilities.uiKitGlass || _subscription != null) {
       return;
     }
     _subscription = _channel.receiveBroadcastStream().listen(
@@ -255,10 +255,10 @@ class LiquidGlassSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool usesFlutterFallback =
-        enabled && !(useNativeGlass && LiquidGlassPlatform.isSupported);
+    final bool usesFlutterFallback = enabled &&
+        !(useNativeGlass && GlassMode.of(context) == GlassMode.native);
     final bool readsNativeTransparency =
-        usesFlutterFallback && defaultTargetPlatform == TargetPlatform.iOS;
+        usesFlutterFallback && PlatformCapabilities.uiKitGlass;
     final Widget surface;
     if (readsNativeTransparency) {
       LiquidGlassAccessibilitySettings.watch();
@@ -301,7 +301,10 @@ class LiquidGlassSurface extends StatelessWidget {
         );
 
         final Widget background;
-        if (enabled && useNativeGlass && LiquidGlassPlatform.isSupported) {
+        if (enabled &&
+            useNativeGlass &&
+            PlatformCapabilities.uiKitGlass &&
+            GlassMode.of(context) == GlassMode.native) {
           background = UiKitView(
             key: ValueKey<String>(
               '${style.name}:$followSystemTransparency:$interactive:$containerSpacing',
@@ -535,7 +538,7 @@ class LiquidGlassTabBar extends CupertinoTabBar {
 
   @override
   Widget build(BuildContext context) {
-    if (LiquidGlassPlatform.isSupported && nativeItems != null) {
+    if (PlatformCapabilities.uiKitGlass && nativeItems != null) {
       return _buildNativeBar(context);
     }
     return _buildFlutterBar(context);

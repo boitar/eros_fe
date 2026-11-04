@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
@@ -311,7 +312,7 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
   Widget build(BuildContext context) {
     final bool useLiquidGlass = Get.isRegistered<EhSettingService>() &&
         Get.find<EhSettingService>().liquidGlass &&
-        LiquidGlassPlatform.isSupported;
+        (GlassMode.resolve(enabled: true).forComponent() == GlassMode.native);
 
     final indicator = AnimatedContainer(
       height: widget.indicatorHeight,
@@ -542,7 +543,8 @@ class _InnerLinkTabItemState extends State<InnerLinkTabItem> {
       return Obx(() => _buildItem(
             context,
             Get.find<EhSettingService>().liquidGlass &&
-                LiquidGlassPlatform.isSupported,
+                (GlassMode.resolve(enabled: true).forComponent() ==
+                    GlassMode.native),
             Get.find<EhSettingService>().liquidGlassFollowSystemTransparency,
           ));
     }

@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -151,7 +152,7 @@ class SettingGlassBar extends StatelessWidget
   static bool get _followsSetting =>
       debugActive == null &&
       !kIsWeb &&
-      LiquidGlassPlatform.isSupported &&
+      (GlassMode.resolve(enabled: true).forComponent() == GlassMode.native) &&
       Get.isRegistered<EhSettingService>();
 
   /// Read inside [observe] so the bar follows the Liquid Glass setting.

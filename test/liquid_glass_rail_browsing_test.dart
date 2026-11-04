@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
@@ -509,6 +510,11 @@ void main() {
   testWidgets(
     'top scrim ignores the accessibility callback and never blurs',
     (tester) async {
+      final previousHostPlatform =
+          PlatformCapabilities.debugHostPlatformOverride;
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride =
+          previousHostPlatform);
       final previousTargetPlatform = debugDefaultTargetPlatformOverride;
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       addTearDown(() {
