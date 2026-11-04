@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -457,6 +458,9 @@ class AdaptiveEnvironmentService extends GetxService {
   }
 
   Future<void> _startNativeStream() async {
+    if (PlatformCapabilities.hostPlatform != TargetPlatform.iOS) {
+      return;
+    }
     try {
       _eventChannel = const EventChannel(eventChannelName);
       _subscription = _eventChannel!.receiveBroadcastStream().listen(
@@ -466,14 +470,13 @@ class AdaptiveEnvironmentService extends GetxService {
           }
         },
         onError: (Object error, StackTrace stack) {
-          // The native bridge is optional on older iOS and all other
-          // platforms. Flutter geometry remains the source of truth.
+          // The native bridge is optional. Flutter geometry remains the
+          // source of truth when it is unavailable.
           snapshot.value = snapshot.value.copyWithGeometry();
         },
       );
     } on MissingPluginException {
-      // Expected on Android, desktop, and simulator targets without the
-      // optional Runner bridge.
+      // Expected on iOS targets without the optional Runner bridge.
     } catch (_) {
       // Keep the adaptive fallback available if a host cannot create a
       // platform stream.
@@ -491,6 +494,9 @@ class AdaptiveEnvironmentService extends GetxService {
   }
 
   Future<void> refreshNativeSnapshot() async {
+    if (PlatformCapabilities.hostPlatform != TargetPlatform.iOS) {
+      return;
+    }
     try {
       final value = await const MethodChannel(methodChannelName)
           .invokeMethod<dynamic>('getSnapshot');

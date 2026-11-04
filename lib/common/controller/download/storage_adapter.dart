@@ -255,7 +255,14 @@ class StorageAdapter {
         ? path.join(Global.appDocPath, currentDownloadPath)
         : currentDownloadPath);
 
-    await for (final fs in directory.list()) {
+    if (!await directory.exists()) {
+      return;
+    }
+    final entries = directory.list().handleError(
+          (Object error) {},
+          test: (error) => error is PathNotFoundException,
+        );
+    await for (final fs in entries) {
       final infoFile = File(path.join(fs.path, '.info'));
       if (fs is Directory && infoFile.existsSync()) {
         await Function.apply(loadInfoFileCallback, [infoFile, fs.path]);
