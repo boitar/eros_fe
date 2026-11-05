@@ -1,4 +1,6 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:window_size/window_size.dart';
@@ -12,6 +14,21 @@ class Desktop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (PlatformCapabilities.hostPlatform == TargetPlatform.macOS) {
+      return StreamBuilder<DesktopTitle>(
+        stream: SysTitle.currentStream,
+        builder: (context, snapshot) {
+          final title = (snapshot.data ?? SysTitle.current)?.title ?? '';
+          if (title.isNotEmpty) {
+            setWindowTitle('$title · Eros-N');
+          }
+          return MacOSWindowContent(
+            dragRegion: MoveWindow(child: const SizedBox.expand()),
+            child: child,
+          );
+        },
+      );
+    }
     final mq = MediaQuery.of(context);
     return Stack(
       children: [

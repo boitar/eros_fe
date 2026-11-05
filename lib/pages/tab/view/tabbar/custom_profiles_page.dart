@@ -3,11 +3,11 @@ import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/debug/offline_group_index.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
+import 'package:eros_fe/widget/adaptive_reorderable_column.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
-import 'package:reorderables/reorderables.dart';
 
 class CustomProfilesPage extends GetView<CustomTabbarController> {
   const CustomProfilesPage({super.key});
@@ -92,7 +92,7 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
     });
 
     Widget reorderableView = Obx(() {
-      return ReorderableColumn(
+      return AdaptiveReorderableColumn(
         onReorder: controller.onReorder,
         children: () {
           final List<Widget> _list = <Widget>[];

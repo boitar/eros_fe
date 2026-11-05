@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/widget/appkit_interaction.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -83,7 +84,7 @@ class _AppKitGlassViewState extends State<AppKitGlassView> {
     _timeout?.cancel();
     _channel = MethodChannel('eros/appkit-glass/$id')
       ..setMethodCallHandler((call) async {
-        if (mounted) {
+        if (mounted && !AppKitInteraction.blocked) {
           widget.onAction?.call(
             call.method,
             call.arguments is int ? call.arguments as int : null,

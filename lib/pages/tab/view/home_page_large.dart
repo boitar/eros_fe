@@ -10,6 +10,7 @@ import 'package:eros_fe/route/app_pages.dart';
 import 'package:eros_fe/route/eh_observer.dart';
 import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/pages/gallery/controller/taginfo_controller.dart';
+import 'package:eros_fe/widget/appkit_interaction.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
@@ -84,6 +85,8 @@ class AdaptiveTabNavigator extends StatefulWidget {
 class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
   final LayoutServices _layout = Get.find();
   TabNavigationStack get _stack => widget.stack;
+  final _primaryModals = AppKitModalObserver();
+  final _detailModals = AppKitModalObserver();
   late final HeroController _primaryHero;
   late final HeroController _detailHero;
   late final Widget _primary;
@@ -102,7 +105,7 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
       controller: _primaryHero,
       child: Navigator(
         key: Get.nestedKey(_stack.primaryId),
-        observers: [_stack.primaryObserver],
+        observers: [_stack.primaryObserver, _primaryModals],
         initialRoute: EHRoutes.home,
         onGenerateInitialRoutes: (_, __) => [_primaryRootRoute()],
         onGenerateRoute: (settings) {
@@ -118,7 +121,7 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
       controller: _detailHero,
       child: Navigator(
         key: Get.nestedKey(_stack.detailId),
-        observers: [_stack.detailObserver],
+        observers: [_stack.detailObserver, _detailModals],
         initialRoute: EHRoutes.empty,
         onGenerateInitialRoutes: (_, __) {
           final root = _generateRoute(
@@ -238,6 +241,8 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
 
   @override
   void dispose() {
+    _primaryModals.dispose();
+    _detailModals.dispose();
     _detailCover.removeStatusListener(_detailCoverChanged);
     _stack.reset();
     _primaryHero.dispose();

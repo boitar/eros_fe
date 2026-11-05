@@ -21,7 +21,9 @@ import 'package:eros_fe/debug/offline_history.dart';
 import 'package:eros_fe/debug/offline_sharing.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/widget/appkit_glass.dart';
+import 'package:eros_fe/widget/appkit_interaction.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
+import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:eros_fe/widget/system_ui_overlay.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -43,6 +45,7 @@ Future<void> main() async {
   // runZonedGuarded<Future<void>>(() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppKitGlassRuntime.initialize();
+  await MacOSWindowChrome.initialize();
   await FlutterGlassRuntime.initialize();
   await initializeOfflineAcceptance();
   final dsn = await getSentryDsn();
@@ -132,6 +135,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  final _appKitModalObserver = AppKitModalObserver(root: true);
   final LocaleService localeService = Get.find();
   final ThemeService themeService = Get.find();
   final EhSettingService _ehSettingService = Get.find();
@@ -187,6 +191,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _appKitModalObserver.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _listener.dispose();
     super.dispose();
@@ -207,6 +212,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           debugShowCheckedModeBanner: false,
           onGenerateTitle: (BuildContext context) => L10n.of(context).app_title,
           navigatorObservers: [
+            _appKitModalObserver,
             SentryNavigatorObserver(),
             FlutterSmartDialog.observer,
             MainNavigatorObserver(),

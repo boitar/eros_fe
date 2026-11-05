@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/image_view/common.dart';
@@ -18,18 +19,11 @@ class ReadSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NativeNavigationPage(
-      chrome: NativePageChrome(title: L10n.of(context).read_setting),
-      child: CupertinoPageScaffold(
-        navigationBar: NativeNavigationScope.isEnabled(context)
-            ? null
-            : CupertinoNavigationBar(
-                middle: Text(L10n.of(context).read_setting),
-              ),
-        child: CustomScrollView(slivers: [
-          SliverSafeArea(sliver: ReadSettingList()),
-        ]),
-      ),
+    return SettingScaffold(
+      title: L10n.of(context).read_setting,
+      child: CustomScrollView(slivers: [
+        SliverSafeArea(sliver: ReadSettingList()),
+      ]),
     );
   }
 }

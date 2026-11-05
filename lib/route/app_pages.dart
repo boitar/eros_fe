@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/cache_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/index.dart';
@@ -62,6 +63,12 @@ import 'package:get/get.dart';
 const Duration kUnLockPageTransitionDuration = Duration(milliseconds: 200);
 
 class AppPages {
+  // A macOS host can create AppKit views later after negotiation or recovery.
+  // Keep reader opacity stable for its whole lifetime, even with glass off.
+  // Other desktop hosts retain their transparent reader/drag-dismiss behavior.
+  static bool get readerRouteOpaque => PlatformCapabilities.uiKitGlass ||
+      PlatformCapabilities.hostPlatform == TargetPlatform.macOS;
+
   static final List<GetPage> routes = <GetPage>[
     GetPage(
       name: EHRoutes.root,
@@ -200,7 +207,8 @@ class AppPages {
       page: () => const ViewPage(),
       binding: BindingsBuilder<dynamic>(bindViewExtController),
       // opaque: kDebugMode,
-      opaque: GetPlatform.isIOS,
+      // macOS readers must remove covered AppKit views.
+      opaque: readerRouteOpaque,
       showCupertinoParallax: false,
     ),
     GetPage(

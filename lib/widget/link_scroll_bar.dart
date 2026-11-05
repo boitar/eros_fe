@@ -4,6 +4,7 @@ import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/app_modal.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -686,7 +687,7 @@ Future showItemAttach({
   EdgeInsetsGeometry? margin,
   AlignmentGeometry? alignmentTemp,
 }) async {
-  await SmartDialog.showAttach(
+  await AppModal.showAttach(
     highlightBuilder: (Offset targetOffset, Size targetSize) {
       return Positioned(
         left: targetOffset.dx,
@@ -725,9 +726,7 @@ Future showItemAttach({
           //   ],
           // ),
           // color: CupertinoColors.systemGrey5,
-          child: EhPopupSurface(
-            child: child,
-          ),
+          child: EhPopupSurface(child: child),
         ),
       );
     },

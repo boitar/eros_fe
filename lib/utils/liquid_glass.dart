@@ -569,7 +569,7 @@ class LiquidGlassTabBar extends CupertinoTabBar {
         PlatformCapabilities.appKitGlass &&
         nativeItems != null &&
         nativeItems!.length == items.length) {
-      return SizedBox(
+      return _compactMacBar(context, SizedBox(
         height: height + MediaQuery.viewPaddingOf(context).bottom,
         child: AppKitGlassView(
           kind: 'tabs',
@@ -593,14 +593,14 @@ class LiquidGlassTabBar extends CupertinoTabBar {
             }
           },
         ),
-      );
+      ));
     }
     if (mode == GlassMode.off) {
       return super.build(context);
     }
     if ((mode == GlassMode.flutter || PlatformCapabilities.appKitGlass) &&
         FlutterGlassRuntime.available) {
-      return LayoutBuilder(
+      return _compactMacBar(context, LayoutBuilder(
           builder: (context, constraints) => SizedBox(
               width: constraints.hasBoundedWidth
                   ? constraints.maxWidth
@@ -634,12 +634,31 @@ class LiquidGlassTabBar extends CupertinoTabBar {
                         onTap: onSearch!,
                         label: searchLabel,
                         size: height - 12),
-              )));
+              ))));
     }
     if (PlatformCapabilities.uiKitGlass && nativeItems != null) {
       return _buildNativeBar(context);
     }
     return _buildFlutterBar(context);
+  }
+
+  /// Share the same compact geometry between AppKit and Flutter renderers.
+  Widget _compactMacBar(BuildContext context, Widget child) {
+    if (PlatformCapabilities.hostPlatform != TargetPlatform.macOS) {
+      return child;
+    }
+    final style = CupertinoTheme.of(context).textTheme.textStyle.copyWith(fontSize:13);
+    var maximumLabelWidth = 0.0;
+    final labels = [...items.map((item)=>item.label ?? ''), if(onSearch!=null) searchLabel];
+    for (final label in labels) {
+      final painter = TextPainter(text:TextSpan(text:label,style:style),textDirection:Directionality.of(context))..layout();
+      maximumLabelWidth = math.max(maximumLabelWidth,painter.width);
+      painter.dispose();
+    }
+    final desired = 24.0 + labels.length * math.max(60.0,maximumLabelWidth + 36);
+    return LayoutBuilder(builder:(context,constraints)=>Align(
+      alignment:Alignment.bottomCenter, widthFactor:1, heightFactor:1,
+      child:SizedBox(width: math.max(0.0,math.min(math.min(desired,560.0), constraints.maxWidth-24)), child:child)));
   }
 
   Widget _buildNativeBar(BuildContext context) {
