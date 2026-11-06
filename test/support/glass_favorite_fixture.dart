@@ -9,6 +9,8 @@ class PickerSettings extends GetxService implements EhSettingService {
   @override
   bool get isPureDarkTheme => false;
   @override
+  bool get liquidGlassFollowSystemTransparency => true;
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

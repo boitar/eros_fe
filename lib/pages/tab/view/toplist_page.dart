@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
@@ -88,7 +89,8 @@ class _ToplistTabState extends State<ToplistTab> {
 
   bool get _useLiquidGlass =>
       _ehSettingService.liquidGlass &&
-      LiquidGlassPlatform.isSupported &&
+      (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+          GlassMode.off) &&
       !NativeNavigationBridge.enabled.value;
 
   List<String> _periodTitles(BuildContext context) {
@@ -324,7 +326,8 @@ class _ToplistTabState extends State<ToplistTab> {
     final native = NativeNavigationScope.isEnabled(context);
     return Obx(() {
       final useLiquidGlass = _ehSettingService.liquidGlass &&
-          LiquidGlassPlatform.isSupported &&
+          (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+              GlassMode.off) &&
           !native;
       final hideTopBarOnScroll = _ehSettingService.hideTopBarOnScroll;
       final mediaQuery = MediaQuery.of(context);

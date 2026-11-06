@@ -5,6 +5,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
 import 'package:eros_fe/utils/avatar_store.dart';
 import 'package:eros_fe/utils/avatar_upload_retry.dart';
+import 'package:eros_fe/widget/app_modal.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -283,7 +284,7 @@ class _AvatarUrlDialogState extends State<_AvatarUrlDialog> {
 }
 
 void _showLoading() {
-  SmartDialog.showLoading(
+  AppModal.showLoading(
     builder: (_) => Center(
       child: CupertinoPopupSurface(
         child: Container(
@@ -294,7 +295,6 @@ void _showLoading() {
         ),
       ),
     ),
-    backType: SmartBackType.block,
   );
 }
 

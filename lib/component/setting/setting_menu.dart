@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:flutter/cupertino.dart';
@@ -45,7 +46,13 @@ abstract final class NativeSettingMenu {
     required List<Map<String, Object?>> items,
     required ValueChanged<int> onSelected,
   }) async {
-    if (_unavailable || kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) {
+    if (_unavailable ||
+        kIsWeb ||
+        (PlatformCapabilities.hostPlatform != TargetPlatform.iOS &&
+            PlatformCapabilities.hostPlatform != TargetPlatform.macOS)) {
+      return false;
+    }
+    if (PlatformCapabilities.hostPlatform == TargetPlatform.macOS && !PlatformCapabilities.appKitMenuAvailable) {
       return false;
     }
     _channel.setMethodCallHandler(_handle);
@@ -72,6 +79,13 @@ abstract final class NativeSettingMenu {
     }
     _pending.remove(token);
     return false;
+  }
+
+  @visibleForTesting
+  static void resetForTesting() {
+    _unavailable = false;
+    _pending.clear();
+    _channel.setMethodCallHandler(null);
   }
 
   static Future<void> _handle(MethodCall call) async {
@@ -144,7 +158,7 @@ class SettingMenuButtonState<T> extends State<SettingMenuButton<T>> {
           },
       ],
       onSelected: (index) {
-        if (index >= 0 && index < options.length) {
+        if (mounted && index >= 0 && index < options.length) {
           _pick(options[index].value);
         }
       },

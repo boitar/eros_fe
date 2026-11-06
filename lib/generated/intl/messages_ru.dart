@@ -76,6 +76,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "cf_verify_action": MessageLookupByLibrary.simpleMessage("Пройти"),
         "cf_verify_success": MessageLookupByLibrary.simpleMessage("Проверка пройдена"),
         "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("Проверка сохранена, но форум всё ещё блокирует запросы. Повторите позже или после смены сети."),
+        "liquid_glass_style": MessageLookupByLibrary.simpleMessage("Стиль жидкого стекла"),
+        "liquid_glass_description": MessageLookupByLibrary.simpleMessage("Применять стеклянный стиль к навигации и элементам управления. Внешний вид зависит от платформы."),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("Расположение категорий"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("Две строки (по умолчанию)"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("Действия и категории в отдельных строках"),

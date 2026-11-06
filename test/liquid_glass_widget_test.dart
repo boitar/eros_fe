@@ -1,5 +1,7 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/models/eh_config.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
@@ -10,6 +12,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  // These exercise the retained lightweight renderer and its gesture contract.
+  setUp(() => FlutterGlassRuntime.debugAvailable = false);
+  tearDown(() => FlutterGlassRuntime.debugAvailable = null);
   test('legacy bottom-search preference is ignored when loading config', () {
     final config = EhConfig.fromJson(const <String, dynamic>{
       'favoritesOrder': '',
@@ -646,6 +651,10 @@ void main() {
   testWidgets('Flutter glass fallback follows Reduce Transparency updates', (
     WidgetTester tester,
   ) async {
+    final previousHostPlatform = PlatformCapabilities.debugHostPlatformOverride;
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() =>
+        PlatformCapabilities.debugHostPlatformOverride = previousHostPlatform);
     final previousTargetPlatform = debugDefaultTargetPlatformOverride;
     addTearDown(LiquidGlassAccessibilitySettings.stopWatching);
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;

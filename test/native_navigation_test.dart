@@ -1,4 +1,5 @@
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/route/eh_observer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -15,7 +16,7 @@ void main() {
       home: NativeNavigationScope(
         child: ValueListenableBuilder(
           valueListenable: title,
-          builder: (_, value, __) => NativeNavigationPage(
+          builder: (_, value, _) => NativeNavigationPage(
             tabId: '/test-gallery',
             chrome: NativePageChrome(
               title: value,
@@ -53,7 +54,9 @@ void main() {
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       channel,
       (call) async {
-        if (call.method == 'getShellState') return true;
+        if (call.method == 'getShellState') {
+          return true;
+        }
         if (call.method == 'publishState') {
           publications.add(Map<Object?, Object?>.from(call.arguments as Map));
         }
@@ -82,7 +85,9 @@ void main() {
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       channel,
       (call) async {
-        if (call.method == 'getShellState') return true;
+        if (call.method == 'getShellState') {
+          return true;
+        }
         if (call.method == 'publishState') {
           publications.add(Map<Object?, Object?>.from(call.arguments as Map));
         }
@@ -133,29 +138,25 @@ void main() {
 
   testWidgets('native bar buttons, menus and back answer with feedback',
       (tester) async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+    addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
     const channel = MethodChannel('eros/native-navigation');
-    const vibration = MethodChannel('vibration');
     final messenger = tester.binding.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(
         channel, (call) async => call.method == 'getShellState' ? true : null);
-    // Tests run on the Android path: a light tap is one vibrate call, a
-    // selection tick goes through the platform channel.
+    // Tests run on the Android path: both semantic haptics go through
+    // Flutter's platform channel.
     final feedback = <String>[];
-    messenger.setMockMethodCallHandler(vibration, (call) async {
-      if (call.method == 'vibrate') {
-        feedback.add('light');
-      }
-      return call.method.startsWith('has') ? false : null;
-    });
     messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
       if (call.method == 'HapticFeedback.vibrate') {
-        feedback.add('selection');
+        feedback.add(call.arguments == 'HapticFeedbackType.selectionClick'
+            ? 'selection'
+            : 'light');
       }
       return null;
     });
     addTearDown(() {
       messenger.setMockMethodCallHandler(channel, null);
-      messenger.setMockMethodCallHandler(vibration, null);
       messenger.setMockMethodCallHandler(SystemChannels.platform, null);
       NativeNavigationBridge.enabled.value = false;
     });

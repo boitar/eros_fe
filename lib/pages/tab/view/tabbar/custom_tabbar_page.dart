@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:blur/blur.dart';
 import 'package:english_words/english_words.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
@@ -79,7 +80,8 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
 
   bool get _useLiquidGlass =>
       _ehSettingService.liquidGlass &&
-      LiquidGlassPlatform.isSupported &&
+      (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+          GlassMode.off) &&
       !NativeNavigationBridge.enabled.value;
 
   GlobalKey _firstCardKeyFor(String profileUuid) =>
@@ -544,8 +546,9 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
     BuildContext context, {
     double? opacity,
   }) {
-    final useLiquidGlass =
-        _ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+    final useLiquidGlass = _ehSettingService.liquidGlass &&
+        (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+            GlassMode.off);
     return CupertinoNavigationBar(
       transitionBetweenRoutes: false,
       automaticBackgroundVisibility: !useLiquidGlass,
@@ -706,10 +709,12 @@ class CustomTabBar extends StatelessWidget {
     return Obx(() {
       // 不要删除这行
       ehTheme.isDarkMode;
-      final useLiquidGlass =
-          ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+      final useLiquidGlass = ehSettingService.liquidGlass &&
+          (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+              GlassMode.off);
       final topTabbarHeight = topTabbarHeightFor(context);
-      if (LiquidGlassPlatform.isSupported &&
+      if ((GlassMode.of(context).forComponent(flutterImplemented: true) !=
+              GlassMode.off) &&
           (useLiquidGlass || NativeNavigationScope.isEnabled(context))) {
         return Padding(
           padding: EdgeInsets.only(

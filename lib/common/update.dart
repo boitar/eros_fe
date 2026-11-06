@@ -54,5 +54,5 @@ Future<void> moveDB() async {
       _ieDir.deleteSync();
     }
   }
-  Global.createDirs();
+  await Global.createDirs();
 }

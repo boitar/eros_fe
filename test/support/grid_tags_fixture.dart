@@ -14,6 +14,9 @@ import 'package:get/get.dart';
 
 /// Offline dependencies for exercising the production grid without user data.
 class GridTagsFixtureSettings extends GetxService implements EhSettingService {
+  final RxBool _glass = false.obs;
+  @override
+  bool get liquidGlass => _glass.value;
   @override
   final listMode = ListModeEnum.gridTags.obs;
   final translation = false.obs;
@@ -131,15 +134,21 @@ void registerGridMasterDependencies() {
   Get.put<HistoryController>(_GridHistory());
   Get.put<TabHomeController>(_GridTabs());
 }
+
 class _GridFavorites extends GetxController implements FavController {
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw StateError('$invocation');
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw StateError('$invocation');
 }
+
 class _GridHistory extends GetxController implements HistoryController {
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw StateError('$invocation');
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw StateError('$invocation');
 }
+
 class _GridTabs extends GetxController implements TabHomeController {
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw StateError('$invocation');
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw StateError('$invocation');
 }

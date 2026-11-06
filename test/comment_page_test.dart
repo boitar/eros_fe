@@ -17,7 +17,8 @@ class _Settings extends GetxService implements EhSettingService {
   @override
   bool get filterCommentsByScore => false;
   @override
-  bool get liquidGlass => false;
+  bool get liquidGlass => _glass.value;
+  final RxBool _glass = false.obs;
   @override
   bool get liquidGlassFollowSystemTransparency => true;
   @override

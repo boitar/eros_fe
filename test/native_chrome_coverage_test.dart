@@ -31,7 +31,8 @@ String _code(File file) => file
 
 class _Settings extends GetxService implements EhSettingService {
   @override
-  bool get liquidGlass => false;
+  bool get liquidGlass => _glass.value;
+  final RxBool _glass = false.obs;
   @override
   bool get liquidGlassFollowSystemTransparency => true;
   @override
@@ -87,8 +88,8 @@ void main() {
   });
 
   test('a pushed page without chrome keeps the bar band', () {
-    final route = PageRouteBuilder<void>(
-        pageBuilder: (_, __, ___) => const SizedBox());
+    final route =
+        PageRouteBuilder<void>(pageBuilder: (_, __, ___) => const SizedBox());
     final fallback = pushedPageChrome(route);
     expect(fallback.ownBar, isTrue);
     expect(fallback.navigationBarVisible, isFalse);

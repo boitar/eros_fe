@@ -233,8 +233,16 @@ void main() {
           await tester.pump();
           final expected =
               reduceMotion ? (progress >= 0.72 ? 0.0 : 1.0) : 1 - progress;
-          expect(find.text('Home'), findsOneWidget);
-          expect(find.text('Favorites'), findsOneWidget);
+          expect(
+              find.descendant(
+                  of: find.byType(LiquidGlassTabBar),
+                  matching: find.text('Home').hitTestable()),
+              findsOneWidget);
+          expect(
+              find.descendant(
+                  of: find.byType(LiquidGlassTabBar),
+                  matching: find.text('Favorites').hitTestable()),
+              findsOneWidget);
           if (expected == 0) {
             expect(find.text('Category'), findsNothing);
           } else {
@@ -281,9 +289,9 @@ void main() {
     expect(tester.getRect(status).bottom, 153);
     final scrim = find.byKey(const ValueKey('liquid-glass-top-scrim'));
     expect(tester.getTopLeft(scrim).dy, 0);
-    final baseGradient = (tester.widget<DecoratedBox>(status).decoration
-            as BoxDecoration)
-        .gradient! as LinearGradient;
+    final baseGradient =
+        (tester.widget<DecoratedBox>(status).decoration as BoxDecoration)
+            .gradient! as LinearGradient;
     expect(baseGradient.colors.first.toARGB32(), 0xFFFFFFFF);
     expect(baseGradient.colors.last.a, 0.0);
     for (final value in [0.0, 0.01, 0.25, 0.5, 0.75, 1.0]) {

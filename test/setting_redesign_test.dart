@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/component/setting/setting_menu.dart';
@@ -176,6 +177,8 @@ void main() {
 
     testWidgets('presents a native UIMenu from the value on iOS',
         (tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
       final calls = <MethodCall>[];
       tester.binding.defaultBinaryMessenger
           .setMockMethodCallHandler(_menuChannel, (call) async {
@@ -228,6 +231,8 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('falls back to Flutter when UIKit declines', (tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
       tester.binding.defaultBinaryMessenger
           .setMockMethodCallHandler(_menuChannel, (call) async => false);
       addTearDown(() => tester.binding.defaultBinaryMessenger

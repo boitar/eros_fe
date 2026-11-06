@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/auto_lock_controller.dart';
 import 'package:eros_fe/common/controller/log_controller.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
@@ -19,6 +20,10 @@ import 'package:eros_fe/debug/offline_haptics.dart';
 import 'package:eros_fe/debug/offline_history.dart';
 import 'package:eros_fe/debug/offline_sharing.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/widget/appkit_glass.dart';
+import 'package:eros_fe/widget/appkit_interaction.dart';
+import 'package:eros_fe/widget/flutter_glass.dart';
+import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:eros_fe/widget/system_ui_overlay.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -39,6 +44,9 @@ Future<void> main() async {
   // BindingBase.debugZoneErrorsAreFatal = true;
   // runZonedGuarded<Future<void>>(() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppKitGlassRuntime.initialize();
+  await MacOSWindowChrome.initialize();
+  await FlutterGlassRuntime.initialize();
   await initializeOfflineAcceptance();
   final dsn = await getSentryDsn();
 
@@ -127,6 +135,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  final _appKitModalObserver = AppKitModalObserver(root: true);
   final LocaleService localeService = Get.find();
   final ThemeService themeService = Get.find();
   final EhSettingService _ehSettingService = Get.find();
@@ -182,6 +191,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _appKitModalObserver.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _listener.dispose();
     super.dispose();
@@ -202,6 +212,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           debugShowCheckedModeBanner: false,
           onGenerateTitle: (BuildContext context) => L10n.of(context).app_title,
           navigatorObservers: [
+            _appKitModalObserver,
             SentryNavigatorObserver(),
             FlutterSmartDialog.observer,
             MainNavigatorObserver(),
@@ -223,10 +234,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           builder: SystemUIOverlay.init(
             builder: FlutterSmartDialog.init(
               styleBuilder: (child) {
-                if (GetPlatform.isDesktop) {
-                  return Desktop(child: child);
-                } else {
+                if (PlatformCapabilities.uiKitGlass) {
                   return child;
+                }
+                if (GetPlatform.isDesktop) {
+                  return Obx(() => FlutterGlassRuntime.wrap(
+                      Desktop(child: child),
+                      enabled: Get.find<EhSettingService>().liquidGlass));
+                } else {
+                  return Obx(() => FlutterGlassRuntime.wrap(child,
+                      enabled: Get.find<EhSettingService>().liquidGlass));
                 }
               },
             ),

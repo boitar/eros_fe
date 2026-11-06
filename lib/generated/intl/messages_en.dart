@@ -76,6 +76,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "cf_verify_action": MessageLookupByLibrary.simpleMessage("Verify"),
         "cf_verify_success": MessageLookupByLibrary.simpleMessage("Verification complete"),
         "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("Verification saved, but the forum is still blocked. Try again later or after switching networks."),
+        "liquid_glass_style": MessageLookupByLibrary.simpleMessage("Liquid glass style"),
+        "liquid_glass_description": MessageLookupByLibrary.simpleMessage("Use a glass style for navigation and controls. The appearance varies by platform."),
         "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("Top category layout"),
         "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("Two rows (default)"),
         "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("Actions and categories on separate rows"),

@@ -1,8 +1,10 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/appkit_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
@@ -151,13 +153,18 @@ class SettingGlassBar extends StatelessWidget
   static bool get _followsSetting =>
       debugActive == null &&
       !kIsWeb &&
-      LiquidGlassPlatform.isSupported &&
+      (GlassMode.resolve(enabled: true)
+              .forComponent(flutterImplemented: true) !=
+          GlassMode.off) &&
       Get.isRegistered<EhSettingService>();
 
   /// Read inside [observe] so the bar follows the Liquid Glass setting.
   static bool get isActive =>
       debugActive ??
-      (_followsSetting && Get.find<EhSettingService>().liquidGlass);
+      (_followsSetting &&
+          GlassMode.resolve(enabled: Get.find<EhSettingService>().liquidGlass)
+                  .forComponent(flutterImplemented: true) !=
+              GlassMode.off);
 
   /// Rebuilds [builder] when the Liquid Glass setting changes.
   static Widget observe(Widget Function() builder) =>
@@ -186,9 +193,8 @@ class SettingGlassBar extends StatelessWidget
     final double safeTop = MediaQuery.paddingOf(context).top;
     final route = ModalRoute.of(context);
     final bool canPop = route?.impliesAppBarDismissal ?? false;
-    final bool followSystem = Get.isRegistered<EhSettingService>()
-        ? Get.find<EhSettingService>().liquidGlassFollowSystemTransparency
-        : true;
+    final bool followSystem = !Get.isRegistered<EhSettingService>() ||
+        Get.find<EhSettingService>().liquidGlassFollowSystemTransparency;
     final Color iconColor = ehTheme.palette.text1.resolveFrom(context);
     final TextStyle titleStyle = CupertinoTheme.of(context)
         .textTheme
@@ -218,47 +224,96 @@ class SettingGlassBar extends StatelessWidget
           padding: EdgeInsets.only(top: safeTop),
           child: SizedBox(
             height: barHeight,
-            child: NavigationToolbar(
-              leading: canPop
-                  ? _GlassCircle(
-                      followSystemTransparency: followSystem,
-                      label: CupertinoLocalizations.of(context).backButtonLabel,
-                      onPressed: () => Navigator.maybePop(context),
-                      child: Icon(
-                        CupertinoIcons.chevron_back,
-                        size: 24,
-                        color: iconColor,
-                      ),
-                    )
-                  : null,
-              middle: AnimatedOpacity(
-                opacity: titleVisible ? 1 : 0,
-                duration: const Duration(milliseconds: 180),
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: titleStyle,
-                  ),
-                ),
-              ),
-              trailing: trailing == null
-                  ? null
-                  : _GlassCapsule(
-                      followSystemTransparency: followSystem,
-                      child: IconTheme.merge(
-                        data: IconThemeData(color: iconColor),
-                        child: trailing!,
+            child: _toolbarSurface(
+                context,
+                NavigationToolbar(
+                  leading: canPop
+                      ? _GlassCircle(
+                          followSystemTransparency: followSystem,
+                          label: CupertinoLocalizations.of(context)
+                              .backButtonLabel,
+                          onPressed: () => Navigator.maybePop(context),
+                          child: Icon(
+                            CupertinoIcons.chevron_back,
+                            size: 24,
+                            color: iconColor,
+                          ),
+                        )
+                      : null,
+                  middle: AnimatedOpacity(
+                    opacity: titleVisible ? 1 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: titleStyle,
                       ),
                     ),
-              middleSpacing: 12,
-            ),
+                  ),
+                  trailing: trailing == null
+                      ? null
+                      : _GlassCapsule(
+                          followSystemTransparency: followSystem,
+                          child: IconTheme.merge(
+                            data: IconThemeData(color: iconColor),
+                            child: trailing!,
+                          ),
+                        ),
+                  middleSpacing: 12,
+                )),
           ),
         ),
       ],
     );
+  }
+
+  // Keep the scroll-edge effect outside the clipped glass toolbar.
+  Widget _toolbarSurface(BuildContext context, Widget child) {
+    final mode = GlassMode.of(context).forComponent(
+      flutterImplemented: true,
+      nativeBackends: const {
+        NativeGlassBackend.uiKit,
+        NativeGlassBackend.appKit,
+      },
+    );
+    if (mode == GlassMode.native && PlatformCapabilities.appKitGlass) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ExcludeSemantics(
+                child: AppKitGlassView(
+                  kind: 'surface',
+                  configuration: {
+                    'dark':
+                        CupertinoTheme.brightnessOf(context) == Brightness.dark,
+                    'followSystemTransparency':
+                        !Get.isRegistered<EhSettingService>() ||
+                        Get.find<EhSettingService>()
+                            .liquidGlassFollowSystemTransparency,
+                  },
+                ),
+              ),
+            ),
+          ),
+          // AppKit owns this bar's material; controls must not add another
+          // Flutter refraction layer above it.
+          GlassPreference(enabled: false, child: child),
+        ],
+      );
+    }
+    if (mode == GlassMode.flutter) {
+      return LiquidGlassSurface(
+        enabled: true,
+        useNativeGlass: false,
+        borderRadius: BorderRadius.zero,
+        child: child,
+      );
+    }
+    return child;
   }
 }
 

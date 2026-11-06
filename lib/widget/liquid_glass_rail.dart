@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/desktop_pointer_effects.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -272,7 +274,8 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
         Widget fitSurface(Widget child) => widget.compactCategories
             ? Align(child: SizedBox(width: surfaceWidth, child: child))
             : child;
-        if (LiquidGlassPlatform.isSupported) {
+        if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
+            GlassMode.native) {
           return fitSurface(NativeCategoryRail(
             categories: categories,
             selectedIndex: widget.selectedIndex,
@@ -381,12 +384,15 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             child: SingleChildScrollView(
               controller: _scroll,
               scrollDirection: Axis.horizontal,
-              child: widget.pageController == null
-                  ? contents()
-                  : AnimatedBuilder(
-                      animation: widget.pageController!,
-                      builder: (_, __) => contents(),
-                    ),
+              child: HorizontalMouseWheel(
+                controller: _scroll,
+                child: widget.pageController == null
+                    ? contents()
+                    : AnimatedBuilder(
+                        animation: widget.pageController!,
+                        builder: (_, __) => contents(),
+                      ),
+              ),
             ),
           ),
         );
@@ -414,32 +420,37 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
       button: true,
       selected: selected,
       label: category.title,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          liquidGlassFeedback(vibrateUtil.selection);
-          category.onTap();
-        },
-        onLongPress: category.onLongPress == null
-            ? null
-            : () {
-                liquidGlassFeedback(vibrateUtil.medium);
-                category.onLongPress!();
-              },
-        child: SizedBox(
-          key: ValueKey<String>('liquid-glass-category-slot-$index'),
-          width: slotWidth,
-          height: widget.layout.categoryHeight(
-            MediaQuery.textScalerOf(context),
-          ),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                category.title,
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                style: textStyle,
+      child: NavigationHover(
+        borderRadius: BorderRadius.circular(
+          widget.layout.categoryHeight(MediaQuery.textScalerOf(context)) / 2,
+        ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            liquidGlassFeedback(vibrateUtil.selection);
+            category.onTap();
+          },
+          onLongPress: category.onLongPress == null
+              ? null
+              : () {
+                  liquidGlassFeedback(vibrateUtil.medium);
+                  category.onLongPress!();
+                },
+          child: SizedBox(
+            key: ValueKey<String>('liquid-glass-category-slot-$index'),
+            width: slotWidth,
+            height: widget.layout.categoryHeight(
+              MediaQuery.textScalerOf(context),
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  category.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                  style: textStyle,
+                ),
               ),
             ),
           ),
@@ -472,13 +483,16 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
           child: Semantics(
             button: true,
             label: action.label,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                liquidGlassFeedback(vibrateUtil.light);
-                action.onPressed();
-              },
-              child: Center(child: Icon(action.icon, size: 25, color: color)),
+            child: NavigationHover(
+              borderRadius: BorderRadius.circular(LiquidGlassRail.controlSize / 2),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  liquidGlassFeedback(vibrateUtil.light);
+                  action.onPressed();
+                },
+                child: Center(child: Icon(action.icon, size: 25, color: color)),
+              ),
             ),
           ),
         ),
@@ -1014,6 +1028,27 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
 
   @override
   Widget build(BuildContext context) {
+    if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
+        GlassMode.flutter) {
+      return SegmentedRail(
+          interactive: widget.interactive,
+          initialOffset: widget.initialOffset,
+          onOffset: widget.onOffset,
+          items: widget.categories,
+          selectedIndex: widget.selectedIndex,
+          pageController: widget.pageController,
+          opacity: widget.opacity,
+          followSystemTransparency: widget.followSystemTransparency);
+    }
+    if (!PlatformCapabilities.uiKitGlass ||
+        GlassMode.of(context) == GlassMode.off) {
+      return Wrap(children: [
+        for (final category in widget.categories)
+          CupertinoButton(
+              onPressed: widget.interactive ? category.onTap : null,
+              child: Text(category.title)),
+      ]);
+    }
     return SizedBox(
       height: widget.height ??
           widget.layout.categoryHeight(MediaQuery.textScalerOf(context)),

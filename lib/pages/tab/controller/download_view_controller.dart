@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:enum_to_string/enum_to_string.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/archiver_download_controller.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/epub/epub_builder.dart';
@@ -45,7 +46,7 @@ const String idDownloadArchiverItem = 'DownloadArchiverItem';
 const String viewTypeStoreKey = 'DownloadView.viewType';
 
 class DownloadViewController extends GetxController {
-  late final ArchiverDownloadController _archiverDownloadController;
+  ArchiverDownloadController get _archiverDownloadController => Get.find();
 
   final DownloadController _downloadController = Get.find();
 
@@ -67,9 +68,6 @@ class DownloadViewController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    if (GetPlatform.isMobile) {
-      _archiverDownloadController = Get.find();
-    }
     tabTag = EHRoutes.download;
 
     viewType = EnumToString.fromString(DownloadType.values,
@@ -84,12 +82,23 @@ class DownloadViewController extends GetxController {
     DownloadType.archiver,
   ];
 
-  List<DownloadArchiverTaskInfo> get archiverTasks =>
-      _archiverDownloadController.archiverTaskMap.entries
-          .map((e) => e.value)
-          .toList()
-          .reversed
-          .toList();
+  // Desktop exposes the tab without the mobile-only downloader. On mobile,
+  // the backend remains a required dependency: Get.find must report a missing
+  // registration rather than silently presenting an empty queue.
+  List<DownloadArchiverTaskInfo> get archiverTasks {
+    final host = PlatformCapabilities.hostPlatform;
+    final desktop =
+        host == TargetPlatform.macOS ||
+        host == TargetPlatform.windows ||
+        host == TargetPlatform.linux;
+    if (desktop && !Get.isRegistered<ArchiverDownloadController>()) {
+      return const [];
+    }
+    return _archiverDownloadController.archiverTaskMap.values
+        .toList()
+        .reversed
+        .toList();
+  }
 
   Map<int, GalleryTask> get galleryTaskMap =>
       _downloadController.dState.galleryTaskMap;

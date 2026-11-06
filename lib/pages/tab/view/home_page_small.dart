@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/browse_layout.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
@@ -163,8 +165,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     final EhSettingService ehSettingService = Get.find();
 
     return Obx(() {
-      final useLiquidGlass =
-          ehSettingService.liquidGlass && LiquidGlassPlatform.isSupported;
+      final useLiquidGlass = ehSettingService.liquidGlass &&
+          (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+              GlassMode.off);
       controller.setNavigationMode(useLiquidGlass: useLiquidGlass);
       _publishNativeNavigationState();
       final tabBar = useLiquidGlass
@@ -280,7 +283,11 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
               ),
             ),
           ),
-          if (!nativeShellEnabled)
+          if (!nativeShellEnabled && PlatformCapabilities.hostPlatform == TargetPlatform.macOS && widget.split && source.isSplit)
+            Obx(()=>Positioned(bottom:0,left:source.contentRect.left,
+              width:AdaptiveBrowseLayout.primaryPaneWidth(source.contentRect.width,Get.find<LayoutServices>().sideProportion),
+              child:MediaQuery.withNoTextScaling(child:tabBar)))
+          else if (!nativeShellEnabled)
             Align(
               alignment: Alignment.bottomCenter,
               child: MediaQuery.withNoTextScaling(child: tabBar),

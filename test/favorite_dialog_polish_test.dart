@@ -7,6 +7,7 @@ import 'package:eros_fe/pages/controller/fav_controller.dart';
 import 'package:eros_fe/pages/gallery/view/favorite_form_widgets.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_favcat.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -56,6 +57,9 @@ BoxDecoration _groupDecoration(WidgetTester tester, Finder group) => tester
     .firstWhere((decoration) => decoration.color != null);
 
 void main() {
+  // Keep the existing contrast and blur assertions for the lightweight fallback.
+  setUp(() => FlutterGlassRuntime.debugAvailable = false);
+  tearDown(() => FlutterGlassRuntime.debugAvailable = null);
   void glassTest(String name, Future<void> Function(WidgetTester) body) {
     testWidgets(name, (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;

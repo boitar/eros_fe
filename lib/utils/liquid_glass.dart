@@ -1,18 +1,22 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/appkit_glass.dart';
+import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart' as glass;
 
 /// Basic feedback is optional and must not interrupt navigation or previews.
 /// Use the existing utility without depending on the enhanced haptics module.
 void liquidGlassFeedback(Future<void> Function() action) {
-  if (!LiquidGlassPlatform.isSupported) {
+  final android = PlatformCapabilities.hostPlatform == TargetPlatform.android;
+  if (!PlatformCapabilities.nativeGlass && !android) {
     return;
   }
   unawaited(action().catchError((Object _) {}));
@@ -128,7 +132,7 @@ class LiquidGlassPlatform {
   /// so a Dart version parser must not hide the user's switch or disable the
   /// whole feature path.
   static bool get isSupported {
-    return Platform.isIOS;
+    return PlatformCapabilities.nativeGlass;
   }
 }
 
@@ -179,7 +183,7 @@ class LiquidGlassAccessibilitySettings {
   static ValueListenable<bool?> get reduceTransparency => _reduceTransparency;
 
   static void watch() {
-    if (_subscription != null) {
+    if (!PlatformCapabilities.uiKitGlass || _subscription != null) {
       return;
     }
     _subscription = _channel.receiveBroadcastStream().listen(
@@ -255,10 +259,27 @@ class LiquidGlassSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool usesFlutterFallback =
-        enabled && !(useNativeGlass && LiquidGlassPlatform.isSupported);
+    final mode = GlassMode.of(context).forComponent(flutterImplemented: true);
+    if (!enabled || mode == GlassMode.off) {
+      return child ?? const SizedBox.expand();
+    }
+    if (mode == GlassMode.flutter && MediaQuery.highContrastOf(context)) {
+      return _buildSurface(context, reduceTransparency: true);
+    }
+    if (mode == GlassMode.flutter && FlutterGlassRuntime.available) {
+      final panel = FlutterGlassPanel(
+          borderRadius: borderRadius, child: child ?? const SizedBox.expand());
+      final alpha = opacity.clamp(0.0, 1.0).toDouble();
+      return alpha >= 1 ? panel : Opacity(opacity: alpha, child: panel);
+    }
+    return _buildLegacy(context);
+  }
+
+  Widget _buildLegacy(BuildContext context) {
+    final bool usesFlutterFallback = enabled &&
+        !(useNativeGlass && GlassMode.of(context) == GlassMode.native);
     final bool readsNativeTransparency =
-        usesFlutterFallback && defaultTargetPlatform == TargetPlatform.iOS;
+        usesFlutterFallback && PlatformCapabilities.uiKitGlass;
     final Widget surface;
     if (readsNativeTransparency) {
       LiquidGlassAccessibilitySettings.watch();
@@ -301,7 +322,10 @@ class LiquidGlassSurface extends StatelessWidget {
         );
 
         final Widget background;
-        if (enabled && useNativeGlass && LiquidGlassPlatform.isSupported) {
+        if (enabled &&
+            useNativeGlass &&
+            PlatformCapabilities.uiKitGlass &&
+            GlassMode.of(context) == GlassMode.native) {
           background = UiKitView(
             key: ValueKey<String>(
               '${style.name}:$followSystemTransparency:$interactive:$containerSpacing',
@@ -535,10 +559,107 @@ class LiquidGlassTabBar extends CupertinoTabBar {
 
   @override
   Widget build(BuildContext context) {
-    if (LiquidGlassPlatform.isSupported && nativeItems != null) {
+    final mode = GlassMode.of(context).forComponent(
+      flutterImplemented: true,
+      nativeBackends: const {
+        NativeGlassBackend.uiKit,
+        NativeGlassBackend.appKit,
+      },
+    );
+    if (mode == GlassMode.native &&
+        PlatformCapabilities.appKitGlass &&
+        nativeItems != null &&
+        nativeItems!.length == items.length) {
+      return _compactMacBar(context, SizedBox(
+        height: height + MediaQuery.viewPaddingOf(context).bottom,
+        child: AppKitGlassView(
+          kind: 'tabs',
+          configuration: {
+            'items': [for (final item in nativeItems!) item.toMap()],
+            'selectedIndex': currentIndex,
+            'searchLabel': searchLabel,
+            'search': onSearch != null,
+            'dark': CupertinoTheme.brightnessOf(context) == Brightness.dark,
+            'followSystemTransparency': followSystemTransparency,
+          },
+          onAction: (method, index) {
+            if (method == 'select' &&
+                index != null &&
+                index >= 0 &&
+                index < items.length) {
+              onTap?.call(index);
+            }
+            if (method == 'search') {
+              onSearch?.call();
+            }
+          },
+        ),
+      ));
+    }
+    if (mode == GlassMode.off) {
+      return super.build(context);
+    }
+    if ((mode == GlassMode.flutter || PlatformCapabilities.appKitGlass) &&
+        FlutterGlassRuntime.available) {
+      return _compactMacBar(context, LayoutBuilder(
+          builder: (context, constraints) => SizedBox(
+              width: constraints.hasBoundedWidth
+                  ? constraints.maxWidth
+                  : MediaQuery.sizeOf(context).width,
+              height: height + MediaQuery.viewPaddingOf(context).bottom,
+              child: glass.GlassTabBar.bottom(
+                tabs: [
+                  for (final item in items)
+                    glass.GlassTab(
+                        icon: item.icon,
+                        activeIcon: item.activeIcon,
+                        label: item.label)
+                ],
+                selectedIndex: _clampTabIndex(currentIndex, items.length),
+                onTabSelected: (index) {
+                  // Retain the feedback of the previous non-native Cupertino bar.
+                  vibrateUtil.tabSwitch();
+                  onTap?.call(index);
+                },
+                horizontalPadding: 8,
+                verticalPadding: 6,
+                barHeight: height - 12,
+                selectedIconColor: activeColor,
+                unselectedIconColor: inactiveColor,
+                selectedLabelColor: activeColor,
+                unselectedLabelColor: inactiveColor,
+                extraButton: onSearch == null
+                    ? null
+                    : glass.GlassTabBarExtraButton(
+                        icon: const Icon(CupertinoIcons.search),
+                        onTap: onSearch!,
+                        label: searchLabel,
+                        size: height - 12),
+              ))));
+    }
+    if (PlatformCapabilities.uiKitGlass && nativeItems != null) {
       return _buildNativeBar(context);
     }
     return _buildFlutterBar(context);
+  }
+
+  /// Share the same compact geometry between AppKit and Flutter renderers.
+  Widget _compactMacBar(BuildContext context, Widget child) {
+    if (PlatformCapabilities.hostPlatform != TargetPlatform.macOS) {
+      return child;
+    }
+    final style = CupertinoTheme.of(context).textTheme.textStyle.copyWith(fontSize:13);
+    var maximumLabelWidth = 0.0;
+    final labels = [...items.map((item)=>item.label ?? ''), if(onSearch!=null) searchLabel];
+    for (final label in labels) {
+      final painter = TextPainter(text:TextSpan(text:label,style:style),textDirection:Directionality.of(context))..layout();
+      maximumLabelWidth = math.max(maximumLabelWidth,painter.width);
+      painter.dispose();
+    }
+    final desired = 24.0 + labels.length * math.max(60.0,maximumLabelWidth + 36);
+    return LayoutBuilder(builder:(context,constraints)=>Align(
+      alignment:Alignment.bottomCenter, widthFactor:1, heightFactor:1,
+      child:SizedBox(width: math.max(0.0,math.min(math.min(desired,560.0), constraints.maxWidth-24)), child:child)));
   }
 
   Widget _buildNativeBar(BuildContext context) {

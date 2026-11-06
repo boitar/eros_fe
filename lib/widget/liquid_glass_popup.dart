@@ -1,15 +1,17 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 bool get liquidGlassPopupsEnabled =>
-    defaultTargetPlatform == TargetPlatform.iOS &&
+    (GlassMode.resolve(enabled: true).forComponent(flutterImplemented: true) !=
+        GlassMode.off) &&
     Get.isRegistered<EhSettingService>() &&
     Get.find<EhSettingService>().liquidGlass;
 
@@ -121,6 +123,22 @@ class LiquidGlassPopupSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!(enabled ?? liquidGlassPopupsEnabled)) {
+      return child;
+    }
+    final mode = GlassMode.of(context).forComponent(flutterImplemented: true);
+    if (mode == GlassMode.off) {
+      return child;
+    }
+    if (mode == GlassMode.flutter &&
+        FlutterGlassRuntime.available &&
+        !MediaQuery.highContrastOf(context)) {
+      return FlutterGlassPanel(borderRadius: borderRadius, child: child);
+    }
+    return _buildLegacy(context);
+  }
+
+  Widget _buildLegacy(BuildContext context) {
     if (!(enabled ?? liquidGlassPopupsEnabled)) {
       return child;
     }
@@ -694,7 +712,8 @@ Widget? _nativePopup(
   Widget? cancelButton,
   bool sheet = false,
 }) {
-  if (!LiquidGlassPlatform.isSupported) {
+  if (GlassMode.resolve(enabled: true).forComponent() != GlassMode.native ||
+      !PlatformCapabilities.uiKitGlass) {
     return null;
   }
   final titleText = _plainText(title);

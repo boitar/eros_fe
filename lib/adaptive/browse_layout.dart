@@ -48,6 +48,11 @@ class AdaptiveBrowseLayout extends StatelessWidget {
   final double sideProportion;
   final Widget? divider;
 
+  static double primaryPaneWidth(double availableWidth, double proportion) {
+    const minimum = AdaptiveEnvironmentSnapshot.minimumPaneWidth;
+    return minimum + math.max(0.0,availableWidth-minimum*2-1)*proportion.clamp(0.0,1.0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final bounds = Offset.zero & environment.size;
@@ -64,10 +69,7 @@ class AdaptiveBrowseLayout extends StatelessWidget {
         detailRect =
             Rect.fromLTRB(panes.last.left, 0, panes.last.right, bounds.bottom);
       } else {
-        const minimum = AdaptiveEnvironmentSnapshot.minimumPaneWidth;
-        final width = minimum +
-            math.max(0.0, available.width - minimum * 2 - 1) *
-                sideProportion.clamp(0.0, 1.0);
+        final width = primaryPaneWidth(available.width, sideProportion);
         primaryRect = Rect.fromLTWH(available.left, 0, width, available.height);
         detailRect = Rect.fromLTRB(
             primaryRect.right + 1, 0, available.right, bounds.bottom);

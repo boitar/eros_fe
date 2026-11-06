@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
@@ -151,7 +152,9 @@ class _DownloadTabState extends State<DownloadTab> {
           ),
         );
       }
-      if (settings.liquidGlass && LiquidGlassPlatform.isSupported) {
+      if (settings.liquidGlass &&
+          (GlassMode.of(context).forComponent(flutterImplemented: true) !=
+              GlassMode.off)) {
         final layout = settings.liquidGlassTopBarLayout;
         final safeTop = MediaQuery.paddingOf(context).top;
         return DownloadGlassScaffold(

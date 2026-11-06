@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:dio/dio.dart';
 import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -358,7 +359,7 @@ class _OfflineGlassProbeState extends State<OfflineGlassProbe> {
         .map((position) => position.pixels.toStringAsFixed(1))
         .join(',');
     final glass = Get.find<EhSettingService>().liquidGlass &&
-        LiquidGlassPlatform.isSupported;
+        (GlassMode.resolve(enabled: true).forComponent() == GlassMode.native);
     final requests = _requestsByPage['${widget.route}-$page'] ?? 0;
     EhTabController? target;
     GalleryScrollAnchor? anchor;

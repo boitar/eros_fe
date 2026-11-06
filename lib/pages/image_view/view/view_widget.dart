@@ -12,6 +12,7 @@ import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/image_view/controller/view_state.dart';
 import 'package:eros_fe/utils/gallery_image_export.dart';
 import 'package:eros_fe/utils/share_service.dart';
+import 'package:eros_fe/widget/app_modal.dart';
 import 'package:eros_fe/widget/image/extended_saf_image_privider.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:extended_image/extended_image.dart';
@@ -1841,7 +1842,7 @@ Future<void> showSaveActionSheet(
     return;
   }
   try {
-    SmartDialog.showLoading(
+    AppModal.showLoading(
         builder: (_) => _downloadIndicator(), backType: SmartBackType.block);
     await Api.saveGalleryImageToPhoto(source, original: original);
     showToast(l10n.saved_successfully);
@@ -1936,9 +1937,9 @@ Future<void> showShareActionSheet(
                     return;
                   }
 
-                  SmartDialog.showLoading(
+                  AppModal.showLoading(
                     builder: (_) => _downloadIndicator(),
-                    backDismiss: false,
+                    backType: SmartBackType.block,
                   );
                   try {
                     await Api.shareNetworkImage(

@@ -195,7 +195,7 @@ class Global {
     isFirstOpen =
         !(StorageUtil().getBool(STORAGE_DEVICE_ALREADY_OPEN_KEY) ?? false);
     if (isFirstOpen) {
-      createDirs();
+      await createDirs();
       StorageUtil().setBool(STORAGE_DEVICE_ALREADY_OPEN_KEY, true);
     }
 
@@ -224,9 +224,9 @@ class Global {
     Get.find<EhSettingService>().setProxy();
   }
 
-  static void createDirs() {
+  static Future<void> createDirs() async {
     final Directory downloadDir = Directory(path.join(appDocPath, 'Download'));
-    downloadDir.create();
+    await downloadDir.create(recursive: true);
   }
 
   /// profile初始化

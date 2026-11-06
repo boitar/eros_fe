@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:eros_fe/adaptive/browse_layout.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
@@ -19,16 +20,23 @@ import 'package:eros_fe/pages/gallery/view/sliver/gallery_more_actions.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/gallery_page_sliver.dart';
 import 'package:eros_fe/pages/gallery/view/thumb_box.dart';
 import 'package:eros_fe/utils/gallery_title.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/share_service.dart';
+import 'package:eros_fe/widget/detail_window_backdrop.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_easyrefresh/easy_refresh.dart';
 import 'package:get/get.dart';
 import 'package:keframe/keframe.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 import 'slivers.dart';
+
+bool usesFloatingGalleryHeader(BuildContext context) =>
+    PlatformCapabilities.hostPlatform != TargetPlatform.iOS &&
+    GlassMode.of(context) != GlassMode.off;
 
 class GalleryPage extends StatefulWidget {
   const GalleryPage({super.key});
@@ -93,8 +101,10 @@ class _GalleryPageState extends State<GalleryPage> {
       showToast('Gallery link is unavailable');
       return;
     }
-    await ShareService.shareText('${Api.getBaseUrl()}/g/$gid/$token',
-        context: context);
+    await ShareService.shareText(
+      '${Api.getBaseUrl()}/g/$gid/$token',
+      context: context,
+    );
   }
 
   /// Follows the layout: a pinned header keeps the bar from taking over the
@@ -124,10 +134,7 @@ class _GalleryPageState extends State<GalleryPage> {
         enableControlFinishLoad: false,
         onLoad: () async {
           if (pageState.images.isNotEmpty) {
-            Get.toNamed(
-              EHRoutes.galleryAllThumbnails,
-              id: detailNavigatorId,
-            );
+            Get.toNamed(EHRoutes.galleryAllThumbnails, id: detailNavigatorId);
           }
         },
         footer: BezierBounceFooter(
@@ -162,11 +169,13 @@ class _GalleryPageState extends State<GalleryPage> {
       builder: (logic) {
         final provider = logic.gState.galleryProvider;
         final cover = heroCoverSize(
-            heroCoverSource(logic.gState.galleryRepository?.item, provider));
+          heroCoverSource(logic.gState.galleryRepository?.item, provider),
+        );
         return GalleryAmbientBackdrop(
           // The cover keeps the list's image after the detail loads; so
           // does the backdrop, instead of reloading another address.
-          imageUrl: logic.gState.galleryRepository?.item?.imgUrl ??
+          imageUrl:
+              logic.gState.galleryRepository?.item?.imgUrl ??
               provider?.imgUrl ??
               '',
           category: provider?.category,
@@ -178,30 +187,69 @@ class _GalleryPageState extends State<GalleryPage> {
     );
   }
 
-  Widget _singleColumn(BuildContext context,
-      {required bool native, required double topInset}) {
+  bool _floatingGlass(BuildContext context) =>
+      usesFloatingGalleryHeader(context);
+
+  Widget _floatingNavigation(BuildContext context) =>
+      ValueListenableBuilder<double>(
+        valueListenable: _scrollOffset,
+        builder: (context, offset, _) => Obx(
+          () => GalleryFloatingNavigation(
+            title: GalleryTitleParts.parse(pageState.displayTitle).title,
+            showTitle: offset >= 320,
+            enableRead: pageState.enableRead,
+            onBack: () => _isRoot
+                ? Get.offNamed<void>(EHRoutes.home)
+                : Navigator.of(context).maybePop(),
+            onMore: () =>
+                showGalleryMoreSheet(context, _controller, isRoot: _isRoot),
+            onShare: _shareGallery,
+            onRead: () => NavigatorUtil.goGalleryViewPage(
+              pageState.lastIndex,
+              pageState.gid,
+              galleryTag: _tag,
+            ),
+          ),
+        ),
+      );
+
+  Widget _singleColumn(
+    BuildContext context, {
+    required bool native,
+    required double topInset,
+  }) {
     // Outside EasyRefresh: it rebuilds its own scroll view from a ScrollView
     // child and would not accept a wrapper.
     final body = _trackScroll(
       _scrollOffset,
-      _refreshable(CustomScrollView(
-        cacheExtent: 1000,
-        controller: GetPlatform.isDesktop ? _controller.scrollController : null,
-        slivers: [
-          if (native)
-            // UIKit owns the bar, but this custom sliver view still owns its
-            // scroll insets. Consume the live top inset once, including after
-            // the Duo bar moves from the side to the top.
-            SliverToBoxAdapter(
-              child: SizedBox(height: MediaQuery.paddingOf(context).top),
-            )
-          else
-            GalleryNavigationBar(controller: _controller),
-          EhCupertinoSliverRefreshControl(onRefresh: _controller.handOnRefresh),
-          GalleryHeadTile(controller: _controller),
-          GalleryBody(controller: _controller),
-        ],
-      )),
+      _refreshable(
+        CustomScrollView(
+          cacheExtent: 1000,
+          controller: GetPlatform.isDesktop
+              ? _controller.scrollController
+              : null,
+          slivers: [
+            if (_floatingGlass(context))
+              SliverToBoxAdapter(
+                child: SizedBox(height: MediaQuery.paddingOf(context).top + 56),
+              )
+            else if (native)
+              // UIKit owns the bar, but this custom sliver view still owns its
+              // scroll insets. Consume the live top inset once, including after
+              // the Duo bar moves from the side to the top.
+              SliverToBoxAdapter(
+                child: SizedBox(height: MediaQuery.paddingOf(context).top),
+              )
+            else
+              GalleryNavigationBar(controller: _controller),
+            EhCupertinoSliverRefreshControl(
+              onRefresh: _controller.handOnRefresh,
+            ),
+            GalleryHeadTile(controller: _controller),
+            GalleryBody(controller: _controller),
+          ],
+        ),
+      ),
     );
     return Stack(
       children: [
@@ -212,6 +260,34 @@ class _GalleryPageState extends State<GalleryPage> {
           child: _backdrop(topInset, _scrollOffset),
         ),
         Positioned.fill(child: body),
+        if (_floatingGlass(context))
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Container(
+                height: MediaQuery.paddingOf(context).top + 68,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors:
+                        CupertinoTheme.brightnessOf(context) == Brightness.dark
+                        ? [const Color(0x99000000), const Color(0x00000000)]
+                        : [const Color(0xCCFFFFFF), const Color(0x00FFFFFF)],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (_floatingGlass(context))
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _floatingNavigation(context),
+          ),
       ],
     );
   }
@@ -219,8 +295,11 @@ class _GalleryPageState extends State<GalleryPage> {
   /// The header sits in a fixed column with its own backdrop; tags,
   /// thumbnails and comments scroll beside it. On an unfolded Duo the
   /// columns meet at the fold.
-  Widget _twoColumns(BuildContext context, GalleryDetailColumns columns,
-      {required double topInset}) {
+  Widget _twoColumns(
+    BuildContext context,
+    GalleryDetailColumns columns, {
+    required double topInset,
+  }) {
     final dynamic tabTag = pageState.galleryRepository?.tabTag;
     Widget hero() {
       if (pageState.fromUrl) {
@@ -263,15 +342,17 @@ class _GalleryPageState extends State<GalleryPage> {
       ],
     );
 
-    final content = _refreshable(CustomScrollView(
-      cacheExtent: 1000,
-      controller: GetPlatform.isDesktop ? _controller.scrollController : null,
-      slivers: [
-        SliverToBoxAdapter(child: SizedBox(height: topInset)),
-        EhCupertinoSliverRefreshControl(onRefresh: _controller.handOnRefresh),
-        GalleryBody(controller: _controller),
-      ],
-    ));
+    final content = _refreshable(
+      CustomScrollView(
+        cacheExtent: 1000,
+        controller: GetPlatform.isDesktop ? _controller.scrollController : null,
+        slivers: [
+          SliverToBoxAdapter(child: SizedBox(height: topInset)),
+          EhCupertinoSliverRefreshControl(onRefresh: _controller.handOnRefresh),
+          GalleryBody(controller: _controller),
+        ],
+      ),
+    );
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -292,79 +373,109 @@ class _GalleryPageState extends State<GalleryPage> {
   @override
   Widget build(BuildContext context) {
     final native = NativeNavigationScope.isEnabled(context);
-    final topInset = MediaQuery.paddingOf(context).top + (native ? 0 : 96);
+    final topInset =
+        MediaQuery.paddingOf(context).top +
+        (native
+            ? 0
+            : _floatingGlass(context)
+            ? 56
+            : 96);
 
-    final Widget body = LayoutBuilder(builder: (context, constraints) {
-      // Two columns need the native bar: the Flutter bar lives inside the
-      // single scroll view.
-      final columns = native
-          ? GalleryDetailColumns.resolve(
-              width: constraints.maxWidth,
-              environment: AdaptiveEnvironment.maybeOf(context),
-              split: BrowsePaneScope.isSplit(context),
-            )
-          : null;
-      _pinHero(columns != null);
-      return columns == null
-          ? _singleColumn(context, native: native, topInset: topInset)
-          : _twoColumns(context, columns, topInset: topInset);
-    });
+    final Widget body = LayoutBuilder(
+      builder: (context, constraints) {
+        // Two columns need the native bar: the Flutter bar lives inside the
+        // single scroll view.
+        final columns = native
+            ? GalleryDetailColumns.resolve(
+                width: constraints.maxWidth,
+                environment: AdaptiveEnvironment.maybeOf(context),
+                split: BrowsePaneScope.isSplit(context),
+              )
+            : null;
+        _pinHero(columns != null);
+        return columns == null
+            ? _singleColumn(context, native: native, topInset: topInset)
+            : _twoColumns(context, columns, topInset: topInset);
+      },
+    );
 
     return GetBuilder<GalleryPageController>(
       tag: _tag,
       id: GetIds.PAGE_VIEW_HEADER,
-      builder: (logic) => Obx(() => NativeNavigationPage(
-            chrome: NativePageChrome(
-              title: GalleryTitleParts.parse(pageState.displayTitle).title,
-              // The hero shows the title; the bar takes it, and the Read
-              // action, once the hero has scrolled away.
-              titleVisible: !pageState.hideNavigationBtn,
-              actions: [
-                if (!pageState.hideNavigationBtn)
-                  NativeNavigationAction(
-                    id: 'read',
-                    title: L10n.of(context).read,
-                    symbol: 'book',
-                    enabled: pageState.enableRead,
-                    onPressed: () => NavigatorUtil.goGalleryViewPage(
-                        pageState.lastIndex, pageState.gid,
-                        galleryTag: _tag),
+      builder: (logic) => Obx(
+        () => NativeNavigationPage(
+          chrome: NativePageChrome(
+            title: GalleryTitleParts.parse(pageState.displayTitle).title,
+            // The hero shows the title; the bar takes it, and the Read
+            // action, once the hero has scrolled away.
+            titleVisible: !pageState.hideNavigationBtn,
+            actions: [
+              if (!pageState.hideNavigationBtn)
+                NativeNavigationAction(
+                  id: 'read',
+                  title: L10n.of(context).read,
+                  symbol: 'book',
+                  enabled: pageState.enableRead,
+                  onPressed: () => NavigatorUtil.goGalleryViewPage(
+                    pageState.lastIndex,
+                    pageState.gid,
+                    galleryTag: _tag,
                   ),
-                NativeNavigationAction(
-                  id: 'share',
-                  title: L10n.of(context).share,
-                  symbol: 'square.and.arrow.up',
-                  onPressed: _shareGallery,
                 ),
-                NativeNavigationAction(
-                  id: 'gallery.more',
-                  title: L10n.of(context).more_actions,
-                  symbol: 'ellipsis.circle',
-                  children: [
-                    for (final action in galleryMoreActions(
-                        context, _controller,
-                        isRoot: _isRoot))
-                      action.toNative(),
-                  ],
-                ),
-              ],
-            ),
-            child: offlineDuoRouteProbe(
-              id: 'gallery',
-              label: () => 'gallery=${pageState.gid};tag=$_tag;'
-                  'scope=${pageCtrlTagOf(context)};root=$_isRoot',
-              child: CupertinoPageScaffold(child: body),
-            ),
-          )),
+              NativeNavigationAction(
+                id: 'share',
+                title: L10n.of(context).share,
+                symbol: 'square.and.arrow.up',
+                onPressed: _shareGallery,
+              ),
+              NativeNavigationAction(
+                id: 'gallery.more',
+                title: L10n.of(context).more_actions,
+                symbol: 'ellipsis.circle',
+                children: [
+                  for (final action in galleryMoreActions(
+                    context,
+                    _controller,
+                    isRoot: _isRoot,
+                  ))
+                    action.toNative(),
+                ],
+              ),
+            ],
+          ),
+          child: offlineDuoRouteProbe(
+            id: 'gallery',
+            label: () =>
+                'gallery=${pageState.gid};tag=$_tag;'
+                'scope=${pageCtrlTagOf(context)};root=$_isRoot',
+            child: !_floatingGlass(context)
+                ? DetailWindowBackdrop(
+                    enabled: _floatingGlass(context),
+                    child: CupertinoPageScaffold(child: body),
+                  )
+                : AnnotatedRegion<SystemUiOverlayStyle>(
+                    value:
+                        CupertinoTheme.brightnessOf(context) == Brightness.dark
+                        ? SystemUiOverlayStyle.light.copyWith(
+                            statusBarColor: Colors.transparent,
+                          )
+                        : SystemUiOverlayStyle.dark.copyWith(
+                            statusBarColor: Colors.transparent,
+                          ),
+                    child: DetailWindowBackdrop(
+                      enabled: _floatingGlass(context),
+                      child: CupertinoPageScaffold(child: body),
+                    ),
+                  ),
+          ),
+        ),
+      ),
     );
   }
 }
 
 class GalleryNavigationBar extends StatelessWidget {
-  const GalleryNavigationBar({
-    super.key,
-    required this.controller,
-  });
+  const GalleryNavigationBar({super.key, required this.controller});
   final GalleryPageController controller;
 
   GalleryPageState get pageState => controller.gState;
@@ -398,7 +509,9 @@ class GalleryNavigationBar extends StatelessWidget {
                 fontSize: 11,
                 height: 1.2,
                 color: CupertinoDynamicColor.resolve(
-                    CupertinoColors.secondaryLabel, context),
+                  CupertinoColors.secondaryLabel,
+                  context,
+                ),
                 fontWeight: FontWeight.normal,
                 fontStyle: FontStyle.italic,
               ),
@@ -406,27 +519,25 @@ class GalleryNavigationBar extends StatelessWidget {
           },
         ),
       ),
-      middle: Obx(
-        () {
-          Widget coverOpacity = AnimatedOpacity(
-            opacity: pageState.hideNavigationBtn ? 0.0 : 1.0,
-            duration: 300.milliseconds,
-            curve: Curves.ease,
-            child: GetBuilder<GalleryPageController>(
-              id: GetIds.PAGE_VIEW_HEADER,
-              tag: controller.controllerTag,
-              builder: (logic) {
-                return NavigationBarImage(
-                  imageUrl: logic.gState.galleryProvider?.imgUrl ?? '',
-                  scrollController: logic.scrollController,
-                );
-              },
-            ),
-          );
+      middle: Obx(() {
+        Widget coverOpacity = AnimatedOpacity(
+          opacity: pageState.hideNavigationBtn ? 0.0 : 1.0,
+          duration: 300.milliseconds,
+          curve: Curves.ease,
+          child: GetBuilder<GalleryPageController>(
+            id: GetIds.PAGE_VIEW_HEADER,
+            tag: controller.controllerTag,
+            builder: (logic) {
+              return NavigationBarImage(
+                imageUrl: logic.gState.galleryProvider?.imgUrl ?? '',
+                scrollController: logic.scrollController,
+              );
+            },
+          ),
+        );
 
-          return coverOpacity;
-        },
-      ),
+        return coverOpacity;
+      }),
       trailing: Obx(() {
         bool isRefresh = false;
         Widget buttons = Row(
@@ -435,34 +546,34 @@ class GalleryNavigationBar extends StatelessWidget {
           children: [
             // Refresh button
             if (GetPlatform.isDesktop)
-              StatefulBuilder(builder: (context, setState) {
-                return CupertinoButton(
-                  padding: const EdgeInsets.all(0),
-                  minSize: 40,
-                  child: isRefresh
-                      ? const CupertinoActivityIndicator(
-                          radius: 12,
-                        )
-                      : const MouseRegionClick(
-                          child: Icon(
-                            CupertinoIcons.arrow_clockwise,
-                            size: 24,
+              StatefulBuilder(
+                builder: (context, setState) {
+                  return CupertinoButton(
+                    padding: const EdgeInsets.all(0),
+                    minSize: 40,
+                    child: isRefresh
+                        ? const CupertinoActivityIndicator(radius: 12)
+                        : const MouseRegionClick(
+                            child: Icon(
+                              CupertinoIcons.arrow_clockwise,
+                              size: 24,
+                            ),
                           ),
-                        ),
-                  onPressed: () async {
-                    setState(() {
-                      isRefresh = true;
-                    });
-                    try {
-                      await controller.handOnRefresh();
-                    } finally {
+                    onPressed: () async {
                       setState(() {
-                        isRefresh = false;
+                        isRefresh = true;
                       });
-                    }
-                  },
-                );
-              }),
+                      try {
+                        await controller.handOnRefresh();
+                      } finally {
+                        setState(() {
+                          isRefresh = false;
+                        });
+                      }
+                    },
+                  );
+                },
+              ),
 
             CupertinoButton(
               padding: const EdgeInsets.all(0),
@@ -473,8 +584,11 @@ class GalleryNavigationBar extends StatelessWidget {
                   child: const Icon(CupertinoIcons.ellipsis_circle, size: 26),
                 ),
               ),
-              onPressed: () => showGalleryMoreSheet(context, controller,
-                  isRoot: ModalRoute.of(context)?.isFirst == true),
+              onPressed: () => showGalleryMoreSheet(
+                context,
+                controller,
+                isRoot: ModalRoute.of(context)?.isFirst == true,
+              ),
             ),
             Builder(
               builder: (buttonContext) {
@@ -503,10 +617,7 @@ class GalleryNavigationBar extends StatelessWidget {
                     }
                     final String url = '${Api.getBaseUrl()}/g/$gid/$token';
                     logger.d('share gallery gid=$gid');
-                    await ShareService.shareText(
-                      url,
-                      context: buttonContext,
-                    );
+                    await ShareService.shareText(url, context: buttonContext);
                   },
                 );
               },
@@ -546,25 +657,25 @@ class GalleryHeadTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final GalleryProvider? provider = pageState.galleryProvider;
     final dynamic tabTag = pageState.galleryRepository?.tabTag;
-    return MultiSliver(children: [
-      if (pageState.fromUrl)
-        GallerySliverSafeArea(
-          child: GalleryObxSliver(
-            (state) => GalleryHeroSliver(
-              initGalleryProvider: state,
+    return MultiSliver(
+      children: [
+        if (pageState.fromUrl)
+          GallerySliverSafeArea(
+            child: GalleryObxSliver(
+              (state) =>
+                  GalleryHeroSliver(initGalleryProvider: state, tabTag: tabTag),
+              pageController: controller,
+            ),
+          )
+        else if (provider != null)
+          GallerySliverSafeArea(
+            child: GalleryHeroSliver(
+              initGalleryProvider: provider,
               tabTag: tabTag,
             ),
-            pageController: controller,
           ),
-        )
-      else if (provider != null)
-        GallerySliverSafeArea(
-          child: GalleryHeroSliver(
-            initGalleryProvider: provider,
-            tabTag: tabTag,
-          ),
-        ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -582,21 +693,23 @@ class GalleryBody extends StatelessWidget {
     return GalleryObxSliver(
       (GalleryProvider state) {
         return GallerySliverSafeArea(
-          child: MultiSliver(children: [
-            if (_ehSettingService.showGalleryTags)
-              TagTile(provider: state, pageController: controller),
-            ChapterTile(controller: controller, provider: state),
-            if (_ehSettingService.showComments)
-              CommentTile(controller: controller, provider: state),
-            if (!_ehSettingService.hideGalleryThumbnails)
-              ThumbTile(
-                controller: controller,
-                provider: state,
-                horizontal: _ehSettingService.horizontalThumbnails,
-              )
-            else
-              const MorePreviewButton(hasMorePreview: true),
-          ]),
+          child: MultiSliver(
+            children: [
+              if (_ehSettingService.showGalleryTags)
+                TagTile(provider: state, pageController: controller),
+              ChapterTile(controller: controller, provider: state),
+              if (_ehSettingService.showComments)
+                CommentTile(controller: controller, provider: state),
+              if (!_ehSettingService.hideGalleryThumbnails)
+                ThumbTile(
+                  controller: controller,
+                  provider: state,
+                  horizontal: _ehSettingService.horizontalThumbnails,
+                )
+              else
+                const MorePreviewButton(hasMorePreview: true),
+            ],
+          ),
         );
       },
       showLoading: true,
@@ -616,32 +729,41 @@ class TagTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final groups = provider.tagGroup ?? [];
     return Obx(() {
-      final labelWidth = tagNamespaceColumnWidth(context, groups,
-          translate: _ehSettingService.isTagTranslate);
-      return MultiSliver(children: [
-        MiniTitle(title: L10n.of(context).tags),
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: kPadding + 4),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => TagGroupItem(
-                tagGroupData: groups[index],
-                labelWidth: labelWidth,
+      final labelWidth = tagNamespaceColumnWidth(
+        context,
+        groups,
+        translate: _ehSettingService.isTagTranslate,
+      );
+      return MultiSliver(
+        children: [
+          MiniTitle(title: L10n.of(context).tags),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: kPadding + 4),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => TagGroupItem(
+                  tagGroupData: groups[index],
+                  labelWidth: labelWidth,
+                ),
+                childCount: groups.length,
               ),
-              childCount: groups.length,
             ),
           ),
-        ),
-        if (pageController != null)
-          Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(
-                kPadding + 4 + labelWidth + 10, 6, kPadding + 4, 4),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: AddTagChip(onPressed: pageController!.addTag),
+          if (pageController != null)
+            Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(
+                kPadding + 4 + labelWidth + 10,
+                6,
+                kPadding + 4,
+                4,
+              ),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: AddTagChip(onPressed: pageController!.addTag),
+              ),
             ),
-          ),
-      ]);
+        ],
+      );
     });
   }
 }
@@ -658,19 +780,22 @@ class ChapterTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiSliver(children: [
-      if (provider.chapter?.isNotEmpty ?? false)
-        MiniTitle(title: L10n.of(context).chapter),
-      Container(
-        padding: EdgeInsets.only(
-            bottom: (provider.chapter?.isNotEmpty ?? false) ? 20 : 0),
-        child: ChapterGridView(
-          controller: controller,
-          chapter: provider.chapter,
-          maxLine: 3,
+    return MultiSliver(
+      children: [
+        if (provider.chapter?.isNotEmpty ?? false)
+          MiniTitle(title: L10n.of(context).chapter),
+        Container(
+          padding: EdgeInsets.only(
+            bottom: (provider.chapter?.isNotEmpty ?? false) ? 20 : 0,
+          ),
+          child: ChapterGridView(
+            controller: controller,
+            chapter: provider.chapter,
+            maxLine: 3,
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -689,46 +814,52 @@ class CommentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final comments = controller.gState.comments;
-    return MultiSliver(children: [
-      Obx(() => MiniTitle(
+    return MultiSliver(
+      children: [
+        Obx(
+          () => MiniTitle(
             title: L10n.of(context).gallery_comments,
             count: comments.isEmpty
                 ? null
                 : L10n.of(context).comment_count(comments.length),
             onTap: _openComments,
-          )),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(kPadding + 4, 0, kPadding + 4, 8),
-        child: GestureDetector(
-          behavior: HitTestBehavior.deferToChild,
-          onTap: _openComments,
-          child: Obx(() {
-            if (comments.isEmpty) {
-              return const SizedBox.shrink();
-            }
-            return DecoratedBox(
-              decoration: ShapeDecoration(
-                color: CupertinoDynamicColor.resolve(
-                    ehTheme.palette.surface, context),
-                shape: RoundedSuperellipseBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: TopCommentEx(
-                  key: ValueKey(comments.map((e) => e.id).join('')),
-                  comments: comments,
-                  uploader: controller.gState.galleryProvider?.uploader,
-                  max: 3,
-                  grouped: true,
-                ),
-              ),
-            );
-          }),
+          ),
         ),
-      ),
-    ]);
+        Padding(
+          padding: const EdgeInsets.fromLTRB(kPadding + 4, 0, kPadding + 4, 8),
+          child: GestureDetector(
+            behavior: HitTestBehavior.deferToChild,
+            onTap: _openComments,
+            child: Obx(() {
+              if (comments.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: CupertinoDynamicColor.resolve(
+                    ehTheme.palette.surface,
+                    context,
+                  ),
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: TopCommentEx(
+                    key: ValueKey(comments.map((e) => e.id).join('')),
+                    comments: comments,
+                    uploader: controller.gState.galleryProvider?.uploader,
+                    max: 3,
+                    grouped: true,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -753,10 +884,7 @@ class ThumbTile extends StatelessWidget {
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              Get.toNamed(
-                EHRoutes.galleryAllThumbnails,
-                id: detailNavigatorId,
-              );
+              Get.toNamed(EHRoutes.galleryAllThumbnails, id: detailNavigatorId);
             },
             child: Row(
               children: [
@@ -775,46 +903,134 @@ class ThumbTile extends StatelessWidget {
     } else {
       // The first rows only; "See All" and pulling past the end open every
       // thumbnail.
-      return MultiSliver(children: [
-        MiniTitle(
-          title: L10n.of(context).thumbnails,
-          count: L10n.of(context).page_count(pageState.filecount),
-          onTap: () => Get.toNamed(
-            EHRoutes.galleryAllThumbnails,
-            id: detailNavigatorId,
-          ),
-        ),
-        LayoutBuilder(builder: (context, constraints) {
-          const gap = 8.0;
-          const inset = kPadding + 4;
-          final width = constraints.maxWidth - inset * 2;
-          final columns = math.max(3, ((width + gap) / (120 + gap)).floor());
-          final rows = math.max(2, (9 / columns).ceil());
-          final images = pageState.firstPageImage;
-          final shown = math.min(images.length, columns * rows);
-          final cell = (width - gap * (columns - 1)) / columns;
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(inset, 0, inset, 28),
-            child: Wrap(
-              spacing: gap,
-              runSpacing: 12,
-              children: [
-                for (var index = 0; index < shown; index++)
-                  SizedBox(
-                    width: cell,
-                    height: cell * 1.42 + 22,
-                    child: ThumbBox(
-                      galleryImageList: images,
-                      index: index,
-                      gid: provider.gid ?? '',
-                      referer: controller.gState.url,
-                    ),
-                  ),
-              ],
+      return MultiSliver(
+        children: [
+          MiniTitle(
+            title: L10n.of(context).thumbnails,
+            count: L10n.of(context).page_count(pageState.filecount),
+            onTap: () => Get.toNamed(
+              EHRoutes.galleryAllThumbnails,
+              id: detailNavigatorId,
             ),
-          );
-        }),
-      ]);
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 8.0;
+              const inset = kPadding + 4;
+              final width = constraints.maxWidth - inset * 2;
+              final columns = math.max(
+                3,
+                ((width + gap) / (120 + gap)).floor(),
+              );
+              final rows = math.max(2, (9 / columns).ceil());
+              final images = pageState.firstPageImage;
+              final shown = math.min(images.length, columns * rows);
+              final cell = (width - gap * (columns - 1)) / columns;
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(inset, 0, inset, 28),
+                child: Wrap(
+                  spacing: gap,
+                  runSpacing: 12,
+                  children: [
+                    for (var index = 0; index < shown; index++)
+                      SizedBox(
+                        width: cell,
+                        height: cell * 1.42 + 22,
+                        child: ThumbBox(
+                          galleryImageList: images,
+                          index: index,
+                          gid: provider.gid ?? '',
+                          referer: controller.gState.url,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      );
     }
+  }
+}
+
+class GalleryFloatingNavigation extends StatelessWidget {
+  const GalleryFloatingNavigation({
+    super.key,
+    required this.title,
+    required this.showTitle,
+    required this.enableRead,
+    required this.onBack,
+    required this.onMore,
+    required this.onShare,
+    required this.onRead,
+  });
+  final String title;
+  final bool showTitle, enableRead;
+  final VoidCallback onBack, onMore, onShare, onRead;
+  @override
+  Widget build(BuildContext context) {
+    Widget surface(Widget child) => LiquidGlassSurface(
+      enabled: true,
+      borderRadius: BorderRadius.circular(24),
+      child: child,
+    );
+    Widget button(IconData icon, String label, VoidCallback? action) =>
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(44, 44),
+          onPressed: action,
+          child: Semantics(label: label, child: Icon(icon, size: 22)),
+        );
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(
+          children: [
+            surface(
+              button(
+                CupertinoIcons.back,
+                MaterialLocalizations.of(context).backButtonTooltip,
+                onBack,
+              ),
+            ),
+            Expanded(
+              child: AnimatedOpacity(
+                opacity: showTitle ? 1 : 0,
+                duration: const Duration(milliseconds: 300),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ),
+            surface(
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showTitle)
+                    button(
+                      CupertinoIcons.book,
+                      L10n.of(context).read,
+                      enableRead ? onRead : null,
+                    ),
+                  button(
+                    CupertinoIcons.ellipsis,
+                    L10n.of(context).more_actions,
+                    onMore,
+                  ),
+                  button(CupertinoIcons.share, L10n.of(context).share, onShare),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
