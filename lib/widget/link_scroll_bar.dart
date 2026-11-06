@@ -5,6 +5,7 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/app_modal.dart';
+import 'package:eros_fe/widget/desktop_pointer_effects.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -336,42 +337,45 @@ class _LinkScrollBarState extends State<LinkScrollBar> {
       return SingleChildScrollView(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: _maxScrollViewWidth,
-          child: Column(
-            children: [
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: items,
+        child: HorizontalMouseWheel(
+          controller: _scrollController,
+          child: SizedBox(
+            width: _maxScrollViewWidth,
+            child: Column(
+              children: [
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: items,
+                  ),
                 ),
-              ),
-              if (!useLiquidGlass && widget.pageController == null)
-                Stack(
-                  children: [
-                    SizedBox(
-                        height: widget.indicatorHeight, width: scrollViewWidth),
-                    AnimatedPositioned(
-                      left: _indicatorPositionedLeft,
-                      duration: kDuration,
-                      curve: Curves.ease,
-                      child: indicator,
-                    ),
-                  ],
-                ),
-              if (!useLiquidGlass &&
-                  widget.pageController != null &&
-                  channelFrameList.isNotEmpty)
-                TitleIndicator(
-                  height: widget.indicatorHeight,
-                  pageController: widget.pageController,
-                  channelFrameList: channelFrameList,
-                  maxWidth: scrollViewWidth,
-                  width: c.maxWidth,
-                  index: selectIndex,
-                  itemPadding: widget.itemPadding,
-                ),
-            ],
+                if (!useLiquidGlass && widget.pageController == null)
+                  Stack(
+                    children: [
+                      SizedBox(
+                          height: widget.indicatorHeight, width: scrollViewWidth),
+                      AnimatedPositioned(
+                        left: _indicatorPositionedLeft,
+                        duration: kDuration,
+                        curve: Curves.ease,
+                        child: indicator,
+                      ),
+                    ],
+                  ),
+                if (!useLiquidGlass &&
+                    widget.pageController != null &&
+                    channelFrameList.isNotEmpty)
+                  TitleIndicator(
+                    height: widget.indicatorHeight,
+                    pageController: widget.pageController,
+                    channelFrameList: channelFrameList,
+                    maxWidth: scrollViewWidth,
+                    width: c.maxWidth,
+                    index: selectIndex,
+                    itemPadding: widget.itemPadding,
+                  ),
+              ],
+            ),
           ),
         ),
       );

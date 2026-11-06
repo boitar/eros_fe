@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/desktop_pointer_effects.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:flutter/cupertino.dart';
@@ -478,29 +479,33 @@ class _SegmentedRailState extends State<SegmentedRail> {
       onTap: widget.interactive ? tap : null,
       onLongPress: widget.interactive ? longPress : null,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.interactive ? tap : null,
-        onLongPress: widget.interactive ? longPress : null,
-        child: SizedBox(
-          key: ValueKey<String>('segmented-rail-segment-$index'),
-          width: width,
-          height: height,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Text(
-                item.title,
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                // One colour and weight for every label, as on the native
-                // rail; the pill marks the selection.
-                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: CupertinoDynamicColor.resolve(
-                          CupertinoColors.label, context),
-                    ),
+      child: NavigationHover(
+        enabled: widget.interactive,
+        borderRadius: BorderRadius.circular(height / 2),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.interactive ? tap : null,
+          onLongPress: widget.interactive ? longPress : null,
+          child: SizedBox(
+            key: ValueKey<String>('segmented-rail-segment-$index'),
+            width: width,
+            height: height,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  item.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                  // One colour and weight for every label, as on the native
+                  // rail; the pill marks the selection.
+                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: CupertinoDynamicColor.resolve(
+                            CupertinoColors.label, context),
+                      ),
+                ),
               ),
             ),
           ),

@@ -231,6 +231,8 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('falls back to Flutter when UIKit declines', (tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
       tester.binding.defaultBinaryMessenger
           .setMockMethodCallHandler(_menuChannel, (call) async => false);
       addTearDown(() => tester.binding.defaultBinaryMessenger

@@ -15,7 +15,8 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart' as glass;
 /// Basic feedback is optional and must not interrupt navigation or previews.
 /// Use the existing utility without depending on the enhanced haptics module.
 void liquidGlassFeedback(Future<void> Function() action) {
-  if (!PlatformCapabilities.nativeGlass) {
+  final android = PlatformCapabilities.hostPlatform == TargetPlatform.android;
+  if (!PlatformCapabilities.nativeGlass && !android) {
     return;
   }
   unawaited(action().catchError((Object _) {}));

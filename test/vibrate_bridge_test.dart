@@ -1,5 +1,7 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -23,6 +25,8 @@ void main() {
   late List<MethodCall> nativeCalls, legacyCalls, systemCalls, vibrationCalls;
   setUp(() {
     Get.testMode = true;
+    debugDefaultTargetPlatformOverride = null;
+    PlatformCapabilities.debugHostPlatformOverride = null;
     settings = Get.put<EhSettingService>(_Settings()) as _Settings;
     nativeCalls = [];
     legacyCalls = [];
@@ -41,6 +45,8 @@ void main() {
     }
   });
   tearDown(() {
+    debugDefaultTargetPlatformOverride = null;
+    PlatformCapabilities.debugHostPlatformOverride = null;
     for (final channel in [
       native,
       legacy,
@@ -67,7 +73,8 @@ void main() {
 
   test('iOS native feedback calls return with their existing style names',
       () async {
-    final util = VibrateUtil(platform: TargetPlatform.iOS);
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    final util = VibrateUtil();
     await util.impact();
     await util.light();
     await util.medium();
@@ -94,15 +101,18 @@ void main() {
   test('disabled iOS and Android feedback produce no plugin or platform calls',
       () async {
     settings.vibrate.value = false;
-    await everyMethod(VibrateUtil(platform: TargetPlatform.iOS));
-    await everyMethod(VibrateUtil(platform: TargetPlatform.android));
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    await everyMethod(VibrateUtil());
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+    await everyMethod(VibrateUtil());
     expect([...nativeCalls, ...legacyCalls, ...systemCalls, ...vibrationCalls],
         isEmpty);
   });
 
   test('progressive iOS ticks prewarm once, clamp progress and ramp parameters',
       () async {
-    final util = VibrateUtil(platform: TargetPlatform.iOS);
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    final util = VibrateUtil();
     await util.pullTick(-1);
     await util.pullTick(.5);
     await util.pullTick(2);
@@ -119,7 +129,8 @@ void main() {
 
   test('explicit new pull sessions can rewarm an already used engine',
       () async {
-    final util = VibrateUtil(platform: TargetPlatform.iOS);
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    final util = VibrateUtil();
     await util.prepareHaptics();
     await util.pullTick(.2);
     await util.prepareHaptics();
@@ -131,7 +142,8 @@ void main() {
   test('a missing progressive bridge falls back once for each tick', () async {
     messenger.setMockMethodCallHandler(
         native, (_) async => throw MissingPluginException());
-    final util = VibrateUtil(platform: TargetPlatform.iOS);
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    final util = VibrateUtil();
     await util.pullTick(.2);
     await util.pullTick(.4);
     expect(systemCalls.map((c) => c.method),
@@ -149,7 +161,11 @@ void main() {
               throw PlatformException(code: 'unsupported-test-device'));
     }
     await expectLater(
-        everyMethod(VibrateUtil(platform: TargetPlatform.iOS)), completes);
+        () async {
+          PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+          await everyMethod(VibrateUtil());
+        }(),
+        completes);
   });
 
   test('unsupported desktop targets safely skip every feedback path', () async {
@@ -159,23 +175,50 @@ void main() {
       TargetPlatform.linux,
       TargetPlatform.fuchsia
     ]) {
-      await everyMethod(VibrateUtil(platform: platform));
+      PlatformCapabilities.debugHostPlatformOverride = platform;
+      await everyMethod(VibrateUtil());
     }
     expect([...nativeCalls, ...legacyCalls, ...systemCalls, ...vibrationCalls],
         isEmpty);
   });
 
-  test(
-      'Android selection and pull ticks use platform feedback without the iOS bridge',
-      () async {
-    final util = VibrateUtil(platform: TargetPlatform.android);
-    await util.selection();
-    await util.pullTick(.5);
+  test('Android feedback maps every semantic type to HapticFeedback', () async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final util = VibrateUtil(androidSdkInt: () async => 30);
+    await everyMethod(util);
     expect(nativeCalls, isEmpty);
     expect(legacyCalls, isEmpty);
+    expect(systemCalls.every((call) => call.method == 'HapticFeedback.vibrate'),
+        isTrue);
     expect(systemCalls.map((c) => c.arguments), [
-      'HapticFeedbackType.selectionClick',
-      'HapticFeedbackType.lightImpact'
+      'HapticFeedbackType.mediumImpact', // impact
+      'HapticFeedbackType.lightImpact', // light
+      'HapticFeedbackType.mediumImpact', // medium
+      'HapticFeedbackType.heavyImpact', // heavy
+      'HapticFeedbackType.successNotification', // success
+      'HapticFeedbackType.errorNotification', // error
+      'HapticFeedbackType.selectionClick', // selection
+      'HapticFeedbackType.lightImpact', // tabSwitch
+      'HapticFeedbackType.selectionClick', // pullTick
     ]);
+  });
+
+  test('Android below API 30 and SDK lookup failure use impact fallback',
+      () async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+    for (final getSdk in <Future<int> Function()>[
+      () async => 29,
+      () async => throw StateError('SDK unavailable'),
+    ]) {
+      systemCalls.clear();
+      final util = VibrateUtil(androidSdkInt: getSdk);
+      await util.success();
+      await util.error();
+      expect(systemCalls.map((c) => c.arguments), [
+        'HapticFeedbackType.mediumImpact',
+        'HapticFeedbackType.heavyImpact',
+      ]);
+    }
   });
 }

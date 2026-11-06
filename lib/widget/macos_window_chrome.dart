@@ -152,7 +152,11 @@ class MacOSWindowContent extends StatelessWidget {
                       );
                     }),
                   ),
+                // The optional glass band before this child disappears in
+                // fullscreen. Keep the Navigator/SmartDialog Overlay mounted
+                // when its sibling index changes; OverlayEntries have owners.
                 Positioned.fill(
+                  key: const ValueKey('macos-window-content'),
                   top: top,
                   child: AdaptiveEnvironmentScope(
                     snapshot: contentEnvironment,

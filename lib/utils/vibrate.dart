@@ -1,18 +1,34 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/common/global.dart' show deviceInfo;
 import 'package:eros_fe/common/service/ehsetting_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:vibration/vibration.dart';
 
 import 'logger.dart';
 
 final VibrateUtil vibrateUtil = VibrateUtil();
 
 class VibrateUtil {
-  VibrateUtil({TargetPlatform? platform})
-      : _platform = platform ?? defaultTargetPlatform;
+  VibrateUtil({TargetPlatform? platform, Future<int> Function()? androidSdkInt})
+      : _platformOverride = platform,
+        _androidSdkInt = androidSdkInt ?? _readAndroidSdkInt;
 
-  final TargetPlatform _platform;
+  final TargetPlatform? _platformOverride;
+  final Future<int> Function() _androidSdkInt;
+  static Future<int> _readAndroidSdkInt() async =>
+      (await deviceInfo.androidInfo).version.sdkInt;
+
+  Future<bool> _supportsAndroidNotifications() async {
+    try {
+      return await _androidSdkInt() >= 30;
+    } catch (error) {
+      logger.t('Android SDK version unavailable: $error');
+      return false;
+    }
+  }
+
+  TargetPlatform? get _platform =>
+      _platformOverride ?? PlatformCapabilities.hostPlatform;
   static const MethodChannel _hapticsChannel = MethodChannel('eros/haptics');
   bool _hapticsPrepared = false;
 
@@ -34,25 +50,11 @@ class VibrateUtil {
     }
   }
 
-  Future<void> _androidPulse(int duration,
-      {int? amplitude, int? customDuration}) async {
-    var amplitudeSupported = false;
-    try {
-      amplitudeSupported = await Vibration.hasAmplitudeControl();
-    } catch (_) {}
-    if (amplitudeSupported && amplitude != null) {
-      await Vibration.vibrate(
-          duration: customDuration ?? duration, amplitude: amplitude);
-    } else {
-      await Vibration.vibrate(duration: duration);
-    }
-  }
-
   Future<void> impact() => _run(() async {
         if (_isIOS) {
           await _hapticsChannel.invokeMethod<void>('impact');
         } else {
-          await _androidPulse(2);
+          await HapticFeedback.mediumImpact();
         }
       });
 
@@ -60,7 +62,7 @@ class VibrateUtil {
         if (_isIOS) {
           await _hapticsChannel.invokeMethod<void>('light');
         } else {
-          await _androidPulse(5, amplitude: 100);
+          await HapticFeedback.lightImpact();
         }
       });
 
@@ -68,7 +70,7 @@ class VibrateUtil {
         if (_isIOS) {
           await _hapticsChannel.invokeMethod<void>('medium');
         } else {
-          await _androidPulse(20, amplitude: 120, customDuration: 15);
+          await HapticFeedback.mediumImpact();
         }
       });
 
@@ -76,19 +78,27 @@ class VibrateUtil {
         if (_isIOS) {
           await _hapticsChannel.invokeMethod<void>('heavy');
         } else {
-          await _androidPulse(35, amplitude: 255, customDuration: 10);
+          await HapticFeedback.heavyImpact();
         }
       });
 
   Future<void> success() => _run(() async {
         if (_isIOS) {
           await _hapticsChannel.invokeMethod<void>('success');
+        } else if (await _supportsAndroidNotifications()) {
+          await HapticFeedback.successNotification();
+        } else {
+          await HapticFeedback.mediumImpact();
         }
       });
 
   Future<void> error() => _run(() async {
         if (_isIOS) {
           await _hapticsChannel.invokeMethod<void>('error');
+        } else if (await _supportsAndroidNotifications()) {
+          await HapticFeedback.errorNotification();
+        } else {
+          await HapticFeedback.heavyImpact();
         }
       });
 
@@ -108,7 +118,7 @@ class VibrateUtil {
         if (_isIOS) {
           await _hapticsChannel.invokeMethod<void>('tabSwitch');
         } else {
-          await _androidPulse(5, amplitude: 100);
+          await HapticFeedback.lightImpact();
         }
       });
 
@@ -120,7 +130,7 @@ class VibrateUtil {
             sharpness: 0.9 - 0.5 * p,
           );
         } else {
-          await HapticFeedback.lightImpact();
+          await HapticFeedback.selectionClick();
         }
       });
 

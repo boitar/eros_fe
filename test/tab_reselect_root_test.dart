@@ -1,5 +1,6 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
@@ -33,6 +34,7 @@ void main() {
   Future<void> mount(WidgetTester tester, Size size,
       {bool shell = true}) async {
     Get.testMode = true;
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
     Get.put<LocaleService>(LocaleService());
     Get.put<EhSettingService>(_Settings());
     Get.put<ThemeService>(_Theme());
@@ -51,6 +53,7 @@ void main() {
     MainNavigatorObserver().resetHistory();
     addTearDown(() {
       NativeNavigationBridge.enabled.value = false;
+      PlatformCapabilities.debugHostPlatformOverride = null;
       tester.binding.defaultBinaryMessenger
           .setMockMethodCallHandler(_channel, null);
       geometry.dispose();
@@ -69,7 +72,7 @@ void main() {
       ),
       home: ValueListenableBuilder(
         valueListenable: geometry,
-        builder: (_, environment, __) {
+        builder: (_, environment, _) {
           layout.layoutMode =
               environment.isSplit ? LayoutMode.large : LayoutMode.small;
           return AdaptiveEnvironmentScope(
@@ -87,21 +90,20 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Haptics in tests take the Android path, which ends in one vibrate call.
+  /// Haptics in tests take the Android path and use Flutter's platform channel.
   List<MethodCall> recordPulses(WidgetTester tester) {
-    const vibration = MethodChannel('vibration');
     final pulses = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      vibration,
+      SystemChannels.platform,
       (call) async {
-        if (call.method == 'vibrate') {
+        if (call.method == 'HapticFeedback.vibrate') {
           pulses.add(call);
         }
-        return call.method.startsWith('has') ? false : null;
+        return null;
       },
     );
     addTearDown(() => tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(vibration, null));
+        .setMockMethodCallHandler(SystemChannels.platform, null));
     return pulses;
   }
 

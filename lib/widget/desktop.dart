@@ -1,6 +1,7 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/widget/macos_window_chrome.dart';
+import 'package:eros_fe/widget/windows_window_content.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:window_size/window_size.dart';
@@ -30,12 +31,21 @@ class Desktop extends StatelessWidget {
       );
     }
     final mq = MediaQuery.of(context);
+    final windows = PlatformCapabilities.hostPlatform == TargetPlatform.windows;
     return Stack(
       children: [
-        MediaQuery(
-            data: mq.copyWith(
-                padding: mq.padding.copyWith(top: appWindow.titleBarHeight)),
-            child: Positioned.fill(child: child)),
+        if (windows)
+          Positioned.fill(
+            child: WindowsWindowContent(
+              titleBarHeight: appWindow.titleBarHeight,
+              child: child,
+            ),
+          )
+        else
+          MediaQuery(
+              data: mq.copyWith(
+                  padding: mq.padding.copyWith(top: appWindow.titleBarHeight)),
+              child: Positioned.fill(child: child)),
         Positioned(
             left: 0,
             top: 0,

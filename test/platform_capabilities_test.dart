@@ -120,7 +120,7 @@ void main() {
         liquidGlassFeedback(() async {
           feedbackCalled = true;
         });
-        expect(feedbackCalled, isFalse);
+        expect(feedbackCalled, host == TargetPlatform.android);
         expect(calls, isEmpty);
         expect(SettingGlassBar.isActive, enabled);
         expect(liquidGlassPopupsEnabled, enabled);
