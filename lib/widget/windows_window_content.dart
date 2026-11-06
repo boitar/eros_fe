@@ -1,6 +1,6 @@
 import 'dart:math' as math;
-
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/widget/detail_window_backdrop.dart';
 import 'package:flutter/widgets.dart';
 
 /// Reserve the custom Windows titlebar outside the Navigator and its overlays.
@@ -17,38 +17,42 @@ class WindowsWindowContent extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final media = MediaQuery.of(context);
-      final top = titleBarHeight.clamp(0.0, constraints.maxHeight);
-      final size = Size(
-        constraints.maxWidth,
-        math.max(0, constraints.maxHeight - top),
-      );
-      final environment =
-          AdaptiveEnvironment.maybeOf(context) ??
-          AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
-      final contentEnvironment = environment
-          .inRect(Rect.fromLTWH(0, top, size.width, size.height))
-          .copyWithGeometry(
-            safeArea: media.padding.copyWith(top: 0),
-            viewPadding: media.viewPadding.copyWith(top: 0),
-            viewInsets: media.viewInsets,
-          );
-      return Padding(
-        padding: EdgeInsets.only(top: top),
-        child: AdaptiveEnvironmentScope(
-          snapshot: contentEnvironment,
-          child: MediaQuery(
-            data: media.copyWith(
-              size: size,
-              padding: media.padding.copyWith(top: 0),
-              viewPadding: media.viewPadding.copyWith(top: 0),
-            ),
-            child: child,
-          ),
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+        valueListenable: DetailWindowBackdrop.active,
+        builder: (context, transparent, _) => LayoutBuilder(
+          builder: (context, constraints) {
+            final media = MediaQuery.of(context);
+            final band = titleBarHeight.clamp(0.0, constraints.maxHeight);
+            final top = transparent ? 0.0 : band;
+            final safeTop = transparent ? band : 0.0;
+            final size = Size(
+              constraints.maxWidth,
+              math.max(0, constraints.maxHeight - top),
+            );
+            final environment = AdaptiveEnvironment.maybeOf(context) ??
+                AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
+            final contentEnvironment = environment
+                .inRect(Rect.fromLTWH(0, top, size.width, size.height))
+                .copyWithGeometry(
+                  safeArea: media.padding.copyWith(top: safeTop),
+                  viewPadding: media.viewPadding.copyWith(top: safeTop),
+                  viewInsets: media.viewInsets,
+                );
+            return Padding(
+              padding: EdgeInsets.only(top: top),
+              child: AdaptiveEnvironmentScope(
+                snapshot: contentEnvironment,
+                child: MediaQuery(
+                  data: media.copyWith(
+                    size: size,
+                    padding: media.padding.copyWith(top: safeTop),
+                    viewPadding: media.viewPadding.copyWith(top: safeTop),
+                  ),
+                  child: child,
+                ),
+              ),
+            );
+          },
         ),
       );
-    },
-  );
 }

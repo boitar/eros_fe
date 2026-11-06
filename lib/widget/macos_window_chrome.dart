@@ -1,10 +1,10 @@
 import 'dart:math' as math;
-
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/appkit_glass.dart';
+import 'package:eros_fe/widget/detail_window_backdrop.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -88,102 +88,105 @@ class MacOSWindowContent extends StatelessWidget {
   Widget build(BuildContext context) =>
       ValueListenableBuilder<MacOSWindowControls>(
         valueListenable: MacOSWindowChrome.controls,
-        builder: (context, controls, _) => LayoutBuilder(
-          builder: (context, constraints) {
-            final media = MediaQuery.of(context);
-            final top = controls.top.clamp(0.0, constraints.maxHeight);
-            final environment =
-                AdaptiveEnvironment.maybeOf(context) ??
-                AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
-            final contentEnvironment = environment
-                .inRect(
-                  Rect.fromLTWH(
-                    0,
-                    top,
-                    media.size.width,
-                    math.max(0, media.size.height - top),
-                  ),
-                )
-                .copyWithGeometry(
-                  safeArea: media.padding.copyWith(top: 0),
-                  viewPadding: media.viewPadding.copyWith(top: 0),
-                  viewInsets: media.viewInsets,
-                );
-            return Stack(
-              children: [
-                Positioned.fill(
-                  child: ColoredBox(
-                    color: CupertinoTheme.of(context).scaffoldBackgroundColor,
-                  ),
-                ),
-                if (top > 0 && Get.isRegistered<EhSettingService>())
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: top,
-                    child: Obx(() {
-                      final settings = Get.find<EhSettingService>();
-                      if (!settings.liquidGlass) {
-                        return const SizedBox.shrink();
-                      }
-                      if (!PlatformCapabilities.appKitGlass) {
-                        return const IgnorePointer(
-                          child: LiquidGlassSurface(
-                            enabled: true,
-                            useNativeGlass: false,
-                            child: SizedBox.expand(),
-                          ),
-                        );
-                      }
-                      return IgnorePointer(
-                        child: ExcludeSemantics(
-                          child: AppKitGlassView(
-                            kind: 'surface',
-                            configuration: {
-                              'dark':
-                                  CupertinoTheme.brightnessOf(context) ==
-                                  Brightness.dark,
-                              'followSystemTransparency':
-                                  settings.liquidGlassFollowSystemTransparency,
-                            },
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                // The optional glass band before this child disappears in
-                // fullscreen. Keep the Navigator/SmartDialog Overlay mounted
-                // when its sibling index changes; OverlayEntries have owners.
-                Positioned.fill(
-                  key: const ValueKey('macos-window-content'),
-                  top: top,
-                  child: AdaptiveEnvironmentScope(
-                    snapshot: contentEnvironment,
-                    child: MediaQuery(
-                      data: media.copyWith(
-                        size: Size(
-                          media.size.width,
-                          math.max(0, media.size.height - top),
-                        ),
-                        padding: media.padding.copyWith(top: 0),
-                        viewPadding: media.viewPadding.copyWith(top: 0),
-                      ),
-                      child: child,
+        builder: (context, controls, _) => ValueListenableBuilder<bool>(
+          valueListenable: DetailWindowBackdrop.active,
+          builder: (context, transparent, _) => LayoutBuilder(
+            builder: (context, constraints) {
+              final media = MediaQuery.of(context);
+              final band = controls.top.clamp(0.0, constraints.maxHeight);
+              final top = transparent ? 0.0 : band;
+              final safeTop = transparent ? band : 0.0;
+              final environment = AdaptiveEnvironment.maybeOf(context) ??
+                  AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
+              final contentEnvironment = environment
+                  .inRect(
+                    Rect.fromLTWH(
+                      0,
+                      top,
+                      media.size.width,
+                      math.max(0, media.size.height - top),
+                    ),
+                  )
+                  .copyWithGeometry(
+                    safeArea: media.padding.copyWith(top: safeTop),
+                    viewPadding: media.viewPadding.copyWith(top: safeTop),
+                    viewInsets: media.viewInsets,
+                  );
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: CupertinoTheme.of(context).scaffoldBackgroundColor,
                     ),
                   ),
-                ),
-                if (top > 0 && dragRegion != null)
-                  Positioned(
-                    top: 0,
-                    left: controls.leading,
-                    right: 0,
-                    height: top,
-                    child: dragRegion!,
+                  if (top > 0 && Get.isRegistered<EhSettingService>())
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: top,
+                      child: Obx(() {
+                        final settings = Get.find<EhSettingService>();
+                        if (!settings.liquidGlass) {
+                          return const SizedBox.shrink();
+                        }
+                        if (!PlatformCapabilities.appKitGlass) {
+                          return const IgnorePointer(
+                            child: LiquidGlassSurface(
+                              enabled: true,
+                              useNativeGlass: false,
+                              child: SizedBox.expand(),
+                            ),
+                          );
+                        }
+                        return IgnorePointer(
+                          child: ExcludeSemantics(
+                            child: AppKitGlassView(
+                              kind: 'surface',
+                              configuration: {
+                                'dark': CupertinoTheme.brightnessOf(context) ==
+                                    Brightness.dark,
+                                'followSystemTransparency': settings
+                                    .liquidGlassFollowSystemTransparency,
+                              },
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  // The optional glass band before this child disappears in
+                  // fullscreen. Keep the Navigator/SmartDialog Overlay mounted
+                  // when its sibling index changes; OverlayEntries have owners.
+                  Positioned.fill(
+                    key: const ValueKey('macos-window-content'),
+                    top: top,
+                    child: AdaptiveEnvironmentScope(
+                      snapshot: contentEnvironment,
+                      child: MediaQuery(
+                        data: media.copyWith(
+                          size: Size(
+                            media.size.width,
+                            math.max(0, media.size.height - top),
+                          ),
+                          padding: media.padding.copyWith(top: safeTop),
+                          viewPadding: media.viewPadding.copyWith(top: safeTop),
+                        ),
+                        child: child,
+                      ),
+                    ),
                   ),
-              ],
-            );
-          },
+                  if (band > 0 && dragRegion != null)
+                    Positioned(
+                      top: 0,
+                      left: controls.leading,
+                      right: 0,
+                      height: band,
+                      child: dragRegion!,
+                    ),
+                ],
+              );
+            },
+          ),
         ),
       );
 }
