@@ -1,6 +1,8 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/setting/android_setting_group.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/layout_setting_page.dart';
@@ -14,6 +16,11 @@ import 'package:sliver_tools/sliver_tools.dart';
 
 /// Scroll offset past which the in-content large title sits under the bar.
 const double _kLargeTitleExtent = 44;
+
+/// Android lays the settings home out as Android 16 groups: separate rounded
+/// rows, a tonal icon and the current value under each title.
+bool get _androidGroups =>
+    PlatformCapabilities.hostPlatform == TargetPlatform.android;
 
 class SettingTab extends GetView<SettingViewController> {
   const SettingTab({super.key});
@@ -72,7 +79,16 @@ class SettingTab extends GetView<SettingViewController> {
                 SliverSafeArea(
                   top: false,
                   sliver: MultiSliver(children: <Widget>[
-                    if (!safeMode)
+                    if (!safeMode && _androidGroups)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 12),
+                          child: AndroidSettingGroup(
+                            children: <Widget>[_ProfileRow()],
+                          ),
+                        ),
+                      )
+                    else if (!safeMode)
                       SliverCupertinoListSection.listInsetGrouped(
                         children: const <Widget>[_ProfileRow()],
                       ),
@@ -135,7 +151,7 @@ class SettingTab extends GetView<SettingViewController> {
                           icon: CupertinoIcons.info_circle,
                           title: l10n.about,
                           route: EHRoutes.about,
-                          value: () => Global.packageInfo.version,
+                          staticValue: Global.packageInfo.version,
                         ),
                       ],
                     ),
@@ -151,6 +167,11 @@ class SettingTab extends GetView<SettingViewController> {
   }
 
   Widget _section({required String header, required List<Widget> rows}) {
+    if (_androidGroups) {
+      return SliverToBoxAdapter(
+        child: AndroidSettingGroup(header: header, children: rows),
+      );
+    }
     return SliverCupertinoListSection.listInsetGrouped(
       header: Text(header),
       hasLeading: true,
@@ -195,6 +216,7 @@ class _SettingLink extends StatelessWidget {
     required this.title,
     required this.route,
     this.value,
+    this.staticValue,
   });
 
   final IconData icon;
@@ -204,10 +226,26 @@ class _SettingLink extends StatelessWidget {
   /// Read inside an [Obx], so the row follows the setting.
   final String? Function()? value;
 
+  /// A value that never changes, such as the app version: no [Obx] needed.
+  final String? staticValue;
+
   @override
   Widget build(BuildContext context) {
     final SettingViewController controller = Get.find();
-    Widget row(String? current) => MergeSemantics(
+    Widget row(String? current) => _androidGroups
+        ? MergeSemantics(
+            child: Semantics(
+              button: true,
+              child: AndroidSettingTile(
+                icon: icon,
+                title: Text(title),
+                subtitle:
+                    current == null || current.isEmpty ? null : Text(current),
+                onTap: () => controller.open(route),
+              ),
+            ),
+          )
+        : MergeSemantics(
           child: Semantics(
             button: true,
             child: EhCupertinoListTile(
@@ -226,7 +264,7 @@ class _SettingLink extends StatelessWidget {
         );
     final value = this.value;
     if (value == null) {
-      return row(null);
+      return row(staticValue);
     }
     return Obx(() => row(value()));
   }
@@ -247,6 +285,43 @@ class _ProfileRow extends StatelessWidget {
       final String name = signedIn
           ? (user.nickName ?? user.username ?? '')
           : L10n.of(context).login;
+      void open() {
+        if (signedIn) {
+          userController.showLogOutDialog(context);
+        } else {
+          Get.toNamed(EHRoutes.login);
+        }
+      }
+
+      if (_androidGroups) {
+        return MergeSemantics(
+          child: Semantics(
+            button: true,
+            child: AndroidSettingTile(
+              minHeight: 80,
+              leading: UserAvatarImage(
+                url: signedIn ? user.avatarUrl ?? '' : '',
+                size: 52,
+              ),
+              title: Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              subtitle: signedIn
+                  ? Text(ehSettingService.isSiteEx.value
+                      ? 'ExHentai'
+                      : 'E-Hentai')
+                  : null,
+              trailing: const Icon(CupertinoIcons.chevron_right, size: 18),
+              onTap: open,
+            ),
+          ),
+        );
+      }
+
       return MergeSemantics(
         child: Semantics(
           button: true,
@@ -274,13 +349,7 @@ class _ProfileRow extends StatelessWidget {
                     ehSettingService.isSiteEx.value ? 'ExHentai' : 'E-Hentai')
                 : null,
             trailing: const CupertinoListTileChevron(),
-            onTap: () {
-              if (signedIn) {
-                userController.showLogOutDialog(context);
-              } else {
-                Get.toNamed(EHRoutes.login);
-              }
-            },
+            onTap: open,
           ),
         ),
       );

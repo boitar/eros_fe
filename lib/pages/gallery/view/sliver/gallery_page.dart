@@ -197,6 +197,8 @@ class _GalleryPageState extends State<GalleryPage> {
           () => GalleryFloatingNavigation(
             title: GalleryTitleParts.parse(pageState.displayTitle).title,
             showTitle: offset >= 320,
+            // The dock already offers Read at all times.
+            showRead: !usesGalleryActionDock(context),
             enableRead: pageState.enableRead,
             onBack: () => _isRoot
                 ? Get.offNamed<void>(EHRoutes.home)
@@ -218,6 +220,7 @@ class _GalleryPageState extends State<GalleryPage> {
     required bool native,
     required double topInset,
   }) {
+    final dock = usesGalleryActionDock(context);
     // Outside EasyRefresh: it rebuilds its own scroll view from a ScrollView
     // child and would not accept a wrapper.
     final body = _trackScroll(
@@ -247,6 +250,12 @@ class _GalleryPageState extends State<GalleryPage> {
             ),
             GalleryHeadTile(controller: _controller),
             GalleryBody(controller: _controller),
+            if (dock)
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: GalleryActionDock.reservedHeight(context),
+                ),
+              ),
           ],
         ),
       ),
@@ -288,6 +297,41 @@ class _GalleryPageState extends State<GalleryPage> {
             right: 0,
             child: _floatingNavigation(context),
           ),
+        if (dock) ...<Widget>[
+          // Keeps text readable where the content passes under the dock.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Container(
+                height: GalleryActionDock.reservedHeight(context) + 40,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: <Color>[
+                      CupertinoDynamicColor.resolve(
+                        ehTheme.palette.canvas,
+                        context,
+                      ).withValues(alpha: 0.6),
+                      CupertinoDynamicColor.resolve(
+                        ehTheme.palette.canvas,
+                        context,
+                      ).withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: GalleryActionDock(controller: _controller),
+          ),
+        ],
       ],
     );
   }
@@ -964,9 +1008,10 @@ class GalleryFloatingNavigation extends StatelessWidget {
     required this.onMore,
     required this.onShare,
     required this.onRead,
+    this.showRead = true,
   });
   final String title;
-  final bool showTitle, enableRead;
+  final bool showTitle, enableRead, showRead;
   final VoidCallback onBack, onMore, onShare, onRead;
   @override
   Widget build(BuildContext context) {
@@ -975,12 +1020,24 @@ class GalleryFloatingNavigation extends StatelessWidget {
       borderRadius: BorderRadius.circular(24),
       child: child,
     );
+    // Glass chrome stays monochrome over the cover; the accent is for content.
+    final iconColor =
+        CupertinoDynamicColor.resolve(ehTheme.palette.text1, context);
     Widget button(IconData icon, String label, VoidCallback? action) =>
         CupertinoButton(
           padding: EdgeInsets.zero,
           minimumSize: const Size(44, 44),
           onPressed: action,
-          child: Semantics(label: label, child: Icon(icon, size: 22)),
+          child: Semantics(
+            label: label,
+            child: Icon(
+              icon,
+              size: 22,
+              color: action == null
+                  ? iconColor.withValues(alpha: 0.35)
+                  : iconColor,
+            ),
+          ),
         );
     return SafeArea(
       bottom: false,
@@ -990,7 +1047,9 @@ class GalleryFloatingNavigation extends StatelessWidget {
           children: [
             surface(
               button(
-                CupertinoIcons.back,
+                PlatformCapabilities.hostPlatform == TargetPlatform.android
+                    ? Icons.arrow_back
+                    : CupertinoIcons.back,
                 MaterialLocalizations.of(context).backButtonTooltip,
                 onBack,
               ),
@@ -1013,7 +1072,7 @@ class GalleryFloatingNavigation extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (showTitle)
+                  if (showTitle && showRead)
                     button(
                       CupertinoIcons.book,
                       L10n.of(context).read,

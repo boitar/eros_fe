@@ -110,6 +110,7 @@ class ReaderSurfaceLayout extends StatefulWidget {
     this.singlePage = false,
     this.fillScreen = false,
     this.nativeChrome = false,
+    this.glassChrome = false,
   });
 
   final AdaptiveEnvironmentSnapshot environment;
@@ -129,6 +130,10 @@ class ReaderSurfaceLayout extends StatefulWidget {
   /// stable safe area so it stays put while those bars come and go, and only
   /// [bottomBar] is drawn here, fading over soft edges instead of a slab.
   final bool nativeChrome;
+
+  /// Flutter draws floating glass controls. They need no slab behind them,
+  /// only a light scrim at each edge, and fade rather than vanish.
+  final bool glassChrome;
 
   static const Duration fadeDuration = Duration(milliseconds: 250);
   static const double edgeTail = 40;
@@ -263,6 +268,78 @@ class _ReaderSurfaceLayoutState extends State<ReaderSurfaceLayout> {
                     ],
                   ),
                 ),
+              ),
+            ),
+            Positioned.fromRect(
+              rect: bottomRect,
+              child: ReaderChromeFade(
+                visible: visible,
+                slide: const Offset(0, 0.15),
+                child: local(
+                  bottomRect,
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: SingleChildScrollView(child: widget.bottomBar),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (widget.glassChrome) {
+      Widget scrim({required bool top, required double height}) => Positioned(
+            left: 0,
+            right: 0,
+            top: top ? 0 : null,
+            bottom: top ? null : 0,
+            height: height,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: top ? Alignment.topCenter : Alignment.bottomCenter,
+                  end: top ? Alignment.bottomCenter : Alignment.topCenter,
+                  colors: const [Color(0x73000000), Color(0x00000000)],
+                ),
+              ),
+            ),
+          );
+      final size = environment.size;
+      return ColoredBox(
+        color: CupertinoColors.black,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            contentLayer,
+            Positioned.fill(
+              child: ReaderChromeFade(
+                visible: visible,
+                child: IgnorePointer(
+                  child: Stack(
+                    children: [
+                      if (!tabletop)
+                        scrim(
+                          top: true,
+                          height: topRect.bottom + ReaderSurfaceLayout.edgeTail,
+                        ),
+                      scrim(
+                        top: false,
+                        height: math.max(0, size.height - bottomRect.top) +
+                            ReaderSurfaceLayout.edgeTail,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned.fromRect(
+              rect: topRect,
+              child: ReaderChromeFade(
+                visible: visible,
+                slide: const Offset(0, -0.15),
+                child: local(topRect, widget.topBar),
               ),
             ),
             Positioned.fromRect(

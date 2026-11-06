@@ -374,6 +374,17 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
                 ),
               ]
             : const <LiquidGlassRailAction>[],
+        search: PlatformCapabilities.topSearchCapsule
+            ? LiquidGlassRailSearch(
+                label: L10n.of(context).search,
+                onTap: () => NavigatorUtil.goSearchPage(
+                  searchType: SearchType.favorite,
+                  fromTabItem: Get.find<TabHomeController>()
+                          .tabMap[EHRoutes.favorite] ??
+                      false,
+                ),
+              )
+            : null,
         categories: controller.favcatList
             .map(
               (favcat) => LiquidGlassRailCategory(

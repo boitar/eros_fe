@@ -59,6 +59,10 @@ abstract final class PlatformCapabilities {
     _ => false,
   };
 
+  /// Android puts search in a capsule at the top of list pages instead of a
+  /// separate button beside the bottom bar, leaving the bar five destinations.
+  static bool get topSearchCapsule => hostPlatform == TargetPlatform.android;
+
   /// iOS keeps its existing opt-in default; other supported platforms opt in.
   static bool get defaultGlassStyle => glassStyle && !uiKitGlass;
 }

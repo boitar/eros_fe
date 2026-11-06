@@ -18,6 +18,21 @@ import 'home_page_large.dart';
 
 typedef TabDestinationBuilder = Widget Function(BuildContext, String route);
 
+/// Android gives a pushed page (detail, search, a group) the whole screen,
+/// so the tab bar slides away while [stack] holds a page above its roots.
+/// A single column opens details in the detail stack and other pages in the
+/// primary stack, so either counts. Split layouts keep the bar.
+bool hidesTabBarForPushedPage(
+  TabNavigationStack? stack, {
+  required bool layoutLarge,
+}) {
+  if (!PlatformCapabilities.topSearchCapsule || layoutLarge || stack == null) {
+    return false;
+  }
+  return stack.primaryObserver.history.length > 1 ||
+      stack.detailObserver.history.length > 1;
+}
+
 class TabHomeSmall extends StatefulWidget {
   const TabHomeSmall({super.key, this.split = false, this.destinationBuilder});
 
@@ -104,6 +119,13 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     _publishNativeNavigationState();
   }
 
+  /// Android gives a pushed page (detail, search, a group) the whole screen,
+  /// so its own bottom controls never sit on top of the tab bar.
+  bool get _hidesBarForPushedPage => hidesTabBarForPushedPage(
+        _navigation.selected,
+        layoutLarge: _layout.isLayoutLarge,
+      );
+
   NativePageChrome? get _currentChrome {
     final stack = _navigation.selected;
     if (stack == null) return null;
@@ -179,7 +201,10 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
                   ehSettingService.liquidGlassFollowSystemTransparency,
               nativeItems: controller.liquidGlassTabItems,
               searchLabel: L10n.of(context).search,
-              onSearch: () {
+              // Android searches from the capsule at the top of list pages.
+              onSearch: PlatformCapabilities.topSearchCapsule
+                  ? null
+                  : () {
                 final bool isFavorite =
                     controller.currRoute == EHRoutes.favorite ||
                         controller.currRoute == EHRoutes.favoriteTabbar;
@@ -206,8 +231,12 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
       return LiquidGlassBarMotionScope(
         motion: _barMotion,
         child: AnimatedBuilder(
-          animation: Listenable.merge(
-              [controller.tabController, controller.selectionRevision]),
+          animation: Listenable.merge([
+            controller.tabController,
+            controller.selectionRevision,
+            // Pushes and pops decide whether Android shows the bar.
+            _navigation,
+          ]),
           builder: (context, _) => _buildStableTabs(
             context,
             tabBar.copyWith(currentIndex: controller.currentIndex),
@@ -227,10 +256,12 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
             widget.destinationBuilder?.call(context, controller.currRoute) ??
             tabPages.tabViews[controller.currRoute]!);
     final media = MediaQuery.of(context);
-    final barHeight = nativeShellEnabled
+    final barHidden = !nativeShellEnabled && _hidesBarForPushedPage;
+    final barHeight = nativeShellEnabled || barHidden
         ? 0.0
         : tabBar.preferredSize.height + media.padding.bottom;
-    final opaqueBar = !nativeShellEnabled && tabBar.opaque(context);
+    final opaqueBar =
+        !nativeShellEnabled && !barHidden && tabBar.opaque(context);
     final contentBottom =
         math.max(media.viewInsets.bottom, opaqueBar ? barHeight : 0.0);
     var contentMedia = media.removeViewInsets(removeBottom: true);
@@ -290,7 +321,19 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
           else if (!nativeShellEnabled)
             Align(
               alignment: Alignment.bottomCenter,
-              child: MediaQuery.withNoTextScaling(child: tabBar),
+              child: AnimatedSlide(
+                key: const ValueKey<String>('tab-bar-slide'),
+                offset: barHidden ? const Offset(0, 1.5) : Offset.zero,
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                child: IgnorePointer(
+                  ignoring: barHidden,
+                  child: ExcludeSemantics(
+                    excluding: barHidden,
+                    child: MediaQuery.withNoTextScaling(child: tabBar),
+                  ),
+                ),
+              ),
             ),
         ],
       )),

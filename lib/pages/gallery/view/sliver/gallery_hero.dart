@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -17,6 +18,7 @@ import 'package:eros_fe/pages/gallery/view/rate_dialog.dart';
 import 'package:eros_fe/pages/item/cover_ratio.dart';
 import 'package:eros_fe/pages/item/gallery_item.dart';
 import 'package:eros_fe/utils/gallery_title.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -34,6 +36,12 @@ const double kHeroCoverRadius = 16;
 
 /// Widest the header column grows on iPad and unfolded iPhone Duo.
 const double kHeroMaxWidth = 520;
+
+/// Android's glass detail page moves Read, Favourite and Download into a
+/// floating bar at the bottom, so they stay in reach while the page scrolls.
+bool usesGalleryActionDock(BuildContext context) =>
+    PlatformCapabilities.topSearchCapsule &&
+    GlassMode.of(context) != GlassMode.off;
 
 /// Cover size at its real aspect ratio, limited to 1:2–2:1, with a constant
 /// area. Unknown sizes fall back to the usual 210:300 portrait.
@@ -181,9 +189,13 @@ class _GalleryHero extends StatelessWidget {
         ],
         const SizedBox(height: 8),
         _MetaLine(provider: provider),
-        const SizedBox(height: 20),
-        _PrimaryActions(controller: controller),
-        const SizedBox(height: 18),
+        if (usesGalleryActionDock(context))
+          const SizedBox(height: 22)
+        else ...<Widget>[
+          const SizedBox(height: 20),
+          _PrimaryActions(controller: controller),
+          const SizedBox(height: 18),
+        ],
         _DataStrip(provider: provider, state: state),
       ],
     );
@@ -400,12 +412,62 @@ class _PrimaryActions extends StatelessWidget {
   }
 }
 
-/// The one filled control on the page: HIG gives the primary action a
-/// coloured background.
-class _ReadCapsule extends StatelessWidget {
-  const _ReadCapsule({required this.controller});
+/// Read, Favourite and Download in one floating glass capsule. The host
+/// places it at the bottom and keeps [reservedHeight] free under the content.
+class GalleryActionDock extends StatelessWidget {
+  const GalleryActionDock({super.key, required this.controller});
 
   final GalleryPageController controller;
+
+  static const double barHeight = 64;
+  static const double bottomGap = 12;
+
+  /// Space the scroll content leaves free so its end clears the dock.
+  static double reservedHeight(BuildContext context) =>
+      barHeight + bottomGap + MediaQuery.paddingOf(context).bottom + 12;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.only(bottom: bottomGap),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: SizedBox(
+          key: const ValueKey<String>('gallery-action-dock'),
+          height: barHeight,
+          child: LiquidGlassSurface(
+            enabled: true,
+            borderRadius: BorderRadius.circular(barHeight / 2),
+            useNativeGlass: false,
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: _ReadCapsule(controller: controller, docked: true),
+                  ),
+                  const SizedBox(width: 6),
+                  const _FavoriteCircle(docked: true),
+                  const SizedBox(width: 6),
+                  _DownloadCircle(controller: controller, docked: true),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The one filled control on the page: HIG gives the primary action a
+/// coloured background. Docked, it is tinted glass with a top highlight.
+class _ReadCapsule extends StatelessWidget {
+  const _ReadCapsule({required this.controller, this.docked = false});
+
+  final GalleryPageController controller;
+  final bool docked;
 
   @override
   Widget build(BuildContext context) {
@@ -415,6 +477,9 @@ class _ReadCapsule extends StatelessWidget {
       final enabled = state.enableRead;
       final last = state.lastIndex;
       final accent = CupertinoDynamicColor.resolve(EhPalette.accent, context);
+      final fill = enabled
+          ? accent.withValues(alpha: docked ? 0.88 : 1)
+          : accent.withValues(alpha: 0.4);
       return CupertinoButton(
         padding: EdgeInsets.zero,
         minimumSize: Size.zero,
@@ -423,13 +488,28 @@ class _ReadCapsule extends StatelessWidget {
                 galleryTag: pageCtrlTagOf(context))
             : null,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 50),
+          constraints: BoxConstraints(minHeight: docked ? 52 : 50),
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: ShapeDecoration(
-            color: enabled ? accent : accent.withValues(alpha: 0.4),
-            shape: const StadiumBorder(),
-          ),
+          decoration: docked
+              ? ShapeDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[
+                      Color.alphaBlend(const Color(0x47FFFFFF), fill),
+                      fill,
+                    ],
+                    stops: const <double>[0, 0.6],
+                  ),
+                  shape: const StadiumBorder(
+                    side: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+                  ),
+                )
+              : ShapeDecoration(
+                  color: fill,
+                  shape: const StadiumBorder(),
+                ),
           child: Text(
             last > 0 ? l10n.continue_reading_page(last + 1) : l10n.read,
             maxLines: 1,
@@ -454,6 +534,7 @@ class _RoundAction extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.progress,
+    this.docked = false,
   });
 
   final Widget child;
@@ -464,10 +545,19 @@ class _RoundAction extends StatelessWidget {
   /// 0–1 ring around the button, for a running download.
   final double? progress;
 
+  /// Inside the glass dock: a lighter lens fill and the dock's fixed size.
+  final bool docked;
+
   @override
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
-    final size = math.max(50.0, MediaQuery.textScalerOf(context).scale(50));
+    final size = docked
+        ? 52.0
+        : math.max(50.0, MediaQuery.textScalerOf(context).scale(50));
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final fill = docked
+        ? (dark ? const Color(0x29FFFFFF) : const Color(0x1414161C))
+        : CupertinoDynamicColor.resolve(palette.fillPressed, context);
     return Semantics(
       button: true,
       label: label,
@@ -493,8 +583,7 @@ class _RoundAction extends StatelessWidget {
               height: size,
               alignment: Alignment.center,
               decoration: ShapeDecoration(
-                color:
-                    CupertinoDynamicColor.resolve(palette.fillPressed, context),
+                color: fill,
                 shape: const CircleBorder(),
               ),
               child: child,
@@ -538,7 +627,9 @@ class _RingPainter extends CustomPainter {
 }
 
 class _FavoriteCircle extends StatelessWidget {
-  const _FavoriteCircle();
+  const _FavoriteCircle({this.docked = false});
+
+  final bool docked;
 
   @override
   Widget build(BuildContext context) {
@@ -548,6 +639,7 @@ class _FavoriteCircle extends StatelessWidget {
     return Obx(() {
       final isFav = favorites.isFav;
       return _RoundAction(
+        docked: docked,
         label: isFav ? l10n.change_to_favorites : l10n.add_to_favorites,
         onTap: favorites.isLoading ? null : () => favorites.tapFav(),
         onLongPress: favorites.isLoading ? null : () => favorites.longTapFav(),
@@ -567,9 +659,10 @@ class _FavoriteCircle extends StatelessWidget {
 }
 
 class _DownloadCircle extends StatelessWidget {
-  const _DownloadCircle({required this.controller});
+  const _DownloadCircle({required this.controller, this.docked = false});
 
   final GalleryPageController controller;
+  final bool docked;
 
   DownloadController get _downloads => Get.find();
 
@@ -583,6 +676,7 @@ class _DownloadCircle extends StatelessWidget {
       final gid = int.tryParse(state.gid) ?? 0;
       if (status == TaskStatus.complete) {
         return _RoundAction(
+          docked: docked,
           label: l10n.downloaded,
           child: Icon(CupertinoIcons.checkmark_alt,
               size: 23,
@@ -591,6 +685,7 @@ class _DownloadCircle extends StatelessWidget {
       }
       if (status == TaskStatus.running || status == TaskStatus.enqueued) {
         return _RoundAction(
+          docked: docked,
           label: l10n.downloading,
           progress: state.downloadProcess / 100,
           onTap: () => status == TaskStatus.running
@@ -601,6 +696,7 @@ class _DownloadCircle extends StatelessWidget {
       }
       if (status == TaskStatus.paused) {
         return _RoundAction(
+          docked: docked,
           label: l10n.paused,
           progress: state.downloadProcess / 100,
           onTap: () => _downloads.galleryTaskResume(gid),
@@ -608,6 +704,7 @@ class _DownloadCircle extends StatelessWidget {
         );
       }
       return _RoundAction(
+          docked: docked,
         label: l10n.p_Download,
         onTap: () => controller.downloadGallery(context),
         child: Icon(CupertinoIcons.arrow_down_to_line, size: 22, color: text1),

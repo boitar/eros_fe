@@ -1,6 +1,7 @@
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/component/setting/android_setting_group.dart';
 import 'package:eros_fe/component/setting/setting_menu.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
@@ -363,6 +364,82 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
+
+    group('Android', () {
+      setUp(() =>
+          PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android);
+      tearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
+
+      testWidgets('uses separate rounded rows with the value as a subtitle',
+          (tester) async {
+        _surface(tester, 412);
+        final EhSettingService settings = Get.find();
+        settings.isSiteEx.value = false;
+        await pumpHome(tester);
+        final l10n = L10n.current;
+        expect(find.byType(AndroidSettingGroup), findsWidgets);
+        expect(find.byType(SliverCupertinoListSection), findsNothing);
+        expect(find.byType(CupertinoListTileChevron), findsNothing);
+
+        await tester.scrollUntilVisible(find.text(l10n.setting_site), 200);
+        final site = tester.getRect(find.text(l10n.setting_site));
+        final value = tester.getRect(find.text('E-Hentai'));
+        // The current value sits under its title, not at the row's end.
+        expect(value.top, greaterThan(site.bottom - 1));
+        expect(value.left, site.left);
+
+        for (final header in [
+          l10n.setting_group_browse,
+          l10n.setting_group_content,
+          l10n.setting_group_system,
+        ]) {
+          await tester.scrollUntilVisible(find.text(header), 200);
+          expect(find.text(header), findsOneWidget);
+        }
+        await tester.scrollUntilVisible(find.text(l10n.about), 200);
+        expect(find.text('1.9.2'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('rows open their page and keep the account first',
+          (tester) async {
+        _surface(tester, 412);
+        await pumpHome(tester);
+        expect(find.text(L10n.current.login), findsOneWidget);
+        final tiles = tester
+            .widgetList<AndroidSettingTile>(find.byType(AndroidSettingTile))
+            .toList();
+        expect(tiles, isNotEmpty);
+        expect(tiles.every((tile) => tile.onTap != null), isTrue);
+      });
+
+      testWidgets('fits accessibility sizes without overflow', (tester) async {
+        _surface(tester, 412);
+        await pumpHome(tester, textScale: 3.1);
+        expect(tester.takeException(), isNull);
+        await tester.drag(
+            find.byType(CustomScrollView), const Offset(0, -2000));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+    });
+  });
+
+  test('Android rows round only the outer corners of their group', () {
+    const outer = Radius.circular(kAndroidSettingOuterRadius);
+    const inner = Radius.circular(kAndroidSettingInnerRadius);
+    expect(androidSettingRowRadius(0, 1), const BorderRadius.all(outer));
+    expect(
+      androidSettingRowRadius(0, 3),
+      const BorderRadius.only(
+          topLeft: outer, topRight: outer, bottomLeft: inner, bottomRight: inner),
+    );
+    expect(androidSettingRowRadius(1, 3), const BorderRadius.all(inner));
+    expect(
+      androidSettingRowRadius(2, 3),
+      const BorderRadius.only(
+          topLeft: inner, topRight: inner, bottomLeft: outer, bottomRight: outer),
+    );
   });
 }
 

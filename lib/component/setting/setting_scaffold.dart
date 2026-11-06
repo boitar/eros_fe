@@ -306,11 +306,27 @@ class SettingGlassBar extends StatelessWidget
       );
     }
     if (mode == GlassMode.flutter) {
-      return LiquidGlassSurface(
-        enabled: true,
-        useNativeGlass: false,
-        borderRadius: BorderRadius.zero,
-        child: child,
+      // A page at rest shows no bar; the glass fades in once content scrolls
+      // under it, like the soft edge above.
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                key: const ValueKey<String>('setting-glass-bar-surface'),
+                opacity: edgeVisible ? 1 : 0,
+                duration: const Duration(milliseconds: 180),
+                child: const LiquidGlassSurface(
+                  enabled: true,
+                  useNativeGlass: false,
+                  borderRadius: BorderRadius.zero,
+                  child: SizedBox.expand(),
+                ),
+              ),
+            ),
+          ),
+          child,
+        ],
       );
     }
     return child;

@@ -394,11 +394,17 @@ class ImagePlugins extends GetView<ViewExtController> {
         final environment = AdaptiveEnvironment.maybeOf(context) ??
             AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
         final showInline = environment.isWide;
+        final glassChrome = !nativeChrome && usesGlassReaderChrome(context);
         final bottomHeight = nativeChrome
             ? ReaderDock.heightFor(thumbnails: vState.showThumbList)
-            : (showInline ? 0 : kBottomBarHeight) +
-                kSliderBarHeight +
-                (vState.showThumbList ? kThumbListViewHeight : 0);
+            : glassChrome
+                ? ReaderGlassBottomBar.heightFor(
+                    thumbnails: vState.showThumbList,
+                    wide: showInline,
+                  )
+                : (showInline ? 0 : kBottomBarHeight) +
+                    kSliderBarHeight +
+                    (vState.showThumbList ? kThumbListViewHeight : 0);
         vState.bottomBarHeight = bottomHeight;
         return Obx(() {
           final fillScreen =
@@ -414,13 +420,19 @@ class ImagePlugins extends GetView<ViewExtController> {
               showBars: vState.showBar,
               fillScreen: fillScreen,
               nativeChrome: nativeChrome,
+              glassChrome: glassChrome,
               topBarHeight: nativeChrome ? 0 : kTopBarHeight,
               bottomBarHeight: bottomHeight,
               topBar: nativeChrome
                   ? const SizedBox.shrink()
-                  : const ViewTopBar(),
-              bottomBar:
-                  nativeChrome ? const ReaderDock() : const ViewBottomBar(),
+                  : glassChrome
+                      ? const ReaderGlassTopBar()
+                      : const ViewTopBar(),
+              bottomBar: nativeChrome
+                  ? const ReaderDock()
+                  : glassChrome
+                      ? const ReaderGlassBottomBar()
+                      : const ViewBottomBar(),
               content: child,
             ),
           );

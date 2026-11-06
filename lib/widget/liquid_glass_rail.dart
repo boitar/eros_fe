@@ -45,6 +45,22 @@ class LiquidGlassRailCategory {
   final VoidCallback? onLongPress;
 }
 
+/// A search field shown as a glass capsule in the first row of a two-row rail.
+/// Tapping it opens the search page; it never takes text input in place.
+class LiquidGlassRailSearch {
+  const LiquidGlassRailSearch({
+    required this.label,
+    required this.onTap,
+    this.trailing,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+
+  /// An icon button drawn inside the capsule's right end, such as history.
+  final LiquidGlassRailAction? trailing;
+}
+
 /// Four independent top controls with one adaptive category glass surface.
 /// Page hosts keep the rail fixed and provide the shared scroll progress.
 class LiquidGlassRail extends StatefulWidget {
@@ -64,9 +80,15 @@ class LiquidGlassRail extends StatefulWidget {
     this.layout = LiquidGlassTopBarLayout.twoRow,
     this.pageController,
     this.compactCategories = false,
+    this.search,
   });
 
   static const double controlSize = 44.0;
+
+  /// Shown only in the two-row layout with categories. It fills the first row
+  /// between [leading] and [trailing]; [categoryTrailing] then moves down to
+  /// sit beside the categories.
+  final LiquidGlassRailSearch? search;
   final LiquidGlassTopBarLayout layout;
   final PageController? pageController;
 
@@ -176,6 +198,17 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     final categoryHeight = widget.layout.categoryHeight(
       MediaQuery.textScalerOf(context),
     );
+    final searchRow =
+        widget.search != null && twoRow && shownCategories.isNotEmpty;
+    if (searchRow) {
+      return _buildSearchLayout(
+        context,
+        shownCategories,
+        categoryHeight: categoryHeight,
+        fadeOpacity: fadeOpacity,
+        fullyHidden: fullyHidden,
+      );
+    }
     final rightActions = <LiquidGlassRailAction>[
       ...widget.categoryTrailing,
       ...widget.trailing,
@@ -252,6 +285,194 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
       child: Stack(
         fit: StackFit.expand,
         children: <Widget>[railContent],
+      ),
+    );
+  }
+
+  /// Row one: [leading] · search capsule · [trailing]. Row two: categories ·
+  /// [categoryTrailing].
+  Widget _buildSearchLayout(
+    BuildContext context,
+    List<LiquidGlassRailCategory> categories, {
+    required double categoryHeight,
+    required double fadeOpacity,
+    required bool fullyHidden,
+  }) {
+    const double size = LiquidGlassRail.controlSize;
+    const double edge = 8.0;
+    const double gap = 6.0;
+    double rowWidth(int count) =>
+        count == 0 ? 0.0 : count * size + (count - 1) * 4.0;
+    Widget actionRow(List<LiquidGlassRailAction> actions) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (int index = 0; index < actions.length; index++) ...<Widget>[
+              if (index > 0) const SizedBox(width: 4.0),
+              _actionButton(actions[index], opacity: fadeOpacity),
+            ],
+          ],
+        );
+    final searchLeft =
+        widget.leading == null ? edge : edge + size + gap;
+    final searchRight = widget.trailing.isEmpty
+        ? edge
+        : edge + rowWidth(widget.trailing.length) + gap;
+    final categoryRight = widget.categoryTrailing.isEmpty
+        ? edge
+        : edge + rowWidth(widget.categoryTrailing.length) + gap;
+    final categoryTop = widget.safeTop + 50;
+
+    final Widget railContent = fullyHidden
+        ? const SizedBox.shrink()
+        : Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              if (widget.leading != null)
+                Positioned(
+                  left: edge,
+                  top: widget.safeTop,
+                  width: size,
+                  height: size,
+                  child: _actionButton(widget.leading!, opacity: fadeOpacity),
+                ),
+              Positioned(
+                left: searchLeft,
+                right: searchRight,
+                top: widget.safeTop,
+                height: size,
+                child: _searchCapsule(widget.search!, opacity: fadeOpacity),
+              ),
+              if (widget.trailing.isNotEmpty)
+                Positioned(
+                  right: edge,
+                  top: widget.safeTop,
+                  height: size,
+                  child: actionRow(widget.trailing),
+                ),
+              Positioned(
+                left: edge,
+                right: categoryRight,
+                top: categoryTop,
+                height: categoryHeight,
+                child: _categorySurface(
+                  context,
+                  categories,
+                  opacity: fadeOpacity,
+                ),
+              ),
+              if (widget.categoryTrailing.isNotEmpty)
+                Positioned(
+                  right: edge,
+                  top: categoryTop + (categoryHeight - size) / 2,
+                  height: size,
+                  child: actionRow(widget.categoryTrailing),
+                ),
+            ],
+          );
+
+    return SizedBox(
+      height: widget.safeTop +
+          widget.layout.expandedHeight(
+            MediaQuery.textScalerOf(context),
+            hasCategories: categories.isNotEmpty,
+          ),
+      child: railContent,
+    );
+  }
+
+  Widget _searchCapsule(
+    LiquidGlassRailSearch search, {
+    required double opacity,
+  }) {
+    const double size = LiquidGlassRail.controlSize;
+    final labelColor =
+        CupertinoDynamicColor.resolve(CupertinoColors.secondaryLabel, context);
+    final iconColor =
+        CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+    final radius = BorderRadius.circular(size / 2);
+    final trailing = search.trailing;
+    return Opacity(
+      opacity: opacity,
+      child: LiquidGlassSurface(
+        key: const ValueKey<String>('liquid-glass-rail-search'),
+        enabled: true,
+        borderRadius: radius,
+        style: LiquidGlassStyle.regular,
+        interactive: false,
+        useNativeGlass: false,
+        followSystemTransparency: widget.followSystemTransparency,
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Semantics(
+                button: true,
+                label: search.label,
+                excludeSemantics: true,
+                child: NavigationHover(
+                  borderRadius: radius,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      liquidGlassFeedback(vibrateUtil.light);
+                      search.onTap();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 14),
+                      child: Row(
+                        children: <Widget>[
+                          Icon(CupertinoIcons.search,
+                              size: 20, color: iconColor),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              search.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: CupertinoTheme.of(context)
+                                  .textTheme
+                                  .textStyle
+                                  .copyWith(fontSize: 16, color: labelColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (trailing != null)
+              Semantics(
+                button: true,
+                label: trailing.label,
+                excludeSemantics: true,
+                child: NavigationHover(
+                  borderRadius: radius,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      liquidGlassFeedback(vibrateUtil.light);
+                      trailing.onPressed();
+                    },
+                    child: SizedBox(
+                      width: size,
+                      height: size,
+                      child: Center(
+                        child: Icon(
+                          trailing.icon,
+                          size: 22,
+                          color: CupertinoDynamicColor.resolve(
+                            trailing.color ?? CupertinoColors.label,
+                            context,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

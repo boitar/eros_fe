@@ -538,6 +538,12 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
             .toList(),
         onTitleTap: _scrollToInitialContentAnchor,
         refreshing: controller.isBackgroundRefresh,
+        search: PlatformCapabilities.topSearchCapsule
+            ? LiquidGlassRailSearch(
+                label: L10n.of(context).search,
+                onTap: NavigatorUtil.goSearchPage,
+              )
+            : null,
       ),
     );
   }
