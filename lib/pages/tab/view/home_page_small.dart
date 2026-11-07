@@ -251,8 +251,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
           animation: Listenable.merge([
             controller.tabController,
             controller.selectionRevision,
-            // Pushes and pops decide whether Android shows the bar.
-            _navigation,
+            // Pushes and pops decide whether Android shows the bar. Other
+            // hosts keep their original rebuild triggers.
+            if (PlatformCapabilities.topSearchCapsule) _navigation,
           ]),
           builder: (context, _) => _buildStableTabs(
             context,
@@ -375,6 +376,13 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
             Obx(()=>Positioned(bottom:0,left:source.contentRect.left,
               width:AdaptiveBrowseLayout.primaryPaneWidth(source.contentRect.width,Get.find<LayoutServices>().sideProportion),
               child:MediaQuery.withNoTextScaling(child:tabBar)))
+          else if (!nativeShellEnabled && !PlatformCapabilities.topSearchCapsule)
+            // Only Android hides the bar for pushed pages; elsewhere keep the
+            // bar's original tree so its taps behave exactly as before.
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: MediaQuery.withNoTextScaling(child: tabBar),
+            )
           else if (!nativeShellEnabled)
             Align(
               alignment: Alignment.bottomCenter,
