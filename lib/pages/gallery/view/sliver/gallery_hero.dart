@@ -422,6 +422,9 @@ class GalleryActionDock extends StatelessWidget {
   static const double barHeight = 64;
   static const double bottomGap = 12;
 
+  /// A wide pane keeps the dock phone-sized, centred, so Read stays a button.
+  static const double maxWidth = 480;
+
   /// Space the scroll content leaves free so its end clears the dock.
   static double reservedHeight(BuildContext context) =>
       barHeight + bottomGap + MediaQuery.paddingOf(context).bottom + 12;
@@ -433,25 +436,32 @@ class GalleryActionDock extends StatelessWidget {
       minimum: const EdgeInsets.only(bottom: bottomGap),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: SizedBox(
-          key: const ValueKey<String>('gallery-action-dock'),
-          height: barHeight,
-          child: LiquidGlassSurface(
-            enabled: true,
-            borderRadius: BorderRadius.circular(barHeight / 2),
-            useNativeGlass: false,
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: _ReadCapsule(controller: controller, docked: true),
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: maxWidth),
+            child: SizedBox(
+              key: const ValueKey<String>('gallery-action-dock'),
+              height: barHeight,
+              child: LiquidGlassSurface(
+                enabled: true,
+                borderRadius: BorderRadius.circular(barHeight / 2),
+                useNativeGlass: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child:
+                            _ReadCapsule(controller: controller, docked: true),
+                      ),
+                      const SizedBox(width: 6),
+                      const _FavoriteCircle(docked: true),
+                      const SizedBox(width: 6),
+                      _DownloadCircle(controller: controller, docked: true),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  const _FavoriteCircle(docked: true),
-                  const SizedBox(width: 6),
-                  _DownloadCircle(controller: controller, docked: true),
-                ],
+                ),
               ),
             ),
           ),

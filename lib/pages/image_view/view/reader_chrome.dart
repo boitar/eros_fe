@@ -338,6 +338,7 @@ Widget _glassIconButton({
       button: true,
       label: label,
       excludeSemantics: true,
+      onTap: onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {

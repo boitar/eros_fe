@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:blur/blur.dart';
 import 'package:english_words/english_words.dart';
@@ -12,6 +14,7 @@ import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/view/hidden_tabs_rail_action.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/android_solid_top_bar.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
@@ -472,18 +475,24 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
               child: Transform.scale(
                 alignment: Alignment.topCenter,
                 scale: 1.0 - collapseProgress * 0.18,
-                child: Stack(
-                  children: [
-                    getNavigationBar(context, opacity: navBarOpacity),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: CustomTabBar(
-                        controller: controller,
-                        opacity: customBarOpacity,
+                child: PlatformCapabilities.topSearchCapsule
+                    ? _androidSolidTopBar(
+                        context,
+                        opacity: navBarOpacity,
+                        height: maxExtentCallBackValue,
+                      )
+                    : Stack(
+                        children: [
+                          getNavigationBar(context, opacity: navBarOpacity),
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: CustomTabBar(
+                              controller: controller,
+                              opacity: customBarOpacity,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
@@ -545,6 +554,58 @@ class _CustomTabbarListState extends State<CustomTabbarList> {
               )
             : null,
       ),
+    );
+  }
+
+  /// Android without glass: a search field, then the groups as chips.
+  Widget _androidSolidTopBar(
+    BuildContext context, {
+    required double opacity,
+    required double height,
+  }) {
+    const double searchRow = 44;
+    final topInset = MediaQuery.paddingOf(context).top;
+    // Built inside the header's own Obx, which must see these reads; another
+    // Obx here would leave that one observing nothing.
+    return AndroidSolidTopBar(
+        opacity: opacity,
+        rowHeight: searchRow,
+        chipRowHeight: math.max(36.0, height - topInset - searchRow),
+        selectedIndex: controller.index,
+        leading: controller.getLeading(context),
+        search: LiquidGlassRailSearch(
+          label: L10n.of(context).search,
+          onTap: NavigatorUtil.goSearchPage,
+        ),
+        trailing: <LiquidGlassRailAction>[
+          if (controller.afterJump)
+            LiquidGlassRailAction(
+              icon: CupertinoIcons.arrow_up_circle,
+              label: L10n.of(context).back_to_top,
+              onPressed: controller.jumpToTop,
+            ),
+          LiquidGlassRailAction(
+            icon: CupertinoIcons.arrow_uturn_down_circle,
+            label: L10n.of(context).jump_or_seek,
+            onPressed: () => controller.showJumpDialog(context),
+          ),
+        ],
+        categoryTrailing: LiquidGlassRailAction(
+          icon: CupertinoIcons.line_horizontal_3,
+          label: L10n.of(context).group_management,
+          onPressed: controller.pressedBar,
+        ),
+        categories: <LiquidGlassRailCategory>[
+          for (final profile in controller.profilesShow)
+            LiquidGlassRailCategory(
+              id: profile.uuid,
+              title: profile.name,
+              onTap: () =>
+                  _selectProfile(controller.profilesShow.indexOf(profile)),
+              onLongPress: () =>
+                  showGroupActionSheet(context, controller, profile),
+            ),
+        ],
     );
   }
 

@@ -10,6 +10,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/android_navigation_rail.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -17,6 +18,14 @@ import 'package:get/get.dart';
 import 'home_page_large.dart';
 
 typedef TabDestinationBuilder = Widget Function(BuildContext, String route);
+
+/// Android list/detail layouts move the destinations into a rail on the left
+/// instead of a bar under both panes.
+bool usesAndroidNavigationRail({
+  required bool split,
+  required AdaptiveEnvironmentSnapshot environment,
+}) =>
+    PlatformCapabilities.topSearchCapsule && split && environment.isSplit;
 
 /// Android gives a pushed page (detail, search, a group) the whole screen,
 /// so the tab bar slides away while [stack] holds a page above its roots.
@@ -215,7 +224,15 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
                 );
               },
             )
-          : CupertinoTabBar(
+          : PlatformCapabilities.topSearchCapsule
+              ? AndroidNavigationBar(
+                  items: controller.listBottomNavigationBarItem,
+                  onTap: (index) {
+                    vibrateUtil.tabSwitch();
+                    _handleTabTap(index, useLiquidGlass: useLiquidGlass);
+                  },
+                )
+              : CupertinoTabBar(
               backgroundColor: kEnableImpeller
                   ? CupertinoTheme.of(context).barBackgroundColor.withValues(
                         alpha: 1,
@@ -256,24 +273,43 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
             widget.destinationBuilder?.call(context, controller.currRoute) ??
             tabPages.tabViews[controller.currRoute]!);
     final media = MediaQuery.of(context);
-    final barHidden = !nativeShellEnabled && _hidesBarForPushedPage;
-    final barHeight = nativeShellEnabled || barHidden
+    final source = AdaptiveEnvironment.maybeOf(context) ??
+        AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
+    final railMode = !nativeShellEnabled &&
+        usesAndroidNavigationRail(split: widget.split, environment: source);
+    final glassRail = tabBar is LiquidGlassTabBar;
+    final railWidth = railMode
+        ? AndroidNavigationRail.reservedWidth(
+            glass: glassRail,
+            leftInset: media.padding.left,
+          )
+        : 0.0;
+    final barHidden =
+        !nativeShellEnabled && !railMode && _hidesBarForPushedPage;
+    final barHeight = nativeShellEnabled || barHidden || railMode
         ? 0.0
         : tabBar.preferredSize.height + media.padding.bottom;
-    final opaqueBar =
-        !nativeShellEnabled && !barHidden && tabBar.opaque(context);
+    final opaqueBar = !nativeShellEnabled &&
+        !barHidden &&
+        !railMode &&
+        tabBar.opaque(context);
     final contentBottom =
         math.max(media.viewInsets.bottom, opaqueBar ? barHeight : 0.0);
     var contentMedia = media.removeViewInsets(removeBottom: true);
+    if (railMode) {
+      // The rail covers the left edge, cutout included.
+      contentMedia = contentMedia.removePadding(removeLeft: true);
+    }
     if (opaqueBar && barHeight > media.viewInsets.bottom) {
       contentMedia = contentMedia.removePadding(removeBottom: true);
     } else if (barHeight > media.viewInsets.bottom) {
       contentMedia = contentMedia.copyWith(
-          padding: media.padding.copyWith(bottom: barHeight));
+          padding: contentMedia.padding.copyWith(bottom: barHeight));
     }
-    final source = AdaptiveEnvironment.maybeOf(context) ??
-        AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
-    final rect = Rect.fromLTWH(0, 0, source.size.width,
+    final rect = Rect.fromLTWH(
+        railWidth,
+        0,
+        math.max(0.0, source.size.width - railWidth),
         math.max(0.0, source.size.height - contentBottom));
     final environment = source.inRect(rect).copyWithGeometry(
           safeArea: contentMedia.padding,
@@ -314,7 +350,28 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
               ),
             ),
           ),
-          if (!nativeShellEnabled && PlatformCapabilities.hostPlatform == TargetPlatform.macOS && widget.split && source.isSplit)
+          if (railMode)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: railWidth,
+              child: MediaQuery.withNoTextScaling(
+                child: AndroidNavigationRail(
+                  items: tabBar.items,
+                  currentIndex: tabBar.currentIndex,
+                  glass: glassRail,
+                  onTap: (index) {
+                    // The solid bar's own handler already ticks.
+                    if (glassRail) {
+                      vibrateUtil.tabSwitch();
+                    }
+                    tabBar.onTap?.call(index);
+                  },
+                ),
+              ),
+            )
+          else if (!nativeShellEnabled && PlatformCapabilities.hostPlatform == TargetPlatform.macOS && widget.split && source.isSplit)
             Obx(()=>Positioned(bottom:0,left:source.contentRect.left,
               width:AdaptiveBrowseLayout.primaryPaneWidth(source.contentRect.width,Get.find<LayoutServices>().sideProportion),
               child:MediaQuery.withNoTextScaling(child:tabBar)))

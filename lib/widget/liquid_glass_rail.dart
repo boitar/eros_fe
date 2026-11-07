@@ -408,6 +408,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                 button: true,
                 label: search.label,
                 excludeSemantics: true,
+                onTap: search.onTap,
                 child: NavigationHover(
                   borderRadius: radius,
                   child: GestureDetector(
@@ -446,6 +447,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                 button: true,
                 label: trailing.label,
                 excludeSemantics: true,
+                onTap: trailing.onPressed,
                 child: NavigationHover(
                   borderRadius: radius,
                   child: GestureDetector(
