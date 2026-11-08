@@ -1,9 +1,11 @@
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/setting/android_setting_group.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/layout_setting_page.dart';
 import 'package:eros_fe/pages/setting/read_setting_page.dart';
@@ -32,7 +34,7 @@ class SettingTab extends GetView<SettingViewController> {
     final EhSettingService ehSettingService = Get.find();
     final bool nativeBar = NativeNavigationScope.isEnabled(context);
 
-    return Obx(() {
+    return _DesktopSettingPanes(child: Obx(() {
       final bool safeMode = ehSettingService.isSafeMode.value;
       final bool glassBar = !nativeBar && SettingGlassBar.isActive;
       final bool titleInContent = nativeBar || glassBar;
@@ -173,7 +175,7 @@ class SettingTab extends GetView<SettingViewController> {
           )),
         ),
       );
-    });
+    }));
   }
 
   Widget _section({required String header, required List<Widget> rows}) {
@@ -188,6 +190,64 @@ class SettingTab extends GetView<SettingViewController> {
       children: rows,
     );
   }
+}
+
+/// Keeps the desktop settings detail pane on a category: it follows the
+/// settings tab's stacks and the window's layout.
+class _DesktopSettingPanes extends StatefulWidget {
+  const _DesktopSettingPanes({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_DesktopSettingPanes> createState() => _DesktopSettingPanesState();
+}
+
+class _DesktopSettingPanesState extends State<_DesktopSettingPanes> {
+  final SettingViewController _controller = Get.find();
+  LayoutServices? _layout;
+  bool _scheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (PlatformCapabilities.isDesktop && Get.isRegistered<LayoutServices>()) {
+      _layout = Get.find<LayoutServices>();
+      _layout!.tabNavigation.addListener(_schedule);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A window resize can turn the split on or off.
+    MediaQuery.sizeOf(context);
+    _schedule();
+  }
+
+  /// Navigation must not change while the navigators report their own
+  /// changes, so the pane is synced after the frame.
+  void _schedule() {
+    if (_layout == null || _scheduled) {
+      return;
+    }
+    _scheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scheduled = false;
+      if (mounted) {
+        _controller.syncDesktopPane();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _layout?.tabNavigation.removeListener(_schedule);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// The page title at the top of the content; the native bar shows it inline
@@ -255,23 +315,46 @@ class _SettingLink extends StatelessWidget {
               ),
             ),
           )
-        : MergeSemantics(
-          child: Semantics(
-            button: true,
-            child: EhCupertinoListTile(
-              leading: Icon(
-                icon,
-                size: 22,
-                color: ehTheme.palette.text2.resolveFrom(context),
+        : Obx(() {
+            // Two panes: the open category is highlighted and rows lead
+            // beside the pane rather than into a new page, so no chevron.
+            final panes = controller.openCategory.value != null;
+            final selected = controller.openCategory.value == route;
+            final accent = EhPalette.accent.resolveFrom(context);
+            return MergeSemantics(
+              child: Semantics(
+                button: true,
+                selected: selected,
+                child: EhCupertinoListTile(
+                  key: ValueKey<String>('setting-link-$route'),
+                  backgroundColor: selected
+                      ? EhPalette.accentSoft.resolveFrom(context)
+                      : null,
+                  leading: Icon(
+                    icon,
+                    size: 22,
+                    color: selected
+                        ? accent
+                        : ehTheme.palette.text2.resolveFrom(context),
+                  ),
+                  title: selected
+                      ? Text(
+                          title,
+                          style: TextStyle(
+                            color: accent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                      : Text(title),
+                  additionalInfo: current == null || current.isEmpty
+                      ? null
+                      : Text(current),
+                  trailing: panes ? null : const CupertinoListTileChevron(),
+                  onTap: () => controller.open(route),
+                ),
               ),
-              title: Text(title),
-              additionalInfo:
-                  current == null || current.isEmpty ? null : Text(current),
-              trailing: const CupertinoListTileChevron(),
-              onTap: () => controller.open(route),
-            ),
-          ),
-        );
+            );
+          });
     final value = this.value;
     if (value == null) {
       return row(staticValue);

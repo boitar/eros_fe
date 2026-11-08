@@ -2,7 +2,9 @@ import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/appkit_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
@@ -10,6 +12,23 @@ import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+
+/// In a desktop two-pane settings window a category page is the root of the
+/// detail pane: the list beside it navigates, there is nothing to go back to.
+bool isDesktopSettingPaneRoot(ModalRoute<dynamic>? route) {
+  if (route == null ||
+      !PlatformCapabilities.isDesktop ||
+      !Get.isRegistered<LayoutServices>()) {
+    return false;
+  }
+  final layout = Get.find<LayoutServices>();
+  final stack = layout.tabNavigation.selected;
+  if (!layout.isLayoutLarge || stack?.id != EHRoutes.setting) {
+    return false;
+  }
+  final history = stack!.detailObserver.history;
+  return history.length >= 2 && identical(history[1], route);
+}
 
 /// A settings page. With the native shell its title and buttons go to the
 /// Liquid Glass bar; otherwise a Flutter navigation bar shows them.
@@ -73,6 +92,9 @@ class _SettingScaffoldState extends State<SettingScaffold> {
                       trailing: widget.trailing,
                     )
                   : CupertinoNavigationBar(
+                      automaticallyImplyLeading: !isDesktopSettingPaneRoot(
+                        ModalRoute.of(context),
+                      ),
                       padding: widget.trailing == null
                           ? null
                           : const EdgeInsetsDirectional.only(end: 8),
@@ -192,7 +214,8 @@ class SettingGlassBar extends StatelessWidget
   Widget build(BuildContext context) {
     final double safeTop = MediaQuery.paddingOf(context).top;
     final route = ModalRoute.of(context);
-    final bool canPop = route?.impliesAppBarDismissal ?? false;
+    final bool canPop = (route?.impliesAppBarDismissal ?? false) &&
+        !isDesktopSettingPaneRoot(route);
     final bool followSystem = !Get.isRegistered<EhSettingService>() ||
         Get.find<EhSettingService>().liquidGlassMaterial;
     final Color iconColor = ehTheme.palette.text1.resolveFrom(context);
