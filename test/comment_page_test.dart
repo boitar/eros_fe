@@ -20,7 +20,7 @@ class _Settings extends GetxService implements EhSettingService {
   bool get liquidGlass => _glass.value;
   final RxBool _glass = false.obs;
   @override
-  bool get liquidGlassFollowSystemTransparency => true;
+  bool get liquidGlassMaterial => true;
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw StateError('Unexpected setting: ${invocation.memberName}');

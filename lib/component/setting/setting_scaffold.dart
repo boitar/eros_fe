@@ -194,7 +194,7 @@ class SettingGlassBar extends StatelessWidget
     final route = ModalRoute.of(context);
     final bool canPop = route?.impliesAppBarDismissal ?? false;
     final bool followSystem = !Get.isRegistered<EhSettingService>() ||
-        Get.find<EhSettingService>().liquidGlassFollowSystemTransparency;
+        Get.find<EhSettingService>().liquidGlassMaterial;
     final Color iconColor = ehTheme.palette.text1.resolveFrom(context);
     final TextStyle titleStyle = CupertinoTheme.of(context)
         .textTheme
@@ -293,7 +293,7 @@ class SettingGlassBar extends StatelessWidget
                     'followSystemTransparency':
                         !Get.isRegistered<EhSettingService>() ||
                         Get.find<EhSettingService>()
-                            .liquidGlassFollowSystemTransparency,
+                            .liquidGlassMaterial,
                   },
                 ),
               ),

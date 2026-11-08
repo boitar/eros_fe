@@ -19,27 +19,36 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
-/// The same preference controls the glass style on each supported platform.
+/// One switch turns glass on for every surface; the material then applies to
+/// all of them, on every supported platform.
 class LiquidGlassSettingsSection extends StatelessWidget {
   const LiquidGlassSettingsSection({super.key, required this.settings});
 
   final EhSettingService settings;
+
+  static const switchKey = ValueKey('glass-effect-switch');
+  static const materialKey = ValueKey('glass-material-selector');
 
   @override
   Widget build(BuildContext context) {
     if (!PlatformCapabilities.glassStyle) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
+    final l10n = L10n.of(context);
     return SliverCupertinoListSection.listInsetGrouped(
-      footer: Text(L10n.of(context).liquid_glass_description),
+      footer: Obx(() => Text(
+            settings.liquidGlass && PlatformCapabilities.uiKitGlass
+                ? '${l10n.liquid_glass_description}\n${l10n.glass_system_bar_note}'
+                : l10n.liquid_glass_description,
+          )),
       children: [
         EhCupertinoListTile(
-          title: Text(L10n.of(context).liquid_glass_style),
+          title: Text(l10n.glass_effect),
           trailing: Obx(() {
             return offlineGlassControl(
                 'enabled',
                 CupertinoSwitch(
-                  key: const ValueKey('liquid-glass-style-switch'),
+                  key: switchKey,
                   value: settings.liquidGlass,
                   onChanged: (bool val) {
                     settings.liquidGlass = val;
@@ -47,26 +56,29 @@ class LiquidGlassSettingsSection extends StatelessWidget {
                 ));
           }),
         ),
-        if (PlatformCapabilities.uiKitGlass)
-          Obx(() {
-            if (!settings.liquidGlass) {
-              return const SizedBox.shrink();
-            }
-            return EhCupertinoListTile(
-              title: const Text('使用系统 Liquid Glass 外观'),
-              trailing: CupertinoSwitch(
-                value: settings.liquidGlassFollowSystemTransparency,
-                onChanged: (bool val) {
-                  settings.liquidGlassFollowSystemTransparency = val;
-                },
-              ),
-            );
-          }),
         Obx(() {
           if (!settings.liquidGlass) {
             return const SizedBox.shrink();
           }
-          final l10n = L10n.of(context);
+          return SelectorCupertinoListTile<GlassMaterial>(
+            key: materialKey,
+            title: l10n.glass_material,
+            actionMap: {
+              GlassMaterial.liquid: l10n.glass_material_liquid,
+              GlassMaterial.frosted: l10n.glass_material_frosted,
+            },
+            subtitleMap: {
+              GlassMaterial.liquid: l10n.glass_material_liquid_detail,
+              GlassMaterial.frosted: l10n.glass_material_frosted_detail,
+            },
+            initVal: settings.glassMaterial,
+            onValueChanged: (selected) => settings.glassMaterial = selected,
+          );
+        }),
+        Obx(() {
+          if (!settings.liquidGlass) {
+            return const SizedBox.shrink();
+          }
           String name(LiquidGlassTopBarLayout layout) =>
               layout == LiquidGlassTopBarLayout.twoRow
                   ? l10n.liquid_glass_two_row

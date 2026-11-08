@@ -207,7 +207,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
               onTap: (index) =>
                   _handleTabTap(index, useLiquidGlass: useLiquidGlass),
               followSystemTransparency:
-                  ehSettingService.liquidGlassFollowSystemTransparency,
+                  ehSettingService.liquidGlassMaterial,
               nativeItems: controller.liquidGlassTabItems,
               searchLabel: L10n.of(context).search,
               // Android searches from the capsule at the top of list pages.

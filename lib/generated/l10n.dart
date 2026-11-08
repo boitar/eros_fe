@@ -4744,10 +4744,10 @@ class L10n {
       args: [],
     );
   }
-  String get liquid_glass_style {
+  String get glass_effect {
     return Intl.message(
-      'Liquid glass style',
-      name: 'liquid_glass_style',
+      'Glass effect',
+      name: 'glass_effect',
       desc: '',
       args: [],
     );
@@ -4755,8 +4755,62 @@ class L10n {
 
   String get liquid_glass_description {
     return Intl.message(
-      'Use a glass style for navigation and controls. The appearance varies by platform.',
+      'Use glass for navigation bars, tab bars, buttons and menus. Frosted glass uses less power and scrolls more smoothly.',
       name: 'liquid_glass_description',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get glass_material {
+    return Intl.message(
+      'Glass material',
+      name: 'glass_material',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get glass_material_liquid {
+    return Intl.message(
+      'Liquid glass',
+      name: 'glass_material_liquid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get glass_material_liquid_detail {
+    return Intl.message(
+      'Refraction and highlights; uses more power',
+      name: 'glass_material_liquid_detail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get glass_material_frosted {
+    return Intl.message(
+      'Frosted glass',
+      name: 'glass_material_frosted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get glass_material_frosted_detail {
+    return Intl.message(
+      'Soft blur; better performance',
+      name: 'glass_material_frosted_detail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  String get glass_system_bar_note {
+    return Intl.message(
+      'Vertical tab bars drawn by the system, such as the side bar on the iPhone Duo outer display, always use Liquid Glass.',
+      name: 'glass_system_bar_note',
       desc: '',
       args: [],
     );

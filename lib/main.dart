@@ -237,13 +237,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 if (PlatformCapabilities.uiKitGlass) {
                   return child;
                 }
+                final settings = Get.find<EhSettingService>();
                 if (GetPlatform.isDesktop) {
                   return Obx(() => FlutterGlassRuntime.wrap(
                       Desktop(child: child),
-                      enabled: Get.find<EhSettingService>().liquidGlass));
+                      enabled: settings.liquidGlass,
+                      material: settings.glassMaterial));
                 } else {
                   return Obx(() => FlutterGlassRuntime.wrap(child,
-                      enabled: Get.find<EhSettingService>().liquidGlass));
+                      enabled: settings.liquidGlass,
+                      material: settings.glassMaterial));
                 }
               },
             ),

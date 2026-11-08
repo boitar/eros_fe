@@ -24,7 +24,7 @@ class _Settings extends GetxService implements EhSettingService {
   @override
   RxBool get pureDarkThemeObs => false.obs;
   @override
-  bool get liquidGlassFollowSystemTransparency => true;
+  bool get liquidGlassMaterial => true;
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw StateError('Unexpected group setting');

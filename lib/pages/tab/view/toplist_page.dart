@@ -121,7 +121,7 @@ class _ToplistTabState extends State<ToplistTab>
     return Obx(() => SegmentedRail(
           selectedIndex: _selectedPeriod,
           followSystemTransparency:
-              _ehSettingService.liquidGlassFollowSystemTransparency,
+              _ehSettingService.liquidGlassMaterial,
           items: <LiquidGlassRailCategory>[
             for (int index = 0; index < titles.length; index++)
               LiquidGlassRailCategory(
@@ -191,7 +191,7 @@ class _ToplistTabState extends State<ToplistTab>
         fadeProgress: fadeProgress,
         selectedIndex: _selectedPeriod,
         followSystemTransparency:
-            _ehSettingService.liquidGlassFollowSystemTransparency,
+            _ehSettingService.liquidGlassMaterial,
         leading: hiddenTabsRailAction(context),
         trailing: <LiquidGlassRailAction>[
           LiquidGlassRailAction(

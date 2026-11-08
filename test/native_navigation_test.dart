@@ -137,13 +137,18 @@ void main() {
   });
 
   test('the glass preferences pick the native bar material', () {
-    expect(NativeBarMaterial.of(glassStyle: true, followSystem: true),
+    expect(
+        NativeBarMaterial.of(glassStyle: true, material: GlassMaterial.liquid),
         NativeBarMaterial.glass);
-    expect(NativeBarMaterial.of(glassStyle: true, followSystem: false),
+    expect(
+        NativeBarMaterial.of(glassStyle: true, material: GlassMaterial.frosted),
         NativeBarMaterial.blur);
-    expect(NativeBarMaterial.of(glassStyle: false, followSystem: true),
+    expect(
+        NativeBarMaterial.of(glassStyle: false, material: GlassMaterial.liquid),
         NativeBarMaterial.opaque);
-    expect(NativeBarMaterial.of(glassStyle: false, followSystem: false),
+    expect(
+        NativeBarMaterial.of(
+            glassStyle: false, material: GlassMaterial.frosted),
         NativeBarMaterial.opaque);
   });
 

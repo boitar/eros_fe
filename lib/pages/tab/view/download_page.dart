@@ -134,7 +134,7 @@ class _DownloadTabState extends State<DownloadTab> {
               selectedIndex: currIndex,
               pageController: pageController,
               followSystemTransparency:
-                  settings.liquidGlassFollowSystemTransparency,
+                  settings.liquidGlassMaterial,
               items: [
                 LiquidGlassRailCategory(
                   id: 'gallery',
@@ -167,7 +167,7 @@ class _DownloadTabState extends State<DownloadTab> {
             selectedIndex: currIndex,
             pageController: pageController,
             followSystemTransparency:
-                settings.liquidGlassFollowSystemTransparency,
+                settings.liquidGlassMaterial,
             leading: hiddenTabsRailAction(context),
             onSelected: select,
             onExport: !kReleaseMode ? _showExportDialog : null,
