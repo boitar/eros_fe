@@ -1379,7 +1379,8 @@ class ThumbnailListView extends GetView<ViewExtController> {
 
   /// The first thumbnail to show so [current] sits in the middle of a
   /// [viewport] of [extent]-sized items, but without empty space past either
-  /// end of the [count] thumbnails.
+  /// end of the [count] thumbnails. The viewport may hold a fraction of an
+  /// item too; counting it keeps [current] centred rather than one slot off.
   static int initialThumbIndex({
     required int current,
     required int count,
@@ -1390,10 +1391,12 @@ class ThumbnailListView extends GetView<ViewExtController> {
       return 0;
     }
     final visible = viewport.isFinite && extent > 0
-        ? math.max(1, (viewport / extent).floor())
-        : 1;
-    final leading = current - (visible - 1) ~/ 2;
-    return leading.clamp(0, math.max(0, count - visible)).toInt();
+        ? math.max(1.0, viewport / extent)
+        : 1.0;
+    // The centre of [current] at the centre of the viewport.
+    final leading = (current + 0.5 - visible / 2).round();
+    final last = math.max(0, (count - visible).floor());
+    return leading.clamp(0, last).toInt();
   }
 
   GalleryPageController? get galleryPageController =>

@@ -207,6 +207,20 @@ void main() {
           extent: 80,
         );
 
+    test('a fraction of a thumbnail still centres the page', () {
+      // 4.9 thumbnails fit (the phone's strip): page 95 of 119 is centred,
+      // 93–97 around it, not second as when only whole thumbnails counted.
+      expect(
+        ThumbnailListView.initialThumbIndex(
+          current: 94,
+          count: 119,
+          viewport: 333.2,
+          extent: 68,
+        ),
+        92,
+      );
+    });
+
     test('the current page sits in the middle of the strip', () {
       // Five thumbnails fit: page 40 (index 39) is the third.
       expect(first(39), 37);
@@ -224,19 +238,18 @@ void main() {
       state.currentItemIndex = 8;
       await tester.pumpWidget(
         const CupertinoApp(
-          home: Center(
-            child: SizedBox(width: 300, child: ThumbnailListView()),
-          ),
+          home: Center(child: SizedBox(width: 300, child: ThumbnailListView())),
         ),
       );
-      // 300 / 68 → four thumbnails; page 9 of 10 ends the strip.
+      // 300 / 68 → 4.4 thumbnails; page 9 of 10 is near the end, so the
+      // strip ends with page 10 rather than centring past it.
       expect(
         tester
             .widget<ScrollablePositionedList>(
               find.byType(ScrollablePositionedList),
             )
             .initialScrollIndex,
-        6,
+        5,
       );
       expect(tester.takeException(), isNull);
     });
