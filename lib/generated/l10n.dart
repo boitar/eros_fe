@@ -5309,6 +5309,16 @@ class L10n {
     );
   }
 
+  /// `Filter by uploader`
+  String get filter_by_uploader {
+    return Intl.message(
+      'Filter by uploader',
+      name: 'filter_by_uploader',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Browsing`
   String get setting_group_browse {
     return Intl.message(

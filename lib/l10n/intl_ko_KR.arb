@@ -554,5 +554,6 @@
   "column_count": "{count}열",
   "column_range": "{min}–{max}열",
   "split_follows_divider": "분할 · 구분선에 따름",
-  "sidebar_library": "보관함"
+  "sidebar_library": "보관함",
+  "filter_by_uploader": "업로더로 필터"
 }

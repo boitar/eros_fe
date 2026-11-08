@@ -7,6 +7,7 @@ import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/route/routes.dart';
+import 'package:eros_fe/widget/desktop_gallery_actions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -45,6 +46,12 @@ double cardRadiusFor(ListModeEnum mode) => switch (mode) {
   _ => 12,
 };
 
+/// List modes put the cover at the card's left edge and text on the right:
+/// their quick actions stack down the cover. Grids and waterfalls have the
+/// cover on top, so the actions sit in a row over its top-right corner.
+bool quickActionsOnCoverStart(ListModeEnum mode) =>
+    mode == ListModeEnum.list || mode == ListModeEnum.simpleList;
+
 /// Space between the list slot and the card the current list mode draws in
 /// it: the list card keeps its own margin, grids leave it to their spacing.
 EdgeInsets cardInsetsFor(ListModeEnum mode) => switch (mode) {
@@ -53,8 +60,9 @@ EdgeInsets cardInsetsFor(ListModeEnum mode) => switch (mode) {
 };
 
 /// Desktop pointer states for a gallery card: it lifts a little under the
-/// mouse, and the gallery open in the detail pane beside the list keeps an
-/// accent ring, so the list shows which one the pane belongs to.
+/// mouse and shows read / favorite / download buttons, a right click opens
+/// its context menu, and the gallery open in the detail pane beside the list
+/// keeps an accent ring, so the list shows which one the pane belongs to.
 ///
 /// Touch platforms get [child] unchanged.
 class DesktopCardChrome extends StatefulWidget {
@@ -108,8 +116,33 @@ class _DesktopCardChromeState extends State<DesktopCardChrome> {
     }
   }
 
+  void _setHovered(bool hovered) {
+    setState(() => _hovered = hovered);
+    final hoveredGid = DesktopGalleryActions.hoveredGid;
+    if (hovered) {
+      hoveredGid.value = widget.gid;
+    } else if (hoveredGid.value == widget.gid) {
+      hoveredGid.value = null;
+    }
+  }
+
+  Future<void> _openMenu(TapUpDetails details) async {
+    final item = DesktopGalleryActions.itemFor(widget.gid);
+    if (item == null) {
+      return;
+    }
+    await showDesktopGalleryMenu(
+      context,
+      position: details.globalPosition,
+      entries: desktopGalleryMenuEntries(context, item),
+    );
+  }
+
   @override
   void dispose() {
+    if (DesktopGalleryActions.hoveredGid.value == widget.gid) {
+      DesktopGalleryActions.hoveredGid.value = null;
+    }
     _layout?.tabNavigation.removeListener(_followStack);
     _stack?.detailObserver.revision.removeListener(_detailChanged);
     super.dispose();
@@ -133,40 +166,64 @@ class _DesktopCardChromeState extends State<DesktopCardChrome> {
         ? Get.find<EhSettingService>().listMode.value
         : ListModeEnum.list;
     final double radius = cardRadiusFor(mode);
+    final item = DesktopGalleryActions.itemFor(widget.gid);
+    final insets = cardInsetsFor(mode);
+    final onCover = quickActionsOnCoverStart(mode);
     return Semantics(
       selected: selected,
       child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: AnimatedContainer(
-          key: ValueKey<String>('desktop-card-${widget.gid}'),
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOutCubic,
-          transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
-          child: Stack(
-            children: <Widget>[
-              widget.child,
-              if (selected)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Padding(
-                      padding: cardInsetsFor(mode),
-                      child: DecoratedBox(
-                        key: ValueKey<String>(
-                          'desktop-card-ring-${widget.gid}',
+        onEnter: (_) => _setHovered(true),
+        onExit: (_) => _setHovered(false),
+        child: GestureDetector(
+          onSecondaryTapUp: _openMenu,
+          child: AnimatedContainer(
+            key: ValueKey<String>('desktop-card-${widget.gid}'),
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutCubic,
+            transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
+            child: Stack(
+              children: <Widget>[
+                widget.child,
+                if (item != null)
+                  Positioned(
+                    top: insets.top + 6,
+                    left: onCover ? insets.left + 6 : null,
+                    right: onCover ? null : insets.right + 8,
+                    child: IgnorePointer(
+                      ignoring: !_hovered,
+                      child: AnimatedOpacity(
+                        key: ValueKey<String>('desktop-quick-${widget.gid}'),
+                        opacity: _hovered ? 1 : 0,
+                        duration: const Duration(milliseconds: 120),
+                        child: DesktopQuickActions(
+                          item: item,
+                          axis: onCover ? Axis.vertical : Axis.horizontal,
                         ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(radius),
-                          border: Border.all(
-                            color: EhPalette.accent.resolveFrom(context),
-                            width: 2,
+                      ),
+                    ),
+                  ),
+                if (selected)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Padding(
+                        padding: insets,
+                        child: DecoratedBox(
+                          key: ValueKey<String>(
+                            'desktop-card-ring-${widget.gid}',
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(radius),
+                            border: Border.all(
+                              color: EhPalette.accent.resolveFrom(context),
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

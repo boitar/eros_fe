@@ -554,5 +554,6 @@
   "column_count": "{count} columns",
   "column_range": "{min}–{max} columns",
   "split_follows_divider": "Split, set by divider",
-  "sidebar_library": "Library"
+  "sidebar_library": "Library",
+  "filter_by_uploader": "Filter by uploader"
 }

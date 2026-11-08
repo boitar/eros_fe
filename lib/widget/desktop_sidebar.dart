@@ -100,6 +100,19 @@ class DesktopSidebar extends StatelessWidget {
     control: PlatformCapabilities.hostPlatform != TargetPlatform.macOS,
   );
 
+  /// ⌘, / Ctrl+, opens settings.
+  static SingleActivator get settingsShortcut => SingleActivator(
+    LogicalKeyboardKey.comma,
+    meta: PlatformCapabilities.hostPlatform == TargetPlatform.macOS,
+    control: PlatformCapabilities.hostPlatform != TargetPlatform.macOS,
+  );
+
+  /// ⌘[ on macOS, Alt+← on Windows: back one page.
+  static SingleActivator get backShortcut =>
+      PlatformCapabilities.hostPlatform == TargetPlatform.macOS
+      ? const SingleActivator(LogicalKeyboardKey.bracketLeft, meta: true)
+      : const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true);
+
   @override
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;

@@ -13,6 +13,8 @@ import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/android_navigation_rail.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
+import 'package:eros_fe/widget/desktop_card_chrome.dart';
+import 'package:eros_fe/widget/desktop_gallery_actions.dart';
 import 'package:eros_fe/widget/desktop_sidebar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -128,15 +130,34 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
   bool _sidebarShown = false;
 
   bool _handleDesktopShortcut(KeyEvent event) {
-    if (!_sidebarShown || event is! KeyDownEvent || !mounted) {
+    if (!PlatformCapabilities.isDesktop || event is! KeyDownEvent || !mounted) {
       return false;
     }
-    if (!DesktopSidebar.searchShortcut
-        .accepts(event, HardwareKeyboard.instance)) {
+    // Only while the tabs are on top: the reader and dialogs keep their keys.
+    final top = MainNavigatorObserver().history.lastOrNull?.settings.name;
+    if (top != EHRoutes.home && top != EHRoutes.root) {
       return false;
     }
-    _openSearch();
-    return true;
+    final keyboard = HardwareKeyboard.instance;
+    if (_sidebarShown && DesktopSidebar.searchShortcut.accepts(event, keyboard)) {
+      _openSearch();
+      return true;
+    }
+    if (DesktopSidebar.settingsShortcut.accepts(event, keyboard)) {
+      controller.selectRoute(EHRoutes.setting);
+      return true;
+    }
+    if (DesktopSidebar.backShortcut.accepts(event, keyboard)) {
+      controller.popLogicalRoute();
+      return true;
+    }
+    return DesktopGalleryActions.handleShortcut(
+      context,
+      event,
+      detailGid: _layout.isLayoutLarge
+          ? galleryShownInDetail(_navigation.selected)
+          : null,
+    );
   }
 
   void _openSearch() {

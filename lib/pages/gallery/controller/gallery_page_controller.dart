@@ -47,8 +47,6 @@ class GalleryPageController extends GetxController
   // 滚动控制器
   ScrollController? scrollController;
 
-  // eh设置
-  final EhSettingService _ehSettingService = Get.find();
   final HistoryController _historyController = Get.find();
   final GalleryCacheController _galleryCacheController = Get.find();
   DownloadController get _downloadController => Get.find();
@@ -659,41 +657,10 @@ class GalleryPageController extends GetxController
     }
   }
 
-  void downloadGallery(BuildContext context) {
-    switch (_ehSettingService.downloadOrigType) {
-      case DownloadOrigImageType.no:
-        _downloadGallery();
-        break;
-      case DownloadOrigImageType.always:
-        _downloadGallery(downloadOri: true);
-        break;
-      case DownloadOrigImageType.askMe:
-        showCupertinoDialog(
-            context: context,
-            barrierDismissible: true,
-            builder: (context) {
-              return EhAlertDialog(
-                title: Text(L10n.of(context).image_download_type),
-                // content: Text(L10n.of(context).download_ori_image_summary),
-                actions: [
-                  CupertinoDialogAction(
-                    child: Text(L10n.of(context).resample_image),
-                    onPressed: () {
-                      Get.back();
-                      _downloadGallery();
-                    },
-                  ),
-                  CupertinoDialogAction(
-                    child: Text(L10n.of(context).original_image),
-                    onPressed: () {
-                      Get.back();
-                      _downloadGallery(downloadOri: true);
-                    },
-                  ),
-                ],
-              );
-            });
-        break;
+  Future<void> downloadGallery(BuildContext context) async {
+    final downloadOri = await chooseDownloadOriginal(context);
+    if (downloadOri != null) {
+      _downloadGallery(downloadOri: downloadOri);
     }
   }
 
@@ -725,5 +692,35 @@ class GalleryPageController extends GetxController
           tag: controllerTag);
       controller?.tagVoteUp(_rult);
     }
+  }
+}
+
+/// Whether to download original images, from the setting or by asking; null
+/// when the user dismissed the question.
+Future<bool?> chooseDownloadOriginal(BuildContext context) async {
+  switch (Get.find<EhSettingService>().downloadOrigType) {
+    case DownloadOrigImageType.no:
+      return false;
+    case DownloadOrigImageType.always:
+      return true;
+    case DownloadOrigImageType.askMe:
+      return showCupertinoDialog<bool>(
+          context: context,
+          barrierDismissible: true,
+          builder: (context) {
+            return EhAlertDialog(
+              title: Text(L10n.of(context).image_download_type),
+              actions: [
+                CupertinoDialogAction(
+                  child: Text(L10n.of(context).resample_image),
+                  onPressed: () => Get.back(result: false),
+                ),
+                CupertinoDialogAction(
+                  child: Text(L10n.of(context).original_image),
+                  onPressed: () => Get.back(result: true),
+                ),
+              ],
+            );
+          });
   }
 }

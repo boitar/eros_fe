@@ -554,5 +554,6 @@
   "column_count": "{count} 列",
   "column_range": "{min}〜{max} 列",
   "split_follows_divider": "分割・仕切りで変化",
-  "sidebar_library": "ライブラリ"
+  "sidebar_library": "ライブラリ",
+  "filter_by_uploader": "アップローダーで絞り込む"
 }

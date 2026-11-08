@@ -554,5 +554,6 @@
   "column_count": "Столбцов: {count}",
   "column_range": "Столбцов: {min}–{max}",
   "split_follows_divider": "разделение по разделителю",
-  "sidebar_library": "Библиотека"
+  "sidebar_library": "Библиотека",
+  "filter_by_uploader": "Фильтр по загрузившему"
 }

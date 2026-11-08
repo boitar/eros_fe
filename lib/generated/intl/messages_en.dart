@@ -802,6 +802,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "appearance_and_layout": MessageLookupByLibrary.simpleMessage("Appearance & Layout"),
         "setting_site": MessageLookupByLibrary.simpleMessage("Site"),
         "sidebar_library": MessageLookupByLibrary.simpleMessage("Library"),
+        "filter_by_uploader": MessageLookupByLibrary.simpleMessage("Filter by uploader"),
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("Browsing"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("Content"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("System"),

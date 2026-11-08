@@ -158,18 +158,88 @@ class GalleryItemController extends GetxController {
         galleryProvider.galleryImages?.sublist(0, galleryImage.length) ?? [];
   }
 
+  bool get _hasNetworkFavorite =>
+      galleryProvider.favcat != null &&
+      (galleryProvider.favcat?.isNotEmpty ?? false);
+
+  /// Adds the gallery to a favorites folder the user picks (or the last one,
+  /// when that setting is on).
+  Future<void> addFavorite() async {
+    if (galleryProvider.gid == null || galleryProvider.token == null) {
+      return;
+    }
+    try {
+      final value = await _favDialogController.addFav(
+          galleryProvider.gid!, galleryProvider.token!);
+      if (value == null) {
+        return;
+      }
+      setFavTitleAndFavcat(favTitle: value.favTitle, favcat: value.favId);
+      showToast('successfully add');
+    } catch (e) {
+      showToast(favoriteMutationMessage(e));
+    }
+  }
+
+  /// Removes the gallery from its favorites folder; false when it failed.
+  Future<bool> removeFavorite() async {
+    if (galleryProvider.gid == null || galleryProvider.token == null) {
+      return false;
+    }
+    try {
+      await _favDialogController.delFav(galleryProvider.favcat!,
+          galleryProvider.gid!, galleryProvider.token!);
+    } catch (e) {
+      showToast(favoriteMutationMessage(e));
+      return false;
+    }
+    setFavTitleAndFavcat(favTitle: '', favcat: '');
+    showToast('successfully deleted');
+    return true;
+  }
+
+  /// Moves the gallery to another favorites folder.
+  Future<void> changeFavorite() async {
+    if (galleryProvider.gid == null || galleryProvider.token == null) {
+      return;
+    }
+    try {
+      final value = await _favDialogController.addFav(
+          galleryProvider.gid!, galleryProvider.token!,
+          oriFavcat: galleryProvider.favcat!);
+      if (value != null) {
+        setFavTitleAndFavcat(favTitle: '', favcat: '');
+        setFavTitleAndFavcat(favTitle: value.favTitle, favcat: value.favId);
+        showToast('successfully changed');
+      }
+    } catch (e) {
+      showToast(favoriteMutationMessage(e));
+    }
+  }
+
+  /// Whether the item sits in the history list, which lets it be removed.
+  bool get isHistoryItem {
+    final curPage = Get.currentRoute;
+    final curTab = Get.isRegistered<TabHomeController>()
+        ? _tabHomeController.currRoute
+        : null;
+    final topRoute = MainNavigatorObserver().history.lastOrNull?.settings.name;
+    return curPage == EHRoutes.history ||
+        topRoute == EHRoutes.history ||
+        curTab == EHRoutes.history;
+  }
+
+  void removeFromHistory() {
+    if (galleryProvider.gid == null) {
+      return;
+    }
+    _historyController.removeHistory(galleryProvider.gid!);
+  }
+
   /// 长按菜单
   Future<void> _showLongPressSheet() async {
     final BuildContext context = Get.overlayContext!;
-    final curPage = Get.currentRoute;
-    logger.t('curPage $curPage');
-    final curTab = _tabHomeController.currRoute;
-    logger.t('curTab $curTab');
-    final topRoute = MainNavigatorObserver().history.lastOrNull?.settings.name;
-
-    final isHistoryItem = curPage == EHRoutes.history ||
-        topRoute == EHRoutes.history ||
-        curTab == EHRoutes.history;
+    final isHistoryItem = this.isHistoryItem;
     logger.d('isHistoryItem $isHistoryItem');
 
     await showCupertinoModalPopup<void>(
@@ -183,8 +253,7 @@ class GalleryItemController extends GetxController {
                 },
                 child: Text(L10n.of(context).cancel)),
             actions: <Widget>[
-              if (galleryProvider.favcat == null ||
-                  (galleryProvider.favcat?.isEmpty ?? false))
+              if (!_hasNetworkFavorite)
                 EhActionSheetAction(
                   icon: CupertinoIcons.heart,
                   systemIcon: 'heart',
@@ -194,49 +263,22 @@ class GalleryItemController extends GetxController {
                       return;
                     }
                     Get.back();
-
-                    try {
-                      final value = await _favDialogController.addFav(
-                          galleryProvider.gid!, galleryProvider.token!);
-                      if (value == null) {
-                        return;
-                      }
-                      setFavTitleAndFavcat(
-                          favTitle: value.favTitle, favcat: value.favId);
-                      showToast('successfully add');
-                    } catch (e) {
-                      showToast(favoriteMutationMessage(e));
-                    }
+                    await addFavorite();
                   },
                   child: Text(L10n.of(context).add_to_favorites),
                 ),
-              if (galleryProvider.favcat != null &&
-                  (galleryProvider.favcat?.isNotEmpty ?? false))
+              if (_hasNetworkFavorite)
                 EhActionSheetAction(
                   icon: CupertinoIcons.heart_slash,
                   systemIcon: 'heart.slash',
                   onPressed: () async {
-                    if (galleryProvider.gid == null ||
-                        galleryProvider.token == null) {
-                      return;
+                    if (await removeFavorite()) {
+                      Get.back();
                     }
-
-                    try {
-                      await _favDialogController.delFav(galleryProvider.favcat!,
-                          galleryProvider.gid!, galleryProvider.token!);
-                    } catch (e) {
-                      showToast(favoriteMutationMessage(e));
-                      return;
-                    }
-                    setFavTitleAndFavcat(favTitle: '', favcat: '');
-                    showToast('successfully deleted');
-
-                    Get.back();
                   },
                   child: Text(L10n.of(context).remove_from_favorites),
                 ),
-              if (galleryProvider.favcat != null &&
-                  (galleryProvider.favcat?.isNotEmpty ?? false))
+              if (_hasNetworkFavorite)
                 EhActionSheetAction(
                   icon: CupertinoIcons.folder,
                   systemIcon: 'folder',
@@ -246,20 +288,7 @@ class GalleryItemController extends GetxController {
                       return;
                     }
                     Get.back();
-
-                    try {
-                      final value = await _favDialogController.addFav(
-                          galleryProvider.gid!, galleryProvider.token!,
-                          oriFavcat: galleryProvider.favcat!);
-                      if (value != null) {
-                        setFavTitleAndFavcat(favTitle: '', favcat: '');
-                        setFavTitleAndFavcat(
-                            favTitle: value.favTitle, favcat: value.favId);
-                        showToast('successfully changed');
-                      }
-                    } catch (e) {
-                      showToast(favoriteMutationMessage(e));
-                    }
+                    await changeFavorite();
                   },
                   child: Text(L10n.of(context).change_to_favorites),
                 ),
@@ -272,8 +301,7 @@ class GalleryItemController extends GetxController {
                     if (galleryProvider.gid == null) {
                       return;
                     }
-                    _historyController.removeHistory(galleryProvider.gid!);
-
+                    removeFromHistory();
                     Get.back();
                   },
                   child: Text(L10n.of(context).delete),
