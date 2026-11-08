@@ -8,12 +8,14 @@ import 'package:eros_fe/pages/image_view/controller/view_controller.dart';
 import 'package:eros_fe/pages/image_view/controller/view_state.dart';
 import 'package:eros_fe/pages/image_view/reader_pagination.dart';
 import 'package:eros_fe/pages/image_view/view/reader_desktop.dart';
+import 'package:eros_fe/pages/image_view/view/view_widget.dart';
 import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 void main() {
   late _Reader reader;
@@ -194,6 +196,50 @@ void main() {
     await tester.pump();
     await wheel(60, 2000);
     expect(reader.turns, <String>['next', 'prev']);
+  });
+
+  group('thumbnails open at the page being read', () {
+    int first(int current, {int count = 50, double viewport = 400}) =>
+        ThumbnailListView.initialThumbIndex(
+          current: current,
+          count: count,
+          viewport: viewport,
+          extent: 80,
+        );
+
+    test('the current page sits in the middle of the strip', () {
+      // Five thumbnails fit: page 40 (index 39) is the third.
+      expect(first(39), 37);
+      // Near either end the strip stays full instead of showing blank space.
+      expect(first(1), 0);
+      expect(first(49), 45);
+      expect(first(3, count: 3), 0);
+      expect(first(0, count: 0), 0);
+    });
+
+    testWidgets('a strip built later starts at the current page', (
+      tester,
+    ) async {
+      await pump(tester);
+      state.currentItemIndex = 8;
+      await tester.pumpWidget(
+        const CupertinoApp(
+          home: Center(
+            child: SizedBox(width: 300, child: ThumbnailListView()),
+          ),
+        ),
+      );
+      // 300 / 68 → four thumbnails; page 9 of 10 ends the strip.
+      expect(
+        tester
+            .widget<ScrollablePositionedList>(
+              find.byType(ScrollablePositionedList),
+            )
+            .initialScrollIndex,
+        6,
+      );
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('fullscreen keys', () {

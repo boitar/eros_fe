@@ -59,6 +59,9 @@ const double kTopBarButtonHeight = 44.0;
 const double kThumbListViewHeight = 140.0;
 const double kThumbImageWidth = kThumbListViewHeight / 2 - 10;
 
+/// Space on each side of a filmstrip thumbnail.
+const double kThumbItemMargin = 4.0;
+
 const String idViewTopBar = 'ViewTopBar';
 const String idViewBottomBar = 'ViewBottomBar';
 const String idViewBar = 'ViewBar';

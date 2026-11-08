@@ -1374,6 +1374,28 @@ class ThumbnailListView extends GetView<ViewExtController> {
   static const double sidebarThumbWidth = 96;
   static const double sidebarThumbHeight = 128;
 
+  /// A sidebar row: the thumbnail, its page number and the row padding.
+  static const double sidebarItemExtent = sidebarThumbHeight + 5 + 16 + 12;
+
+  /// The first thumbnail to show so [current] sits in the middle of a
+  /// [viewport] of [extent]-sized items, but without empty space past either
+  /// end of the [count] thumbnails.
+  static int initialThumbIndex({
+    required int current,
+    required int count,
+    required double viewport,
+    required double extent,
+  }) {
+    if (count <= 0) {
+      return 0;
+    }
+    final visible = viewport.isFinite && extent > 0
+        ? math.max(1, (viewport / extent).floor())
+        : 1;
+    final leading = current - (visible - 1) ~/ 2;
+    return leading.clamp(0, math.max(0, count - visible)).toInt();
+  }
+
   GalleryPageController? get galleryPageController =>
       controller.vState.galleryPageController;
 
@@ -1390,139 +1412,153 @@ class ThumbnailListView extends GetView<ViewExtController> {
           children: [
             SizedBox(
               height: vertical ? null : kThumbListViewHeight,
-              child: ScrollablePositionedList.builder(
-                itemScrollController: vertical
-                    ? logic.thumbSidebarScrollController
-                    : logic.thumbScrollController,
-                itemPositionsListener:
-                    vertical ? null : logic.thumbPositionsListener,
-                initialScrollIndex: vertical
-                    ? math.max(0, logic.vState.currentItemIndex - 1)
-                    : 0,
-                itemCount: controller.vState.fileCount,
-                scrollDirection: axis,
-                padding: vertical
-                    ? const EdgeInsets.symmetric(vertical: 10)
-                    : null,
-                reverse: !vertical &&
-                    logic.vState.viewMode == ViewMode.rightToLeft,
-                itemBuilder: (context, index) {
-                  // 缩略图
-                  late Widget thumb;
-                  switch (logic.vState.loadFrom) {
-                    case LoadFrom.download:
-                      final path = controller.vState.imagePathList[index];
+              // The strip is built when the controls appear, long after the
+              // reader opened at its page: it starts at that page, not at 1.
+              child: LayoutBuilder(builder: (context, constraints) {
+                final extent = vertical
+                    ? sidebarItemExtent
+                    : kThumbImageWidth + 2 * kThumbItemMargin;
+                final viewport = vertical
+                    ? constraints.maxHeight
+                    : constraints.maxWidth;
+                return ScrollablePositionedList.builder(
+                  itemScrollController: vertical
+                      ? logic.thumbSidebarScrollController
+                      : logic.thumbScrollController,
+                  itemPositionsListener:
+                      vertical ? null : logic.thumbPositionsListener,
+                  initialScrollIndex: initialThumbIndex(
+                    current: logic.vState.currentItemIndex,
+                    count: logic.vState.fileCount,
+                    viewport: viewport,
+                    extent: extent,
+                  ),
+                  itemCount: controller.vState.fileCount,
+                  scrollDirection: axis,
+                  padding: vertical
+                      ? const EdgeInsets.symmetric(vertical: 10)
+                      : null,
+                  reverse: !vertical &&
+                      logic.vState.viewMode == ViewMode.rightToLeft,
+                  itemBuilder: (context, index) {
+                    // 缩略图
+                    late Widget thumb;
+                    switch (logic.vState.loadFrom) {
+                      case LoadFrom.download:
+                        final path = controller.vState.imagePathList[index];
 
-                      thumb = path.isContentUri
-                          ? ExtendedImage(
-                              image: ExtendedSafImageProvider(Uri.parse(path)),
-                              fit: BoxFit.cover,
-                              filterQuality: FilterQuality.medium,
-                            )
-                          : ExtendedImage.file(
-                              File(path),
-                              fit: BoxFit.cover,
-                              filterQuality: FilterQuality.medium,
-                            );
-                      break;
-                    case LoadFrom.gallery:
-                      thumb = FutureThumbl(itemSer: index + 1);
-                      break;
-                    case LoadFrom.archiver:
-                      final asyncFile =
-                          controller.vState.asyncArchiveFiles[index];
-                      // thumb = Container(color: Colors.white);
-                      thumb = FutureThumblArchive(
-                        gid: controller.vState.gid,
-                        asyncArchiveFile: asyncFile,
+                        thumb = path.isContentUri
+                            ? ExtendedImage(
+                                image: ExtendedSafImageProvider(Uri.parse(path)),
+                                fit: BoxFit.cover,
+                                filterQuality: FilterQuality.medium,
+                              )
+                            : ExtendedImage.file(
+                                File(path),
+                                fit: BoxFit.cover,
+                                filterQuality: FilterQuality.medium,
+                              );
+                        break;
+                      case LoadFrom.gallery:
+                        thumb = FutureThumbl(itemSer: index + 1);
+                        break;
+                      case LoadFrom.archiver:
+                        final asyncFile =
+                            controller.vState.asyncArchiveFiles[index];
+                        // thumb = Container(color: Colors.white);
+                        thumb = FutureThumblArchive(
+                          gid: controller.vState.gid,
+                          asyncArchiveFile: asyncFile,
+                        );
+                        break;
+                    }
+
+                    if (vertical) {
+                      return GestureDetector(
+                        key: ValueKey<String>('reader-sidebar-thumb-$index'),
+                        onTap: () => logic.jumpToPage(index),
+                        child: Obx(() {
+                          final state = logic.vState;
+                          // Reading the index subscribes to page changes.
+                          final current = state.currentItemIndex;
+                          final isCurrent = state.viewMode == ViewMode.topToBottom
+                              ? index == current
+                              : state.pagination
+                                  .imagesForPage(state.pageIndex)
+                                  .contains(index);
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: sidebarThumbWidth,
+                                  height: sidebarThumbHeight,
+                                  child: _buildThumb(
+                                    isCurrent,
+                                    thumb,
+                                    ring: EhPalette.accent.darkColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  '${index + 1}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: isCurrent
+                                        ? EhPalette.accent.darkColor
+                                        : const Color(0xFFA3A7AF),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
                       );
-                      break;
-                  }
-
-                  if (vertical) {
+                    }
                     return GestureDetector(
-                      key: ValueKey<String>('reader-sidebar-thumb-$index'),
                       onTap: () => logic.jumpToPage(index),
                       child: Obx(() {
-                        final state = logic.vState;
-                        // Reading the index subscribes to page changes.
-                        final current = state.currentItemIndex;
-                        final isCurrent = state.viewMode == ViewMode.topToBottom
-                            ? index == current
-                            : state.pagination
-                                .imagesForPage(state.pageIndex)
-                                .contains(index);
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
+                        final isCurrent = index == logic.vState.currentItemIndex;
+                        return Container(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: kThumbItemMargin),
+                          width: kThumbImageWidth,
                           child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                            // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              SizedBox(
-                                width: sidebarThumbWidth,
-                                height: sidebarThumbHeight,
-                                child: _buildThumb(
-                                  isCurrent,
-                                  thumb,
-                                  ring: EhPalette.accent.darkColor,
+                              Expanded(
+                                flex: (kThumbListViewHeight / 14).round(),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  // child: _buildThumb(isCurrent, thumb),
+                                  child: AnimatedCrossFade(
+                                    firstChild: _buildThumb(false, thumb),
+                                    secondChild: _buildThumb(true, thumb),
+                                    duration: 400.milliseconds,
+                                    crossFadeState: isCurrent
+                                        ? CrossFadeState.showSecond
+                                        : CrossFadeState.showFirst,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 5),
-                              Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: isCurrent
-                                      ? EhPalette.accent.darkColor
-                                      : const Color(0xFFA3A7AF),
+                              if (logic.vState.showThumbList)
+                                Expanded(
+                                  flex: 1,
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: _kBottomTextStyle,
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         );
                       }),
                     );
-                  }
-                  return GestureDetector(
-                    onTap: () => logic.jumpToPage(index),
-                    child: Obx(() {
-                      final isCurrent = index == logic.vState.currentItemIndex;
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: kThumbImageWidth,
-                        child: Column(
-                          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              flex: (kThumbListViewHeight / 14).round(),
-                              child: Container(
-                                alignment: Alignment.center,
-                                // child: _buildThumb(isCurrent, thumb),
-                                child: AnimatedCrossFade(
-                                  firstChild: _buildThumb(false, thumb),
-                                  secondChild: _buildThumb(true, thumb),
-                                  duration: 400.milliseconds,
-                                  crossFadeState: isCurrent
-                                      ? CrossFadeState.showSecond
-                                      : CrossFadeState.showFirst,
-                                ),
-                              ),
-                            ),
-                            if (logic.vState.showThumbList)
-                              Expanded(
-                                flex: 1,
-                                child: Text(
-                                  '${index + 1}',
-                                  style: _kBottomTextStyle,
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    }),
-                  );
-                },
-              ),
+                  },
+                );
+              }),
             ),
 
             // 暂时不使用。改为默认同步
