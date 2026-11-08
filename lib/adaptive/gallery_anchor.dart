@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import '../widget/desktop_card_chrome.dart';
+import 'platform_capabilities.dart';
+
 /// A gallery identity and its leading edge, not a layout-dependent pixel offset.
 class GalleryScrollAnchor {
   const GalleryScrollAnchor({
@@ -153,13 +156,18 @@ class GalleryAnchorItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scope = GalleryAnchorScope.maybeOf(context);
+    // Every list mode places its cards here, so desktop hover and the
+    // detail-pane selection ring are added once for all of them.
+    final card = PlatformCapabilities.isDesktop
+        ? DesktopCardChrome(gid: id, child: child)
+        : child;
     return scope == null
-        ? child
+        ? card
         : _GalleryAnchorMarker(
             controller: scope.controller,
             id: id,
             index: index,
-            child: child,
+            child: card,
           );
   }
 }

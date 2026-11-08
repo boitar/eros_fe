@@ -7,12 +7,15 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/android_navigation_rail.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
+import 'package:eros_fe/widget/desktop_sidebar.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'home_page_large.dart';
@@ -75,6 +78,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     _navigation.addListener(_publishNativeNavigationState);
     NativeNavigationBridge.chromeRevision
         .addListener(_publishNativeNavigationState);
+    HardwareKeyboard.instance.addHandler(_handleDesktopShortcut);
   }
 
   @override
@@ -115,7 +119,84 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
         .removeListener(_publishNativeNavigationState);
     controller.resetTabTapSequence();
     _barMotion.dispose();
+    HardwareKeyboard.instance.removeHandler(_handleDesktopShortcut);
     super.dispose();
+  }
+
+  /// Whether the last build showed the desktop sidebar, whose search field
+  /// answers ⌘F / Ctrl+F.
+  bool _sidebarShown = false;
+
+  bool _handleDesktopShortcut(KeyEvent event) {
+    if (!_sidebarShown || event is! KeyDownEvent || !mounted) {
+      return false;
+    }
+    if (!DesktopSidebar.searchShortcut
+        .accepts(event, HardwareKeyboard.instance)) {
+      return false;
+    }
+    _openSearch();
+    return true;
+  }
+
+  void _openSearch() {
+    final bool isFavorite = controller.currRoute == EHRoutes.favorite ||
+        controller.currRoute == EHRoutes.favoriteTabbar;
+    NavigatorUtil.goSearchPage(
+      searchType: isFavorite ? SearchType.favorite : SearchType.normal,
+      fromTabItem: controller.tabMap[controller.currRoute] ?? false,
+    );
+  }
+
+  Widget _buildDesktopSidebar(BuildContext context, CupertinoTabBar tabBar,
+      {required bool glass}) {
+    final l10n = L10n.of(context);
+    void selectTab(int index) {
+      vibrateUtil.tabSwitch();
+      tabBar.onTap?.call(index);
+    }
+
+    Widget sidebar(
+            List<DesktopSidebarGroup> groups, ValueChanged<int>? onGroupTap) =>
+        DesktopSidebar(
+          routes: controller.visibleTabRoutes,
+          items: tabBar.items,
+          currentIndex: tabBar.currentIndex,
+          onTap: selectTab,
+          glass: glass,
+          searchLabel: l10n.search,
+          onSearch: _openSearch,
+          browseLabel: l10n.setting_group_browse,
+          libraryLabel: l10n.sidebar_library,
+          groupsLabel: l10n.group,
+          groups: groups,
+          onGroupTap: onGroupTap,
+        );
+    if (!Get.isRegistered<CustomTabbarController>()) {
+      return sidebar(const <DesktopSidebarGroup>[], null);
+    }
+    final groups = Get.find<CustomTabbarController>();
+    return Obx(() {
+      final onGallery = controller.currRoute == EHRoutes.gallery;
+      final profiles = groups.profilesShow;
+      return sidebar(
+        <DesktopSidebarGroup>[
+          for (var index = 0; index < profiles.length; index++)
+            DesktopSidebarGroup(
+              title: profiles[index].name,
+              selected: onGallery && index == groups.index,
+            ),
+        ],
+        (index) {
+          final gallery =
+              controller.visibleTabRoutes.indexOf(EHRoutes.gallery);
+          if (!onGallery && gallery >= 0) {
+            selectTab(gallery);
+          }
+          groups.selectPage(index);
+        },
+      );
+    });
   }
 
   void _handleTabTap(int index, {required bool useLiquidGlass}) {
@@ -276,15 +357,23 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     final media = MediaQuery.of(context);
     final source = AdaptiveEnvironment.maybeOf(context) ??
         AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
-    final railMode = !nativeShellEnabled &&
+    final androidRail = !nativeShellEnabled &&
         usesAndroidNavigationRail(split: widget.split, environment: source);
+    final sidebarMode = !nativeShellEnabled &&
+        !androidRail &&
+        usesDesktopSidebar(environment: source);
+    _sidebarShown = sidebarMode;
+    // Either takes the destinations off the bottom edge to the left.
+    final railMode = androidRail || sidebarMode;
     final glassRail = tabBar is LiquidGlassTabBar;
-    final railWidth = railMode
-        ? AndroidNavigationRail.reservedWidth(
-            glass: glassRail,
-            leftInset: media.padding.left,
-          )
-        : 0.0;
+    final railWidth = sidebarMode
+        ? DesktopSidebar.reservedWidth(glass: glassRail)
+        : railMode
+            ? AndroidNavigationRail.reservedWidth(
+                glass: glassRail,
+                leftInset: media.padding.left,
+              )
+            : 0.0;
     final barHidden =
         !nativeShellEnabled && !railMode && _hidesBarForPushedPage;
     final barHeight = nativeShellEnabled || barHidden || railMode
@@ -331,7 +420,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
               snapshot: environment,
               child: MediaQuery(
                 data: contentMedia.copyWith(size: rect.size),
-                child: Stack(
+                child: DesktopSidebarScope(
+                  visible: sidebarMode,
+                  child: Stack(
                   fit: StackFit.expand,
                   children: [
                     for (final entry in _tabRoots.entries)
@@ -348,10 +439,19 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
                       ),
                   ],
                 ),
+                ),
               ),
             ),
           ),
-          if (railMode)
+          if (sidebarMode)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: railWidth,
+              child: _buildDesktopSidebar(context, tabBar, glass: glassRail),
+            )
+          else if (railMode)
             Positioned(
               left: 0,
               top: 0,

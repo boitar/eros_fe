@@ -5245,6 +5245,16 @@ class L10n {
     );
   }
 
+  /// `Library`
+  String get sidebar_library {
+    return Intl.message(
+      'Library',
+      name: 'sidebar_library',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Browsing`
   String get setting_group_browse {
     return Intl.message(

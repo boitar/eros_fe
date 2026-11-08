@@ -17,6 +17,7 @@ import 'package:eros_fe/pages/tab/view/top_bar_layout_reset.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/android_solid_top_bar.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
+import 'package:eros_fe/widget/desktop_sidebar.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
@@ -246,7 +247,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
             ? layout.safeTop +
                 _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
                   MediaQuery.textScalerOf(context),
-                  hasCategories: controller.profilesShow.isNotEmpty,
+                  hasCategories: _showsGroupChips(context),
                 )
             : topInset + kHeaderMaxHeight;
     final dockTopBar =
@@ -347,7 +348,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
           child: LiquidGlassSafeAreaBase(
             safeTop: layout.safeTop,
             layout: _ehSettingService.liquidGlassTopBarLayout,
-            hasCategories: controller.profilesShow.isNotEmpty,
+            hasCategories: _showsGroupChips(context),
           ),
         ),
         scrollView,
@@ -373,7 +374,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
           child: LiquidGlassTopScrim(
             safeTop: layout.safeTop,
             layout: _ehSettingService.liquidGlassTopBarLayout,
-            hasCategories: controller.profilesShow.isNotEmpty,
+            hasCategories: _showsGroupChips(context),
           ),
         ),
         Positioned(
@@ -439,6 +440,11 @@ class _CustomTabbarListState extends State<CustomTabbarList>
       },
     );
   }
+
+  /// Beside the desktop sidebar, which lists the groups, the top bar names
+  /// the current group instead of repeating them as chips.
+  bool _showsGroupChips(BuildContext context) =>
+      controller.profilesShow.isNotEmpty && !DesktopSidebarScope.of(context);
 
   Widget _buildSliverTopBar(
     BuildContext context,
@@ -516,11 +522,16 @@ class _CustomTabbarListState extends State<CustomTabbarList>
     LiquidGlassTopLayout layout,
     double fadeProgress,
   ) {
+    final chips = !DesktopSidebarScope.of(context);
     return Obx(
       () => LiquidGlassRail(
         layout: _ehSettingService.liquidGlassTopBarLayout,
         pageController: controller.pageController,
-        title: L10n.of(context).tab_gallery,
+        title: chips || controller.profilesShow.isEmpty
+            ? L10n.of(context).tab_gallery
+            : controller.profilesShow[controller.index
+                    .clamp(0, controller.profilesShow.length - 1)]
+                .name,
         safeTop: layout.safeTop,
         fadeProgress: fadeProgress,
         selectedIndex: controller.index,
@@ -541,7 +552,10 @@ class _CustomTabbarListState extends State<CustomTabbarList>
             onPressed: controller.pressedBar,
           ),
         ],
-        categories: controller.profilesShow
+        showsTitle: !chips,
+        categories: !chips
+            ? const <LiquidGlassRailCategory>[]
+            : controller.profilesShow
             .map(
               (profile) => LiquidGlassRailCategory(
                 id: profile.uuid,

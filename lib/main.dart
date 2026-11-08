@@ -96,7 +96,8 @@ Future<void> main() async {
     doWhenWindowReady(() {
       const minSize = Size(400, 400);
       appWindow.minSize = minSize;
-      // appWindow.size = initialSize;
+      // Wide enough for the sidebar, the list and a detail pane.
+      appWindow.size = const Size(1280, 820);
       appWindow.alignment = Alignment.center;
       appWindow.title = L10n.current.app_title;
       appWindow.show();

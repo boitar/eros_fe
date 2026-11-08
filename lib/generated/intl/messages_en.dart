@@ -795,6 +795,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "copy_title": MessageLookupByLibrary.simpleMessage("Copy Title"),
         "appearance_and_layout": MessageLookupByLibrary.simpleMessage("Appearance & Layout"),
         "setting_site": MessageLookupByLibrary.simpleMessage("Site"),
+        "sidebar_library": MessageLookupByLibrary.simpleMessage("Library"),
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("Browsing"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("Content"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("System"),

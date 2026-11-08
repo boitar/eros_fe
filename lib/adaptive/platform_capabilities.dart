@@ -59,6 +59,10 @@ abstract final class PlatformCapabilities {
     _ => false,
   };
 
+  static bool get isDesktop =>
+      hostPlatform == TargetPlatform.macOS ||
+      hostPlatform == TargetPlatform.windows;
+
   /// Android puts search in a capsule at the top of list pages instead of a
   /// separate button beside the bottom bar, leaving the bar five destinations.
   static bool get topSearchCapsule => hostPlatform == TargetPlatform.android;

@@ -81,9 +81,15 @@ class LiquidGlassRail extends StatefulWidget {
     this.pageController,
     this.compactCategories = false,
     this.search,
+    this.showsTitle = false,
   });
 
   static const double controlSize = 44.0;
+
+  /// Without categories, draws [title] in the first row between [leading]
+  /// and the right-hand buttons, as the desktop list header beside the
+  /// sidebar does. Tapping it calls [onTitleTap].
+  final bool showsTitle;
 
   /// In the two-row layout with categories it fills the first row between
   /// [leading] and [trailing]; [categoryTrailing] then moves down to sit
@@ -245,6 +251,37 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             width: LiquidGlassRail.controlSize,
             height: LiquidGlassRail.controlSize,
             child: _actionButton(widget.leading!, opacity: fadeOpacity),
+          ),
+        if (shownCategories.isEmpty && widget.showsTitle)
+          Positioned(
+            left: widget.leading == null ? 16.0 : leftInset + 4.0,
+            right: rightInset,
+            top: widget.safeTop,
+            height: LiquidGlassRail.controlSize,
+            child: Opacity(
+              opacity: fadeOpacity,
+              child: Semantics(
+                header: true,
+                button: widget.onTitleTap != null,
+                child: GestureDetector(
+                  key: const ValueKey<String>('liquid-glass-rail-title'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onTitleTap,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: CupertinoTheme.of(context)
+                          .textTheme
+                          .navLargeTitleTextStyle
+                          .copyWith(fontSize: 22, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         if (shownCategories.isNotEmpty)
           Positioned(

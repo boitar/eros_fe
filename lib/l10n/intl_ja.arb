@@ -547,5 +547,6 @@
   "portrait": "縦向き",
   "column_count": "{count} 列",
   "column_range": "{min}〜{max} 列",
-  "split_follows_divider": "分割・仕切りで変化"
+  "split_follows_divider": "分割・仕切りで変化",
+  "sidebar_library": "ライブラリ"
 }

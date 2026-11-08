@@ -747,6 +747,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "copy_title": MessageLookupByLibrary.simpleMessage("제목 복사"),
         "appearance_and_layout": MessageLookupByLibrary.simpleMessage("모양 및 레이아웃"),
         "setting_site": MessageLookupByLibrary.simpleMessage("사이트"),
+        "sidebar_library": MessageLookupByLibrary.simpleMessage("보관함"),
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("탐색"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("콘텐츠"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("시스템"),

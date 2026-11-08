@@ -547,5 +547,6 @@
   "portrait": "竖屏",
   "column_count": "{count} 列",
   "column_range": "{min}–{max} 列",
-  "split_follows_divider": "分栏随分割条"
+  "split_follows_divider": "分栏随分割条",
+  "sidebar_library": "资料库"
 }

@@ -547,5 +547,6 @@
   "portrait": "Portrait",
   "column_count": "{count} columns",
   "column_range": "{min}–{max} columns",
-  "split_follows_divider": "Split, set by divider"
+  "split_follows_divider": "Split, set by divider",
+  "sidebar_library": "Library"
 }

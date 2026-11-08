@@ -132,7 +132,7 @@ void main() {
     }
   });
   testWidgets(
-    'native settings decoration preserves Flutter actions and off removes it',
+    'native settings bar keeps its actions without a full-width AppKit slab',
     (tester) async {
       PlatformCapabilities.appKitAvailable.value = true;
       final channels = <String>[];
@@ -180,9 +180,16 @@ void main() {
       );
       await tester.pumpWidget(page(true));
       await tester.pump();
-      expect(find.byType(AppKitView), findsOneWidget);
-      expect(created, ['eros/appkit-glass-view']);
-      expect(find.byType(FlutterGlassPanel), findsNothing);
+      // Like Android and Windows, macOS keeps only the soft scroll edge: a
+      // full-width glass slab read as a stray mask band over the page.
+      final slab = find.byWidgetPredicate(
+        (widget) => widget is AppKitGlassView && widget.kind == 'surface',
+      );
+      expect(slab, findsNothing);
+      // The action keeps its own small capsule of glass.
+      final capsule = find.byType(FlutterGlassPanel);
+      expect(capsule, findsOneWidget);
+      expect(tester.getSize(capsule).width, lessThan(200));
       await tester.tap(find.text('Done'));
       expect(actions, 1);
       expect(find.byType(UiKitView), findsNothing);

@@ -279,6 +279,14 @@ class SettingGlassBar extends StatelessWidget
         NativeGlassBackend.appKit,
       },
     );
+    if (mode != GlassMode.off &&
+        PlatformCapabilities.hostPlatform != TargetPlatform.iOS) {
+      // Android, macOS and Windows keep only the soft scroll edge: a
+      // full-width glass slab reads as a stray mask band and smears the
+      // large title under it. The back button and actions stay on their own
+      // glass.
+      return child;
+    }
     if (mode == GlassMode.native && PlatformCapabilities.appKitGlass) {
       return Stack(
         children: [
@@ -304,13 +312,6 @@ class SettingGlassBar extends StatelessWidget
           GlassPreference(enabled: false, child: child),
         ],
       );
-    }
-    if (mode == GlassMode.flutter &&
-        PlatformCapabilities.hostPlatform == TargetPlatform.android) {
-      // Android keeps only the soft scroll edge: a full-width glass slab
-      // reads as a stray mask band and smears the large title under it.
-      // The back button and actions stay on their own glass.
-      return child;
     }
     if (mode == GlassMode.flutter) {
       // A page at rest shows no bar; the glass fades in once content scrolls

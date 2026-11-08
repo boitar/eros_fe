@@ -652,6 +652,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "copy_title": MessageLookupByLibrary.simpleMessage("複製標題"),
         "appearance_and_layout": MessageLookupByLibrary.simpleMessage("外觀與版面"),
         "setting_site": MessageLookupByLibrary.simpleMessage("站點"),
+        "sidebar_library": MessageLookupByLibrary.simpleMessage("資料庫"),
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("瀏覽"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("內容"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("系統"),

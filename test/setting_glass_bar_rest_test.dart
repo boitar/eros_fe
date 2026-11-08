@@ -17,44 +17,27 @@ Widget _bar({required bool edgeVisible}) => GlassPreference(
       ),
     );
 
-double _surfaceOpacity(WidgetTester tester) => tester
-    .widget<AnimatedOpacity>(
-        find.byKey(const ValueKey('setting-glass-bar-surface')))
-    .opacity;
-
 void main() {
   tearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
 
   for (final host in [
+    TargetPlatform.android,
     TargetPlatform.macOS,
     TargetPlatform.windows,
   ]) {
-    testWidgets('$host Flutter glass bar shows no surface at rest',
+    testWidgets('$host shows only the soft edge, never a glass slab',
         (tester) async {
       PlatformCapabilities.debugHostPlatformOverride = host;
-      await tester.pumpWidget(_bar(edgeVisible: false));
-      await tester.pumpAndSettle();
-      expect(_surfaceOpacity(tester), 0);
-
-      await tester.pumpWidget(_bar(edgeVisible: true));
-      await tester.pumpAndSettle();
-      expect(_surfaceOpacity(tester), 1);
+      for (final scrolled in [false, true]) {
+        await tester.pumpWidget(_bar(edgeVisible: scrolled));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('setting-glass-bar-surface')),
+            findsNothing);
+        expect(find.text('Settings'), findsOneWidget);
+      }
       expect(tester.takeException(), isNull);
     });
   }
-
-  testWidgets('Android shows only the soft edge, never a glass slab',
-      (tester) async {
-    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
-    for (final scrolled in [false, true]) {
-      await tester.pumpWidget(_bar(edgeVisible: scrolled));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('setting-glass-bar-surface')),
-          findsNothing);
-      expect(find.text('Settings'), findsOneWidget);
-    }
-    expect(tester.takeException(), isNull);
-  });
 
   testWidgets('iOS keeps its own bar treatment', (tester) async {
     PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;

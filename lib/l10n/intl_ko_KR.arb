@@ -547,5 +547,6 @@
   "portrait": "세로",
   "column_count": "{count}열",
   "column_range": "{min}–{max}열",
-  "split_follows_divider": "분할 · 구분선에 따름"
+  "split_follows_divider": "분할 · 구분선에 따름",
+  "sidebar_library": "보관함"
 }

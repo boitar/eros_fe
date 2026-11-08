@@ -547,5 +547,6 @@
   "portrait": "豎屏",
   "column_count": "{count} 欄",
   "column_range": "{min}–{max} 欄",
-  "split_follows_divider": "分欄隨分隔線"
+  "split_follows_divider": "分欄隨分隔線",
+  "sidebar_library": "資料庫"
 }
