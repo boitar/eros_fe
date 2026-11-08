@@ -11,6 +11,7 @@ import 'package:eros_fe/pages/tab/view/tabbar/favorite_tabbar_page.dart';
 import 'package:eros_fe/pages/tab/view/toplist_page.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
@@ -486,17 +487,55 @@ class TabHomeController extends GetxController {
     logger.t('click back');
     if (lastPressedAt == null ||
         DateTime.now().difference(lastPressedAt ?? DateTime.now()) >
-            const Duration(seconds: 1)) {
-      showToast(L10n.of(tContext).double_click_back);
-      //两次点击间隔超过1秒则重新计时
+            const Duration(seconds: 2)) {
+      showExitHint();
+      //两次点击间隔超过2秒则重新计时
       lastPressedAt = DateTime.now();
       return false;
     }
+    lastPressedAt = null;
     return true;
   }
 
-  Future<bool> onWillPop() async {
-    return await popLogicalRoute() ? false : await doubleClickBack();
+  /// Tells the user that one more back leaves the app.
+  void showExitHint() => showToast(L10n.of(tContext).double_click_back);
+
+  /// The tab a back gesture returns to before the app may exit.
+  String get homeRoute =>
+      _showTabs.contains(EHRoutes.gallery) ? EHRoutes.gallery : _showTabs.first;
+
+  /// Selects the gallery tab when another tab is showing its root.
+  Future<bool> returnToHomeTab() async {
+    final index = _showTabs.indexOf(homeRoute);
+    if (currRoute == homeRoute || index < 0) {
+      return false;
+    }
+    lastPressedAt = null;
+    await onTap(index, useLiquidGlass: _useLiquidGlass ?? false);
+    return true;
+  }
+
+  /// One back step: a pushed page closes first, then another tab returns to
+  /// the gallery, and only there do two backs in a row leave the app.
+  ///
+  /// The home route never lets the system pop it. With Android's predictive
+  /// back (the default for apps targeting API 36 on Android 16) the system
+  /// would otherwise finish the activity as soon as no navigator can pop,
+  /// without asking Flutter first.
+  Future<bool> handleBack() async {
+    if (await popLogicalRoute() || await returnToHomeTab()) {
+      return false;
+    }
+    return doubleClickBack();
+  }
+
+  Future<void> onPopInvokedWithResult(bool didPop, Object? _) async {
+    if (didPop) {
+      return;
+    }
+    if (await handleBack()) {
+      await SystemNavigator.pop();
+    }
   }
 
   Future<bool> popLogicalRoute() async {
@@ -516,7 +555,4 @@ class TabHomeController extends GetxController {
     return false;
   }
 
-  Future<void> onPopInvoked(bool didPop) async {
-    logger.d('onPopInvoked $didPop');
-  }
 }

@@ -10,6 +10,7 @@ import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/view/hidden_tabs_rail_action.dart';
+import 'package:eros_fe/pages/tab/view/top_bar_layout_reset.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
@@ -32,7 +33,16 @@ class FavoriteTabTabBarPage extends StatefulWidget {
   State<FavoriteTabTabBarPage> createState() => _FavoriteTabTabBarPageState();
 }
 
-class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage> {
+class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
+    with TopBarLayoutReset<FavoriteTabTabBarPage> {
+  @override
+  void resetForTopBarLayout() {
+    for (final sub in controller.subControllerMap.values) {
+      sub.galleryAnchor.forget();
+    }
+    _topState.jumpToInitialAnchor();
+  }
+
   final EhTabController ehTabController = EhTabController();
   final LinkScrollBarController linkScrollBarController =
       LinkScrollBarController();

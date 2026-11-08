@@ -7,6 +7,7 @@ import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/controller/toplist_controller.dart';
 import 'package:eros_fe/pages/tab/view/hidden_tabs_rail_action.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
+import 'package:eros_fe/pages/tab/view/top_bar_layout_reset.dart';
 import 'package:eros_fe/utils/cust_lib/persistent_header_builder.dart';
 import 'package:eros_fe/utils/cust_lib/sliver/sliver_persistent_header.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
@@ -30,7 +31,14 @@ class ToplistTab extends StatefulWidget {
   _ToplistTabState createState() => _ToplistTabState();
 }
 
-class _ToplistTabState extends State<ToplistTab> {
+class _ToplistTabState extends State<ToplistTab>
+    with TopBarLayoutReset<ToplistTab> {
+  @override
+  void resetForTopBarLayout() {
+    controller.galleryAnchor.forget();
+    _topState.jumpToInitialAnchor();
+  }
+
   final controller = Get.find<TopListViewController>();
   final EhTabController ehTabController = EhTabController();
   final EhSettingService _ehSettingService = Get.find();
@@ -207,6 +215,13 @@ class _ToplistTabState extends State<ToplistTab> {
         ],
         onTitleTap: _scrollToInitialContentAnchor,
         refreshing: controller.isBackgroundRefresh,
+        // Android has no search button in the tab bar.
+        search: PlatformCapabilities.topSearchCapsule
+            ? LiquidGlassRailSearch(
+                label: L10n.of(context).search,
+                onTap: NavigatorUtil.goSearchPage,
+              )
+            : null,
       ),
     );
   }

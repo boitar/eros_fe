@@ -68,7 +68,17 @@ class SettingTab extends GetView<SettingViewController> {
                   SliverSafeArea(
                     bottom: false,
                     sliver: SliverToBoxAdapter(
-                      child: SettingLargeTitle(title),
+                      // Android fades the large title out as the bar's own
+                      // title appears, so no blurred copy lingers under it.
+                      child: _androidGroups
+                          ? AnimatedOpacity(
+                              key: const ValueKey<String>(
+                                  'setting-large-title-fade'),
+                              opacity: controller.titleInBar.value ? 0 : 1,
+                              duration: const Duration(milliseconds: 180),
+                              child: SettingLargeTitle(title),
+                            )
+                          : SettingLargeTitle(title),
                     ),
                   )
                 else

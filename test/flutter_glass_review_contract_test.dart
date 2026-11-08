@@ -63,8 +63,12 @@ void main() {
         expect(SettingGlassBar.isActive, enabled);
         expect(find.byType(SettingGlassBar),
             enabled ? findsOneWidget : findsNothing);
-        expect(find.byType(GlassContainer),
-            enabled ? findsOneWidget : findsNothing);
+        // Android's bar is only the soft scroll edge: no glass slab.
+        expect(
+            find.byType(GlassContainer),
+            enabled && host != TargetPlatform.android
+                ? findsOneWidget
+                : findsNothing);
         expect(find.byType(CupertinoNavigationBar),
             enabled ? findsNothing : findsOneWidget);
         expect(find.byType(UiKitView), findsNothing);

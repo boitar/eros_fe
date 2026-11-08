@@ -36,6 +36,10 @@ class GalleryAnchorRestoration {
 class GalleryAnchorController {
   GalleryScrollAnchor? get anchor => _anchor;
   GalleryScrollAnchor? _anchor;
+
+  /// Drops the remembered gallery after the page jumps back to its start, so
+  /// the next layout change cannot restore the position it left.
+  void forget() => _anchor = null;
   final _items = <_RenderGalleryAnchorItem>{};
 }
 
@@ -77,9 +81,12 @@ class _AnchoredGallerySliverState extends State<AnchoredGallerySliver> {
             MediaQuery.textScalerOf(context),
           );
           final anchor = _controller.anchor;
-          if (_layout != null &&
+          if (anchor == null) {
+            // Forgotten after a jump back to the start: drop the last
+            // restoration too, or a rebuilt list would replay its index.
+            _restoration = null;
+          } else if (_layout != null &&
               layout != _layout &&
-              anchor != null &&
               widget.itemIds.isNotEmpty) {
             final found = widget.itemIds.indexOf(anchor.id);
             final index = found >= 0

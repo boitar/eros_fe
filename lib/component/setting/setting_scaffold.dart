@@ -305,6 +305,13 @@ class SettingGlassBar extends StatelessWidget
         ],
       );
     }
+    if (mode == GlassMode.flutter &&
+        PlatformCapabilities.hostPlatform == TargetPlatform.android) {
+      // Android keeps only the soft scroll edge: a full-width glass slab
+      // reads as a stray mask band and smears the large title under it.
+      // The back button and actions stay on their own glass.
+      return child;
+    }
     if (mode == GlassMode.flutter) {
       // A page at rest shows no bar; the glass fades in once content scrolls
       // under it, like the soft edge above.

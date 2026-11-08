@@ -112,6 +112,16 @@ class LiquidGlassInitialContentAnchor extends ValueNotifier<bool> {
     }
   }
 
+  /// Jumps the outer/nested coordinator to its initial logical position. A
+  /// nested coordinator also returns its inner positions to their start.
+  void jumpToInitialAnchor() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    _scrollController.jumpTo(_scrollController.position.minScrollExtent);
+    refresh();
+  }
+
   /// Scrolls the outer/nested coordinator to its initial logical position.
   /// With ExtendedNestedScrollView this also returns its active inner position
   /// to the beginning while restoring the expanded header spacer.
@@ -349,6 +359,19 @@ class LiquidGlassTopStateCoordinator {
         _pushBarProgress(0.0);
       }
     }
+  }
+
+  /// Starts the page over at its initial anchor without animation, for a top
+  /// bar that changed height: proportionally corrected offsets would leave
+  /// the outer header and the inner list out of step.
+  void jumpToInitialAnchor() {
+    _anchor.jumpToInitialAnchor();
+    _lastScrollDistance = null;
+    _directionFade = 0.0;
+    _pendingReverseDistance = 0.0;
+    _fadeDirection = 0;
+    refresh();
+    _pushBarProgress(0.0);
   }
 
   List<ScrollPosition> _currentPositions() => <ScrollPosition>{

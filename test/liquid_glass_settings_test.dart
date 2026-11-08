@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -133,7 +134,17 @@ void main() {
         final settings = EhSettingService()..initLiquidGlassPreference();
         expect(settings.liquidGlass, saved ?? expectedDefault,
             reason: '$platform, saved=$saved');
+        // The iOS 27.1 native shell draws its bars from the same preference.
+        expect(NativeNavigationBridge.barMaterial.value,
+            settings.liquidGlass ? NativeBarMaterial.glass : NativeBarMaterial.opaque);
         settings.liquidGlass = !settings.liquidGlass;
+        expect(NativeNavigationBridge.barMaterial.value,
+            settings.liquidGlass ? NativeBarMaterial.glass : NativeBarMaterial.opaque);
+        if (settings.liquidGlass) {
+          settings.liquidGlassFollowSystemTransparency = false;
+          expect(NativeNavigationBridge.barMaterial.value, NativeBarMaterial.blur);
+          settings.liquidGlassFollowSystemTransparency = true;
+        }
         expect(Global.profile.ehConfig.liquidGlass, settings.liquidGlass);
         expect(hiveHelper.profile.ehConfig.liquidGlass, settings.liquidGlass);
         final restored = hiveHelper.profile;

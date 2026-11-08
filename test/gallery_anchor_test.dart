@@ -37,6 +37,30 @@ void main() {
     }
   });
 
+  testWidgets('a forgotten gallery stays at the start the page jumped to',
+      (tester) async {
+    final fixture = await _mount(tester);
+    fixture.scroll.jumpTo(1347);
+    await tester.pumpAndSettle();
+    expect(fixture.anchor.anchor!.index, greaterThan(10));
+
+    // A jump to the start followed by a resize in the same frame restores
+    // the gallery remembered before the jump.
+    fixture.scroll.jumpTo(0);
+    tester.view.physicalSize = const Size(900, 1200);
+    await tester.pumpAndSettle();
+    expect(fixture.scroll.offset, greaterThan(0));
+
+    fixture.scroll.jumpTo(0);
+    fixture.anchor.forget();
+    tester.view.physicalSize = const Size(390, 700);
+    await tester.pumpAndSettle();
+    expect(fixture.scroll.offset, 0);
+    expect(fixture.anchor.anchor!.index, 0);
+    expect(fixture.anchor.anchor!.atStart, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('user scrolling replaces a restored grid-row identity',
       (tester) async {
     final fixture = await _mount(tester);

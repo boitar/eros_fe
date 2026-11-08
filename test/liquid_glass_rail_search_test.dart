@@ -129,17 +129,31 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('inline layout and empty categories ignore the search capsule',
+  testWidgets('without the search row, search is a round button on the right',
       (tester) async {
-    final search = LiquidGlassRailSearch(label: 'Search', onTap: () {});
-    await tester.pumpWidget(
-        _rail(search: search, layout: LiquidGlassTopBarLayout.inline));
-    expect(find.byKey(const ValueKey('liquid-glass-rail-search')),
-        findsNothing);
-
-    await tester.pumpWidget(_rail(search: search, categories: 0));
-    expect(find.byKey(const ValueKey('liquid-glass-rail-search')),
-        findsNothing);
+    var searches = 0;
+    final handle = tester.ensureSemantics();
+    final search =
+        LiquidGlassRailSearch(label: 'Search', onTap: () => searches++);
+    for (final rail in <Widget>[
+      _rail(search: search, layout: LiquidGlassTopBarLayout.inline),
+      _rail(search: search, categories: 0),
+    ]) {
+      await tester.pumpWidget(rail);
+      expect(find.byKey(const ValueKey('liquid-glass-rail-search')),
+          findsNothing);
+      final button = _rectOfLabel(tester, 'Search');
+      expect(button.top, _safeTop);
+      expect(button.height, LiquidGlassRail.controlSize);
+      // It leads the right-hand buttons and stays clear of them.
+      expect(button.right,
+          lessThanOrEqualTo(_rectOfLabel(tester, 'Groups').left));
+      await tester.tap(find.bySemanticsLabel('Search').first);
+      await tester.pump();
+    }
+    expect(searches, 2);
+    expect(tester.takeException(), isNull);
+    handle.dispose();
   });
 
   test('only Android moves search into the top capsule', () {

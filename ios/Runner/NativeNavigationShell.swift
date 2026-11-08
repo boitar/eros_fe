@@ -88,6 +88,17 @@ final class ErosNativeNavigationShell: UITabBarController,
     private var lastState: [String: Any] = [:]
     private var applyingState = false
     private var lastBarCollapsed = false
+    /// "glass" keeps the system bars; "blur" (system Liquid Glass appearance
+    /// off) and "opaque" (Liquid Glass style off) replace their background.
+    /// The system defaults are kept to restore the glass.
+    private var barMaterial = "glass"
+    private var barsStyled = Set<ObjectIdentifier>()
+    private var styledMaterial: [ObjectIdentifier: String] = [:]
+    private lazy var systemTabAppearance =
+        tabBar.standardAppearance.copy() as! UITabBarAppearance
+    private var systemBarAppearances:
+        [ObjectIdentifier: (UINavigationBarAppearance, UINavigationBarAppearance?,
+                            UIToolbarAppearance, UIToolbarAppearance?)] = [:]
 
     init(flutterViewController: FlutterViewController) {
         self.flutterViewController = flutterViewController
@@ -177,7 +188,82 @@ final class ErosNativeNavigationShell: UITabBarController,
         navigationControllers = navigationControllers.filter {
             newRoutes.contains($0.key)
         }
+        applyBarBackground(state["barMaterial"] as? String ?? "glass")
         updateNavigationChrome(state)
+    }
+
+    private func configure(_ appearance: UIBarAppearance, _ material: String) {
+        if material == "opaque" {
+            appearance.configureWithOpaqueBackground()
+        } else {
+            appearance.configureWithDefaultBackground()
+            appearance.backgroundEffect = UIBlurEffect(style: .systemThickMaterial)
+        }
+    }
+
+    private func applyBarBackground(_ material: String) {
+        guard material != barMaterial else { return }
+        _ = systemTabAppearance
+        barMaterial = material
+        if material == "glass" {
+            tabBar.standardAppearance = systemTabAppearance
+            tabBar.scrollEdgeAppearance = nil
+        } else {
+            let appearance = UITabBarAppearance()
+            configure(appearance, material)
+            tabBar.standardAppearance = appearance
+            tabBar.scrollEdgeAppearance = appearance
+        }
+    }
+
+    /// Only a horizontal bar that shows the page's own title or back button
+    /// takes the material. Beside the vertical bar its items have moved away
+    /// and the band left behind keeps the system look: drawn solid it would
+    /// read as a stray strip over the page.
+    private func styleBars(_ navigation: UINavigationController, plain: Bool) {
+        let id = ObjectIdentifier(navigation)
+        let bar = navigation.navigationBar
+        let toolbar = navigation.toolbar!
+        if systemBarAppearances[id] == nil {
+            systemBarAppearances[id] = (
+                bar.standardAppearance, bar.scrollEdgeAppearance,
+                toolbar.standardAppearance, toolbar.scrollEdgeAppearance
+            )
+        }
+        let styled = !plain && barMaterial != "glass"
+        guard styled != barsStyled.contains(id) || (styled && !barsStyledMaterial(id)) else {
+            return
+        }
+        if styled {
+            barsStyled.insert(id)
+            styledMaterial[id] = barMaterial
+            let appearance = UINavigationBarAppearance()
+            configure(appearance, barMaterial)
+            bar.standardAppearance = appearance
+            bar.scrollEdgeAppearance = appearance
+            bar.compactAppearance = appearance
+            let toolbarAppearance = UIToolbarAppearance()
+            configure(toolbarAppearance, barMaterial)
+            toolbar.standardAppearance = toolbarAppearance
+            toolbar.scrollEdgeAppearance = toolbarAppearance
+        } else {
+            barsStyled.remove(id)
+            styledMaterial[id] = nil
+            let system = systemBarAppearances[id]!
+            bar.standardAppearance = system.0
+            bar.scrollEdgeAppearance = system.1
+            bar.compactAppearance = nil
+            toolbar.standardAppearance = system.2
+            toolbar.scrollEdgeAppearance = system.3
+        }
+        let live = Set(navigationControllers.values.map(ObjectIdentifier.init))
+        systemBarAppearances = systemBarAppearances.filter { live.contains($0.key) }
+        styledMaterial = styledMaterial.filter { live.contains($0.key) }
+        barsStyled.formIntersection(live)
+    }
+
+    private func barsStyledMaterial(_ id: ObjectIdentifier) -> Bool {
+        styledMaterial[id] == barMaterial
     }
 
     private func moveFlutter(to host: NativeTabHostController) {
@@ -214,6 +300,7 @@ final class ErosNativeNavigationShell: UITabBarController,
         let hidden = ownBar
             ? !usesVerticalBar
             : !(state["navigationBarVisible"] as? Bool ?? false) || collapsed
+        styleBars(navigation, plain: usesVerticalBar || ownBar || hidden)
         // Items moving in and out of the vertical bar fade like the system's;
         // the horizontal bar fades as a whole below.
         let fadesItems = usesVerticalBar && !barWasHidden && !hidden

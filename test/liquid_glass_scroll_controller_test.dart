@@ -310,6 +310,81 @@ void main() {
     });
   });
 
+  testWidgets(
+      'a shorter top bar starts the scrolled page over, still scrollable', (
+    WidgetTester tester,
+  ) async {
+    final outer = LiquidGlassScrollController();
+    final nestedKey = GlobalKey<ExtendedNestedScrollViewState>();
+    final coordinator = LiquidGlassTopStateCoordinator(
+      scrollController: outer,
+      additionalPositions: () =>
+          nestedKey.currentState?.innerPositions ?? const <ScrollPosition>[],
+    );
+    addTearDown(coordinator.dispose);
+    addTearDown(outer.dispose);
+    var header = 180.0;
+    late StateSetter setHeader;
+
+    await tester.pumpWidget(
+      CupertinoApp(
+        home: StatefulBuilder(builder: (context, setState) {
+          setHeader = setState;
+          // Pages set the extent while building, as the list pages do.
+          outer.headerExtent = header;
+          return ExtendedNestedScrollView(
+            key: nestedKey,
+            controller: outer,
+            onlyOneScrollInBody: true,
+            headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
+              SliverToBoxAdapter(child: SizedBox(height: header)),
+            ],
+            body: CustomScrollView(
+              slivers: <Widget>[
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => SizedBox(
+                      height: 100,
+                      child: Text('Content $index'),
+                    ),
+                    childCount: 40,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+
+    await tester.drag(find.text('Content 2'), const Offset(0, -320));
+    await tester.pumpAndSettle();
+    final inner = nestedKey.currentState!.innerPositions.single;
+    expect(inner.pixels, greaterThan(0));
+
+    setHeader(() => header = 100);
+    await tester.pump();
+    coordinator.jumpToInitialAnchor();
+    await tester.pumpAndSettle();
+
+    expect(outer.position.pixels, outer.position.minScrollExtent);
+    for (final position in nestedKey.currentState!.innerPositions) {
+      expect(position.pixels, position.minScrollExtent);
+    }
+    expect(coordinator.isAtInitialPosition.value, isTrue);
+    expect(coordinator.barFadeProgress.value, 0);
+    expect(tester.getTopLeft(find.text('Content 0')).dy, 100);
+
+    // The page keeps scrolling both ways afterwards.
+    await tester.drag(find.text('Content 2'), const Offset(0, -200));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('Content 2')).dy, lessThan(300));
+    await tester.drag(find.text('Content 2'), const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('Content 0')).dy, 100);
+    expect(tester.takeException(), isNull);
+  });
+
   group('LiquidGlassTopStateCoordinator', () {
     FixedScrollMetrics fixedMetrics(double pixels) => FixedScrollMetrics(
           minScrollExtent: 0,

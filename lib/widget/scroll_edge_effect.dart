@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
 
+import '../adaptive/platform_capabilities.dart';
 import '../utils/liquid_glass.dart';
 
 enum SoftEdge { top, bottom }
@@ -29,6 +30,12 @@ class SoftEdgeCurve {
       SoftEdgeCurve(<double>[0.86, 0.61, 0.44, 0.15, 0], maxSigma: 12);
   static const SoftEdgeCurve reducedTransparency =
       SoftEdgeCurve(<double>[0.97, 0.94, 0.88, 0.35, 0], maxSigma: 0);
+  /// For hosts without a reliable blur: denser, so the fade alone keeps
+  /// content under the bars out of the way.
+  static const SoftEdgeCurve withoutBlur =
+      SoftEdgeCurve(<double>[0.96, 0.92, 0.84, 0.36, 0], maxSigma: 0);
+  static const SoftEdgeCurve mediaWithoutBlur =
+      SoftEdgeCurve(<double>[0.60, 0.40, 0.22, 0.07, 0], maxSigma: 0);
   // Media keeps more of the page readable: dimming carries legibility and
   // the blur stays light so bright pages do not turn foggy.
   static const SoftEdgeCurve media =
@@ -203,6 +210,15 @@ class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
   }
 
   SoftEdgeCurve _curve(BuildContext context) {
+    // Android gets no blur: the shader's coordinates flip differently across
+    // its backends (streaks, mirrored content), standard blur bands show
+    // seams, and a gradient mask drops the blur altogether. A denser fade in
+    // the page colour hides content cleanly instead.
+    if (PlatformCapabilities.hostPlatform == TargetPlatform.android) {
+      return widget.tone == SoftEdgeTone.media
+          ? SoftEdgeCurve.mediaWithoutBlur
+          : SoftEdgeCurve.withoutBlur;
+    }
     if (widget.tone == SoftEdgeTone.media) return SoftEdgeCurve.media;
     if (LiquidGlassAccessibilitySettings.reduceTransparency.value ?? false) {
       return SoftEdgeCurve.reducedTransparency;

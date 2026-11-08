@@ -3,6 +3,7 @@ import 'package:eros_fe/common/global.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/component/setting/android_setting_group.dart';
 import 'package:eros_fe/component/setting/setting_menu.dart';
+import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:eros_fe/pages/tab/controller/setting_controller.dart';
@@ -420,6 +421,32 @@ void main() {
         await tester.drag(
             find.byType(CustomScrollView), const Offset(0, -2000));
         await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('large title fades out once the bar shows the title',
+          (tester) async {
+        SettingGlassBar.debugActive = true;
+        addTearDown(() => SettingGlassBar.debugActive = null);
+        _surface(tester, 412);
+        await pumpHome(tester);
+        double opacity() => tester
+            .widget<AnimatedOpacity>(
+                find.byKey(const ValueKey('setting-large-title-fade'),
+                    skipOffstage: false))
+            .opacity;
+        expect(opacity(), 1);
+        // Hold the drag: a short page bounces back once released.
+        final gesture = await tester
+            .startGesture(tester.getCenter(find.byType(CustomScrollView)));
+        await gesture.moveBy(const Offset(0, -40));
+        await gesture.moveBy(const Offset(0, -120));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(opacity(), 0);
+        await gesture.moveBy(const Offset(0, 160));
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(opacity(), 1);
         expect(tester.takeException(), isNull);
       });
     });

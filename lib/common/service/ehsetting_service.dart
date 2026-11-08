@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:enum_to_string/enum_to_string.dart';
+import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/base_service.dart';
@@ -348,6 +349,10 @@ class EhSettingService extends ProfileService {
       _liquidGlassTopBarLayout.value;
   set liquidGlassTopBarLayout(LiquidGlassTopBarLayout value) =>
       _liquidGlassTopBarLayout.value = value;
+
+  /// Lets list pages react when the top bar changes height.
+  Rx<LiquidGlassTopBarLayout> get liquidGlassTopBarLayoutRx =>
+      _liquidGlassTopBarLayout;
 
   // liquidGlass
   final _liquidGlass = PlatformCapabilities.defaultGlassStyle.obs;
@@ -964,6 +969,16 @@ class EhSettingService extends ProfileService {
     everProfile<bool>(_liquidGlass, (value) {
       ehConfig = ehConfig.copyWith(liquidGlass: value.oN);
     });
+    // The native shell on iOS 27.1 draws its own bars and reads both
+    // preferences from the bridge.
+    void publishBarMaterial(Object? _) =>
+        NativeNavigationBridge.barMaterial.value = NativeBarMaterial.of(
+          glassStyle: liquidGlass,
+          followSystem: liquidGlassFollowSystemTransparency,
+        );
+    publishBarMaterial(null);
+    ever<bool>(_liquidGlass, publishBarMaterial);
+    ever<bool>(_liquidGlassFollowSystemTransparency, publishBarMaterial);
   }
 
   ///

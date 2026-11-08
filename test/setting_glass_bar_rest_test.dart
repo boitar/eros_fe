@@ -26,7 +26,6 @@ void main() {
   tearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
 
   for (final host in [
-    TargetPlatform.android,
     TargetPlatform.macOS,
     TargetPlatform.windows,
   ]) {
@@ -43,6 +42,19 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('Android shows only the soft edge, never a glass slab',
+      (tester) async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+    for (final scrolled in [false, true]) {
+      await tester.pumpWidget(_bar(edgeVisible: scrolled));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('setting-glass-bar-surface')),
+          findsNothing);
+      expect(find.text('Settings'), findsOneWidget);
+    }
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('iOS keeps its own bar treatment', (tester) async {
     PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;

@@ -85,9 +85,10 @@ class LiquidGlassRail extends StatefulWidget {
 
   static const double controlSize = 44.0;
 
-  /// Shown only in the two-row layout with categories. It fills the first row
-  /// between [leading] and [trailing]; [categoryTrailing] then moves down to
-  /// sit beside the categories.
+  /// In the two-row layout with categories it fills the first row between
+  /// [leading] and [trailing]; [categoryTrailing] then moves down to sit
+  /// beside the categories. Otherwise it is the first round button on the
+  /// right.
   final LiquidGlassRailSearch? search;
   final LiquidGlassTopBarLayout layout;
   final PageController? pageController;
@@ -209,7 +210,16 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
         fullyHidden: fullyHidden,
       );
     }
+    final search = widget.search;
     final rightActions = <LiquidGlassRailAction>[
+      // Without the search row (single-row layout, or no categories) the
+      // search stays reachable as a round button.
+      if (search != null)
+        LiquidGlassRailAction(
+          icon: CupertinoIcons.search,
+          label: search.label,
+          onPressed: search.onTap,
+        ),
       ...widget.categoryTrailing,
       ...widget.trailing,
     ];

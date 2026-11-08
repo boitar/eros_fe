@@ -30,14 +30,11 @@ class HomePage extends GetView<TabHomeController> {
       },
     );
 
-    // return PopScope(
-    //   canPop: false,
-    //   onPopInvoked: controller.onPopInvoked,
-    //   child: child,
-    // );
-
-    return WillPopScope(
-      onWillPop: controller.onWillPop,
+    // canPop stays false so the framework, not the system, owns every back
+    // on the home route; see TabHomeController.handleBack.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: controller.onPopInvokedWithResult,
       child: child,
     );
   }

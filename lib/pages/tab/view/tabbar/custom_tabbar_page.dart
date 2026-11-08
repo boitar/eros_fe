@@ -13,6 +13,7 @@ import 'package:eros_fe/pages/tab/controller/group/custom_sublist_controller.dar
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/view/hidden_tabs_rail_action.dart';
+import 'package:eros_fe/pages/tab/view/top_bar_layout_reset.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/android_solid_top_bar.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
@@ -37,7 +38,16 @@ class CustomTabbarList extends StatefulWidget {
   State<CustomTabbarList> createState() => _CustomTabbarListState();
 }
 
-class _CustomTabbarListState extends State<CustomTabbarList> {
+class _CustomTabbarListState extends State<CustomTabbarList>
+    with TopBarLayoutReset<CustomTabbarList> {
+  @override
+  void resetForTopBarLayout() {
+    for (final sub in controller.subControllerMap.values) {
+      sub.galleryAnchor.forget();
+    }
+    _topState.jumpToInitialAnchor();
+  }
+
   final CustomTabbarController controller = Get.find();
 
   final EhTabController ehTabController = EhTabController();

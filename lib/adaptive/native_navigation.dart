@@ -198,6 +198,25 @@ class NativeNavigationAction {
 
 /// Dart owns the logical navigation stack. The optional native shell only
 /// mirrors this state and sends user actions back through the same channel.
+/// How the system bars of the native shell are drawn.
+enum NativeBarMaterial {
+  /// The system's Liquid Glass.
+  glass,
+
+  /// A frosted blur, matching the app's glass views when they don't follow
+  /// the system appearance.
+  blur,
+
+  /// A solid background: the glass style is off.
+  opaque;
+
+  static NativeBarMaterial of({
+    required bool glassStyle,
+    required bool followSystem,
+  }) =>
+      !glassStyle ? opaque : (followSystem ? glass : blur);
+}
+
 class NativeNavigationBridge {
   NativeNavigationBridge._();
 
@@ -208,6 +227,11 @@ class NativeNavigationBridge {
 
   /// A root list asked to tuck its navigation bar away while scrolling.
   static final ValueNotifier<bool> rootBarCollapsed = ValueNotifier(false);
+
+  /// The background of the native shell's system bars, from the "Liquid
+  /// Glass style" and "system Liquid Glass appearance" preferences.
+  static final ValueNotifier<NativeBarMaterial> barMaterial =
+      ValueNotifier(NativeBarMaterial.glass);
   static final Map<Object, (Object, NativePageChrome)> _chrome = {};
   static final Map<Route<dynamic>, NativeNavigationSource> _sources = {};
   static NativeNavigationConnection? _connection;
@@ -297,6 +321,7 @@ class NativeNavigationBridge {
       await _channel.invokeMethod<void>('publishState', {
         ...state.toMap(),
         'barCollapsed': barCollapsed,
+        'barMaterial': barMaterial.value.name,
       });
     } on MissingPluginException {
       // The legacy Flutter shell remains the fallback on older systems.
@@ -405,6 +430,7 @@ class _NativeNavigationHostState extends State<NativeNavigationHost> {
     NativeNavigationBridge.chromeRevision.addListener(_schedule);
     NativeNavigationBridge.sourceRevision.addListener(_schedule);
     NativeNavigationBridge.rootBarCollapsed.addListener(_schedule);
+    NativeNavigationBridge.barMaterial.addListener(_schedule);
     _connection = NativeNavigationBridge.initialize(
       onSelectTab: (id) async {
         if (!_hasPublishedContext || _overlaid) return;
@@ -522,6 +548,7 @@ class _NativeNavigationHostState extends State<NativeNavigationHost> {
     NativeNavigationBridge.chromeRevision.removeListener(_schedule);
     NativeNavigationBridge.sourceRevision.removeListener(_schedule);
     NativeNavigationBridge.rootBarCollapsed.removeListener(_schedule);
+    NativeNavigationBridge.barMaterial.removeListener(_schedule);
     if (_connection.isCurrent) {
       NativeNavigationBridge.enabled.value = false;
       NativeNavigationBridge.setEnabled(false);

@@ -136,6 +136,67 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  test('the glass preferences pick the native bar material', () {
+    expect(NativeBarMaterial.of(glassStyle: true, followSystem: true),
+        NativeBarMaterial.glass);
+    expect(NativeBarMaterial.of(glassStyle: true, followSystem: false),
+        NativeBarMaterial.blur);
+    expect(NativeBarMaterial.of(glassStyle: false, followSystem: true),
+        NativeBarMaterial.opaque);
+    expect(NativeBarMaterial.of(glassStyle: false, followSystem: false),
+        NativeBarMaterial.opaque);
+  });
+
+  testWidgets('turning the glass style off republishes opaque bars',
+      (tester) async {
+    const channel = MethodChannel('eros/native-navigation');
+    final publications = <Map<Object?, Object?>>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      (call) async {
+        if (call.method == 'getShellState') {
+          return true;
+        }
+        if (call.method == 'publishState') {
+          publications.add(Map<Object?, Object?>.from(call.arguments as Map));
+        }
+        return null;
+      },
+    );
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+      NativeNavigationBridge.enabled.value = false;
+      NativeNavigationBridge.barMaterial.value = NativeBarMaterial.glass;
+    });
+    final observer = EhNavigatorObserver();
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(CupertinoApp(
+      navigatorKey: navigator,
+      navigatorObservers: [observer],
+      builder: (context, child) => NativeNavigationHost(
+        observer: observer,
+        navigatorKey: navigator,
+        child: child!,
+      ),
+      home: const NativeNavigationPage(
+        chrome: NativePageChrome(title: 'Gallery'),
+        child: SizedBox.expand(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(publications.last['barMaterial'], 'glass');
+
+    NativeNavigationBridge.barMaterial.value = NativeBarMaterial.opaque;
+    await tester.pumpAndSettle();
+    expect(publications.last['barMaterial'], 'opaque');
+
+    NativeNavigationBridge.barMaterial.value = NativeBarMaterial.blur;
+    await tester.pumpAndSettle();
+    expect(publications.last['barMaterial'], 'blur');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('native bar buttons, menus and back answer with feedback',
       (tester) async {
     PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;

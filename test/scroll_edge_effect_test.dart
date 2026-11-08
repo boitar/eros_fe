@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +16,8 @@ void main() {
       'dark': SoftEdgeCurve.dark,
       'reduced transparency': SoftEdgeCurve.reducedTransparency,
       'media': SoftEdgeCurve.media,
+      'without blur': SoftEdgeCurve.withoutBlur,
+      'media without blur': SoftEdgeCurve.mediaWithoutBlur,
     }.entries) {
       test('${entry.key} fades monotonically to zero', () {
         final alphas =
@@ -88,6 +91,31 @@ void main() {
               of: find.byType(SoftScrollEdgeEffect),
               matching: find.byType(BackdropFilter)),
           findsNWidgets(3));
+    });
+
+    testWidgets('Android fades without any blur', (tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
+      for (final tone in SoftEdgeTone.values) {
+        await tester.pumpWidget(host(SoftScrollEdgeEffect(
+          edge: SoftEdge.top,
+          inset: 50,
+          bars: 44,
+          tone: tone,
+        )));
+        expect(
+            find.descendant(
+                of: find.byType(SoftScrollEdgeEffect),
+                matching: find.byType(BackdropFilter)),
+            findsNothing,
+            reason: '$tone');
+        final box = tester.widget<DecoratedBox>(find.descendant(
+            of: find.byType(SoftScrollEdgeEffect),
+            matching: find.byType(DecoratedBox)));
+        final gradient =
+            (box.decoration as BoxDecoration).gradient! as LinearGradient;
+        expect(gradient.colors.last.a, 0, reason: '$tone');
+      }
     });
 
     testWidgets('bottom media edge dims toward black from the bottom',
