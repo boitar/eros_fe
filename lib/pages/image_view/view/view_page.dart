@@ -21,6 +21,7 @@ import 'image_list_view.dart';
 import 'image_page_view.dart';
 import 'image_page_view_ex.dart';
 import 'reader_chrome.dart';
+import 'reader_desktop.dart';
 import 'reader_layout.dart';
 import 'view_image.dart';
 
@@ -193,6 +194,9 @@ class _ViewKeyboardListenerState extends State<ViewKeyboardListener> {
       focusNode: _focusNode,
       onKeyEvent: (KeyEvent event) async {
         if (event is! KeyDownEvent) {
+          return;
+        }
+        if (handleDesktopReaderKey(event.logicalKey)) {
           return;
         }
 
@@ -388,6 +392,18 @@ class ImagePlugins extends GetView<ViewExtController> {
   @override
   Widget build(BuildContext context) {
     final nativeChrome = NativeNavigationScope.isEnabled(context);
+    if (usesDesktopReaderChrome(context)) {
+      return GetBuilder<ViewExtController>(
+        id: idViewBar,
+        builder: (logic) {
+          vState.bottomBarHeight = 0;
+          return ReaderDesktopLayout(
+            content: child,
+            glass: usesDesktopReaderGlass(context),
+          );
+        },
+      );
+    }
     return GetBuilder<ViewExtController>(
       id: idViewBar,
       builder: (logic) {

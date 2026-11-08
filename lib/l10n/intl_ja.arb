@@ -555,5 +555,11 @@
   "column_range": "{min}〜{max} 列",
   "split_follows_divider": "分割・仕切りで変化",
   "sidebar_library": "ライブラリ",
-  "filter_by_uploader": "アップローダーで絞り込む"
+  "filter_by_uploader": "アップローダーで絞り込む",
+  "reader_double_page": "見開き",
+  "reader_vertical": "縦スクロール",
+  "reader_turn_page": "ページ送り",
+  "reader_previous_page": "前のページ",
+  "reader_next_page": "次のページ",
+  "reader_page_of": "{page} / {total} ページ"
 }

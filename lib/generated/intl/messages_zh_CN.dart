@@ -55,6 +55,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m10(min, max) => "${min}–${max} 列";
 
+  static String m11(page, total) => "第 ${page} 页，共 ${total} 页";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("上传头像"),
@@ -660,6 +662,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "setting_site": MessageLookupByLibrary.simpleMessage("站点"),
         "sidebar_library": MessageLookupByLibrary.simpleMessage("资料库"),
         "filter_by_uploader": MessageLookupByLibrary.simpleMessage("按上传者筛选"),
+        "reader_double_page": MessageLookupByLibrary.simpleMessage("双页"),
+        "reader_vertical": MessageLookupByLibrary.simpleMessage("纵向"),
+        "reader_turn_page": MessageLookupByLibrary.simpleMessage("翻页"),
+        "reader_previous_page": MessageLookupByLibrary.simpleMessage("上一页"),
+        "reader_next_page": MessageLookupByLibrary.simpleMessage("下一页"),
+        "reader_page_of": m11,
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("浏览"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("内容"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("系统"),

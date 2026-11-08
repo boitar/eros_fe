@@ -555,5 +555,11 @@
   "column_range": "Столбцов: {min}–{max}",
   "split_follows_divider": "разделение по разделителю",
   "sidebar_library": "Библиотека",
-  "filter_by_uploader": "Фильтр по загрузившему"
+  "filter_by_uploader": "Фильтр по загрузившему",
+  "reader_double_page": "Разворот",
+  "reader_vertical": "Вертикально",
+  "reader_turn_page": "Листать",
+  "reader_previous_page": "Предыдущая страница",
+  "reader_next_page": "Следующая страница",
+  "reader_page_of": "Стр. {page} из {total}"
 }

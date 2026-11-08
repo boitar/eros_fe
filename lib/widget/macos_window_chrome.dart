@@ -57,23 +57,44 @@ class MacOSWindowControls {
 abstract final class MacOSWindowChrome {
   static const channel = MethodChannel('eros/window-chrome');
   static final controls = ValueNotifier(const MacOSWindowControls());
+
+  /// Whether the window is in its own fullscreen space.
+  static final fullscreen = ValueNotifier(false);
+
+  static void _apply(Object? message) {
+    controls.value = MacOSWindowControls.fromMessage(message);
+    fullscreen.value = message is Map && message['fullscreen'] == true;
+  }
+
   static Future<void> initialize() async {
     if (PlatformCapabilities.hostPlatform != TargetPlatform.macOS) {
       return;
     }
     channel.setMethodCallHandler((call) async {
       if (call.method == 'changed') {
-        controls.value = MacOSWindowControls.fromMessage(call.arguments);
+        _apply(call.arguments);
       }
     });
     try {
-      controls.value = MacOSWindowControls.fromMessage(
+      _apply(
         await channel
             .invokeMethod<Object?>('get')
             .timeout(const Duration(seconds: 2)),
       );
     } catch (_) {
       controls.value = const MacOSWindowControls();
+    }
+  }
+
+  /// Enters or leaves the fullscreen space, like the green window button.
+  static Future<void> toggleFullscreen() async {
+    if (PlatformCapabilities.hostPlatform != TargetPlatform.macOS) {
+      return;
+    }
+    try {
+      await channel.invokeMethod<void>('toggleFullScreen');
+    } on MissingPluginException {
+      // Older native hosts lack the method; the green button still works.
     }
   }
 }

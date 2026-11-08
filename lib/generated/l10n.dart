@@ -5319,6 +5319,66 @@ class L10n {
     );
   }
 
+  /// `Double`
+  String get reader_double_page {
+    return Intl.message(
+      'Double',
+      name: 'reader_double_page',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Vertical`
+  String get reader_vertical {
+    return Intl.message(
+      'Vertical',
+      name: 'reader_vertical',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Turn page`
+  String get reader_turn_page {
+    return Intl.message(
+      'Turn page',
+      name: 'reader_turn_page',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Previous page`
+  String get reader_previous_page {
+    return Intl.message(
+      'Previous page',
+      name: 'reader_previous_page',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Next page`
+  String get reader_next_page {
+    return Intl.message(
+      'Next page',
+      name: 'reader_next_page',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Page {page} of {total}`
+  String reader_page_of(Object page, Object total) {
+    return Intl.message(
+      'Page $page of $total',
+      name: 'reader_page_of',
+      desc: '',
+      args: [page, total],
+    );
+  }
+
   /// `Browsing`
   String get setting_group_browse {
     return Intl.message(

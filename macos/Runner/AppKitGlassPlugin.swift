@@ -349,6 +349,10 @@ private final class MacOSWindowChromePlugin: NSObject, FlutterPlugin {
       let current = geometry()
       lastGeometry = current
       result(current)
+    } else if call.method == "toggleFullScreen" {
+      // The reader's F key: the system fullscreen space, as the green button.
+      host?.window?.toggleFullScreen(nil)
+      result(nil)
     } else { result(FlutterMethodNotImplemented) }
   }
   // The app does not independently toggle standardWindowButton.isHidden or

@@ -555,5 +555,11 @@
   "column_range": "{min}–{max}열",
   "split_follows_divider": "분할 · 구분선에 따름",
   "sidebar_library": "보관함",
-  "filter_by_uploader": "업로더로 필터"
+  "filter_by_uploader": "업로더로 필터",
+  "reader_double_page": "두 쪽",
+  "reader_vertical": "세로",
+  "reader_turn_page": "페이지 넘기기",
+  "reader_previous_page": "이전 페이지",
+  "reader_next_page": "다음 페이지",
+  "reader_page_of": "{page} / {total}쪽"
 }

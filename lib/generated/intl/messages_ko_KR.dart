@@ -55,6 +55,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m10(min, max) => "${min}–${max}열";
 
+  static String m11(page, total) => "${page} / ${total}쪽";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
@@ -755,6 +757,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "setting_site": MessageLookupByLibrary.simpleMessage("사이트"),
         "sidebar_library": MessageLookupByLibrary.simpleMessage("보관함"),
         "filter_by_uploader": MessageLookupByLibrary.simpleMessage("업로더로 필터"),
+        "reader_double_page": MessageLookupByLibrary.simpleMessage("두 쪽"),
+        "reader_vertical": MessageLookupByLibrary.simpleMessage("세로"),
+        "reader_turn_page": MessageLookupByLibrary.simpleMessage("페이지 넘기기"),
+        "reader_previous_page": MessageLookupByLibrary.simpleMessage("이전 페이지"),
+        "reader_next_page": MessageLookupByLibrary.simpleMessage("다음 페이지"),
+        "reader_page_of": m11,
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("탐색"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("콘텐츠"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("시스템"),

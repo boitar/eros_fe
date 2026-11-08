@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:archive_async/archive_async.dart';
 import 'package:collection/collection.dart';
@@ -149,6 +150,12 @@ class ViewExtController extends GetxController {
       ItemPositionsListener.create();
 
   final ItemScrollController thumbScrollController = ItemScrollController();
+
+  /// The desktop reader's thumbnail sidebar. It has its own controller: a
+  /// list can only attach to a controller no other list holds, and the
+  /// filmstrip and the sidebar briefly coexist when the glass setting flips.
+  final ItemScrollController thumbSidebarScrollController =
+      ItemScrollController();
   final ItemPositionsListener thumbPositionsListener =
       ItemPositionsListener.create();
 
@@ -1377,6 +1384,18 @@ class ViewExtController extends GetxController {
       Throttling(duration: const Duration(milliseconds: 200));
 
   void thumbScrollTo({int? index}) {
+    if (!isClosed && thumbSidebarScrollController.isAttached) {
+      // Keep the page one row below the top, so the previous one shows.
+      final target = math.max(0, (index ?? vState.currentItemIndex) - 1);
+      thrThumbScrollTo.throttle(() {
+        if (isClosed || !thumbSidebarScrollController.isAttached) return;
+        thumbSidebarScrollController.scrollTo(
+          index: target,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.ease,
+        );
+      });
+    }
     if (isClosed || !thumbScrollController.isAttached) return;
     final indexRange = vState.maxThumbIndex - vState.minThumbIndex;
     final toIndex = index ?? vState.currentItemIndex;

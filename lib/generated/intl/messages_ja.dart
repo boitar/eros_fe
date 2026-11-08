@@ -55,6 +55,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m10(min, max) => "${min}〜${max} 列";
 
+  static String m11(page, total) => "${page} / ${total} ページ";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
@@ -700,6 +702,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "setting_site": MessageLookupByLibrary.simpleMessage("サイト"),
         "sidebar_library": MessageLookupByLibrary.simpleMessage("ライブラリ"),
         "filter_by_uploader": MessageLookupByLibrary.simpleMessage("アップローダーで絞り込む"),
+        "reader_double_page": MessageLookupByLibrary.simpleMessage("見開き"),
+        "reader_vertical": MessageLookupByLibrary.simpleMessage("縦スクロール"),
+        "reader_turn_page": MessageLookupByLibrary.simpleMessage("ページ送り"),
+        "reader_previous_page": MessageLookupByLibrary.simpleMessage("前のページ"),
+        "reader_next_page": MessageLookupByLibrary.simpleMessage("次のページ"),
+        "reader_page_of": m11,
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("閲覧"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("コンテンツ"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("システム"),

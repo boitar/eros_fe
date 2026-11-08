@@ -55,6 +55,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m10(min, max) => "Столбцов: ${min}–${max}";
 
+  static String m11(page, total) => "Стр. ${page} из ${total}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Загрузить аватар"),
@@ -838,6 +840,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "setting_site": MessageLookupByLibrary.simpleMessage("Сайт"),
         "sidebar_library": MessageLookupByLibrary.simpleMessage("Библиотека"),
         "filter_by_uploader": MessageLookupByLibrary.simpleMessage("Фильтр по загрузившему"),
+        "reader_double_page": MessageLookupByLibrary.simpleMessage("Разворот"),
+        "reader_vertical": MessageLookupByLibrary.simpleMessage("Вертикально"),
+        "reader_turn_page": MessageLookupByLibrary.simpleMessage("Листать"),
+        "reader_previous_page": MessageLookupByLibrary.simpleMessage("Предыдущая страница"),
+        "reader_next_page": MessageLookupByLibrary.simpleMessage("Следующая страница"),
+        "reader_page_of": m11,
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("Просмотр"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("Контент"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("Система"),

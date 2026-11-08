@@ -6,6 +6,7 @@ import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/common/controller/image_block_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/component/exception/error.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
@@ -1364,7 +1365,14 @@ class ControllerButtonBar extends StatelessWidget {
 }
 
 class ThumbnailListView extends GetView<ViewExtController> {
-  const ThumbnailListView({super.key});
+  const ThumbnailListView({super.key, this.axis = Axis.horizontal});
+
+  /// Horizontal is the filmstrip under the page; vertical is the desktop
+  /// reader's sidebar, which rings every page of the current spread.
+  final Axis axis;
+
+  static const double sidebarThumbWidth = 96;
+  static const double sidebarThumbHeight = 128;
 
   GalleryPageController? get galleryPageController =>
       controller.vState.galleryPageController;
@@ -1377,16 +1385,27 @@ class ThumbnailListView extends GetView<ViewExtController> {
     return GetBuilder<ViewExtController>(
       id: idThumbnailListView,
       builder: (logic) {
+        final vertical = axis == Axis.vertical;
         return Stack(
           children: [
             SizedBox(
-              height: kThumbListViewHeight,
+              height: vertical ? null : kThumbListViewHeight,
               child: ScrollablePositionedList.builder(
-                itemScrollController: logic.thumbScrollController,
-                itemPositionsListener: logic.thumbPositionsListener,
+                itemScrollController: vertical
+                    ? logic.thumbSidebarScrollController
+                    : logic.thumbScrollController,
+                itemPositionsListener:
+                    vertical ? null : logic.thumbPositionsListener,
+                initialScrollIndex: vertical
+                    ? math.max(0, logic.vState.currentItemIndex - 1)
+                    : 0,
                 itemCount: controller.vState.fileCount,
-                scrollDirection: Axis.horizontal,
-                reverse: logic.vState.viewMode == ViewMode.rightToLeft,
+                scrollDirection: axis,
+                padding: vertical
+                    ? const EdgeInsets.symmetric(vertical: 10)
+                    : null,
+                reverse: !vertical &&
+                    logic.vState.viewMode == ViewMode.rightToLeft,
                 itemBuilder: (context, index) {
                   // 缩略图
                   late Widget thumb;
@@ -1420,6 +1439,50 @@ class ThumbnailListView extends GetView<ViewExtController> {
                       break;
                   }
 
+                  if (vertical) {
+                    return GestureDetector(
+                      key: ValueKey<String>('reader-sidebar-thumb-$index'),
+                      onTap: () => logic.jumpToPage(index),
+                      child: Obx(() {
+                        final state = logic.vState;
+                        // Reading the index subscribes to page changes.
+                        final current = state.currentItemIndex;
+                        final isCurrent = state.viewMode == ViewMode.topToBottom
+                            ? index == current
+                            : state.pagination
+                                .imagesForPage(state.pageIndex)
+                                .contains(index);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: sidebarThumbWidth,
+                                height: sidebarThumbHeight,
+                                child: _buildThumb(
+                                  isCurrent,
+                                  thumb,
+                                  ring: EhPalette.accent.darkColor,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                '${index + 1}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: isCurrent
+                                      ? EhPalette.accent.darkColor
+                                      : const Color(0xFFA3A7AF),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    );
+                  }
                   return GestureDetector(
                     onTap: () => logic.jumpToPage(index),
                     child: Obx(() {
@@ -1494,12 +1557,12 @@ class ThumbnailListView extends GetView<ViewExtController> {
     );
   }
 
-  Container _buildThumb(bool isCurrent, Widget thumb) {
+  Container _buildThumb(bool isCurrent, Widget thumb, {Color? ring}) {
     return Container(
       decoration: BoxDecoration(
         border: isCurrent
             ? Border.all(
-                color: CupertinoColors.systemTeal,
+                color: ring ?? CupertinoColors.systemTeal,
                 width: kBorderWidth,
               )
             : null,

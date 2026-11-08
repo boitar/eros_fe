@@ -555,5 +555,11 @@
   "column_range": "{min}–{max} columns",
   "split_follows_divider": "Split, set by divider",
   "sidebar_library": "Library",
-  "filter_by_uploader": "Filter by uploader"
+  "filter_by_uploader": "Filter by uploader",
+  "reader_double_page": "Double",
+  "reader_vertical": "Vertical",
+  "reader_turn_page": "Turn page",
+  "reader_previous_page": "Previous page",
+  "reader_next_page": "Next page",
+  "reader_page_of": "Page {page} of {total}"
 }

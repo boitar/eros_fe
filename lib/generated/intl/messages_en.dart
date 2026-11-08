@@ -55,6 +55,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m10(min, max) => "${min}–${max} columns";
 
+  static String m11(page, total) => "Page ${page} of ${total}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
@@ -803,6 +805,12 @@ class MessageLookup extends MessageLookupByLibrary {
         "setting_site": MessageLookupByLibrary.simpleMessage("Site"),
         "sidebar_library": MessageLookupByLibrary.simpleMessage("Library"),
         "filter_by_uploader": MessageLookupByLibrary.simpleMessage("Filter by uploader"),
+        "reader_double_page": MessageLookupByLibrary.simpleMessage("Double"),
+        "reader_vertical": MessageLookupByLibrary.simpleMessage("Vertical"),
+        "reader_turn_page": MessageLookupByLibrary.simpleMessage("Turn page"),
+        "reader_previous_page": MessageLookupByLibrary.simpleMessage("Previous page"),
+        "reader_next_page": MessageLookupByLibrary.simpleMessage("Next page"),
+        "reader_page_of": m11,
         "setting_group_browse": MessageLookupByLibrary.simpleMessage("Browsing"),
         "setting_group_content": MessageLookupByLibrary.simpleMessage("Content"),
         "setting_group_system": MessageLookupByLibrary.simpleMessage("System"),

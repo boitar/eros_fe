@@ -555,5 +555,11 @@
   "column_range": "{min}–{max} 列",
   "split_follows_divider": "分栏随分割条",
   "sidebar_library": "资料库",
-  "filter_by_uploader": "按上传者筛选"
+  "filter_by_uploader": "按上传者筛选",
+  "reader_double_page": "双页",
+  "reader_vertical": "纵向",
+  "reader_turn_page": "翻页",
+  "reader_previous_page": "上一页",
+  "reader_next_page": "下一页",
+  "reader_page_of": "第 {page} 页，共 {total} 页"
 }
