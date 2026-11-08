@@ -551,7 +551,7 @@ class _InnerLinkTabItemState extends State<InnerLinkTabItem> {
             Get.find<EhSettingService>().liquidGlass &&
                 (GlassMode.of(context).forComponent(flutterImplemented: true) !=
                     GlassMode.off),
-            Get.find<EhSettingService>().liquidGlassFollowSystemTransparency,
+            Get.find<EhSettingService>().liquidGlassMaterial,
           ));
     }
     return _buildItem(context, false, true);

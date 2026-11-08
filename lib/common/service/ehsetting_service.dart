@@ -359,17 +359,15 @@ class EhSettingService extends ProfileService {
   bool get liquidGlass => _liquidGlass.value;
   set liquidGlass(bool val) => _liquidGlass.value = val;
 
-  /// Whether native Liquid Glass should be used so UIKit can apply the
-  /// device's system Liquid Glass appearance and accessibility settings.
-  ///
-  /// The persisted name is retained for profile compatibility. It no longer
-  /// means only Reduce Transparency; the system appearance slider is owned by
-  /// UIKit and is intentionally not read through private preferences.
-  final _liquidGlassFollowSystemTransparency = true.obs;
-  bool get liquidGlassFollowSystemTransparency =>
-      _liquidGlassFollowSystemTransparency.value;
-  set liquidGlassFollowSystemTransparency(bool val) =>
-      _liquidGlassFollowSystemTransparency.value = val;
+  /// The material of every glass surface while [liquidGlass] is on.
+  final _glassMaterial = GlassMaterial.liquid.obs;
+  GlassMaterial get glassMaterial => _glassMaterial.value;
+  set glassMaterial(GlassMaterial value) => _glassMaterial.value = value;
+  Rx<GlassMaterial> get glassMaterialRx => _glassMaterial;
+
+  /// Whether glass surfaces draw Liquid Glass rather than the frosted blur.
+  /// Native renderers still receive it as `followSystemTransparency`.
+  bool get liquidGlassMaterial => glassMaterial.isLiquid;
 
   final _itemConfigList = <ItemConfig>[].obs;
   final _itemConfigMap = <ListModeEnum, ItemConfig>{}.obs;
@@ -552,15 +550,6 @@ class EhSettingService extends ProfileService {
     });
 
     initLiquidGlassPreference();
-
-    liquidGlassFollowSystemTransparency =
-        ehConfig.liquidGlassFollowSystemTransparency ??
-            liquidGlassFollowSystemTransparency;
-    everProfile<bool>(_liquidGlassFollowSystemTransparency, (value) {
-      ehConfig = ehConfig.copyWith(
-        liquidGlassFollowSystemTransparency: value.oN,
-      );
-    });
 
     // webDAVMaxConnections
     webDAVMaxConnections =
@@ -969,16 +958,29 @@ class EhSettingService extends ProfileService {
     everProfile<bool>(_liquidGlass, (value) {
       ehConfig = ehConfig.copyWith(liquidGlass: value.oN);
     });
+    // Profiles from before the material choice only kept the "system Liquid
+    // Glass appearance" switch; its off state drew the frosted blur.
+    glassMaterial = GlassMaterial.migrate(
+      stored: ehConfig.glassMaterial,
+      legacyFollowSystem: ehConfig.liquidGlassFollowSystemTransparency,
+    );
+    everProfile<GlassMaterial>(_glassMaterial, (value) {
+      ehConfig = ehConfig.copyWith(
+        glassMaterial: value.name.oN,
+        // Kept in step so an older build still opens with the same material.
+        liquidGlassFollowSystemTransparency: value.isLiquid.oN,
+      );
+    });
     // The native shell on iOS 27.1 draws its own bars and reads both
     // preferences from the bridge.
     void publishBarMaterial(Object? _) =>
         NativeNavigationBridge.barMaterial.value = NativeBarMaterial.of(
           glassStyle: liquidGlass,
-          followSystem: liquidGlassFollowSystemTransparency,
+          material: glassMaterial,
         );
     publishBarMaterial(null);
     ever<bool>(_liquidGlass, publishBarMaterial);
-    ever<bool>(_liquidGlassFollowSystemTransparency, publishBarMaterial);
+    ever<GlassMaterial>(_glassMaterial, publishBarMaterial);
   }
 
   ///

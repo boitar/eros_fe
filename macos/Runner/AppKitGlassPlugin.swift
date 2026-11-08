@@ -92,8 +92,11 @@ private final class AppKitGlassHost: NSView {
     buttons.removeAll()
     selection = nil
     appearance = NSAppearance(named: configuration["dark"] as? Bool == true ? .darkAqua : .aqua)
-    let follow = configuration["followSystemTransparency"] as? Bool ?? true
-    let opaque = follow && (NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency || NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast)
+    // The Dart key keeps its name; it now carries the glass material:
+    // true is Liquid Glass, false is the frosted blur. Both honour the
+    // system's Reduce Transparency and Increase Contrast.
+    let liquid = configuration["followSystemTransparency"] as? Bool ?? true
+    let opaque = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency || NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
     let body = NSView(frame: bounds)
     if decorative && !opaque {
       // Navigation backgrounds use window chrome material. NSGlassEffectView
@@ -104,6 +107,15 @@ private final class AppKitGlassHost: NSView {
       chrome.state = .followsWindowActiveState
       chrome.addSubview(body)
       backing = chrome
+    } else if !opaque && !liquid {
+      let frosted = NSVisualEffectView(frame: bounds)
+      frosted.material = .popover
+      frosted.blendingMode = .withinWindow
+      frosted.state = .active
+      frosted.wantsLayer = true
+      frosted.layer?.masksToBounds = true
+      frosted.addSubview(body)
+      backing = frosted
     } else if #available(macOS 26.0, *), !opaque {
       let glass = NSGlassEffectView(frame: bounds)
       glass.style = .regular
@@ -153,6 +165,9 @@ private final class AppKitGlassHost: NSView {
     super.layout()
     let inset: CGFloat = decorative ? 0 : 6
     backing?.frame = bounds.insetBy(dx: inset, dy: inset)
+    if let frosted = backing as? NSVisualEffectView, !decorative {
+      frosted.layer?.cornerRadius = frosted.bounds.height / 2
+    }
     content?.frame = NSRect(origin: .zero, size: backing?.bounds.size ?? bounds.size)
     guard !buttons.isEmpty, let content else { return }
     let width = max(0, (content.bounds.width - 12) / CGFloat(buttons.count))

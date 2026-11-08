@@ -123,20 +123,54 @@ enum GlassMode {
   }
 }
 
+/// The material every glass surface uses while the glass effect is on.
+///
+/// Each renderer maps it to its own implementation: the refractive shader or
+/// the lightweight frosted one in Flutter, `UIGlassEffect` or `UIBlurEffect`
+/// in UIKit, `NSGlassEffectView` or `NSVisualEffectView` in AppKit.
+enum GlassMaterial {
+  /// Refraction and specular highlights; the heavier renderer.
+  liquid,
+
+  /// A frosted blur; cheaper to draw.
+  frosted;
+
+  bool get isLiquid => this == liquid;
+
+  static GlassMaterial? tryParse(String? name) {
+    for (final material in values) {
+      if (material.name == name) {
+        return material;
+      }
+    }
+    return null;
+  }
+
+  /// A stored material wins; older profiles only kept the "system Liquid
+  /// Glass appearance" switch, whose off state drew the frosted blur.
+  static GlassMaterial migrate({String? stored, bool? legacyFollowSystem}) =>
+      tryParse(stored) ?? (legacyFollowSystem == false ? frosted : liquid);
+}
+
 /// Optional inherited preference keeps the capability layer independent of DI.
 class GlassPreference extends InheritedWidget {
   const GlassPreference({
     super.key,
     required this.enabled,
+    this.material = GlassMaterial.liquid,
     required super.child,
   });
   final bool enabled;
+  final GlassMaterial material;
   static bool of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<GlassPreference>()?.enabled ??
       true;
+  static GlassMaterial materialOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<GlassPreference>()?.material ??
+      GlassMaterial.liquid;
   @override
   bool updateShouldNotify(GlassPreference oldWidget) =>
-      enabled != oldWidget.enabled;
+      enabled != oldWidget.enabled || material != oldWidget.material;
 }
 
 /// Rebuilds component decisions when the negotiated native backend fails or changes.

@@ -536,7 +536,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
         fadeProgress: fadeProgress,
         selectedIndex: controller.index,
         followSystemTransparency:
-            _ehSettingService.liquidGlassFollowSystemTransparency,
+            _ehSettingService.liquidGlassMaterial,
         leading: hiddenTabsRailAction(context),
         trailing: <LiquidGlassRailAction>[
           LiquidGlassRailAction(
@@ -819,7 +819,7 @@ class CustomTabBar extends StatelessWidget {
               selectedIndex: controller.index,
               pageController: controller.pageController,
               followSystemTransparency:
-                  ehSettingService.liquidGlassFollowSystemTransparency,
+                  ehSettingService.liquidGlassMaterial,
               accessory: LiquidGlassRailAction(
                 icon: CupertinoIcons.line_horizontal_3,
                 label: L10n.of(context).group_management,

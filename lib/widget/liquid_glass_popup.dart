@@ -822,7 +822,7 @@ Widget? _nativePopup(
         'rtl': Directionality.of(context) == TextDirection.rtl,
         'dark': CupertinoTheme.brightnessOf(context) == Brightness.dark,
         'followSystemTransparency': !Get.isRegistered<EhSettingService>() ||
-            Get.find<EhSettingService>().liquidGlassFollowSystemTransparency,
+            Get.find<EhSettingService>().liquidGlassMaterial,
       },
       callbacks: callbacks,
     ),

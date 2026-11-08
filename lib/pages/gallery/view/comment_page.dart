@@ -265,7 +265,7 @@ class _CommentPageState extends State<CommentPage>
             useNativeGlass: false,
             emphasizeFallbackEdge: true,
             followSystemTransparency:
-                _ehSettingService.liquidGlassFollowSystemTransparency,
+                _ehSettingService.liquidGlassMaterial,
             borderRadius: BorderRadius.circular(_kComposerHeight / 2),
             child: Column(
               mainAxisSize: MainAxisSize.min,

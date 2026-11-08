@@ -616,6 +616,7 @@ class LiquidGlassTabBar extends CupertinoTabBar {
                         label: item.label)
                 ],
                 selectedIndex: _clampTabIndex(currentIndex, items.length),
+                quality: GlassPreference.materialOf(context).quality,
                 onTabSelected: (index) {
                   // Retain the feedback of the previous non-native Cupertino bar.
                   vibrateUtil.tabSwitch();

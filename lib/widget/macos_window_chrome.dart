@@ -147,7 +147,7 @@ class MacOSWindowContent extends StatelessWidget {
                                 'dark': CupertinoTheme.brightnessOf(context) ==
                                     Brightness.dark,
                                 'followSystemTransparency': settings
-                                    .liquidGlassFollowSystemTransparency,
+                                    .liquidGlassMaterial,
                               },
                             ),
                           ),

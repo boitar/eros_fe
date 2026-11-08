@@ -348,7 +348,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
         fadeProgress: fadeProgress,
         selectedIndex: controller.index,
         followSystemTransparency:
-            _ehSettingService.liquidGlassFollowSystemTransparency,
+            _ehSettingService.liquidGlassMaterial,
         leading: hiddenTabsRailAction(context),
         trailing: <LiquidGlassRailAction>[
           LiquidGlassRailAction(
@@ -783,7 +783,7 @@ class FavoriteTabBar extends StatelessWidget {
               selectedIndex: controller.index,
               pageController: pageController,
               followSystemTransparency:
-                  ehSettingService.liquidGlassFollowSystemTransparency,
+                  ehSettingService.liquidGlassMaterial,
               accessory: controller.showBarsBtn
                   ? LiquidGlassRailAction(
                       icon: CupertinoIcons.line_horizontal_3,

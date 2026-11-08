@@ -34,7 +34,7 @@ class _Settings extends GetxService implements EhSettingService {
   bool get liquidGlass => _glass.value;
   final RxBool _glass = false.obs;
   @override
-  bool get liquidGlassFollowSystemTransparency => true;
+  bool get liquidGlassMaterial => true;
   @override
   bool get isTagTranslate => false;
   @override

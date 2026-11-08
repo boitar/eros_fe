@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 
 import '../route/eh_observer.dart';
 import '../utils/vibrate.dart';
+import 'platform_capabilities.dart';
 
 typedef NativeNavigationTabHandler = Future<void> Function(String route);
 typedef NativeNavigationBackHandler = Future<void> Function();
@@ -203,18 +204,17 @@ enum NativeBarMaterial {
   /// The system's Liquid Glass.
   glass,
 
-  /// A frosted blur, matching the app's glass views when they don't follow
-  /// the system appearance.
+  /// A frosted blur: the frosted glass material is chosen.
   blur,
 
-  /// A solid background: the glass style is off.
+  /// A solid background: the glass effect is off.
   opaque;
 
   static NativeBarMaterial of({
     required bool glassStyle,
-    required bool followSystem,
+    required GlassMaterial material,
   }) =>
-      !glassStyle ? opaque : (followSystem ? glass : blur);
+      !glassStyle ? opaque : (material.isLiquid ? glass : blur);
 }
 
 class NativeNavigationBridge {
@@ -228,8 +228,8 @@ class NativeNavigationBridge {
   /// A root list asked to tuck its navigation bar away while scrolling.
   static final ValueNotifier<bool> rootBarCollapsed = ValueNotifier(false);
 
-  /// The background of the native shell's system bars, from the "Liquid
-  /// Glass style" and "system Liquid Glass appearance" preferences.
+  /// The background of the native shell's system bars, from the "glass
+  /// effect" and "glass material" preferences.
   static final ValueNotifier<NativeBarMaterial> barMaterial =
       ValueNotifier(NativeBarMaterial.glass);
   static final Map<Object, (Object, NativePageChrome)> _chrome = {};

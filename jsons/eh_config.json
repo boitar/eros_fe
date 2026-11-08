@@ -60,6 +60,7 @@
   "hideTopBarOnScroll?": false,
   "liquidGlass?": false,
   "liquidGlassFollowSystemTransparency?": true,
+  "glassMaterial?": "liquid",
   "liquidGlassTopBarLayout?": "twoRow",
   "readViewCompatibleMode?": true,
   "translateSearchHistory?": false,
