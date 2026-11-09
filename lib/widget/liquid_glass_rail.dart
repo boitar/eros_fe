@@ -860,21 +860,18 @@ Future<void> _printLiquidGlassTopDiag(bool? reduceTransparency) async {
 abstract final class LiquidGlassEdgeTokens {
   static double get reveal => PlatformCapabilities.isDesktop ? 8 : 16;
 
-  static double contentGapFor(BuildContext context) {
-    if (PlatformCapabilities.isDesktop) {
-      return 12;
-    }
-    if (PlatformCapabilities.hostPlatform == TargetPlatform.android) {
-      return 8;
-    }
-    return AdaptiveEnvironment.windowSizeOf(context).shortestSide >= 600
-        ? 12
-        : 8;
-  }
+  /// Mobile lists keep their own original margins and sliver padding.
+  static double? contentGapFor(BuildContext context) =>
+      PlatformCapabilities.isDesktop ? 12 : null;
 
-  static double tailFor(BuildContext context) {
+  static double tailFor(BuildContext context) =>
+      PlatformCapabilities.isDesktop ? 16 : 0;
+
+  /// The scroll-only soft edge used by Flutter-hosted mobile headers.
+  /// iPad keeps its device token even when an AdaptivePane is narrow.
+  static double softTailFor(BuildContext context) {
     if (PlatformCapabilities.isDesktop) {
-      return 16;
+      return 0;
     }
     if (PlatformCapabilities.hostPlatform == TargetPlatform.android) {
       return 20;
@@ -906,8 +903,8 @@ double _liquidGlassTopFadeEnd({
   return math.min(screenHeight, activeRailBottom + tail).toDouble();
 }
 
-// Android retains the original fixed wash, capped at the measured resting card.
-double _androidFadeEnd(
+// Mobile Flutter headers retain the fixed wash, capped at the resting card.
+double _flutterFadeEnd(
   BuildContext context,
   double safeTop,
   LiquidGlassTopBarLayout layout,
@@ -933,8 +930,8 @@ double _androidFadeEnd(
 /// The themed base layer that sits below the scroll content across the whole
 /// top fade region.
 ///
-/// iOS follows the scroll strength. Android retains its static legacy wash,
-/// capped at the resting first card; desktop has no base layer.
+/// Mobile Flutter headers retain their static legacy wash, capped at the
+/// resting first card; desktop has no base layer.
 class LiquidGlassSafeAreaBase extends StatelessWidget {
   const LiquidGlassSafeAreaBase({
     super.key,
@@ -983,26 +980,14 @@ class LiquidGlassSafeAreaBase extends StatelessWidget {
   }
 
   Widget _buildBase(BuildContext context, double progress) {
-    final double fadeEnd = _liquidGlassTopFadeEnd(
-      safeTop: safeTop,
-      layout: layout,
-      hasCategories: hasCategories,
-      screenHeight: MediaQuery.sizeOf(context).height,
-      textScaler: MediaQuery.textScalerOf(context),
-      barFadeProgress: barFadeProgress,
-      tail: LiquidGlassEdgeTokens.tailFor(context) * progress,
+    final effectiveEnd = _flutterFadeEnd(
+      context,
+      safeTop,
+      layout,
+      hasCategories,
+      progress,
+      firstCardRestTop?.value,
     );
-    final android = PlatformCapabilities.hostPlatform == TargetPlatform.android;
-    final effectiveEnd = android
-        ? _androidFadeEnd(
-            context,
-            safeTop,
-            layout,
-            hasCategories,
-            progress,
-            firstCardRestTop?.value,
-          )
-        : fadeEnd;
     final Color background = CupertinoDynamicColor.resolve(
       CupertinoColors.systemBackground,
       context,
@@ -1023,9 +1008,7 @@ class LiquidGlassSafeAreaBase extends StatelessWidget {
               end: Alignment.bottomCenter,
               colors: <Color>[
                 for (final opacity in <double>[1.0, ..._fadeOpacities])
-                  background.withValues(
-                    alpha: opacity * (android ? 1 : progress),
-                  ),
+                  background.withValues(alpha: opacity),
               ],
               stops: <double>[
                 0.0,
@@ -1040,7 +1023,78 @@ class LiquidGlassSafeAreaBase extends StatelessWidget {
   }
 }
 
-/// Scroll-driven tint and blur above content and below the glass rail.
+/// Scroll-only support for the fixed mobile header.
+///
+/// The legacy Base/Scrim/Mask stack remains the complete resting appearance.
+/// This layer is omitted at p=0, then sits above that stack and below the
+/// controls so content that has moved under the header is softened without
+/// changing the resting first-card geometry.
+class LiquidGlassTopSoftEdge extends StatelessWidget {
+  const LiquidGlassTopSoftEdge({
+    super.key,
+    required this.safeTop,
+    required this.layout,
+    this.hasCategories = true,
+    this.edgeProgress,
+    this.barFadeProgress = 0,
+  });
+
+  final double safeTop;
+  final LiquidGlassTopBarLayout layout;
+  final bool hasCategories;
+  final ValueListenable<double>? edgeProgress;
+  final double barFadeProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    if (PlatformCapabilities.isDesktop) {
+      return const SizedBox.shrink();
+    }
+    return AnimatedBuilder(
+      animation: edgeProgress ?? _restingEdge,
+      builder: (context, _) => _buildEdge(
+        context,
+        SoftScrollEdgeEffect.quantizeStrength(edgeProgress?.value ?? 0),
+      ),
+    );
+  }
+
+  Widget _buildEdge(BuildContext context, double progress) {
+    if (progress <= 0.0) {
+      return const SizedBox.shrink();
+    }
+    final barBottom = _liquidGlassTopFadeEnd(
+      safeTop: safeTop,
+      layout: layout,
+      hasCategories: hasCategories,
+      screenHeight: MediaQuery.sizeOf(context).height,
+      textScaler: MediaQuery.textScalerOf(context),
+      barFadeProgress: barFadeProgress,
+    );
+    final inset = math.min(safeTop, barBottom);
+    final bars = math.max(0.0, barBottom - inset);
+    final tail = LiquidGlassEdgeTokens.softTailFor(context) * progress;
+    final surfaceColor = CupertinoDynamicColor.resolve(
+      CupertinoTheme.of(context).scaffoldBackgroundColor,
+      context,
+    );
+    return IgnorePointer(
+      child: SoftScrollEdgeEffect(
+        edge: SoftEdge.top,
+        inset: inset,
+        bars: bars,
+        tail: tail,
+        strength: progress,
+        surfaceColor: surfaceColor,
+        decorationKey: const ValueKey<String>(
+          'liquid-glass-top-soft-edge',
+        ),
+      ),
+    );
+  }
+}
+
+/// The legacy mobile wash or scroll-driven desktop tint below the glass rail.
 class LiquidGlassTopScrim extends StatelessWidget {
   const LiquidGlassTopScrim({
     super.key,
@@ -1093,9 +1147,9 @@ class LiquidGlassTopScrim extends StatelessWidget {
       barFadeProgress: barFadeProgress,
       tail: LiquidGlassEdgeTokens.tailFor(context) * progress,
     );
-    final android = PlatformCapabilities.hostPlatform == TargetPlatform.android;
-    final effectiveEnd = android
-        ? _androidFadeEnd(
+    final desktop = PlatformCapabilities.isDesktop;
+    final effectiveEnd = !desktop
+        ? _flutterFadeEnd(
             context,
             safeTop,
             layout,
@@ -1105,85 +1159,65 @@ class LiquidGlassTopScrim extends StatelessWidget {
           )
         : fadeEnd;
     final bool isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-    _logLiquidGlassTopState(safeTop: safeTop, fadeEnd: fadeEnd, dark: isDark);
+    _logLiquidGlassTopState(
+      safeTop: safeTop,
+      fadeEnd: effectiveEnd,
+      dark: isDark,
+    );
 
     final Color background = CupertinoDynamicColor.resolve(
       CupertinoColors.systemBackground,
       context,
     );
-    final desktop = PlatformCapabilities.isDesktop;
-    if (android || desktop) {
-      final end = desktop ? fadeEnd : effectiveEnd;
-      final List<double> alphas;
-      final List<double> stops;
-      if (android) {
-        alphas = [
-          for (final a in [1.0, .55, .22, 0.0]) a * (isDark ? .37 : .32),
-        ];
-        stops = [0, .35, .70, 1];
-      } else {
-        final reduced =
-            LiquidGlassAccessibilitySettings.reduceTransparency.value ?? false;
-        final curve = SoftEdgeCurve(
-          reduced
-              ? [1, 1, .96, .40, 0]
-              : isDark
-              ? [.94, .90, .84, .36, 0]
-              : [.92, .88, .80, .32, 0],
-          maxSigma: 0,
-        );
-        alphas = curve
-            .sample(
-              inset: safeTop,
-              bars: math.max(0, barBottom - safeTop),
-              tail: end - barBottom,
-            )
-            .map((a) => a * progress)
-            .toList();
-        stops = List.generate(alphas.length, (i) => i / (alphas.length - 1));
-      }
-      return IgnorePointer(
-        child: SizedBox(
-          width: double.infinity,
-          height: end,
-          child: DecoratedBox(
-            key: const ValueKey<String>('liquid-glass-top-scrim'),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  for (final a in alphas)
-                    (desktop
-                            ? CupertinoTheme.of(context).scaffoldBackgroundColor
-                            : background)
-                        .withValues(alpha: a),
-                ],
-                stops: stops,
-              ),
-            ),
-          ),
-        ),
+    final end = effectiveEnd;
+    final List<double> alphas;
+    final List<double> stops;
+    if (!desktop) {
+      alphas = [
+        for (final a in [1.0, .55, .22, 0.0]) a * (isDark ? .37 : .32),
+      ];
+      stops = [0, .35, .70, 1];
+    } else {
+      final reduced =
+          LiquidGlassAccessibilitySettings.reduceTransparency.value ?? false;
+      final curve = SoftEdgeCurve(
+        reduced
+            ? [1, 1, .96, .40, 0]
+            : isDark
+            ? [.94, .90, .84, .36, 0]
+            : [.92, .88, .80, .32, 0],
+        maxSigma: 0,
       );
+      alphas = curve
+          .sample(
+            inset: safeTop,
+            bars: math.max(0, barBottom - safeTop),
+            tail: end - barBottom,
+          )
+          .map((a) => a * progress)
+          .toList();
+      stops = List.generate(alphas.length, (i) => i / (alphas.length - 1));
     }
-    final inset = math.min(safeTop, barBottom);
     return IgnorePointer(
       child: SizedBox(
         width: double.infinity,
-        height: fadeEnd,
-        child: Stack(
-          children: [
-            SoftScrollEdgeEffect(
-              edge: SoftEdge.top,
-              inset: inset,
-              bars: math.max(0, barBottom - inset),
-              tail: math.max(0, fadeEnd - barBottom),
-              strength: progress,
-              surfaceColor: background,
-              hardEdge: desktop,
-              decorationKey: const ValueKey<String>('liquid-glass-top-scrim'),
+        height: end,
+        child: DecoratedBox(
+          key: const ValueKey<String>('liquid-glass-top-scrim'),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                for (final a in alphas)
+                  (desktop
+                          ? CupertinoTheme.of(context).scaffoldBackgroundColor
+                          : background)
+                      .withValues(alpha: a),
+              ],
+              stops: stops,
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1212,8 +1246,8 @@ class LiquidGlassSolidMask extends StatelessWidget {
 
   /// Fixed upper corner radius of the revealed background. The drawing region
   /// keeps this size at every progress so the painter can never shrink the
-  /// radius indirectly; only the opacity follows the reveal. The outer stack
-  /// clips corners below the rail on iOS. Android retains the full 20dp region.
+  /// radius indirectly; only the opacity follows the reveal. Mobile Flutter
+  /// headers retain the full region below the rail for the inverse corners.
   static const double _cornerRadius = 20.0;
 
   @override
@@ -1223,11 +1257,7 @@ class LiquidGlassSolidMask extends StatelessWidget {
     }
     return IgnorePointer(
       child: SizedBox(
-        height:
-            height +
-            (PlatformCapabilities.hostPlatform == TargetPlatform.android
-                ? _cornerRadius
-                : 0),
+        height: height + _cornerRadius,
         child: ValueListenableBuilder<double>(
           valueListenable: progressListenable,
           builder: (BuildContext context, double progress, Widget? child) {

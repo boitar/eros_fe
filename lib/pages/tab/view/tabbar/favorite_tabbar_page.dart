@@ -578,6 +578,20 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
           right: 0,
           child: LiquidGlassBarMotionBuilder(
             enabled: dockTopBar,
+            builder: (context, progress) => LiquidGlassTopSoftEdge(
+              safeTop: layout.safeTop,
+              layout: _ehSettingService.liquidGlassTopBarLayout,
+              edgeProgress: _nativeEdgeProgress,
+              barFadeProgress: progress,
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: LiquidGlassBarMotionBuilder(
+            enabled: dockTopBar,
             builder: (context, progress) =>
                 _buildGlassRail(context, progress, layout),
           ),
@@ -609,10 +623,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
                     child: FavoriteSubPage(
                       favcat: e.favId,
                       firstCardKey: _firstCardKeyFor(e.favId),
-                      contentTopGap:
-                          liquidGlass &&
-                              PlatformCapabilities.hostPlatform !=
-                                  TargetPlatform.android
+                      contentTopGap: liquidGlass
                           ? LiquidGlassEdgeTokens.contentGapFor(context)
                           : null,
                       scrollToInitialAnchor: _scrollToInitialContentAnchor,

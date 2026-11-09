@@ -309,7 +309,7 @@ class LiquidGlassTopStateCoordinator {
     }
     _anchor.refresh();
     final firstCardTop = _firstCardTopProvider?.call();
-    if (PlatformCapabilities.hostPlatform == TargetPlatform.android &&
+    if (!PlatformCapabilities.isDesktop &&
         _anchor.distanceFromAnchor == 0 &&
         !_anchor._hasTopBounce &&
         firstCardTop != null) {

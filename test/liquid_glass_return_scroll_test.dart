@@ -123,6 +123,7 @@ Widget _page(
                     layout: LiquidGlassTopBarLayout.twoRow,
                     edgeProgress: edge,
                     barFadeProgress: progress,
+                    firstCardRestTop: coordinator?.firstCardRestTop,
                   ),
                 ),
               ),
@@ -134,6 +135,21 @@ Widget _page(
                 child: LiquidGlassBarMotionBuilder(
                   enabled: hideOnScroll,
                   builder: (context, progress) => LiquidGlassTopScrim(
+                    safeTop: 59,
+                    layout: LiquidGlassTopBarLayout.twoRow,
+                    edgeProgress: edge,
+                    barFadeProgress: progress,
+                    firstCardRestTop: coordinator?.firstCardRestTop,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: LiquidGlassBarMotionBuilder(
+                  enabled: hideOnScroll,
+                  builder: (context, progress) => LiquidGlassTopSoftEdge(
                     safeTop: 59,
                     layout: LiquidGlassTopBarLayout.twoRow,
                     edgeProgress: edge,
@@ -306,7 +322,7 @@ void main() {
   for (final hideOnScroll in [false, true]) {
     for (final reduceMotion in [false, true]) {
       testWidgets(
-        'scroll edge follows the mounted rail: hide=$hideOnScroll reduce=$reduceMotion',
+        'mobile wash stays continuous as rail hides: hide=$hideOnScroll reduce=$reduceMotion',
         (tester) async {
           PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
           addTearDown(
@@ -351,7 +367,11 @@ void main() {
           );
           coordinator.setBarFadeEnabled(hideOnScroll);
           await tester.pumpAndSettle();
+          coordinator.refresh();
+          await tester.pump();
           expect(edge.value, 0);
+          expect(coordinator.firstCardRestTop.value, 153);
+          expect(find.byType(SoftScrollEdgeEffect), findsNothing);
           expect(find.byIcon(CupertinoIcons.clock), findsOneWidget);
 
           void expectExtent(double visibleBars) {
@@ -362,16 +382,22 @@ void main() {
             expect(effect.bars, visibleBars);
             expect(effect.tail, 24);
             expect(effect.strength, 1);
-            expect(effect.hardEdge, isFalse);
             for (final key in [
               'liquid-glass-safe-area-base',
               'liquid-glass-top-scrim',
             ]) {
-              expect(
-                tester.getRect(find.byKey(ValueKey(key))).bottom,
-                59 + visibleBars + 24,
-              );
+              expect(tester.getRect(find.byKey(ValueKey(key))).bottom, 153);
             }
+            final decoration = tester.widget<DecoratedBox>(
+              find.byKey(const ValueKey('liquid-glass-top-scrim')),
+            );
+            final gradient =
+                (decoration.decoration as BoxDecoration).gradient!
+                    as LinearGradient;
+            expect(
+              gradient.colors.map((c) => c.a),
+              orderedEquals([.32, .32 * .55, .32 * .22, 0]),
+            );
           }
 
           await _drag(tester, -700);
@@ -380,6 +406,7 @@ void main() {
             greaterThan(200),
           );
           expect(edge.value, 1);
+          expect(coordinator.firstCardRestTop.value, 153);
           expect(motion.value, hideOnScroll ? 1 : 0);
           expectExtent(hideOnScroll ? 0 : 94);
           expect(
@@ -387,24 +414,18 @@ void main() {
             hideOnScroll ? findsNothing : findsOneWidget,
           );
           if (hideOnScroll) {
-            final curve = SoftEdgeCurve.light.sample(
-              inset: 59,
-              bars: 0,
-              tail: 24,
-              count: 300,
-            );
-            for (var i = 1; i < curve.length; i++) {
-              expect((curve[i] - curve[i - 1]).abs(), lessThan(.03));
-            }
             await _drag(tester, 24);
             expect(motion.value, inExclusiveRange(0, 1));
             final visibleProgress = reduceMotion
                 ? (motion.value >= .72 ? 1.0 : 0.0)
                 : motion.value;
-            final bars =
-                94 *
-                (1 - SoftScrollEdgeEffect.quantizeStrength(visibleProgress));
-            expectExtent(bars);
+            expectExtent(
+              94 *
+                  (1 -
+                      SoftScrollEdgeEffect.quantizeStrength(
+                        visibleProgress,
+                      )),
+            );
             await _drag(tester, 60);
             expect(motion.value, 0);
             expectExtent(94);

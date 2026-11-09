@@ -265,8 +265,8 @@ void main() {
   });
 
   for (final (platform, size, gap, tail) in [
-    (TargetPlatform.android, const Size(393, 852), 12.0, 0.0),
-    (TargetPlatform.iOS, const Size(393, 852), 8.0, 24.0),
+    (TargetPlatform.android, const Size(393, 852), 12.0, 20.0),
+    (TargetPlatform.iOS, const Size(393, 852), 12.0, 24.0),
     (TargetPlatform.iOS, const Size(820, 1180), 12.0, 28.0),
     (TargetPlatform.windows, const Size(820, 900), 12.0, 16.0),
   ]) {
@@ -281,37 +281,49 @@ void main() {
         tester.getRect(find.byKey(const ValueKey('task-0-0'))).top,
         header.bottom + gap,
       );
-      if (platform != TargetPlatform.iOS) {
-        const key = ValueKey<String>('liquid-glass-top-scrim');
-        LinearGradient gradient() => (tester.widget<DecoratedBox>(find.byKey(key)).decoration as BoxDecoration).gradient! as LinearGradient;
-        expect(find.byType(SoftScrollEdgeEffect), findsNothing);
-        expect(gradient().colors.first.a, closeTo(platform == TargetPlatform.android ? .32 : 0, .001));
-        await tester.drag(find.byType(PageView), const Offset(0, -300));
-        await tester.pumpAndSettle();
-        expect(gradient().colors.first.a, closeTo(platform == TargetPlatform.android ? .32 : .92, .001));
-        if (platform == TargetPlatform.windows) {
-          expect(tester.getRect(find.byKey(key)).bottom, header.bottom + tail);
-        }
-        final state = tester.state<_DownloadsState>(find.byType(_Downloads));
-        state.pages.jumpToPage(1);
-        await tester.pumpAndSettle();
-        expect(gradient().colors.first.a, closeTo(platform == TargetPlatform.android ? .32 : 0, .001));
-        return;
-      }
-      SoftScrollEdgeEffect effect() =>
-          tester.widget(find.byType(SoftScrollEdgeEffect));
-      expect(effect().strength, 0);
+      const key = ValueKey<String>('liquid-glass-top-scrim');
+      LinearGradient gradient() =>
+          (tester.widget<DecoratedBox>(find.byKey(key)).decoration
+                      as BoxDecoration)
+                  .gradient!
+              as LinearGradient;
+      final mobile = !PlatformCapabilities.isDesktop;
+      expect(find.byType(SoftScrollEdgeEffect), findsNothing);
+      expect(gradient().colors.first.a, closeTo(mobile ? .32 : 0, .001));
       await tester.drag(find.byType(PageView), const Offset(0, -300));
       await tester.pumpAndSettle();
-      expect(effect().strength, 1);
-      expect(effect().tail, tail);
+      expect(gradient().colors.first.a, closeTo(mobile ? .32 : .92, .001));
+      if (mobile) {
+        final state = tester.state<_DownloadsState>(find.byType(_Downloads));
+        state.edge.update(
+          FixedScrollMetrics(
+            minScrollExtent: 0,
+            maxScrollExtent: 1000,
+            pixels: LiquidGlassEdgeTokens.reveal,
+            viewportDimension: size.height,
+            axisDirection: AxisDirection.down,
+            devicePixelRatio: 1,
+          ),
+        );
+        await tester.pump();
+        final effect = tester.widget<SoftScrollEdgeEffect>(
+          find.byType(SoftScrollEdgeEffect),
+        );
+        expect(effect.inset, 59);
+        expect(effect.bars, 94);
+        expect(effect.tail, tail);
+        expect(effect.strength, 1);
+      }
+      if (platform == TargetPlatform.windows) {
+        expect(tester.getRect(find.byKey(key)).bottom, header.bottom + tail);
+      }
       final state = tester.state<_DownloadsState>(find.byType(_Downloads));
       state.pages.jumpToPage(1);
       await tester.pumpAndSettle();
-      expect(effect().strength, 0);
+      expect(gradient().colors.first.a, closeTo(mobile ? .32 : 0, .001));
       state.pages.jumpToPage(0);
       await tester.pumpAndSettle();
-      expect(effect().strength, 1);
+      expect(gradient().colors.first.a, closeTo(mobile ? .32 : .92, .001));
     });
   }
 

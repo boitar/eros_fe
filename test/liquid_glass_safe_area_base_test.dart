@@ -1,8 +1,11 @@
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
+import 'package:eros_fe/widget/scroll_edge_effect.dart';
+import 'package:eros_fe/widget/scroll_edge_progress.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +27,232 @@ void main() {
 
   double fadeEndFor(LiquidGlassTopBarLayout layout) =>
       layout == LiquidGlassTopBarLayout.twoRow ? twoRowFadeEnd : inlineFadeEnd;
+
+  for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+    for (final brightness in Brightness.values) {
+      for (final cardTop in [161.0, 300.0]) {
+        testWidgets(
+          '$platform $brightness keeps static layers with resting card $cardTop',
+          (tester) async {
+            PlatformCapabilities.debugHostPlatformOverride = platform;
+            tester.view.physicalSize = const Size(800, 1200);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.reset);
+            final edge = ScrollEdgeProgressController();
+            final rest = ValueNotifier<double?>(cardTop);
+            addTearDown(edge.dispose);
+            addTearDown(rest.dispose);
+            await tester.pumpWidget(
+              CupertinoApp(
+                theme: CupertinoThemeData(brightness: brightness),
+                home: Stack(
+                  children: [
+                    LiquidGlassSafeAreaBase(
+                      safeTop: safeTop,
+                      layout: LiquidGlassTopBarLayout.twoRow,
+                      edgeProgress: edge,
+                      firstCardRestTop: rest,
+                    ),
+                    const LiquidGlassSolidMask(
+                      progressListenable: AlwaysStoppedAnimation(1),
+                      safeTop: safeTop,
+                      height: twoRowFadeEnd,
+                    ),
+                    LiquidGlassTopScrim(
+                      safeTop: safeTop,
+                      layout: LiquidGlassTopBarLayout.twoRow,
+                      edgeProgress: edge,
+                      firstCardRestTop: rest,
+                    ),
+                    LiquidGlassTopSoftEdge(
+                      safeTop: safeTop,
+                      layout: LiquidGlassTopBarLayout.twoRow,
+                      edgeProgress: edge,
+                    ),
+                  ],
+                ),
+              ),
+            );
+            LinearGradient gradient(Key key) =>
+                (tester.widget<DecoratedBox>(find.byKey(key)).decoration
+                            as BoxDecoration)
+                        .gradient!
+                    as LinearGradient;
+            final background = CupertinoDynamicColor.resolve(
+              CupertinoColors.systemBackground,
+              tester.element(find.byType(LiquidGlassTopScrim)),
+            );
+            const target = 1200 * .17;
+            final resting = cardTop < target ? cardTop : target;
+            for (final (offset, progress) in [
+              (0.0, 0.0),
+              (8.0, .5),
+              (16.0, 1.0),
+              (-8.0, 0.0),
+            ]) {
+              edge.update(
+                FixedScrollMetrics(
+                  minScrollExtent: 0,
+                  maxScrollExtent: 1000,
+                  pixels: offset,
+                  viewportDimension: 1200,
+                  axisDirection: AxisDirection.down,
+                  devicePixelRatio: 1,
+                ),
+              );
+              await tester.pump();
+              expect(edge.value, progress);
+              final end = resting + (target - resting) * progress;
+              for (final key in [baseKey, scrimKey]) {
+                expect(find.byKey(key), findsOneWidget);
+                expect(
+                  tester.getRect(find.byKey(key)).bottom,
+                  closeTo(end, .001),
+                );
+                for (final color in gradient(key).colors) {
+                  expect(
+                    color.withValues(alpha: 1).toARGB32(),
+                    background.toARGB32(),
+                  );
+                }
+              }
+              final base = gradient(baseKey);
+              expect(
+                base.colors.map((c) => c.a),
+                orderedEquals([1, 1, .84, .28, 0]),
+              );
+              final solidStop = safeTop / end;
+              final expectedStops = [
+                0.0,
+                for (final fraction in [0.0, .25, .65, 1.0])
+                  solidStop + (1 - solidStop) * fraction,
+              ];
+              expect(base.stops, orderedEquals(expectedStops));
+              final scrim = gradient(scrimKey);
+              final alpha = brightness == Brightness.dark ? .37 : .32;
+              expect(
+                scrim.colors.map((c) => c.a),
+                orderedEquals([alpha, alpha * .55, alpha * .22, 0]),
+              );
+              expect(scrim.stops, [0, .35, .70, 1]);
+              final soft = find.byType(SoftScrollEdgeEffect);
+              if (progress == 0) {
+                expect(soft, findsNothing);
+                expect(find.byType(BackdropFilter), findsNothing);
+              } else {
+                expect(soft, findsOneWidget);
+                final effect = tester.widget<SoftScrollEdgeEffect>(soft);
+                expect(effect.inset, safeTop);
+                expect(effect.bars, 94);
+                expect(
+                  effect.tail,
+                  closeTo(
+                    (platform == TargetPlatform.android ? 20 : 28) * progress,
+                    .001,
+                  ),
+                );
+                expect(effect.strength, progress);
+                if (platform == TargetPlatform.iOS) {
+                  expect(find.byType(BackdropFilter), findsWidgets);
+                } else {
+                  expect(find.byType(BackdropFilter), findsNothing);
+                }
+              }
+              expect(
+                tester.getSize(find.byType(LiquidGlassSolidMask)).height,
+                twoRowFadeEnd + 20,
+              );
+            }
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  }
+
+  for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
+    for (final brightness in Brightness.values) {
+      testWidgets('$platform $brightness preserves the desktop canvas fade', (
+        tester,
+      ) async {
+        PlatformCapabilities.debugHostPlatformOverride = platform;
+        const canvas = Color(0xFF324654);
+        final progress = ValueNotifier<double>(0);
+        addTearDown(progress.dispose);
+        final reduced =
+            LiquidGlassAccessibilitySettings.reduceTransparency
+                as ValueNotifier<bool?>;
+        reduced.value = false;
+        addTearDown(() => reduced.value = null);
+        await tester.pumpWidget(
+          CupertinoApp(
+            theme: CupertinoThemeData(
+              brightness: brightness,
+              scaffoldBackgroundColor: canvas,
+            ),
+            home: Stack(
+              children: [
+                LiquidGlassSafeAreaBase(
+                  safeTop: safeTop,
+                  layout: LiquidGlassTopBarLayout.twoRow,
+                  edgeProgress: progress,
+                ),
+                const LiquidGlassSolidMask(
+                  progressListenable: AlwaysStoppedAnimation(1),
+                  safeTop: safeTop,
+                  height: twoRowFadeEnd,
+                ),
+                LiquidGlassTopScrim(
+                  safeTop: safeTop,
+                  layout: LiquidGlassTopBarLayout.twoRow,
+                  edgeProgress: progress,
+                ),
+                LiquidGlassTopSoftEdge(
+                  safeTop: safeTop,
+                  layout: LiquidGlassTopBarLayout.twoRow,
+                  edgeProgress: progress,
+                ),
+              ],
+            ),
+          ),
+        );
+        for (final p in [0.0, .5, 1.0]) {
+          progress.value = p;
+          await tester.pump();
+          expect(find.byKey(baseKey), findsNothing);
+          expect(
+            find.byKey(const ValueKey('liquid-glass-solid-mask')),
+            findsNothing,
+          );
+          expect(find.byType(SoftScrollEdgeEffect), findsNothing);
+          expect(find.byType(BackdropFilter), findsNothing);
+          expect(
+            find.byKey(const ValueKey('liquid-glass-edge-hairline')),
+            findsNothing,
+          );
+          expect(
+            tester.getRect(find.byKey(scrimKey)).bottom,
+            twoRowFadeEnd + 16 * p,
+          );
+          final decoration =
+              tester.widget<DecoratedBox>(find.byKey(scrimKey)).decoration
+                  as BoxDecoration;
+          final gradient = decoration.gradient! as LinearGradient;
+          final curve = SoftEdgeCurve(
+            brightness == Brightness.dark
+                ? [.94, .90, .84, .36, 0]
+                : [.92, .88, .80, .32, 0],
+            maxSigma: 0,
+          );
+          final expected = curve.sample(inset: safeTop, bars: 94, tail: 16 * p);
+          for (var i = 0; i < expected.length; i++) {
+            expect(gradient.colors[i].withValues(alpha: 1), canvas);
+            expect(gradient.colors[i].a, closeTo(expected[i] * p, .001));
+          }
+        }
+      });
+    }
+  }
 
   /// Theme-background opacity of the base at logical y: solid through the
   /// safe area, then 100% → 84% → 28% → 0% with the three fade points at
@@ -536,6 +765,9 @@ void main() {
                       child: LiquidGlassTopScrim(
                         safeTop: safeTop,
                         layout: layout,
+                        firstCardRestTop: AlwaysStoppedAnimation<double?>(
+                          headerHeight,
+                        ),
                       ),
                     ),
                   ],
@@ -553,7 +785,8 @@ void main() {
           final bytes = (await image.toByteData(
             format: ui.ImageByteFormat.rawRgba,
           ))!;
-          for (final x in [0, 1, 10, 220, 429, 439]) {
+          // The inverse 20pt corners occupy the outer canvas, not the card.
+          for (final x in [20, 220, 419]) {
             for (final y in [
               headerHeight.toInt(),
               headerHeight.toInt() + 10,
@@ -576,6 +809,47 @@ void main() {
         });
       });
     }
+  }
+
+  for (final width in [320.0, 400.0, 500.0]) {
+    testWidgets('iPad pane keeps the 28pt mobile soft tail at $width',
+        (tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+      const windowSize = Size(820, 1180);
+      tester.view.physicalSize = windowSize;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final progress = ValueNotifier<double>(1);
+      addTearDown(progress.dispose);
+      await tester.pumpWidget(
+        CupertinoApp(
+          home: SizedBox(
+            width: width,
+            child: AdaptivePane(
+              environment: const AdaptiveEnvironmentSnapshot(
+                size: windowSize,
+                safeArea: EdgeInsets.only(top: 59),
+                viewPadding: EdgeInsets.only(top: 59),
+              ),
+              rect: Rect.fromLTWH(0, 0, width, windowSize.height),
+              child: LiquidGlassTopSoftEdge(
+                safeTop: 59,
+                layout: LiquidGlassTopBarLayout.twoRow,
+                edgeProgress: progress,
+              ),
+            ),
+          ),
+        ),
+      );
+      final effect = tester.widget<SoftScrollEdgeEffect>(
+        find.byType(SoftScrollEdgeEffect),
+      );
+      expect(effect.inset, 59);
+      expect(effect.bars, 94);
+      expect(effect.tail, 28);
+      expect(effect.strength, 1);
+      expect(tester.takeException(), isNull);
+    });
   }
 
   testWidgets('full page stack keeps the previous top appearance with the '

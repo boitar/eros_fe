@@ -100,12 +100,9 @@ void main() {
                 final edge = (40 + 100 * value).round();
                 final opaque = brightness == Brightness.light ? 255 : 0;
                 int blend(int fg) => (fg * value + 136 * (1 - value)).round();
-                // The 20pt corners follow the content while they are inside the
-                // rail. Any portion below its lower edge at y=140 is clipped.
-                final edgeColor =
-                    platform == TargetPlatform.android || edge < 140
-                    ? blend(opaque)
-                    : 136;
+                // Both mobile Flutter paths keep the full inverse corners
+                // below the rail instead of clipping them at y=140.
+                final edgeColor = blend(opaque);
                 expect(
                   (channel(0, edge) - edgeColor).abs(),
                   lessThanOrEqualTo(2),
@@ -114,10 +111,7 @@ void main() {
                   (channel(199, edge) - edgeColor).abs(),
                   lessThanOrEqualTo(2),
                 );
-                final lowerColor =
-                    platform == TargetPlatform.android || edge + 10 < 140
-                    ? blend(opaque)
-                    : 136;
+                final lowerColor = blend(opaque);
                 expect(
                   (channel(0, edge + 10) - lowerColor).abs(),
                   lessThanOrEqualTo(2),

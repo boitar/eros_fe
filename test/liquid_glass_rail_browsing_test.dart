@@ -526,7 +526,7 @@ void main() {
     expect(tester.getSize(find.byType(LiquidGlassTopScrim)).height, 153);
   });
 
-  testWidgets('resting top scrim stays clear when accessibility changes', (
+  testWidgets('resting mobile wash stays static when accessibility changes', (
     tester,
   ) async {
     final previousHostPlatform = PlatformCapabilities.debugHostPlatformOverride;
@@ -572,8 +572,10 @@ void main() {
                 as LinearGradient)
             .colors;
     final initial = gradientColors();
+    expect(initial.map((c) => c.a),
+        orderedEquals([.32, .32 * .55, .32 * .22, 0]));
 
-    // Accessibility changes must not reveal a resting edge.
+    // Mobile keeps the legacy gradient regardless of accessibility settings.
     LiquidGlassAccessibilitySettings.watch();
     await tester.pump();
     await tester.pump();
@@ -588,7 +590,7 @@ void main() {
     expect(gradientColors(), initial);
     expect(find.byKey(scrimKey), findsOneWidget);
 
-    // Reduce Transparency also keeps every resting tint fully transparent.
+    // Reduce Transparency keeps the same static wash without adding blur.
     settings!.success(true);
     await tester.pump();
     await tester.pump();

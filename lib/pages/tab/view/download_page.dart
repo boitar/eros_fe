@@ -382,10 +382,7 @@ class DownloadGlassScaffold extends StatelessWidget {
                     padding: MediaQuery.paddingOf(context).copyWith(
                       top:
                           headerHeight +
-                          (PlatformCapabilities.hostPlatform ==
-                                  TargetPlatform.android
-                              ? 12
-                              : LiquidGlassEdgeTokens.contentGapFor(context)),
+                          (LiquidGlassEdgeTokens.contentGapFor(context) ?? 12),
                     ),
                   ),
                   child: child,
@@ -393,9 +390,14 @@ class DownloadGlassScaffold extends StatelessWidget {
               ),
             ),
             LiquidGlassTopScrim(
-              firstCardRestTop: PlatformCapabilities.hostPlatform == TargetPlatform.android
+              firstCardRestTop: !PlatformCapabilities.isDesktop
                   ? AlwaysStoppedAnimation<double?>(headerHeight + 17)
                   : null,
+              safeTop: header.safeTop,
+              layout: header.layout,
+              edgeProgress: edgeProgress,
+            ),
+            LiquidGlassTopSoftEdge(
               safeTop: header.safeTop,
               layout: header.layout,
               edgeProgress: edgeProgress,
@@ -537,8 +539,7 @@ class _DownloadArchiverViewState extends State<DownloadArchiverView>
               context.mediaQueryPadding.top -
               (NativeNavigationScope.isEnabled(context) ||
                       (_DownloadGlassContentScope.of(context) &&
-                          PlatformCapabilities.hostPlatform !=
-                              TargetPlatform.android)
+                          PlatformCapabilities.isDesktop)
                   ? 5
                   : 0),
           bottom: context.mediaQueryPadding.bottom,
@@ -599,8 +600,7 @@ class _DownloadGalleryViewState extends State<DownloadGalleryView>
                     context.mediaQueryPadding.top -
                     (NativeNavigationScope.isEnabled(context) ||
                             (_DownloadGlassContentScope.of(context) &&
-                                PlatformCapabilities.hostPlatform !=
-                                    TargetPlatform.android)
+                                PlatformCapabilities.isDesktop)
                         ? 5
                         : 0),
                 bottom: context.mediaQueryPadding.bottom,

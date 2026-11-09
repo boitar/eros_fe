@@ -253,17 +253,19 @@ void main() {
     }
   });
 
-  group('Android fade cap uses real card containers', () {
-    for (final mode in [
-      ListModeEnum.list,
-      ListModeEnum.simpleList,
-      ListModeEnum.grid,
-      ListModeEnum.gridTags,
-      ListModeEnum.waterfall,
-      ListModeEnum.waterfallLarge,
-    ]) {
-      testWidgets('$mode excludes internal labels and favorite badges',
-          (tester) => _expectAndroidFirstCardCap(tester, mode));
+  group('mobile Flutter fade cap uses real card containers', () {
+    for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+      for (final mode in [
+        ListModeEnum.list,
+        ListModeEnum.simpleList,
+        ListModeEnum.grid,
+        ListModeEnum.gridTags,
+        ListModeEnum.waterfall,
+        ListModeEnum.waterfallLarge,
+      ]) {
+        testWidgets('$platform $mode excludes internal labels and badges',
+            (tester) => _expectMobileFirstCardCap(tester, platform, mode));
+      }
     }
   });
 
@@ -657,9 +659,7 @@ Future<void> _expectFlutterContentGap(
                 firstCardKey: first,
                 contentTopGap: native
                     ? NativeTopTabHeader.contentGapFor(context)
-                    : platform == TargetPlatform.android
-                        ? null
-                        : LiquidGlassEdgeTokens.contentGapFor(context),
+                    : LiquidGlassEdgeTokens.contentGapFor(context),
               ),
             ],
           ));
@@ -711,7 +711,7 @@ Future<void> _expectFlutterContentGap(
               platform == TargetPlatform.windows
           ? 12
           : 8;
-  final effectiveGap = platform == TargetPlatform.android
+  final effectiveGap = !native && !PlatformCapabilities.isDesktop
       ? switch (mode) {
           ListModeEnum.list => 8,
           ListModeEnum.simpleList => 0,
@@ -726,12 +726,13 @@ Future<void> _expectFlutterContentGap(
   await tester.pumpWidget(const SizedBox());
 }
 
-Future<void> _expectAndroidFirstCardCap(
+Future<void> _expectMobileFirstCardCap(
   WidgetTester tester,
+  TargetPlatform platform,
   ListModeEnum mode,
 ) async {
   const barBottom = 153.0;
-  PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+  PlatformCapabilities.debugHostPlatformOverride = platform;
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(402, 1200);
   addTearDown(tester.view.reset);
@@ -777,6 +778,11 @@ Future<void> _expectAndroidFirstCardCap(
         layout: LiquidGlassTopBarLayout.twoRow,
         edgeProgress: progress,
         firstCardRestTop: rest,
+      ),
+      LiquidGlassTopSoftEdge(
+        safeTop: 59,
+        layout: LiquidGlassTopBarLayout.twoRow,
+        edgeProgress: progress,
       ),
     ]),
   ));
@@ -826,6 +832,23 @@ Future<void> _expectAndroidFirstCardCap(
     expect(find.byKey(scrimKey), findsOneWidget);
     expect(tester.getRect(find.byKey(scrimKey)).bottom,
         closeTo(cardTop + (1200 * .17 - cardTop) * p, .001));
+    if (p == 0) {
+      expect(find.byType(SoftScrollEdgeEffect), findsNothing);
+    } else {
+      final effect = tester.widget<SoftScrollEdgeEffect>(
+        find.byType(SoftScrollEdgeEffect),
+      );
+      expect(effect.inset, 59);
+      expect(effect.bars, 94);
+      expect(
+        effect.tail,
+        closeTo(
+          (platform == TargetPlatform.android ? 20 : 24) * p,
+          .001,
+        ),
+      );
+      expect(effect.strength, p);
+    }
   }
   expect(tester.takeException(), isNull);
   await tester.pumpWidget(const SizedBox());

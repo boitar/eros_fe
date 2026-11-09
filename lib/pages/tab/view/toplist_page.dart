@@ -528,6 +528,20 @@ class _ToplistTabState extends State<ToplistTab>
                   right: 0,
                   child: LiquidGlassBarMotionBuilder(
                     enabled: dockTopBar,
+                    builder: (context, progress) => LiquidGlassTopSoftEdge(
+                      safeTop: layout.safeTop,
+                      layout: _ehSettingService.liquidGlassTopBarLayout,
+                      edgeProgress: _nativeEdgeProgress,
+                      barFadeProgress: progress,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LiquidGlassBarMotionBuilder(
+                    enabled: dockTopBar,
                     builder: (context, progress) =>
                         _buildGlassRail(context, layout, progress),
                   ),
@@ -617,9 +631,7 @@ class _ToplistTabState extends State<ToplistTab>
             anchorController: logic.galleryAnchor,
             contentTopGap: NativeNavigationScope.isEnabled(context)
                 ? NativeTopTabHeader.contentGapFor(context)
-                : _useLiquidGlass &&
-                      PlatformCapabilities.hostPlatform !=
-                          TargetPlatform.android
+                : _useLiquidGlass
                 ? LiquidGlassEdgeTokens.contentGapFor(context)
                 : null,
           );
