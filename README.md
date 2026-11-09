@@ -2,11 +2,12 @@
 English | [简体中文](./README_cn.md)
 
 An unofficial E-Hentai app built with Flutter. This repository is a personal fork of
-[erosTeam/eros_fe](https://github.com/erosTeam/eros_fe). The `custom` branch focuses on iOS/iPadOS
-and iPhone Duo: it redesigns the main screens, adopts native Liquid Glass navigation, and fixes
-downloads, favorites, sharing, history, avatars, haptics and Cloudflare verification.
+[erosTeam/eros_fe](https://github.com/erosTeam/eros_fe). The `custom` branch redesigns the main
+screens with Liquid Glass navigation and fixes downloads, favorites, sharing, history, avatars,
+haptics and Cloudflare verification. It started on iOS/iPadOS and iPhone Duo; **the new UI now also
+supports Android and desktop (macOS)**. A Windows build is in progress and will follow in a few days.
 
-The version remains `1.9.2+566`. The iOS Bundle ID is `cn.honjow.fehv`.
+The current version is `1.10.0+567` (nightly). The iOS Bundle ID is `cn.honjow.fehv`.
 
 ## Screenshots
 
@@ -59,6 +60,21 @@ The native vertical bars sit on the right edge.
 - The reader improves single/double pages, continuous reading, the thumbnail strip, system bars and
   safe areas.
 
+**Android and desktop**
+- The redesigned UI now runs on Android and desktop. Android gets glass and solid (Material 3)
+  variants: a search capsule on the home page, a navigation rail on large screens, a bottom action
+  bar in the gallery detail, a glass reader and an Android 16 style settings home with predictive
+  Back.
+- macOS 26+ uses native AppKit Liquid Glass for the bottom bar, settings bars and menus, and the
+  title bar matches the content canvas.
+- Desktop adds a sidebar, card hover actions, right-click menus and keyboard shortcuts, two-pane
+  settings, and a desktop reader (layout switch, thumbnail sidebar, page buttons, wheel paging,
+  Ctrl+wheel zoom, F for full screen).
+- Glass material can be switched between Liquid Glass and frosted glass, or turned off, on every
+  platform.
+- Windows: the UI is adapted, but no Windows package has been published yet. It is expected in a
+  few days.
+
 **Fixes and features**
 - Cloudflare verification: switching between E-Hentai and ExHentai no longer requests the forum.
   When the forum is blocked, the app offers in-app verification, and Settings › Site has a new
@@ -76,6 +92,22 @@ The native vertical bars sit on the right edge.
   shell and the older glass top bar (one hidden tab opens directly; several open a picker).
 
 ## Changelog
+
+### 2026-11-10: v1.10.0-nightly, UI redesign for Android and desktop
+
+Tag: `v1.10.0-nightly` ([release](https://github.com/boitar/eros_fe/releases/tag/v1.10.0-nightly)).
+
+- **The whole UI was reworked to support Android and desktop.** Liquid Glass components now run on
+  Android, macOS and Windows; macOS 26+ uses native AppKit glass. See *Android and desktop* above.
+- **Desktop:** sidebar navigation, card hover and right-click actions, keyboard shortcuts, two-pane
+  settings and a desktop reader.
+- **Android:** glass home with a search capsule, large-screen navigation rail, solid Material 3
+  variant, glass reader and redesigned settings.
+- **Top bar blur** ([#1](https://github.com/boitar/eros_fe/issues/1)): at rest, the first list item
+  is no longer covered by the Liquid Glass blur; the soft edge appears only once content scrolls under
+  the bar, on iOS, iPadOS and Android. The macOS title bar no longer shows a separate white strip.
+- **Packages:** iOS (unsigned IPA), Android (arm64-v8a, armeabi-v7a, x86_64 and universal APKs) and
+  macOS (DMG). Windows will follow.
 
 ### 2026-11-03: hidden tab entry and language section fixes (builds 94–95)
 
@@ -256,19 +288,27 @@ For glass combinations, prefix the favorites, avatar, group-index, haptics or do
 
 **Not yet verified:**
 - Physical-device VoiceOver and vibration strength
-- Android hardware
 - OCR and legacy archive downloads
 - LiveContainer
 - Real-network Cloudflare blocks and forum uploads
 
 Simulator results do not substitute for these checks.
 
-## Installation for iOS
+## Installation
 
-Unsigned IPAs of this fork are published on [Releases](https://github.com/boitar/eros_fe/releases/latest): arm64, main app unsigned,
-Bundle ID `cn.honjow.fehv`, iOS 15.6 or later.
+Packages of this fork are published on [Releases](https://github.com/boitar/eros_fe/releases).
 
-1. Download the latest `Eros-FE_*-unsigned_*.ipa` from [Releases](https://github.com/boitar/eros_fe/releases/latest).
+- **Android:** pick the APK for your device's architecture (`arm64-v8a` for most phones), or the
+  universal APK if unsure.
+- **macOS:** open the DMG and drag Eros-FE to Applications. The app is ad hoc signed, so the first
+  launch may need right-click › Open.
+- **Windows:** not published yet; expected in a few days.
+
+### iOS
+
+Unsigned IPAs are arm64, main app unsigned, Bundle ID `cn.honjow.fehv`, iOS 15.6 or later.
+
+1. Download the latest `Eros-FE_*-unsigned_*.ipa` from [Releases](https://github.com/boitar/eros_fe/releases).
 2. Sign and install it yourself with a tool such as [AltStore](https://altstore.io). It replaces any
    installed app with the same Bundle ID, so back up the app data before switching.
 
