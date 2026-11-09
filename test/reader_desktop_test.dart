@@ -1,21 +1,33 @@
+import 'dart:io';
+import 'dart:ui' show SemanticsAction;
+
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/generated/l10n.dart';
+import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
 import 'package:eros_fe/pages/image_view/common.dart';
 import 'package:eros_fe/pages/image_view/controller/view_controller.dart';
 import 'package:eros_fe/pages/image_view/controller/view_state.dart';
 import 'package:eros_fe/pages/image_view/reader_pagination.dart';
 import 'package:eros_fe/pages/image_view/view/reader_desktop.dart';
+import 'package:eros_fe/pages/image_view/view/reader_layout.dart';
+import 'package:eros_fe/pages/image_view/view/view_image.dart';
 import 'package:eros_fe/pages/image_view/view/view_widget.dart';
 import 'package:eros_fe/widget/macos_window_chrome.dart';
+import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
+import 'support/gallery_save_fixture.dart';
 
 void main() {
   late _Reader reader;
@@ -25,12 +37,20 @@ void main() {
     WidgetTester tester, {
     bool glass = false,
     TargetPlatform host = TargetPlatform.macOS,
+    Size size = const Size(1280, 800),
+    Locale locale = const Locale('en'),
+    double textScale = 1,
+    Widget? content,
+    void Function(_State)? configure,
   }) async {
     Get.testMode = true;
     PlatformCapabilities.debugHostPlatformOverride = host;
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(1280, 800);
-    state = _State();
+    tester.view.physicalSize = size;
+    Get.put<LocaleService>(LocaleService());
+    state = _State(Get.put<EhSettingService>(_Settings()));
+    state.ehSettingService.liquidGlass = glass;
+    configure?.call(state);
     reader = _Reader(state);
     Get.put<ViewExtController>(reader);
     addTearDown(() {
@@ -38,17 +58,28 @@ void main() {
       tester.view.reset();
       Get.reset();
     });
-    const environment = AdaptiveEnvironmentSnapshot(size: Size(1280, 800));
+    final environment = AdaptiveEnvironmentSnapshot(size: size);
     await tester.pumpWidget(
-      CupertinoApp(
-        localizationsDelegates: const [L10n.delegate],
+      GetCupertinoApp(
+        locale: locale,
+        supportedLocales: L10n.delegate.supportedLocales,
+        localizationsDelegates: const [
+          L10n.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         home: AdaptiveEnvironmentScope(
           snapshot: environment,
           child: GetBuilder<ViewExtController>(
             id: idViewBar,
             builder: (_) => ReaderDesktopLayout(
               glass: glass,
-              content: const SizedBox.expand(key: ValueKey('pages')),
+              content: content ?? const SizedBox.expand(key: ValueKey('pages')),
             ),
           ),
         ),
@@ -198,6 +229,280 @@ void main() {
     expect(reader.turns, <String>['next', 'prev']);
   });
 
+  for (final glass in [false, true]) {
+    for (final locale in [const Locale('en'), const Locale('ru')]) {
+      for (final host in [TargetPlatform.macOS, TargetPlatform.windows]) {
+        testWidgets(
+          '400px $host $locale glass=$glass keeps all controls reachable',
+          (tester) async {
+            await pump(
+              tester,
+              glass: glass,
+              host: host,
+              locale: locale,
+              size: const Size(400, 600),
+              textScale: 1.6,
+              configure: (state) => state.pageState = _GalleryState(),
+            );
+            expect(tester.takeException(), isNull);
+            for (final key in [
+              'reader-layout-single',
+              'reader-layout-double',
+              'reader-layout-vertical',
+              'reader-desktop-${L10n.current.more_actions}',
+            ]) {
+              final bounds = tester.getRect(find.byKey(ValueKey(key)));
+              expect(bounds.left, greaterThanOrEqualTo(0));
+              expect(bounds.right, lessThanOrEqualTo(400));
+            }
+            await tester.tap(
+              find.byKey(
+                ValueKey('reader-desktop-${L10n.current.more_actions}'),
+              ),
+            );
+            await tester.pumpAndSettle();
+            expect(find.text(L10n.current.save_current_image), findsOneWidget);
+            expect(find.text(L10n.current.share_image), findsOneWidget);
+            expect(find.text(L10n.current.reader_auto_read), findsOneWidget);
+            expect(find.text(L10n.current.read_setting), findsOneWidget);
+            expect(
+              find.text(L10n.current.fullscreen),
+              host == TargetPlatform.macOS ? findsOneWidget : findsNothing,
+            );
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+
+    for (final width in [400.0, 1280.0]) {
+      testWidgets(
+        '${width}px glass=$glass semantic actions operate layouts and page buttons',
+        (tester) async {
+          final semantics = tester.ensureSemantics();
+          await pump(tester, glass: glass, size: Size(width, 800));
+          void activate(String key) {
+            final node = tester.getSemantics(find.byKey(ValueKey(key)));
+            expect(
+              node.getSemanticsData().hasAction(SemanticsAction.tap),
+              isTrue,
+            );
+            node.owner!.performAction(node.id, SemanticsAction.tap);
+          }
+
+          activate('reader-layout-single');
+          await tester.pump();
+          expect(reader.columns, [ReaderColumnPreference.single]);
+          activate('reader-layout-double');
+          await tester.pump();
+          expect(reader.columns.last, ReaderColumnPreference.oddLeft);
+          activate('reader-layout-vertical');
+          await tester.pump();
+          expect(state.viewMode, ViewMode.topToBottom);
+          activate('reader-layout-single');
+          await tester.pump();
+          expect(state.viewMode, isNot(ViewMode.topToBottom));
+          activate('reader-desktop-next');
+          activate('reader-desktop-prev');
+          expect(reader.taps, ['right', 'left']);
+          state.viewMode = ViewMode.rightToLeft;
+          reader.update([idViewBar]);
+          await tester.pump();
+          activate('reader-desktop-next');
+          activate('reader-desktop-prev');
+          expect(reader.taps, ['right', 'left', 'right', 'left']);
+          semantics.dispose();
+        },
+      );
+    }
+  }
+
+  for (final mode in [ViewColumnMode.single, ViewColumnMode.oddLeft]) {
+    for (final direction in [ViewMode.leftToRight, ViewMode.rightToLeft]) {
+      testWidgets('real downloaded image wheel arbitration $mode $direction', (
+        tester,
+      ) async {
+        final directory = Directory('tmpfile')
+            .createTempSync('desktop-reader-test-');
+        addTearDown(() => directory.deleteSync(recursive: true));
+        final file = File('${directory.path}/page.png').absolute;
+        file.writeAsBytesSync(saveCurrentPng);
+        // Start and await the real file decode outside the fake clock.
+        await tester.runAsync(() async {
+          await pump(
+            tester,
+            content: mode == ViewColumnMode.single
+                ? const ViewImage(imageSer: 3, enableSlideOutPage: false)
+                : Builder(
+                    builder: (context) => ReaderSpreadLayout(
+                      environment: AdaptiveEnvironment.of(context),
+                      reverse: direction == ViewMode.rightToLeft,
+                      pages: const [
+                        ReaderSpreadPage(
+                          slot: 0,
+                          aspectRatio: 1,
+                          child: ViewImage(
+                            imageSer: 3,
+                            enableSlideOutPage: false,
+                          ),
+                        ),
+                        ReaderSpreadPage(
+                          slot: 1,
+                          aspectRatio: 1,
+                          child: ViewImage(
+                            imageSer: 4,
+                            enableSlideOutPage: false,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+            configure: (state) {
+              state.loadFrom = LoadFrom.download;
+              state.imagePathList = List.filled(10, file.absolute.path);
+              state.viewMode = direction;
+              state.columns = mode;
+            },
+          );
+          await precacheImage(
+            ExtendedFileImageProvider(file),
+            tester.element(find.byType(ViewImage).first),
+          );
+        });
+        await tester.pumpAndSettle();
+        final image = tester.state<ExtendedImageGestureState>(
+          find
+              .byWidgetPredicate((widget) => widget is ExtendedImageGesture)
+              .first,
+        );
+        final fitted = image.gestureDetails!.totalScale!;
+        final mouse = TestPointer(1, PointerDeviceKind.mouse);
+        await tester.sendEventToBinding(
+          mouse.hover(tester.getCenter(find.byType(ViewImage).first)),
+        );
+        Future<void> wheel(double dy, int ms) => tester.sendEventToBinding(
+          mouse.scroll(Offset(0, dy), timeStamp: Duration(milliseconds: ms)),
+        );
+
+        await wheel(60, 1000);
+        await wheel(40, 1100);
+        expect(reader.turns, ['next']);
+        expect(image.gestureDetails!.totalScale, fitted);
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await wheel(200, 1500);
+        await tester.pumpAndSettle();
+        expect(image.gestureDetails!.totalScale, greaterThan(fitted));
+        expect(reader.turns, ['next']);
+        final zoomed = image.gestureDetails!.totalScale;
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await wheel(-60, 2000);
+        await wheel(-40, 2100);
+        expect(reader.turns, ['next', 'prev']);
+        expect(image.gestureDetails!.totalScale, zoomed);
+
+        // Local images have no long-press menu: export remains in the toolbar.
+        reader.useRealExports = true;
+        await tester.tap(
+          find.byKey(ValueKey('reader-desktop-${L10n.current.more_actions}')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(
+            CupertinoMenuItem,
+            L10n.current.save_current_image,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(reader.exportPaths, [file.absolute.path]);
+        expect(find.text(L10n.current.save_current_image), findsOneWidget);
+        await tester.tap(find.text(L10n.current.cancel));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(ValueKey('reader-desktop-${L10n.current.more_actions}')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(CupertinoMenuItem, L10n.current.share_image),
+        );
+        await tester.pumpAndSettle();
+        expect(reader.exportPaths, [file.absolute.path, file.absolute.path]);
+        expect(find.text(L10n.current.share_image), findsOneWidget);
+        await tester.tap(find.text(L10n.current.cancel));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+  testWidgets('vertical images scroll normally and Ctrl+wheel only zooms', (
+    tester,
+  ) async {
+    final directory = Directory('tmpfile')
+        .createTempSync('desktop-reader-vertical-');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final file = File('${directory.path}/page.png').absolute
+      ..writeAsBytesSync(saveCurrentPng);
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await tester.runAsync(() async {
+      await pump(
+        tester,
+        content: SingleChildScrollView(
+          controller: scroll,
+          child: const SizedBox(
+            height: 1600,
+            child: ViewImage(imageSer: 3, enableSlideOutPage: false),
+          ),
+        ),
+        configure: (state) {
+          state.loadFrom = LoadFrom.download;
+          state.imagePathList = List.filled(10, file.absolute.path);
+          state.viewMode = ViewMode.topToBottom;
+          state.showThumbList = false;
+        },
+      );
+      await precacheImage(
+        ExtendedFileImageProvider(file),
+        tester.element(find.byType(ViewImage)),
+      );
+    });
+    await tester.pumpAndSettle();
+    final image = tester.state<ExtendedImageGestureState>(
+      find.byWidgetPredicate((widget) => widget is ExtendedImageGesture),
+    );
+    final fitted = image.gestureDetails!.totalScale!;
+    final mouse = TestPointer(1, PointerDeviceKind.mouse);
+    const position = Offset(700, 300);
+    await tester.sendEventToBinding(mouse.hover(position));
+    Future<void> wheel(double dy) =>
+        tester.sendEventToBinding(mouse.scroll(Offset(0, dy)));
+    await wheel(100);
+    await tester.pumpAndSettle();
+    expect(scroll.offset, 100);
+    expect(image.gestureDetails!.totalScale, fitted);
+    expect(reader.turns, isEmpty);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await wheel(200);
+    await tester.pumpAndSettle();
+    expect(image.gestureDetails!.totalScale, greaterThan(fitted));
+    expect(scroll.offset, 100);
+    expect(reader.turns, isEmpty);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await wheel(-60);
+    await tester.pumpAndSettle();
+    expect(scroll.offset, 40);
+    expect(reader.turns, isEmpty);
+
+    // Replacing the library's signal listener keeps double-tap zoom intact.
+    await tester.tapAt(position);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tapAt(position);
+    await tester.pumpAndSettle();
+    expect(image.gestureDetails!.totalScale, closeTo(fitted, .0001));
+    expect(tester.takeException(), isNull);
+  });
+
   group('thumbnails open at the page being read', () {
     int first(int current, {int count = 50, double viewport = 400}) =>
         ThumbnailListView.initialThumbIndex(
@@ -325,6 +630,48 @@ class _Reader extends ViewExtController {
 
   final taps = <String>[];
   final turns = <String>[];
+  final columns = <ReaderColumnPreference>[];
+  final exportPaths = <String>[];
+  bool useRealExports = false;
+
+  @override
+  Future<GalleryImage?> fetchThumb(
+    int itemSer, {
+    bool refresh = false,
+    bool changeSource = false,
+  }) async => null;
+
+  @override
+  void setColumnPreference(ReaderColumnPreference preference) {
+    columns.add(preference);
+    (vState as _State).columns = preference == ReaderColumnPreference.single
+        ? ViewColumnMode.single
+        : ViewColumnMode.oddLeft;
+    update([idViewTopBar, idViewBar]);
+  }
+
+  @override
+  Future<void> handOnViewModeChanged(ViewMode mode) async =>
+      update([idViewTopBar, idViewBar]);
+
+  @override
+  void tapSave(BuildContext context) {
+    exportPaths.add(vState.imagePathList[vState.currentItemIndex]);
+    if (useRealExports) {
+      super.tapSave(context);
+    }
+  }
+
+  @override
+  void tapShare(BuildContext context) {
+    exportPaths.add(vState.imagePathList[vState.currentItemIndex]);
+    if (useRealExports) {
+      super.tapShare(context);
+    }
+  }
+
+  @override
+  Future<void> onLoadCompleted(int ser) async {}
 
   @override
   Future<void> tapLeft() async => taps.add('left');
@@ -347,6 +694,9 @@ class _Reader extends ViewExtController {
 }
 
 class _State extends Fake implements ViewExtState {
+  _State(this.ehSettingService);
+  @override
+  final EhSettingService ehSettingService;
   // Real reader state is observable; the sidebar's thumbnails watch it.
   final _index = 2.obs;
   @override
@@ -354,7 +704,9 @@ class _State extends Fake implements ViewExtState {
   @override
   set currentItemIndex(int value) => _index.value = value;
   @override
-  ViewMode viewMode = ViewMode.leftToRight;
+  ViewMode get viewMode => ehSettingService.viewMode.value;
+  @override
+  set viewMode(ViewMode value) => ehSettingService.viewMode.value = value;
   @override
   bool showBar = true;
   @override
@@ -367,17 +719,43 @@ class _State extends Fake implements ViewExtState {
   double sliderValue = 2;
   @override
   int get fileCount => 10;
+  ViewColumnMode columns = ViewColumnMode.oddLeft;
   @override
-  ViewColumnMode get columnMode => viewMode == ViewMode.topToBottom
-      ? ViewColumnMode.single
-      : ViewColumnMode.oddLeft;
+  ViewColumnMode get columnMode =>
+      viewMode == ViewMode.topToBottom ? ViewColumnMode.single : columns;
   @override
   ReaderPagination get pagination =>
       ReaderPagination(mode: columnMode, imageCount: fileCount);
   @override
   int get pageIndex => pagination.pageForImage(currentItemIndex);
   @override
-  GalleryPageState? get pageState => null;
+  GalleryPageState? pageState;
   @override
-  LoadFrom get loadFrom => LoadFrom.gallery;
+  LoadFrom loadFrom = LoadFrom.gallery;
+  @override
+  List<String> imagePathList = [];
+  @override
+  final Map<int, Size> imageSizeMap = {};
+  @override
+  final Map<int, double> readerZoomRatios = {};
+  @override
+  final List<double> doubleTapScales = [1, 2, 3];
+  @override
+  bool fade = false;
+  @override
+  bool needRebuild = false;
+  @override
+  String? get gid => 'offline-desktop-fixture';
+}
+
+class _Settings extends EhSettingService {
+  @override
+  // ignore: must_call_super
+  void onInit() {}
+}
+
+class _GalleryState extends Fake implements GalleryPageState {
+  @override
+  String get displayTitle =>
+      'A long gallery title that must leave the desktop controls reachable';
 }

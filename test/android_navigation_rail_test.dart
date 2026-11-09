@@ -18,9 +18,23 @@ const _items = <BottomNavigationBarItem>[
   BottomNavigationBarItem(icon: Icon(CupertinoIcons.gear), label: 'Settings'),
 ];
 
+const _landscapeItems = <BottomNavigationBarItem>[
+  BottomNavigationBarItem(icon: Icon(CupertinoIcons.book), label: 'Gallery'),
+  BottomNavigationBarItem(icon: Icon(CupertinoIcons.heart), label: 'Favorites'),
+  BottomNavigationBarItem(
+    icon: Icon(CupertinoIcons.arrow_down),
+    label: 'Downloads',
+  ),
+  BottomNavigationBarItem(icon: Icon(CupertinoIcons.clock), label: 'History'),
+  BottomNavigationBarItem(icon: Icon(CupertinoIcons.search), label: 'Search'),
+  BottomNavigationBarItem(icon: Icon(CupertinoIcons.gear), label: 'Settings'),
+];
+
 Widget _rail({
   required bool glass,
   int current = 0,
+  double leftInset = 0,
+  List<BottomNavigationBarItem> items = _items,
   ValueChanged<int>? onTap,
 }) => GlassPreference(
   enabled: glass,
@@ -29,9 +43,12 @@ Widget _rail({
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
-          width: AndroidNavigationRail.reservedWidth(glass: glass),
+          width: AndroidNavigationRail.reservedWidth(
+            glass: glass,
+            leftInset: leftInset,
+          ),
           child: AndroidNavigationRail(
-            items: _items,
+            items: items,
             currentIndex: current,
             glass: glass,
             onTap: onTap ?? (_) {},
@@ -85,6 +102,65 @@ void main() {
       expect(tester.takeException(), isNull);
       handle.dispose();
     });
+  }
+
+  for (final glass in [true, false]) {
+    for (final count in [5, 6]) {
+      testWidgets(
+        '960x360 rail scrolls to all $count destinations: glass=$glass',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = const Size(960, 360);
+          tester.view.padding = const FakeViewPadding(
+            top: 24,
+            bottom: 20,
+            left: 30,
+          );
+          addTearDown(tester.view.reset);
+          final taps = <int>[];
+          final items = <BottomNavigationBarItem>[
+            ..._landscapeItems.take(count - 1),
+            _landscapeItems.last,
+          ];
+          await tester.pumpWidget(
+            _rail(glass: glass, items: items, leftInset: 30, onTap: taps.add),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+
+          final first = tester.getRect(find.text('Gallery'));
+          expect(first.top, greaterThanOrEqualTo(24));
+          expect(first.left, greaterThanOrEqualTo(30));
+
+          await tester.drag(
+            find.byType(SingleChildScrollView),
+            const Offset(0, -500),
+          );
+          await tester.pumpAndSettle();
+          final last = tester.getRect(find.text('Settings'));
+          expect(last.top, greaterThanOrEqualTo(24));
+          expect(last.bottom, lessThanOrEqualTo(360 - 20));
+          expect(last.left, greaterThanOrEqualTo(30));
+          await tester.tap(find.text('Settings'));
+          expect(taps, [count - 1]);
+
+          // Each destination stays visible and tappable after scrolling,
+          // including the ones that were initially outside the viewport.
+          for (var index = 0; index < items.length; index++) {
+            final destination = find.text(items[index].label!);
+            await tester.ensureVisible(destination);
+            await tester.pumpAndSettle();
+            final bounds = tester.getRect(destination);
+            expect(bounds.top, greaterThanOrEqualTo(24));
+            expect(bounds.bottom, lessThanOrEqualTo(360 - 20));
+            expect(bounds.left, greaterThanOrEqualTo(30));
+            await tester.tap(destination);
+          }
+          expect(taps, [count - 1, for (var i = 0; i < count; i++) i]);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
   }
 
   testWidgets('the glass capsule stays below the status bar', (tester) async {

@@ -1,9 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:eros_fe/const/const.dart';
-import 'package:eros_fe/pages/image_view/view/view_widget.dart';
 import 'package:eros_fe/utils/logger.dart';
-import 'package:eros_fe/widget/image/eh_cached_network_image.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +13,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../controller/view_controller.dart';
 import '../controller/view_state.dart';
 import 'reader_continuous_viewport.dart';
+import 'reader_image_gesture.dart';
 import 'view_image.dart';
 
 class ImageListView extends StatefulWidget {
@@ -27,8 +25,15 @@ class ImageListView extends StatefulWidget {
 
 class _ImageListViewState extends State<ImageListView> {
   final ViewExtController controller = Get.find();
+  final PhotoViewController _photoController = PhotoViewController();
 
   late Offset downPosition;
+
+  @override
+  void dispose() {
+    _photoController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +53,7 @@ class _ImageListViewState extends State<ImageListView> {
           reflowKey: (contentWidth, padding),
           builder: (context, offsetController) =>
               ScrollablePositionedList.builder(
+            physics: const ReaderPhotoViewScrollPhysics(),
             initialScrollIndex: vState.currentItemIndex,
             minCacheExtent: 0.0,
             padding: EdgeInsets.fromLTRB(
@@ -68,18 +74,24 @@ class _ImageListViewState extends State<ImageListView> {
           child: listView,
         );
 
-        return PhotoViewGallery.builder(
-          itemCount: 1,
-          builder: (_, __) {
-            return PhotoViewGalleryPageOptions.customChild(
-              scaleStateController: controller.photoViewScaleStateController,
-              initialScale: PhotoViewComputedScale.contained * 1.0,
-              minScale: PhotoViewComputedScale.contained * 1.0,
-              maxScale: PhotoViewComputedScale.contained * 3.0,
-              scaleStateCycle: listViewScaleStateCycle,
-              child: imageListView,
-            );
-          },
+        return ReaderPhotoViewScroll(
+          controller: _photoController,
+          minScale: 1,
+          maxScale: 3,
+          child: PhotoViewGallery.builder(
+            itemCount: 1,
+            builder: (_, __) {
+              return PhotoViewGalleryPageOptions.customChild(
+                controller: _photoController,
+                scaleStateController: controller.photoViewScaleStateController,
+                initialScale: PhotoViewComputedScale.contained * 1.0,
+                minScale: PhotoViewComputedScale.contained * 1.0,
+                maxScale: PhotoViewComputedScale.contained * 3.0,
+                scaleStateCycle: listViewScaleStateCycle,
+                child: imageListView,
+              );
+            },
+          ),
         );
       },
     );
@@ -131,7 +143,6 @@ class _ImageListViewState extends State<ImageListView> {
     double contentWidth,
   ) {
     return (BuildContext context, int index) {
-      final Size size = MediaQuery.sizeOf(context);
       final int itemSer = index + 1;
 
       // return Padding(
@@ -169,69 +180,16 @@ class _ImageListViewState extends State<ImageListView> {
                 mode: ExtendedImageMode.none,
               );
 
-              final int gid = int.tryParse(logic.vState.gid ?? '') ?? 0;
-              final ser = index + 1;
-              final viewImage2 = ExtendedImage(
-                  image: getEhImageProvider('${gid}_${ser}_', ser: ser),
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.medium,
-                  mode: ExtendedImageMode.none,
-                  loadStateChanged: (ExtendedImageState state) {
-                    final ImageInfo? imageInfo = state.extendedImageInfo;
-                    if (state.extendedImageLoadState == LoadState.completed ||
-                        imageInfo != null) {
-                      // 加载完成 显示图片
-                      controller.setScale100(imageInfo!, size);
-
-                      // 重新设置图片容器大小
-                      if (vState.imageSizeMap[ser] == null) {
-                        vState.imageSizeMap[ser] = Size(
-                            imageInfo.image.width.toDouble(),
-                            imageInfo.image.height.toDouble());
-                        Future.delayed(const Duration(milliseconds: 100)).then(
-                            (value) =>
-                                controller.update(['$idImageListView${ser}']));
-                      }
-
-                      controller.onLoadCompleted(ser);
-
-                      return controller.vState.viewMode != ViewMode.topToBottom
-                          ? Hero(
-                              tag: '$ser',
-                              child: state.completedWidget,
-                              createRectTween: (Rect? begin, Rect? end) =>
-                                  MaterialRectCenterArcTween(
-                                      begin: begin, end: end),
-                            )
-                          : state.completedWidget;
-                    } else if (state.extendedImageLoadState ==
-                        LoadState.loading) {
-                      // 显示加载中
-                      final ImageChunkEvent? loadingProgress =
-                          state.loadingProgress;
-                      final double? progress =
-                          loadingProgress?.expectedTotalBytes != null
-                              ? (loadingProgress?.cumulativeBytesLoaded ?? 0) /
-                                  (loadingProgress?.expectedTotalBytes ?? 1)
-                              : null;
-
-                      return ViewLoading(
-                        ser: ser,
-                        // progress: progress,
-                        duration: vState.viewMode != ViewMode.topToBottom
-                            ? const Duration(milliseconds: 100)
-                            : null,
-                        debugLabel: '### Widget fileImage 加载图片文件',
-                      );
-                    }
-                  });
-
-              return Container(
-                padding:
-                    EdgeInsets.only(bottom: vState.showPageInterval ? 8 : 0),
-                height: height ?? context.mediaQueryShortestSide,
-                // child: !kDebugMode ? viewImage : viewImage2,
-                child: viewImage,
+              return ReaderPhotoViewScroll(
+                controller: _photoController,
+                minScale: 1,
+                maxScale: 3,
+                child: Container(
+                  padding:
+                      EdgeInsets.only(bottom: vState.showPageInterval ? 8 : 0),
+                  height: height ?? context.mediaQueryShortestSide,
+                  child: viewImage,
+                ),
               );
             }),
       );

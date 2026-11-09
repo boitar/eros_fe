@@ -193,7 +193,7 @@ class _ViewKeyboardListenerState extends State<ViewKeyboardListener> {
       autofocus: true,
       focusNode: _focusNode,
       onKeyEvent: (KeyEvent event) async {
-        if (event is! KeyDownEvent) {
+        if (event is! KeyDownEvent || controller.keyboardShortcutsSuspended) {
           return;
         }
         if (handleDesktopReaderKey(event.logicalKey)) {

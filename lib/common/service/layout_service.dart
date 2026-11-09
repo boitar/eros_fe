@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/route/main_observer.dart';
@@ -52,6 +53,13 @@ class EhLayoutHelper {
 
 class LayoutServices extends GetxService {
   LayoutMode layoutMode = LayoutMode.small;
+  bool? _navigationSplit;
+
+  /// The mounted shell's content area, after sidebars and insets are consumed.
+  /// [layoutMode] remains the requested window layout so a resize can expand
+  /// the panes again instead of feeding the previous compact result back in.
+  void updateNavigationSplit(bool split) => _navigationSplit = split;
+
   Object? _adaptiveOwner;
   int _nextNavigatorId = 1;
   late TabNavigationRegistry _tabNavigation = _createNavigation();
@@ -64,19 +72,28 @@ class LayoutServices extends GetxService {
   TabNavigationRegistry mountNavigation(Object owner) {
     if (_adaptiveOwner != null) _tabNavigation = _createNavigation();
     _adaptiveOwner = owner;
+    _navigationSplit = null;
     return _tabNavigation;
   }
 
   void unmountNavigation(Object owner, TabNavigationRegistry navigation) {
     if (identical(_adaptiveOwner, owner)) {
       _adaptiveOwner = null;
+      _navigationSplit = null;
       _tabNavigation = _createNavigation();
     }
     navigation.dispose();
   }
 
   int get activePaneNavigatorId => tabNavigation.selected?.topNavigatorId ?? 1;
-  bool get isLayoutLarge => layoutMode == LayoutMode.large;
+  bool get isLayoutLarge {
+    // The desktop sidebar consumes a separate content band. Keep the mobile
+    // layout contract unchanged, including Android's existing rail behavior.
+    if (PlatformCapabilities.isDesktop && _navigationSplit != null) {
+      return _navigationSplit!;
+    }
+    return layoutMode == LayoutMode.large;
+  }
 
   late EhLayout _ehLayout;
 

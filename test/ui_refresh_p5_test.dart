@@ -1,5 +1,6 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/component/setting/setting_menu.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
@@ -69,6 +70,8 @@ CupertinoThemeData _theme(Brightness brightness) =>
     EhPalette.graphite.themeData(brightness, ehTextTheme);
 
 Widget _cards(Brightness brightness) {
+  // These card and golden fixtures model a phone even when tests run on Mac.
+  PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
   return GetMaterialApp(
     debugShowCheckedModeBanner: false,
     home: CupertinoTheme(
@@ -145,6 +148,7 @@ List<Widget> _settingSections() => <Widget>[
 void main() {
   setUp(registerWaterfallFixture);
   tearDown(() {
+    PlatformCapabilities.debugHostPlatformOverride = null;
     SettingGlassBar.debugActive = null;
     Get.reset();
   });

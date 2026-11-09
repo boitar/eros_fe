@@ -1,4 +1,5 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/models/gallery_provider.dart';
@@ -180,8 +181,14 @@ void main() {
   });
 
   group('GalleryItemFlowLarge', () {
-    setUp(registerWaterfallFixture);
-    tearDown(Get.reset);
+    setUp(() {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+      registerWaterfallFixture();
+    });
+    tearDown(() {
+      PlatformCapabilities.debugHostPlatformOverride = null;
+      Get.reset();
+    });
 
     const gallery = GalleryProvider(
       gid: 'card',

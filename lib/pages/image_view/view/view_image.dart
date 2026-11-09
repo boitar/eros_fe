@@ -11,7 +11,6 @@ import 'package:eros_fe/pages/image_view/controller/view_state.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/utils/utility.dart';
 import 'package:eros_fe/utils/vibrate.dart';
-import 'package:eros_fe/widget/image/eh_cached_network_image.dart';
 import 'package:eros_fe/widget/image/extended_saf_image_privider.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +19,7 @@ import 'package:get/get.dart';
 
 import '../common.dart';
 import '../controller/view_controller.dart';
+import 'reader_image_gesture.dart';
 import 'view_widget.dart';
 
 typedef DoubleClickAnimationListener = void Function();
@@ -56,13 +56,15 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
   late AnimationController _fadeAnimationController;
 
-  final ValueNotifier<double>? _acceptanceScale = offlineAcceptanceEnabled &&
+  final ValueNotifier<double>? _acceptanceScale =
+      offlineAcceptanceEnabled &&
           const bool.fromEnvironment('EROS_DUO_ACCEPTANCE')
       ? ValueNotifier(1)
       : null;
   double _acceptanceInitialScale = 1;
   double _gestureFittedScale = 1;
-  final int _acceptanceInstance = offlineAcceptanceEnabled &&
+  final int _acceptanceInstance =
+      offlineAcceptanceEnabled &&
           const bool.fromEnvironment('EROS_DUO_ACCEPTANCE')
       ? DateTime.now().microsecondsSinceEpoch
       : 0;
@@ -78,14 +80,20 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
   @override
   void initState() {
     if (_acceptanceScale != null) {
-      logger.d('OFFLINE_READER_IMAGE_INIT ser=${widget.imageSer};'
-          'instance=$_acceptanceInstance');
+      logger.d(
+        'OFFLINE_READER_IMAGE_INIT ser=${widget.imageSer};'
+        'instance=$_acceptanceInstance',
+      );
     }
     _doubleClickAnimationController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
 
     _fadeAnimationController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: vState.fade ? 200 : 0));
+      vsync: this,
+      duration: Duration(milliseconds: vState.fade ? 200 : 0),
+    );
     vState.fade = true;
 
     if (vState.loadFrom == LoadFrom.gallery) {
@@ -110,8 +118,10 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
   void dispose() {
     final acceptanceScale = _acceptanceScale;
     if (acceptanceScale != null) {
-      logger.d('OFFLINE_READER_IMAGE_DISPOSE ser=${widget.imageSer};'
-          'instance=$_acceptanceInstance;scale=${acceptanceScale.value}');
+      logger.d(
+        'OFFLINE_READER_IMAGE_DISPOSE ser=${widget.imageSer};'
+        'instance=$_acceptanceInstance;scale=${acceptanceScale.value}',
+      );
     }
     _doubleClickAnimationController.dispose();
     _fadeAnimationController.dispose();
@@ -129,8 +139,10 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
         final scale = _pendingAcceptanceScale ?? 1;
         final acceptanceScale = _acceptanceScale;
         if (acceptanceScale != null && acceptanceScale.value != scale) {
-          logger.d('OFFLINE_READER_IMAGE_SCALE ser=${widget.imageSer};'
-              'instance=$_acceptanceInstance;scale=$scale');
+          logger.d(
+            'OFFLINE_READER_IMAGE_SCALE ser=${widget.imageSer};'
+            'instance=$_acceptanceInstance;scale=$scale',
+          );
           acceptanceScale.value = scale;
         }
       }
@@ -158,11 +170,14 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
         final imageInfo = state.extendedImageInfo;
         final imageSize = imageInfo != null
-            ? Size(imageInfo.image.width.toDouble(),
-                imageInfo.image.height.toDouble())
+            ? Size(
+                imageInfo.image.width.toDouble(),
+                imageInfo.image.height.toDouble(),
+              )
             : vState.imageSizeMap[widget.imageSer];
         if (imageSize != null) {
-          fittedScale = initScale(
+          fittedScale =
+              initScale(
                 size: size,
                 initialScale: widget.initialScale,
                 imageSize: imageSize,
@@ -183,12 +198,14 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
             if (!mounted || acceptanceScale.value == initialScale) return;
             acceptanceScale.value = initialScale;
             logger.d(
-                'OFFLINE_READER_IMAGE_CONFIGURED_SCALE ser=${widget.imageSer};'
-                'instance=$_acceptanceInstance;scale=$initialScale');
+              'OFFLINE_READER_IMAGE_CONFIGURED_SCALE ser=${widget.imageSer};'
+              'instance=$_acceptanceInstance;scale=$initialScale',
+            );
           });
         }
         return GestureConfig(
           inPageView: true,
+          minScale: fittedScale,
           initialScale: initialScale,
           maxScale: 10.0,
           // animationMaxScale: max(initialScale, 5.0),
@@ -202,47 +219,51 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
   /// 双击事件
   DoubleTap get _onDoubleTap => (ExtendedImageGestureState state) {
-        ///you can use define pointerDownPosition as you can,
-        ///default value is double tap pointer down position.
-        final Offset? pointerDownPosition = state.pointerDownPosition;
-        final double begin = state.gestureDetails?.totalScale ?? 0.0;
-        double end;
+    ///you can use define pointerDownPosition as you can,
+    ///default value is double tap pointer down position.
+    final Offset? pointerDownPosition = state.pointerDownPosition;
+    final double begin = state.gestureDetails?.totalScale ?? 0.0;
+    double end;
 
-        //remove old
-        _doubleClickAnimation?.removeListener(_doubleClickAnimationListener);
+    //remove old
+    _doubleClickAnimation?.removeListener(_doubleClickAnimationListener);
 
-        //stop pre
-        _doubleClickAnimationController.stop();
+    //stop pre
+    _doubleClickAnimationController.stop();
 
-        //reset to use
-        _doubleClickAnimationController.reset();
+    //reset to use
+    _doubleClickAnimationController.reset();
 
-        // logger.d('begin[$begin]  doubleTapScales[1]${doubleTapScales[1]}');
+    // logger.d('begin[$begin]  doubleTapScales[1]${doubleTapScales[1]}');
 
-        if ((begin - vState.doubleTapScales[0]).abs() < 0.0005) {
-          end = vState.doubleTapScales[1];
-        } else if ((begin - vState.doubleTapScales[1]).abs() < 0.0005 &&
-            vState.doubleTapScales.length > 2) {
-          end = vState.doubleTapScales[2];
-        } else {
-          end = vState.doubleTapScales[0];
-        }
+    if ((begin - vState.doubleTapScales[0]).abs() < 0.0005) {
+      end = vState.doubleTapScales[1];
+    } else if ((begin - vState.doubleTapScales[1]).abs() < 0.0005 &&
+        vState.doubleTapScales.length > 2) {
+      end = vState.doubleTapScales[2];
+    } else {
+      end = vState.doubleTapScales[0];
+    }
 
-        // logger.d('to Scales $end');
+    // logger.d('to Scales $end');
 
-        _doubleClickAnimationListener = () {
-          state.handleDoubleTap(
-              scale: _doubleClickAnimation?.value ?? 1.0,
-              doubleTapPosition: pointerDownPosition);
-        };
-        _doubleClickAnimation = _doubleClickAnimationController.drive(
-            Tween<double>(begin: begin, end: end)
-                .chain(CurveTween(curve: Curves.easeInOutCubic)));
+    _doubleClickAnimationListener = () {
+      state.handleDoubleTap(
+        scale: _doubleClickAnimation?.value ?? 1.0,
+        doubleTapPosition: pointerDownPosition,
+      );
+    };
+    _doubleClickAnimation = _doubleClickAnimationController.drive(
+      Tween<double>(
+        begin: begin,
+        end: end,
+      ).chain(CurveTween(curve: Curves.easeInOutCubic)),
+    );
 
-        _doubleClickAnimation?.addListener(_doubleClickAnimationListener);
+    _doubleClickAnimation?.addListener(_doubleClickAnimationListener);
 
-        _doubleClickAnimationController.forward();
-      };
+    _doubleClickAnimationController.forward();
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +291,8 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
           container: true,
           explicitChildNodes: true,
           identifier: 'offline-duo-image-${widget.imageSer}',
-          label: 'ser=${widget.imageSer};scale=$scale;'
+          label:
+              'ser=${widget.imageSer};scale=$scale;'
               'initial=$_acceptanceInitialScale;'
               'ratio=${controller.readerZoomRatioFor(widget.imageSer)};'
               'generation=${controller.paginationGeneration};'
@@ -297,9 +319,12 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
     Widget? loadStateChanged(ExtendedImageState state) {
       final ImageInfo? imageInfo = state.extendedImageInfo;
-      widget.imageSizeChanged?.call(Size(
+      widget.imageSizeChanged?.call(
+        Size(
           imageInfo?.image.width.toDouble() ?? 0.0,
-          imageInfo?.image.height.toDouble() ?? 0.0));
+          imageInfo?.image.height.toDouble() ?? 0.0,
+        ),
+      );
       if (state.extendedImageLoadState == LoadState.completed ||
           imageInfo != null) {
         // 加载完成 显示图片
@@ -308,10 +333,13 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
         // 重新设置图片容器大小
         if (vState.imageSizeMap[widget.imageSer] == null) {
           vState.imageSizeMap[widget.imageSer] = Size(
-              imageInfo.image.width.toDouble(),
-              imageInfo.image.height.toDouble());
-          Future.delayed(const Duration(milliseconds: 100)).then((value) =>
-              controller.update(['$idImageListView${widget.imageSer}']));
+            imageInfo.image.width.toDouble(),
+            imageInfo.image.height.toDouble(),
+          );
+          Future.delayed(const Duration(milliseconds: 100)).then(
+            (value) =>
+                controller.update(['$idImageListView${widget.imageSer}']),
+          );
         }
 
         controller.onLoadCompleted(widget.imageSer);
@@ -319,17 +347,17 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
         return controller.vState.viewMode != ViewMode.topToBottom
             ? Hero(
                 tag: '${widget.imageSer}',
-                child: state.completedWidget,
+                child: readerCompletedImage(state),
                 createRectTween: (Rect? begin, Rect? end) =>
                     MaterialRectCenterArcTween(begin: begin, end: end),
               )
-            : state.completedWidget;
+            : readerCompletedImage(state);
       } else if (state.extendedImageLoadState == LoadState.loading) {
         // 显示加载中
         final ImageChunkEvent? loadingProgress = state.loadingProgress;
         final double? progress = loadingProgress?.expectedTotalBytes != null
             ? (loadingProgress?.cumulativeBytesLoaded ?? 0) /
-                (loadingProgress?.expectedTotalBytes ?? 1)
+                  (loadingProgress?.expectedTotalBytes ?? 1)
             : null;
 
         return ViewLoading(
@@ -373,111 +401,118 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
   /// 归档页查看
   Widget archiverImage() {
     return FutureBuilder<File?>(
-        future: controller.imageArchiveFutureMap[widget.imageSer],
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.hasError || snapshot.data == null) {
-              String errInfo = '';
-              logger.e('${snapshot.error.runtimeType}');
-              if (snapshot.error is EhError) {
-                final EhError ehErr = snapshot.error as EhError;
-                logger.e('$ehErr');
-                errInfo = ehErr.type.toString();
-                if (ehErr.type == EhErrorType.image509) {
-                  return ViewErr509(ser: widget.imageSer);
-                }
-              } else if (snapshot.error is HttpException) {
-                final HttpException e = snapshot.error as HttpException;
-                if (e is BadRequestException && e.code == 429) {
-                  return ViewErr429(ser: widget.imageSer);
-                } else {
-                  errInfo = e.message;
-                }
+      future: controller.imageArchiveFutureMap[widget.imageSer],
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasError || snapshot.data == null) {
+            String errInfo = '';
+            logger.e('${snapshot.error.runtimeType}');
+            if (snapshot.error is EhError) {
+              final EhError ehErr = snapshot.error as EhError;
+              logger.e('$ehErr');
+              errInfo = ehErr.type.toString();
+              if (ehErr.type == EhErrorType.image509) {
+                return ViewErr509(ser: widget.imageSer);
+              }
+            } else if (snapshot.error is HttpException) {
+              final HttpException e = snapshot.error as HttpException;
+              if (e is BadRequestException && e.code == 429) {
+                return ViewErr429(ser: widget.imageSer);
               } else {
-                logger.e(
-                    'other error: ${snapshot.error}\n${snapshot.stackTrace}');
-                errInfo = snapshot.error.toString();
+                errInfo = e.message;
               }
-
-              if ((vState.errCountMap[widget.imageSer] ?? 0) <
-                  vState.retryCount) {
-                Future.delayed(const Duration(milliseconds: 100))
-                    .then((_) => controller.initArchiveFuture(widget.imageSer));
-                vState.errCountMap.update(
-                    widget.imageSer, (int value) => value + 1,
-                    ifAbsent: () => 1);
-
-                logger.t('${vState.errCountMap}');
-                logger.d(
-                    '${widget.imageSer} 重试 第 ${vState.errCountMap[widget.imageSer]} 次');
-              }
-              if ((vState.errCountMap[widget.imageSer] ?? 0) >=
-                  vState.retryCount) {
-                return ViewError(ser: widget.imageSer, errInfo: errInfo);
-              } else {
-                return ViewLoading(
-                  debugLabel: 'archiverImage 重试',
-                  ser: widget.imageSer,
-                  duration: vState.viewMode != ViewMode.topToBottom
-                      ? const Duration(milliseconds: 50)
-                      : null,
-                );
-              }
+            } else {
+              logger.e(
+                'other error: ${snapshot.error}\n${snapshot.stackTrace}',
+              );
+              errInfo = snapshot.error.toString();
             }
-            final File file = snapshot.data!;
 
-            Widget image = fileImage(file.path);
+            if ((vState.errCountMap[widget.imageSer] ?? 0) <
+                vState.retryCount) {
+              Future.delayed(const Duration(milliseconds: 100))
+                  .then((_) => controller.initArchiveFuture(widget.imageSer));
+              vState.errCountMap.update(
+                widget.imageSer,
+                (int value) => value + 1,
+                ifAbsent: () => 1,
+              );
 
-            return image;
-          } else {
-            return ViewLoading(
-              ser: widget.imageSer,
-              duration: vState.viewMode != ViewMode.topToBottom
-                  ? const Duration(milliseconds: 50)
-                  : null,
-            );
+              logger.t('${vState.errCountMap}');
+              logger.d(
+                '${widget.imageSer} 重试 第 ${vState.errCountMap[widget.imageSer]} 次',
+              );
+            }
+            if ((vState.errCountMap[widget.imageSer] ?? 0) >=
+                vState.retryCount) {
+              return ViewError(ser: widget.imageSer, errInfo: errInfo);
+            } else {
+              return ViewLoading(
+                debugLabel: 'archiverImage 重试',
+                ser: widget.imageSer,
+                duration: vState.viewMode != ViewMode.topToBottom
+                    ? const Duration(milliseconds: 50)
+                    : null,
+              );
+            }
           }
-        });
+          final File file = snapshot.data!;
+
+          Widget image = fileImage(file.path);
+
+          return image;
+        } else {
+          return ViewLoading(
+            ser: widget.imageSer,
+            duration: vState.viewMode != ViewMode.topToBottom
+                ? const Duration(milliseconds: 50)
+                : null,
+          );
+        }
+      },
+    );
   }
 
   /// 网络图片 （从画廊页查看）
   Widget getViewImage() {
     // 长按菜单
     return GetBuilder<ViewExtController>(
-        id: '$idImageListView${widget.imageSer}',
-        builder: (logic) {
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onLongPress: () async {
-              logger.t('long press');
-              vibrateUtil.medium();
-              final GalleryImage? currentImage =
-                  vState.pageState?.imageMap[widget.imageSer];
+      id: '$idImageListView${widget.imageSer}',
+      builder: (logic) {
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onLongPress: () async {
+            logger.t('long press');
+            vibrateUtil.medium();
+            final GalleryImage? currentImage =
+                vState.pageState?.imageMap[widget.imageSer];
 
-              logger.d('_currentImage ${currentImage?.toJson()}');
+            logger.d('_currentImage ${currentImage?.toJson()}');
 
-              showImageSheet(
-                context,
-                () =>
-                    controller.reloadImage(widget.imageSer, changeSource: true),
-                imageUrl: currentImage?.imageUrl ?? '',
-                filePath: currentImage?.filePath,
-                tempPath: currentImage?.tempPath,
-                cacheKey: currentImage?.cacheKey,
-                originalCacheKey: currentImage
-                    ?.getCacheKey(currentImage.originImageUrl ?? ''),
-                origImageUrl: currentImage?.originImageUrl,
-                title: '${vState.pageState?.mainTitle} [${widget.imageSer}]',
-                ser: widget.imageSer,
-                gid: vState.pageState?.gid,
-                filename: currentImage?.filename,
-                isLocal: vState.loadFrom == LoadFrom.download ||
-                    vState.loadFrom == LoadFrom.archiver,
-              );
-            },
-            child: _buildViewImageWidgetProvider(),
-          );
-        });
+            showImageSheet(
+              context,
+              () => controller.reloadImage(widget.imageSer, changeSource: true),
+              imageUrl: currentImage?.imageUrl ?? '',
+              filePath: currentImage?.filePath,
+              tempPath: currentImage?.tempPath,
+              cacheKey: currentImage?.cacheKey,
+              originalCacheKey: currentImage?.getCacheKey(
+                currentImage.originImageUrl ?? '',
+              ),
+              origImageUrl: currentImage?.originImageUrl,
+              title: '${vState.pageState?.mainTitle} [${widget.imageSer}]',
+              ser: widget.imageSer,
+              gid: vState.pageState?.gid,
+              filename: currentImage?.filename,
+              isLocal:
+                  vState.loadFrom == LoadFrom.download ||
+                  vState.loadFrom == LoadFrom.archiver,
+            );
+          },
+          child: _buildViewImageWidgetProvider(),
+        );
+      },
+    );
   }
 
   Widget _buildViewImageWidget() {
@@ -500,11 +535,12 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
       if (imageFromState?.imageUrl != null &&
           (imageFromState?.downloadProcess == null)) {
         controller.downloadImage(
-            ser: widget.imageSer,
-            url: imageFromState!.imageUrl!,
-            onError: (e) {
-              _buildErr(e);
-            });
+          ser: widget.imageSer,
+          url: imageFromState!.imageUrl!,
+          onError: (e) {
+            _buildErr(e);
+          },
+        );
 
         return _buildDownloadImage(debugLable: 'FutureBuilder 外');
       }
@@ -512,55 +548,57 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
     logger.d('return FutureBuilder ser:${widget.imageSer}');
     return FutureBuilder<GalleryImage?>(
-        future: controller.imageFutureMap[widget.imageSer],
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.hasError || snapshot.data == null) {
-              return _buildErr(snapshot.error);
-            }
-            final GalleryImage? imageData = snapshot.data;
+      future: controller.imageFutureMap[widget.imageSer],
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasError || snapshot.data == null) {
+            return _buildErr(snapshot.error);
+          }
+          final GalleryImage? imageData = snapshot.data;
 
-            // 图片文件已下载 加载显示本地图片文件
-            if (imageData?.filePath?.isNotEmpty ?? false) {
-              logger.d('file... ${imageData?.filePath}');
-              return fileImage(imageData!.filePath!);
-            }
+          // 图片文件已下载 加载显示本地图片文件
+          if (imageData?.filePath?.isNotEmpty ?? false) {
+            logger.d('file... ${imageData?.filePath}');
+            return fileImage(imageData!.filePath!);
+          }
 
-            if (imageData?.tempPath?.isNotEmpty ?? false) {
-              logger.d('file... ${imageData?.tempPath}');
-              return fileImage(imageData!.tempPath!);
-            }
+          if (imageData?.tempPath?.isNotEmpty ?? false) {
+            logger.d('file... ${imageData?.tempPath}');
+            return fileImage(imageData!.tempPath!);
+          }
 
-            if (imageData?.imageUrl != null) {
-              logger.d('downloadImage...');
+          if (imageData?.imageUrl != null) {
+            logger.d('downloadImage...');
 
-              controller.downloadImage(
-                ser: widget.imageSer,
-                url: imageData!.imageUrl!,
-                reset: true,
-              );
-            }
-
-            Widget image = _buildDownloadImage(debugLable: 'FutureBuilder内');
-
-            return image;
-          } else {
-            return ViewLoading(
-              debugLabel: 'FutureBuilder 加载画廊页数据',
+            controller.downloadImage(
               ser: widget.imageSer,
-              duration: vState.viewMode != ViewMode.topToBottom
-                  ? const Duration(milliseconds: 200)
-                  : null,
+              url: imageData!.imageUrl!,
+              reset: true,
             );
           }
-        });
+
+          Widget image = _buildDownloadImage(debugLable: 'FutureBuilder内');
+
+          return image;
+        } else {
+          return ViewLoading(
+            debugLabel: 'FutureBuilder 加载画廊页数据',
+            ser: widget.imageSer,
+            duration: vState.viewMode != ViewMode.topToBottom
+                ? const Duration(milliseconds: 200)
+                : null,
+          );
+        }
+      },
+    );
   }
 
   Widget _buildViewImageWidgetProvider() {
     final GalleryImage? imageFromState =
         vState.pageState?.imageMap[widget.imageSer];
     logger.d(
-        'ser: ${widget.imageSer}, imageFromState ${imageFromState?.toJson()}');
+      'ser: ${widget.imageSer}, imageFromState ${imageFromState?.toJson()}',
+    );
 
     if (imageFromState?.hide ?? false) {
       return ViewAD(ser: widget.imageSer);
@@ -568,149 +606,157 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
     logger.t('return FutureBuilder ser:${widget.imageSer}');
     return FutureBuilder<GalleryImage?>(
-        future: controller.imageFutureMap[widget.imageSer],
-        builder: (context, snapshot) {
-          logger.d(
-              'FutureBuilder ser:${widget.imageSer}, snapshot.connectionState: ${snapshot.connectionState}');
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-            case ConnectionState.active:
-            case ConnectionState.waiting:
-              logger.d(
-                  'FutureBuilder 加载画廊页数据 ser:${widget.imageSer}, snapshot.connectionState: ${snapshot.connectionState}');
-              return ViewLoading(
-                debugLabel: 'FutureBuilder 加载画廊页数据',
+      future: controller.imageFutureMap[widget.imageSer],
+      builder: (context, snapshot) {
+        logger.d(
+          'FutureBuilder ser:${widget.imageSer}, snapshot.connectionState: ${snapshot.connectionState}',
+        );
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+          case ConnectionState.active:
+          case ConnectionState.waiting:
+            logger.d(
+              'FutureBuilder 加载画廊页数据 ser:${widget.imageSer}, snapshot.connectionState: ${snapshot.connectionState}',
+            );
+            return ViewLoading(
+              debugLabel: 'FutureBuilder 加载画廊页数据',
+              ser: widget.imageSer,
+              duration: vState.viewMode != ViewMode.topToBottom
+                  ? const Duration(milliseconds: 200)
+                  : null,
+            );
+          case ConnectionState.done:
+            if (snapshot.hasError || snapshot.data == null) {
+              logger.e('${snapshot.error}\n${snapshot.stackTrace}');
+              return _buildErr(snapshot.error);
+            }
+            final GalleryImage? imageData = snapshot.data;
+
+            final GalleryImage? currentImageData =
+                vState.pageState?.imageMap[widget.imageSer];
+
+            logger.t(
+              'currentImageData ${currentImageData?.toJson()}\n'
+              'imageData        ${imageData?.toJson()}',
+            );
+
+            // 图片文件已下载 加载显示本地图片文件
+            if (imageData?.filePath?.isNotEmpty ?? false) {
+              logger.d('图片文件已下载 file... ${imageData?.filePath}');
+              controller.vState.galleryPageController?.uptImageBySer(
                 ser: widget.imageSer,
-                duration: vState.viewMode != ViewMode.topToBottom
-                    ? const Duration(milliseconds: 200)
-                    : null,
+                imageCallback: (image) =>
+                    image.copyWith(filePath: imageData?.filePath.oN),
               );
-            case ConnectionState.done:
-              if (snapshot.hasError || snapshot.data == null) {
-                logger.e('${snapshot.error}\n${snapshot.stackTrace}');
-                return _buildErr(snapshot.error);
-              }
-              final GalleryImage? imageData = snapshot.data;
+              return fileImage(imageData!.filePath!);
+            }
 
-              final GalleryImage? currentImageData =
-                  vState.pageState?.imageMap[widget.imageSer];
+            if (imageData?.tempPath?.isNotEmpty ?? false) {
+              logger.t('tempPath file... ${imageData?.tempPath}');
+              controller.vState.galleryPageController?.uptImageBySer(
+                ser: widget.imageSer,
+                imageCallback: (image) =>
+                    image.copyWith(tempPath: imageData?.tempPath.oN),
+              );
+              return fileImage(imageData!.tempPath!);
+            }
 
-              logger.t('currentImageData ${currentImageData?.toJson()}\n'
-                  'imageData        ${imageData?.toJson()}');
+            // 常规情况 加载网络图片
+            // 图片加载完成
+            void onLoadCompleted(ExtendedImageState state) {
+              final ImageInfo? imageInfo = state.extendedImageInfo;
+              controller.setScale100(imageInfo!, context.mediaQuerySize);
 
-              // 图片文件已下载 加载显示本地图片文件
-              if (imageData?.filePath?.isNotEmpty ?? false) {
-                logger.d('图片文件已下载 file... ${imageData?.filePath}');
-                controller.vState.galleryPageController?.uptImageBySer(
-                  ser: widget.imageSer,
-                  imageCallback: (image) => image.copyWith(
-                    filePath: imageData?.filePath.oN,
-                  ),
-                );
-                return fileImage(imageData!.filePath!);
-              }
-
-              if (imageData?.tempPath?.isNotEmpty ?? false) {
-                logger.t('tempPath file... ${imageData?.tempPath}');
-                controller.vState.galleryPageController?.uptImageBySer(
-                  ser: widget.imageSer,
-                  imageCallback: (image) => image.copyWith(
-                    tempPath: imageData?.tempPath.oN,
-                  ),
-                );
-                return fileImage(imageData!.tempPath!);
-              }
-
-              // 常规情况 加载网络图片
-              // 图片加载完成
-              void onLoadCompleted(ExtendedImageState state) {
-                final ImageInfo? imageInfo = state.extendedImageInfo;
-                controller.setScale100(imageInfo!, context.mediaQuerySize);
-
-                widget.imageSizeChanged?.call(Size(
-                    imageInfo.image.width.toDouble(),
-                    imageInfo.image.height.toDouble()));
-
-                if (imageData != null) {
-                  final GalleryImage? tmpImage =
-                      vState.imageMap?[imageData.ser];
-                  if (tmpImage != null && !(tmpImage.completeHeight ?? false)) {
-                    vState.galleryPageController?.uptImageBySer(
-                      ser: imageData.ser,
-                      imageCallback: (image) =>
-                          image.copyWith(completeHeight: true.oN),
-                    );
-
-                    logger.t('upt _tmpImage ${tmpImage.ser}');
-                    Future.delayed(const Duration(milliseconds: 100)).then(
-                        (value) => controller.update(
-                            [idSlidePage, '$idImageListView${imageData.ser}']));
-                  }
-                }
-
-                controller.onLoadCompleted(widget.imageSer);
-              }
-
-              // if (kReleaseMode) {
-              //   logger.d('ImageExt');
-              //   return ImageExt(
-              //     url: imageData?.imageUrl ?? '',
-              //     onDoubleTap: widget.enableDoubleTap ? _onDoubleTap : null,
-              //     ser: widget.imageSer,
-              //     mode: widget.mode,
-              //     enableSlideOutPage: widget.enableSlideOutPage,
-              //     reloadImage: () =>
-              //         controller.reloadImage(widget.imageSer, changeSource: true),
-              //     fadeAnimationController: _fadeAnimationController,
-              //     initGestureConfigHandler: _initGestureConfigHandler,
-              //     onLoadCompleted: onLoadCompleted,
-              //   );
-              // }
-
-              logger.t('ImageExtProvider, imageUrl: ${imageData?.imageUrl}');
-              Widget image = ImageExtProvider(
-                image: ExtendedResizeImage.resizeIfNeeded(
-                  provider: ExtendedNetworkImageProvider(
-                    imageData?.imageUrl ?? '',
-                    timeLimit: const Duration(seconds: 5),
-                    cache: true,
-                    retries: 2,
-                    timeRetry: const Duration(seconds: 2),
-                    printError: true,
-                    cacheKey: imageData?.cacheKey,
-                  ),
-                  // provider: getEhImageProvider(
-                  //   imageData?.imageUrl ?? '',
-                  //   ser: widget.imageSer,
-                  // ),
+              widget.imageSizeChanged?.call(
+                Size(
+                  imageInfo.image.width.toDouble(),
+                  imageInfo.image.height.toDouble(),
                 ),
-                // image: getEhImageProvider(
+              );
+
+              if (imageData != null) {
+                final GalleryImage? tmpImage = vState.imageMap?[imageData.ser];
+                if (tmpImage != null && !(tmpImage.completeHeight ?? false)) {
+                  vState.galleryPageController?.uptImageBySer(
+                    ser: imageData.ser,
+                    imageCallback: (image) =>
+                        image.copyWith(completeHeight: true.oN),
+                  );
+
+                  logger.t('upt _tmpImage ${tmpImage.ser}');
+                  Future.delayed(const Duration(milliseconds: 100)).then(
+                    (value) => controller.update([
+                      idSlidePage,
+                      '$idImageListView${imageData.ser}',
+                    ]),
+                  );
+                }
+              }
+
+              controller.onLoadCompleted(widget.imageSer);
+            }
+
+            // if (kReleaseMode) {
+            //   logger.d('ImageExt');
+            //   return ImageExt(
+            //     url: imageData?.imageUrl ?? '',
+            //     onDoubleTap: widget.enableDoubleTap ? _onDoubleTap : null,
+            //     ser: widget.imageSer,
+            //     mode: widget.mode,
+            //     enableSlideOutPage: widget.enableSlideOutPage,
+            //     reloadImage: () =>
+            //         controller.reloadImage(widget.imageSer, changeSource: true),
+            //     fadeAnimationController: _fadeAnimationController,
+            //     initGestureConfigHandler: _initGestureConfigHandler,
+            //     onLoadCompleted: onLoadCompleted,
+            //   );
+            // }
+
+            logger.t('ImageExtProvider, imageUrl: ${imageData?.imageUrl}');
+            Widget image = ImageExtProvider(
+              image: ExtendedResizeImage.resizeIfNeeded(
+                provider: ExtendedNetworkImageProvider(
+                  imageData?.imageUrl ?? '',
+                  timeLimit: const Duration(seconds: 5),
+                  cache: true,
+                  retries: 2,
+                  timeRetry: const Duration(seconds: 2),
+                  printError: true,
+                  cacheKey: imageData?.cacheKey,
+                ),
+                // provider: getEhImageProvider(
                 //   imageData?.imageUrl ?? '',
                 //   ser: widget.imageSer,
                 // ),
-                // image: EhCheckHideImage(
-                //   checkQRCodeHide: checkQRCodeHide,
-                //   checkPHashHide: checkPHashHide,
-                //   imageProvider: ExtendedNetworkImageProvider(
-                //     imageData?.imageUrl ?? '',
-                //     timeLimit: const Duration(seconds: 10),
-                //     cache: true,
-                //   ),
-                // ),
-                onDoubleTap: widget.enableDoubleTap ? _onDoubleTap : null,
-                ser: widget.imageSer,
-                mode: widget.mode,
-                enableSlideOutPage: widget.enableSlideOutPage,
-                reloadImage: () =>
-                    controller.reloadImage(widget.imageSer, changeSource: true),
-                fadeAnimationController: _fadeAnimationController,
-                initGestureConfigHandler: _initGestureConfigHandler,
-                onLoadCompleted: onLoadCompleted,
-              );
+              ),
+              // image: getEhImageProvider(
+              //   imageData?.imageUrl ?? '',
+              //   ser: widget.imageSer,
+              // ),
+              // image: EhCheckHideImage(
+              //   checkQRCodeHide: checkQRCodeHide,
+              //   checkPHashHide: checkPHashHide,
+              //   imageProvider: ExtendedNetworkImageProvider(
+              //     imageData?.imageUrl ?? '',
+              //     timeLimit: const Duration(seconds: 10),
+              //     cache: true,
+              //   ),
+              // ),
+              onDoubleTap: widget.enableDoubleTap ? _onDoubleTap : null,
+              ser: widget.imageSer,
+              mode: widget.mode,
+              enableSlideOutPage: widget.enableSlideOutPage,
+              reloadImage: () =>
+                  controller.reloadImage(widget.imageSer, changeSource: true),
+              fadeAnimationController: _fadeAnimationController,
+              initGestureConfigHandler: _initGestureConfigHandler,
+              onLoadCompleted: onLoadCompleted,
+            );
 
-              return image;
-          }
-        });
+            return image;
+        }
+      },
+    );
   }
 
   Widget _buildErr(Object? e) {
@@ -739,13 +785,18 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
 
     if ((vState.errCountMap[widget.imageSer] ?? 0) < vState.retryCount) {
       Future.delayed(const Duration(milliseconds: 100)).then(
-          (_) => controller.reloadImage(widget.imageSer, changeSource: true));
-      vState.errCountMap
-          .update(widget.imageSer, (int value) => value + 1, ifAbsent: () => 1);
+        (_) => controller.reloadImage(widget.imageSer, changeSource: true),
+      );
+      vState.errCountMap.update(
+        widget.imageSer,
+        (int value) => value + 1,
+        ifAbsent: () => 1,
+      );
 
       logger.t('${vState.errCountMap}');
       logger.d(
-          '${widget.imageSer} 重试 第 ${vState.errCountMap[widget.imageSer]} 次');
+        '${widget.imageSer} 重试 第 ${vState.errCountMap[widget.imageSer]} 次',
+      );
     }
     if ((vState.errCountMap[widget.imageSer] ?? 0) >= vState.retryCount) {
       return ViewError(ser: widget.imageSer, errInfo: errInfo);
@@ -773,18 +824,12 @@ class _ViewImageState extends State<ViewImage> with TickerProviderStateMixin {
         }
 
         if (image.errorInfo?.isNotEmpty ?? false) {
-          return ViewError(
-            ser: widget.imageSer,
-            errInfo: image.errorInfo,
-          );
+          return ViewError(ser: widget.imageSer, errInfo: image.errorInfo);
         }
 
         final process = image.downloadProcess ?? 0.0;
         if (process < 1.0) {
-          return ViewLoading(
-            ser: widget.imageSer,
-            progress: process,
-          );
+          return ViewLoading(ser: widget.imageSer, progress: process);
         } else {
           return fileImage(image.tempPath!);
         }

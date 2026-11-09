@@ -1,4 +1,5 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -15,7 +16,7 @@ import 'package:get/get.dart';
 
 /// In a desktop two-pane settings window a category page is the root of the
 /// detail pane: the list beside it navigates, there is nothing to go back to.
-bool isDesktopSettingPaneRoot(ModalRoute<dynamic>? route) {
+bool isDesktopSettingPaneRoot(ModalRoute<dynamic>? route, {bool? split}) {
   if (route == null ||
       !PlatformCapabilities.isDesktop ||
       !Get.isRegistered<LayoutServices>()) {
@@ -23,7 +24,7 @@ bool isDesktopSettingPaneRoot(ModalRoute<dynamic>? route) {
   }
   final layout = Get.find<LayoutServices>();
   final stack = layout.tabNavigation.selected;
-  if (!layout.isLayoutLarge || stack?.id != EHRoutes.setting) {
+  if (!(split ?? layout.isLayoutLarge) || stack?.id != EHRoutes.setting) {
     return false;
   }
   final history = stack!.detailObserver.history;
@@ -79,6 +80,8 @@ class _SettingScaffoldState extends State<SettingScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    final split =
+        context.dependOnInheritedWidgetOfExactType<BrowsePaneScope>()?.split;
     final bool nativeBar =
         widget.nativeChrome && NativeNavigationScope.isEnabled(context);
     final Widget child = CanvasGrain(child: widget.child);
@@ -94,6 +97,7 @@ class _SettingScaffoldState extends State<SettingScaffold> {
                   : CupertinoNavigationBar(
                       automaticallyImplyLeading: !isDesktopSettingPaneRoot(
                         ModalRoute.of(context),
+                        split: split,
                       ),
                       padding: widget.trailing == null
                           ? null
@@ -215,7 +219,12 @@ class SettingGlassBar extends StatelessWidget
     final double safeTop = MediaQuery.paddingOf(context).top;
     final route = ModalRoute.of(context);
     final bool canPop = (route?.impliesAppBarDismissal ?? false) &&
-        !isDesktopSettingPaneRoot(route);
+        !isDesktopSettingPaneRoot(
+          route,
+          split: context
+              .dependOnInheritedWidgetOfExactType<BrowsePaneScope>()
+              ?.split,
+        );
     final bool followSystem = !Get.isRegistered<EhSettingService>() ||
         Get.find<EhSettingService>().liquidGlassMaterial;
     final Color iconColor = ehTheme.palette.text1.resolveFrom(context);

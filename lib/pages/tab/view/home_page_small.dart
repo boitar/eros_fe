@@ -427,6 +427,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
           viewPadding: contentMedia.viewPadding,
           viewInsets: contentMedia.viewInsets,
         );
+    final split = widget.split && environment.isSplit;
+    _layout.updateNavigationSplit(split);
     return offlineDuoNavigationProbe(
         child: ColoredBox(
       color: CupertinoTheme.of(context).scaffoldBackgroundColor,
@@ -454,7 +456,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
                           key: _tabNavigators.putIfAbsent(
                               entry.key, GlobalKey.new),
                           stack: _navigation.stackFor(entry.key),
-                          split: widget.split,
+                          split: split,
                           primaryRoot: entry.value,
                         ),
                       ),

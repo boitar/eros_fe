@@ -140,6 +140,9 @@ void main() {
   ]) {
     testWidgets('$host ${mode.name} keeps settings as pages', (tester) async {
       await pump(tester, host: host, mode: mode);
+      // Only desktop uses the post-sidebar result for its global pane logic.
+      layout.updateNavigationSplit(false);
+      expect(layout.isLayoutLarge, mode == LayoutMode.large);
       controller.syncDesktopPane();
       await tester.pumpAndSettle();
       expect(pane(), <String>[EHRoutes.empty]);

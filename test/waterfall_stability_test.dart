@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/models/gallery_provider.dart';
@@ -12,8 +13,14 @@ import 'package:get/get.dart';
 import 'support/waterfall_fixture.dart';
 
 void main() {
-  setUp(registerWaterfallFixture);
-  tearDown(Get.reset);
+  setUp(() {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    registerWaterfallFixture();
+  });
+  tearDown(() {
+    PlatformCapabilities.debugHostPlatformOverride = null;
+    Get.reset();
+  });
 
   for (final large in [false, true]) {
     for (final size in [const Size(390, 844), const Size(844, 390)]) {

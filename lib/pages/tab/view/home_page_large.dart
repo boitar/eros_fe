@@ -212,6 +212,7 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
             [_stack.primaryObserver.revision, _stack.detailObserver.revision]),
         builder: (context, _) {
           final split = widget.split && environment.isSplit;
+          _layout.updateNavigationSplit(split);
           final moving = !split && _detailMoving;
           // A page opened in the list column puts the list back on top while
           // the detail page still sits where it covered the list; it covers

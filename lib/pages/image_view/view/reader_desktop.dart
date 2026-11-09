@@ -270,9 +270,16 @@ class _WheelPagerState extends State<_WheelPager> {
   static const Duration _gap = Duration(milliseconds: 280);
 
   void _onSignal(PointerSignalEvent event) {
-    if (!widget.enabled || event is! PointerScrollEvent) {
+    if (!widget.enabled ||
+        event is! PointerScrollEvent ||
+        HardwareKeyboard.instance.isControlPressed) {
       return;
     }
+    GestureBinding.instance.pointerSignalResolver.register(event, _turnPage);
+  }
+
+  void _turnPage(PointerSignalEvent signal) {
+    final event = signal as PointerScrollEvent;
     final delta = event.scrollDelta.dy.abs() >= event.scrollDelta.dx.abs()
         ? event.scrollDelta.dy
         : event.scrollDelta.dx;
@@ -394,19 +401,48 @@ class _BarButtonState extends State<_BarButton> {
 
 /// Single · Double · Vertical.
 class _LayoutSegments extends StatelessWidget {
-  const _LayoutSegments({required this.controller, required this.glass});
+  const _LayoutSegments({
+    required this.controller,
+    required this.glass,
+    this.compact = false,
+  });
 
   final ViewExtController controller;
   final bool glass;
+  final bool compact;
 
-  @override
-  Widget build(BuildContext context) {
+  static Map<DesktopReaderLayout, String> labels(BuildContext context) {
     final l10n = L10n.of(context);
-    final current = desktopReaderLayoutOf(controller.vState);
-    final labels = <DesktopReaderLayout, String>{
+    return {
       DesktopReaderLayout.single: l10n.reader_single_page,
       DesktopReaderLayout.double: l10n.reader_double_page,
       DesktopReaderLayout.vertical: l10n.reader_vertical,
+    };
+  }
+
+  static double widthFor(BuildContext context, {required bool glass}) =>
+      4 +
+      labels(context).values.fold<double>(0, (width, label) {
+        final painter = TextPainter(
+          text: TextSpan(
+            text: label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        final result = width + painter.width + (glass ? 24 : 20);
+        painter.dispose();
+        return result;
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    final current = desktopReaderLayoutOf(controller.vState);
+    final icons = {
+      DesktopReaderLayout.single: CupertinoIcons.rectangle,
+      DesktopReaderLayout.double: CupertinoIcons.book,
+      DesktopReaderLayout.vertical: CupertinoIcons.arrow_down,
     };
     final radius = glass ? 14.0 : 5.0;
     return Container(
@@ -419,12 +455,13 @@ class _LayoutSegments extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (final entry in labels.entries)
+          for (final entry in labels(context).entries)
             Semantics(
               button: true,
               selected: entry.key == current,
               label: entry.value,
               excludeSemantics: true,
+              onTap: () => setDesktopReaderLayout(controller, entry.key),
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: GestureDetector(
@@ -433,8 +470,11 @@ class _LayoutSegments extends StatelessWidget {
                   onTap: () => setDesktopReaderLayout(controller, entry.key),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 140),
-                    height: glass ? 28 : 24,
-                    padding: EdgeInsets.symmetric(horizontal: glass ? 12 : 10),
+                    height: compact ? 30 : (glass ? 28 : 24),
+                    width: compact ? 32 : null,
+                    padding: compact
+                        ? EdgeInsets.zero
+                        : EdgeInsets.symmetric(horizontal: glass ? 12 : 10),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: entry.key == current
@@ -444,14 +484,16 @@ class _LayoutSegments extends StatelessWidget {
                           : const Color(0x00000000),
                       borderRadius: BorderRadius.circular(radius),
                     ),
-                    child: Text(
-                      entry.value,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: entry.key == current ? _kText : _kText2,
-                      ),
-                    ),
+                    child: compact
+                        ? Icon(icons[entry.key], size: 17, color: _kText)
+                        : Text(
+                            entry.value,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: entry.key == current ? _kText : _kText2,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -474,161 +516,276 @@ class ReaderDesktopTopBar extends GetView<ViewExtController> {
     final l10n = L10n.of(context);
     return GetBuilder<ViewExtController>(
       id: idViewTopBar,
-      builder: (logic) {
-        final state = logic.vState;
-        final title = GalleryTitleParts.parse(
-          state.pageState?.displayTitle ?? '',
-        ).title;
-        final page = l10n.reader_page_of(
-          desktopReaderPageLabel(state),
-          state.fileCount,
-        );
-        final vertical = state.viewMode == ViewMode.topToBottom;
-        final titleBlock = Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (title.isNotEmpty)
+      builder: (logic) => LayoutBuilder(
+        builder: (context, constraints) {
+          final state = logic.vState;
+          final size = glass ? 32.0 : 30.0;
+          final fullWidth =
+              _LayoutSegments.widthFor(context, glass: glass) +
+              (glass ? 64 : 52) +
+              size * ((glass ? 1 : 2) + (desktopReaderCanFullscreen ? 4 : 3)) +
+              124;
+          final compact = constraints.maxWidth < fullWidth;
+          final title = GalleryTitleParts.parse(
+            state.pageState?.displayTitle ?? '',
+          ).title;
+          final page = l10n.reader_page_of(
+            desktopReaderPageLabel(state),
+            state.fileCount,
+          );
+          final vertical = state.viewMode == ViewMode.topToBottom;
+          final showTitle = title.isNotEmpty && !compact;
+          final titleBlock = Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (showTitle)
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _kText,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               Text(
-                title,
+                page,
+                key: const ValueKey<String>('reader-desktop-page'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: _kText,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                style: TextStyle(
+                  color: showTitle ? _kText2 : _kText,
+                  fontSize: showTitle ? 11 : 13,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
-            Text(
-              page,
-              key: const ValueKey<String>('reader-desktop-page'),
-              maxLines: 1,
-              style: TextStyle(
-                color: title.isEmpty ? _kText : _kText2,
-                fontSize: title.isEmpty ? 13 : 11,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ],
-        );
-        final leading = <Widget>[
-          _BarButton(
-            glass: glass,
-            icon: CupertinoIcons.chevron_left,
-            label: l10n.back,
-            onTap: Get.back,
-          ),
-          if (!glass)
-            GetBuilder<ViewExtController>(
-              id: idShowThumbListIcon,
-              builder: (logic) => _BarButton(
-                icon: CupertinoIcons.sidebar_left,
-                label: l10n.thumbnails,
-                selected: logic.vState.showThumbList,
-                onTap: logic.switchShowThumbList,
-              ),
-            ),
-        ];
-        final trailing = <Widget>[
-          _LayoutSegments(controller: logic, glass: glass),
-          const SizedBox(width: 4),
-          _BarButton(
-            glass: glass,
-            // Vertical scrolling has no reading direction to flip.
-            enabled: !vertical,
-            icon: state.viewMode == ViewMode.rightToLeft
-                ? CupertinoIcons.arrow_left
-                : CupertinoIcons.arrow_right,
-            label:
-                '${l10n.reading_direction}: '
-                '${state.viewMode == ViewMode.rightToLeft ? l10n.right_to_left : l10n.left_to_right}',
-            onTap: () => toggleDesktopReaderDirection(logic),
-          ),
-          GetBuilder<ViewExtController>(
-            id: idAutoReadIcon,
-            builder: (logic) => _BarButton(
+            ],
+          );
+          final leading = <Widget>[
+            _BarButton(
               glass: glass,
-              icon: CupertinoIcons.timer,
-              label: l10n.reader_auto_read,
-              selected: logic.vState.autoRead,
-              onTap: () => logic.tapAutoRead(context),
+              icon: CupertinoIcons.chevron_left,
+              label: l10n.back,
+              onTap: Get.back,
             ),
-          ),
-          if (desktopReaderCanFullscreen)
-            ValueListenableBuilder<bool>(
-              valueListenable: MacOSWindowChrome.fullscreen,
-              builder: (context, fullscreen, _) => _BarButton(
-                glass: glass,
-                icon: fullscreen
-                    ? CupertinoIcons.fullscreen_exit
-                    : CupertinoIcons.fullscreen,
-                label: l10n.fullscreen,
-                selected: fullscreen,
-                onTap: MacOSWindowChrome.toggleFullscreen,
+            if (!glass)
+              GetBuilder<ViewExtController>(
+                id: idShowThumbListIcon,
+                builder: (logic) => _BarButton(
+                  icon: CupertinoIcons.sidebar_left,
+                  label: l10n.thumbnails,
+                  selected: logic.vState.showThumbList,
+                  onTap: logic.switchShowThumbList,
+                ),
               ),
-            ),
-          _BarButton(
-            glass: glass,
-            icon: CupertinoIcons.ellipsis,
-            label: l10n.read_setting,
-            onTap: () => _openReadSettings(logic),
-          ),
-        ];
-        if (!glass) {
-          return Container(
-            key: const ValueKey<String>('reader-desktop-topbar'),
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: const BoxDecoration(
-              color: _kBar,
-              border: Border(bottom: BorderSide(color: _kHairline)),
-            ),
-            child: Row(
-              children: [
-                ...leading,
-                const SizedBox(width: 12),
-                Expanded(child: titleBlock),
-                const SizedBox(width: 12),
-                ...trailing,
-              ],
+          ];
+          final trailing = <Widget>[
+            _LayoutSegments(controller: logic, glass: glass, compact: compact),
+            const SizedBox(width: 4),
+            if (!compact) ...[
+              _BarButton(
+                glass: glass,
+                // Vertical scrolling has no reading direction to flip.
+                enabled: !vertical,
+                icon: state.viewMode == ViewMode.rightToLeft
+                    ? CupertinoIcons.arrow_left
+                    : CupertinoIcons.arrow_right,
+                label:
+                    '${l10n.reading_direction}: '
+                    '${state.viewMode == ViewMode.rightToLeft ? l10n.right_to_left : l10n.left_to_right}',
+                onTap: () => toggleDesktopReaderDirection(logic),
+              ),
+              GetBuilder<ViewExtController>(
+                id: idAutoReadIcon,
+                builder: (logic) => _BarButton(
+                  glass: glass,
+                  icon: CupertinoIcons.timer,
+                  label: l10n.reader_auto_read,
+                  selected: logic.vState.autoRead,
+                  onTap: () => logic.tapAutoRead(context),
+                ),
+              ),
+              if (desktopReaderCanFullscreen)
+                ValueListenableBuilder<bool>(
+                  valueListenable: MacOSWindowChrome.fullscreen,
+                  builder: (context, fullscreen, _) => _BarButton(
+                    glass: glass,
+                    icon: fullscreen
+                        ? CupertinoIcons.fullscreen_exit
+                        : CupertinoIcons.fullscreen,
+                    label: l10n.fullscreen,
+                    selected: fullscreen,
+                    onTap: MacOSWindowChrome.toggleFullscreen,
+                  ),
+                ),
+            ],
+            _ReaderMoreMenu(controller: logic, glass: glass, compact: compact),
+          ];
+          if (!glass) {
+            return Container(
+              key: const ValueKey<String>('reader-desktop-topbar'),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: const BoxDecoration(
+                color: _kBar,
+                border: Border(bottom: BorderSide(color: _kHairline)),
+              ),
+              child: Row(
+                children: [
+                  ...leading,
+                  const SizedBox(width: 12),
+                  Expanded(child: titleBlock),
+                  const SizedBox(width: 12),
+                  ...trailing,
+                ],
+              ),
+            );
+          }
+          Widget capsule(Widget child, {Key? key}) => _glassSurface(
+            radius: 20,
+            child: SizedBox(
+              key: key,
+              height: 40,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: child,
+              ),
             ),
           );
-        }
-        Widget capsule(Widget child, {Key? key}) => _glassSurface(
-          radius: 20,
-          child: SizedBox(
-            key: key,
-            height: 40,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: child,
-            ),
-          ),
-        );
-        return Padding(
-          key: const ValueKey<String>('reader-desktop-topbar'),
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              capsule(Row(mainAxisSize: MainAxisSize.min, children: leading)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: capsule(
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: titleBlock,
+          return Padding(
+            key: const ValueKey<String>('reader-desktop-topbar'),
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                capsule(Row(mainAxisSize: MainAxisSize.min, children: leading)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: capsule(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: titleBlock,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              capsule(Row(mainAxisSize: MainAxisSize.min, children: trailing)),
-            ],
+                const SizedBox(width: 12),
+                capsule(
+                  Row(mainAxisSize: MainAxisSize.min, children: trailing),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Secondary controls remain reachable at every window width. Image exports
+/// use the same controller actions as the mobile reader, including fileImage.
+class _ReaderMoreMenu extends StatefulWidget {
+  const _ReaderMoreMenu({
+    required this.controller,
+    required this.glass,
+    required this.compact,
+  });
+
+  final ViewExtController controller;
+  final bool glass;
+  final bool compact;
+
+  @override
+  State<_ReaderMoreMenu> createState() => _ReaderMoreMenuState();
+}
+
+class _ReaderMoreMenuState extends State<_ReaderMoreMenu> {
+  bool _open = false;
+  ViewExtController get controller => widget.controller;
+
+  void _setOpen(bool open) {
+    _open = open;
+    controller.setKeyboardShortcutsSuspended(this, open);
+  }
+
+  @override
+  void didUpdateWidget(_ReaderMoreMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != controller) {
+      oldWidget.controller.setKeyboardShortcutsSuspended(this, false);
+      controller.setKeyboardShortcutsSuspended(this, _open);
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.setKeyboardShortcutsSuspended(this, false);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
+    final state = controller.vState;
+    return CupertinoMenuAnchor(
+      onOpen: () => _setOpen(true),
+      onClose: () => _setOpen(false),
+      menuChildren: [
+        CupertinoMenuItem(
+          leading: const Icon(CupertinoIcons.arrow_down_to_line),
+          onPressed: () => controller.tapSave(context),
+          child: Text(l10n.save_current_image),
+        ),
+        CupertinoMenuItem(
+          leading: const Icon(CupertinoIcons.share),
+          onPressed: () => controller.tapShare(context),
+          child: Text(l10n.share_image),
+        ),
+        if (widget.compact) ...[
+          CupertinoMenuItem(
+            leading: const Icon(CupertinoIcons.arrow_left_right),
+            onPressed: state.viewMode == ViewMode.topToBottom
+                ? null
+                : () => toggleDesktopReaderDirection(controller),
+            child: Text(
+              '${l10n.reading_direction}: '
+              '${state.viewMode == ViewMode.rightToLeft ? l10n.right_to_left : l10n.left_to_right}',
+            ),
           ),
-        );
-      },
+          GetBuilder<ViewExtController>(
+            id: idAutoReadIcon,
+            builder: (logic) => CupertinoMenuItem(
+              leading: Icon(
+                logic.vState.autoRead
+                    ? CupertinoIcons.checkmark
+                    : CupertinoIcons.timer,
+              ),
+              onPressed: () => logic.tapAutoRead(context),
+              child: Text(l10n.reader_auto_read),
+            ),
+          ),
+          if (desktopReaderCanFullscreen)
+            CupertinoMenuItem(
+              leading: const Icon(CupertinoIcons.fullscreen),
+              onPressed: MacOSWindowChrome.toggleFullscreen,
+              child: Text(l10n.fullscreen),
+            ),
+        ],
+        CupertinoMenuItem(
+          leading: const Icon(CupertinoIcons.settings),
+          onPressed: () => _openReadSettings(controller),
+          child: Text(l10n.read_setting),
+        ),
+      ],
+      builder: (context, menu, _) => _BarButton(
+        glass: widget.glass,
+        icon: CupertinoIcons.ellipsis,
+        label: l10n.more_actions,
+        onTap: () => menu.isOpen ? menu.close() : menu.open(),
+      ),
     );
   }
 }
@@ -802,6 +959,7 @@ class _PageButton extends GetView<ViewExtController> {
       button: true,
       label: label,
       excludeSemantics: true,
+      onTap: forward ? controller.tapRight : controller.tapLeft,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(

@@ -159,7 +159,11 @@ class GalleryAnchorItem extends StatelessWidget {
     // Every list mode places its cards here, so desktop hover and the
     // detail-pane selection ring are added once for all of them.
     final card = PlatformCapabilities.isDesktop
-        ? DesktopCardChrome(gid: id, child: child)
+        ? DesktopCardChrome(
+            key: ValueKey<String>('desktop-card-chrome-$id'),
+            gid: id,
+            child: child,
+          )
         : child;
     return scope == null
         ? card

@@ -14,6 +14,7 @@ import 'package:preload_page_view/preload_page_view.dart';
 import '../common.dart';
 import '../controller/view_controller.dart';
 import 'reader_gesture_page_view.dart';
+import 'reader_image_gesture.dart';
 import 'view_image.dart';
 
 class ImagePageView extends GetView<ViewExtController> {
@@ -88,8 +89,11 @@ class ImagePageView extends GetView<ViewExtController> {
                 minScale: PhotoViewComputedScale.contained,
                 maxScale: PhotoViewComputedScale.covered * 5,
                 controller: logic.photoViewController,
-                child: ViewImage(
-                  imageSer: pageIndex + 1,
+                child: ReaderPhotoViewScroll(
+                  controller: logic.photoViewController,
+                  minScale: 1,
+                  maxScale: 5,
+                  child: ViewImage(imageSer: pageIndex + 1),
                 ),
               );
             });
@@ -115,11 +119,16 @@ class ImagePageView extends GetView<ViewExtController> {
                 maxScale: PhotoViewComputedScale.covered * 5,
                 controller: logic.photoViewController,
                 childSize: context.mediaQuery.size * 2,
-                child: ViewImage(
-                  imageSer: pageIndex + 1,
-                  mode: ExtendedImageMode.none,
-                  // enableSlideOutPage: !GetPlatform.isAndroid,
-                  enableSlideOutPage: logic.enableSlideOutPage,
+                child: ReaderPhotoViewScroll(
+                  controller: logic.photoViewController,
+                  minScale: .5,
+                  maxScale: 2.5,
+                  child: ViewImage(
+                    imageSer: pageIndex + 1,
+                    mode: ExtendedImageMode.none,
+                    // enableSlideOutPage: !GetPlatform.isAndroid,
+                    enableSlideOutPage: logic.enableSlideOutPage,
+                  ),
                 ),
               );
             });
@@ -231,24 +240,7 @@ class ImagePageView extends GetView<ViewExtController> {
       case PageViewType.preloadPageView: // 非兼容模式
         logger.d('preloadPageView');
         Widget doubleView(int pageIndex) {
-          return PhotoViewGallery.builder(
-            backgroundDecoration:
-                const BoxDecoration(color: Colors.transparent),
-            itemCount: 1,
-            builder: (_, __) {
-              return PhotoViewGalleryPageOptions.customChild(
-                scaleStateController: controller.photoViewScaleStateController,
-                initialScale: PhotoViewComputedScale.contained * 1.0,
-                minScale: PhotoViewComputedScale.contained * 1.0,
-                maxScale: PhotoViewComputedScale.contained * 2.0,
-                scaleStateCycle: listViewScaleStateCycle,
-                child: DoublePageView(
-                  pageIndex: pageIndex,
-                  key: ValueKey(controller.vState.columnMode),
-                ),
-              );
-            },
-          );
+          return _DoublePhotoView(pageIndex: pageIndex);
         }
 
         //
@@ -294,9 +286,14 @@ class ImagePageView extends GetView<ViewExtController> {
               controller: logic.photoViewController,
               // scaleStateController: logic.photoViewScaleStateController,
               // disableGestures: true,
-              child: DoublePageView(
-                pageIndex: pageIndex,
-                key: ValueKey(controller.vState.columnMode),
+              child: ReaderPhotoViewScroll(
+                controller: logic.photoViewController,
+                minScale: 1,
+                maxScale: 5,
+                child: DoublePageView(
+                  pageIndex: pageIndex,
+                  key: ValueKey(controller.vState.columnMode),
+                ),
               ),
             );
           },
@@ -319,13 +316,63 @@ class ImagePageView extends GetView<ViewExtController> {
               minScale: PhotoViewComputedScale.contained,
               maxScale: PhotoViewComputedScale.covered * 5,
               controller: logic.photoViewController,
-              child: DoublePageView(
-                pageIndex: pageIndex,
-                key: ValueKey(controller.vState.columnMode),
+              child: ReaderPhotoViewScroll(
+                controller: logic.photoViewController,
+                minScale: 1,
+                maxScale: 5,
+                child: DoublePageView(
+                  pageIndex: pageIndex,
+                  key: ValueKey(controller.vState.columnMode),
+                ),
               ),
             );
           },
         );
     }
   }
+}
+
+/// Each preloaded spread owns its zoom controller; wheel events must address
+/// the visible spread rather than a controller shared by offscreen pages.
+class _DoublePhotoView extends StatefulWidget {
+  const _DoublePhotoView({required this.pageIndex});
+
+  final int pageIndex;
+
+  @override
+  State<_DoublePhotoView> createState() => _DoublePhotoViewState();
+}
+
+class _DoublePhotoViewState extends State<_DoublePhotoView> {
+  final PhotoViewController _photoController = PhotoViewController();
+  final ViewExtController _reader = Get.find();
+
+  @override
+  void dispose() {
+    _photoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => PhotoViewGallery.builder(
+        backgroundDecoration: const BoxDecoration(color: Colors.transparent),
+        itemCount: 1,
+        builder: (_, _) => PhotoViewGalleryPageOptions.customChild(
+          controller: _photoController,
+          scaleStateController: _reader.photoViewScaleStateController,
+          initialScale: PhotoViewComputedScale.contained,
+          minScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.contained * 2,
+          scaleStateCycle: listViewScaleStateCycle,
+          child: ReaderPhotoViewScroll(
+            controller: _photoController,
+            minScale: 1,
+            maxScale: 2,
+            child: DoublePageView(
+              pageIndex: widget.pageIndex,
+              key: ValueKey(_reader.vState.columnMode),
+            ),
+          ),
+        ),
+      );
 }

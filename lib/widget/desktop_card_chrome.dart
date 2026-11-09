@@ -116,6 +116,18 @@ class _DesktopCardChromeState extends State<DesktopCardChrome> {
     }
   }
 
+  @override
+  void didUpdateWidget(DesktopCardChrome oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.gid != widget.gid &&
+        _hovered &&
+        DesktopGalleryActions.hoveredGid.value == oldWidget.gid) {
+      // A caller may reuse this State for a new gallery while the mouse stays
+      // still. Transfer ownership without waiting for another pointer event.
+      DesktopGalleryActions.hoveredGid.value = widget.gid;
+    }
+  }
+
   void _setHovered(bool hovered) {
     setState(() => _hovered = hovered);
     final hoveredGid = DesktopGalleryActions.hoveredGid;

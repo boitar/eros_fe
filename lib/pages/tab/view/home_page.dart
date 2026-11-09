@@ -26,7 +26,9 @@ class HomePage extends GetView<TabHomeController> {
 
         layoutServices.layoutMode = getLayoutMode(context, tabletLayoutType);
 
-        return TabHomeLarge(split: isLayoutLarge);
+        return TabHomeLarge(
+          split: layoutServices.layoutMode == LayoutMode.large,
+        );
       },
     );
 

@@ -11,6 +11,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/image_view/controller/view_state.dart';
+import 'package:eros_fe/pages/image_view/view/reader_image_gesture.dart';
 import 'package:eros_fe/utils/gallery_image_export.dart';
 import 'package:eros_fe/utils/share_service.dart';
 import 'package:eros_fe/widget/app_modal.dart';
@@ -334,7 +335,7 @@ class ImageExt extends GetView<ViewExtController> {
 
             Widget image = FadeTransition(
               opacity: fadeAnimationController,
-              child: state.completedWidget,
+              child: readerCompletedImage(state),
             );
 
             if (checkPHashHide || checkQRCodeHide) {
@@ -482,11 +483,11 @@ class ImageExtProvider extends GetView<ViewExtController> {
             Widget image = controller.vState.viewMode != ViewMode.topToBottom
                 ? Hero(
                     tag: '$ser',
-                    child: state.completedWidget,
+                    child: readerCompletedImage(state),
                     createRectTween: (Rect? begin, Rect? end) =>
                         MaterialRectCenterArcTween(begin: begin, end: end),
                   )
-                : state.completedWidget;
+                : readerCompletedImage(state);
 
             image = FadeTransition(
               opacity: fadeAnimationController,

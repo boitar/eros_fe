@@ -31,22 +31,25 @@ class AndroidNavigationRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
-    final destinations = Padding(
-      padding: EdgeInsets.symmetric(vertical: glass ? 8 : 16),
-      child: Column(
-        mainAxisSize: glass ? MainAxisSize.min : MainAxisSize.max,
-        children: <Widget>[
-          for (var index = 0; index < items.length; index++)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: _RailDestination(
-                item: items[index],
-                selected: index == currentIndex,
-                glass: glass,
-                onTap: () => onTap(index),
+    final destinations = SingleChildScrollView(
+      primary: false,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: glass ? 8 : 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (var index = 0; index < items.length; index++)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: _RailDestination(
+                  item: items[index],
+                  selected: index == currentIndex,
+                  glass: glass,
+                  onTap: () => onTap(index),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
     if (!glass) {

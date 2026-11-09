@@ -87,6 +87,19 @@ class ViewExtController extends GetxController {
   /// 状态
   final ViewExtState vState;
 
+  final Set<Object> _keyboardShortcutBlockers = {};
+  bool get keyboardShortcutsSuspended => _keyboardShortcutBlockers.isNotEmpty;
+
+  /// Overlay menus stay in the reader's focus ancestry. Keep their key events
+  /// out of the reader until their closing animation has finished.
+  void setKeyboardShortcutsSuspended(Object owner, bool suspended) {
+    if (suspended) {
+      _keyboardShortcutBlockers.add(owner);
+    } else {
+      _keyboardShortcutBlockers.remove(owner);
+    }
+  }
+
   final _absorbing = false.obs;
   bool get absorbing => _absorbing.value;
   set absorbing(bool val) => _absorbing.value = val;
