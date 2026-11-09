@@ -19,6 +19,7 @@ class EhGridView extends StatelessWidget {
       this.mode = ListModeEnum.grid,
       this.centerKey,
       this.firstCardKey,
+      this.topPadding,
       this.lastTopItemIndex,
       super.key})
       : assert(mode == ListModeEnum.grid || mode == ListModeEnum.gridTags);
@@ -31,6 +32,7 @@ class EhGridView extends StatelessWidget {
   final ListModeEnum mode;
   final Key? centerKey;
   final Key? firstCardKey;
+  final double? topPadding;
   final int? lastTopItemIndex;
 
   EhSettingService get _ehSettingService => Get.find();
@@ -85,7 +87,8 @@ class EhGridView extends StatelessWidget {
       childCount: galleryProviders.length,
     );
     return SliverPadding(
-      padding: const EdgeInsets.all(EHConst.gridCrossAxisSpacing),
+      padding: const EdgeInsets.all(EHConst.gridCrossAxisSpacing)
+          .copyWith(top: topPadding),
       sliver: showTags
           ? Obx(() => GalleryGridTagsSliver(
                 maxCrossAxisExtent: getMaxCrossAxisExtent(),

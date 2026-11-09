@@ -92,6 +92,30 @@ void main() {
           const Rect.fromLTWH(316, 20, 20, 20));
     });
 
+    test('pane projections retain the current unpartitioned window size', () {
+      const window = AdaptiveEnvironmentSnapshot(size: Size(820, 1180));
+      final pane = window.inRect(const Rect.fromLTWH(0, 0, 400, 1180));
+      final nested = pane.inRect(const Rect.fromLTWH(0, 0, 320, 1180));
+      expect(pane.size, const Size(400, 1180));
+      expect(pane.unpartitionedSize, window.size);
+      expect(nested.unpartitionedSize, window.size);
+      expect(
+        pane.copyWithGeometry(safeArea: const EdgeInsets.only(top: 24))
+            .unpartitionedSize,
+        window.size,
+      );
+      expect(
+        AdaptiveEnvironmentSnapshot.fromMap(pane.toMap()).unpartitionedSize,
+        window.size,
+      );
+      final resized = window.copyWithGeometry(size: const Size(500, 700));
+      expect(resized.unpartitionedSize, const Size(500, 700));
+      expect(
+        resized.inRect(const Rect.fromLTWH(0, 0, 320, 700)).unpartitionedSize,
+        const Size(500, 700),
+      );
+    });
+
     test('tabletop uses reliable horizontal panes, not hinge angles', () {
       const snapshot = AdaptiveEnvironmentSnapshot(
         size: Size(900, 700),

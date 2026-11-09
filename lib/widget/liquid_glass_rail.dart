@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:eros_fe/widget/desktop_pointer_effects.dart';
+import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -133,7 +135,8 @@ class _RailScrubTicker {
     final double page = controller.page!;
     final int index = page.round();
     final position = controller.position;
-    final bool userDriven = position.isScrollingNotifier.value &&
+    final bool userDriven =
+        position.isScrollingNotifier.value &&
         position.userScrollDirection != ScrollDirection.idle;
     if (userDriven && index != _lastIndex) {
       liquidGlassFeedback(vibrateUtil.selection);
@@ -229,17 +232,20 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
       ...widget.categoryTrailing,
       ...widget.trailing,
     ];
-    final leftInset =
-        widget.leading == null ? 8.0 : 8.0 + LiquidGlassRail.controlSize + 6.0;
+    final leftInset = widget.leading == null
+        ? 8.0
+        : 8.0 + LiquidGlassRail.controlSize + 6.0;
     final rightButtonsWidth = rightActions.isEmpty
         ? 0.0
         : rightActions.length * LiquidGlassRail.controlSize +
-            (rightActions.length - 1) * 4.0;
+              (rightActions.length - 1) * 4.0;
     final rightInset = 8.0 + rightButtonsWidth + 6.0;
-    final categoryLeftInset =
-        widget.compactCategories ? math.max(leftInset, rightInset) : leftInset;
-    final categoryRightInset =
-        widget.compactCategories ? math.max(leftInset, rightInset) : rightInset;
+    final categoryLeftInset = widget.compactCategories
+        ? math.max(leftInset, rightInset)
+        : leftInset;
+    final categoryRightInset = widget.compactCategories
+        ? math.max(leftInset, rightInset)
+        : rightInset;
 
     Widget railContent = Stack(
       fit: StackFit.expand,
@@ -324,15 +330,13 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     }
 
     return SizedBox(
-      height: widget.safeTop +
+      height:
+          widget.safeTop +
           widget.layout.expandedHeight(
             MediaQuery.textScalerOf(context),
             hasCategories: widget.categories.isNotEmpty,
           ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[railContent],
-      ),
+      child: Stack(fit: StackFit.expand, children: <Widget>[railContent]),
     );
   }
 
@@ -351,16 +355,15 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     double rowWidth(int count) =>
         count == 0 ? 0.0 : count * size + (count - 1) * 4.0;
     Widget actionRow(List<LiquidGlassRailAction> actions) => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (int index = 0; index < actions.length; index++) ...<Widget>[
-              if (index > 0) const SizedBox(width: 4.0),
-              _actionButton(actions[index], opacity: fadeOpacity),
-            ],
-          ],
-        );
-    final searchLeft =
-        widget.leading == null ? edge : edge + size + gap;
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        for (int index = 0; index < actions.length; index++) ...<Widget>[
+          if (index > 0) const SizedBox(width: 4.0),
+          _actionButton(actions[index], opacity: fadeOpacity),
+        ],
+      ],
+    );
+    final searchLeft = widget.leading == null ? edge : edge + size + gap;
     final searchRight = widget.trailing.isEmpty
         ? edge
         : edge + rowWidth(widget.trailing.length) + gap;
@@ -418,7 +421,8 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
           );
 
     return SizedBox(
-      height: widget.safeTop +
+      height:
+          widget.safeTop +
           widget.layout.expandedHeight(
             MediaQuery.textScalerOf(context),
             hasCategories: categories.isNotEmpty,
@@ -432,10 +436,14 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     required double opacity,
   }) {
     const double size = LiquidGlassRail.controlSize;
-    final labelColor =
-        CupertinoDynamicColor.resolve(CupertinoColors.secondaryLabel, context);
-    final iconColor =
-        CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+    final labelColor = CupertinoDynamicColor.resolve(
+      CupertinoColors.secondaryLabel,
+      context,
+    );
+    final iconColor = CupertinoDynamicColor.resolve(
+      CupertinoColors.label,
+      context,
+    );
     final radius = BorderRadius.circular(size / 2);
     final trailing = search.trailing;
     return Opacity(
@@ -468,8 +476,11 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                       padding: const EdgeInsetsDirectional.only(start: 14),
                       child: Row(
                         children: <Widget>[
-                          Icon(CupertinoIcons.search,
-                              size: 20, color: iconColor),
+                          Icon(
+                            CupertinoIcons.search,
+                            size: 20,
+                            color: iconColor,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -535,31 +546,37 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
       builder: (context, constraints) {
         final layout = SegmentedRailLayout.compute(
           SegmentedRailLayout.measure(
-              context, categories.map((category) => category.title).toList()),
+            context,
+            categories.map((category) => category.title).toList(),
+          ),
           constraints.maxWidth,
           compact: widget.compactCategories,
         );
         final widths = layout.widths;
         final surfaceWidth = layout.trackWidth;
         Widget fitSurface(Widget child) => widget.compactCategories
-            ? Align(child: SizedBox(width: surfaceWidth, child: child))
+            ? Align(
+                child: SizedBox(width: surfaceWidth, child: child),
+              )
             : child;
         if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
             GlassMode.native) {
-          return fitSurface(NativeCategoryRail(
-            categories: categories,
-            selectedIndex: widget.selectedIndex,
-            followSystemTransparency: widget.followSystemTransparency,
-            brightness: CupertinoTheme.brightnessOf(context),
-            fontSize: MediaQuery.textScalerOf(context).scale(15),
-            opacity: opacity,
-            interactive: widget.fadeProgress < 1.0,
-            pageController: widget.pageController,
-            layout: widget.layout,
-            initialOffset: _nativeOffset,
-            onOffset: (value) => _nativeOffset = value,
-            segmentWidths: widths,
-          ));
+          return fitSurface(
+            NativeCategoryRail(
+              categories: categories,
+              selectedIndex: widget.selectedIndex,
+              followSystemTransparency: widget.followSystemTransparency,
+              brightness: CupertinoTheme.brightnessOf(context),
+              fontSize: MediaQuery.textScalerOf(context).scale(15),
+              opacity: opacity,
+              interactive: widget.fadeProgress < 1.0,
+              pageController: widget.pageController,
+              layout: widget.layout,
+              initialOffset: _nativeOffset,
+              onOffset: (value) => _nativeOffset = value,
+              segmentWidths: widths,
+            ),
+          );
         }
         final height = constraints.maxHeight;
         final fits = !layout.scrolls;
@@ -584,10 +601,10 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             final target = !revealSelection
                 ? restoreOffset
                 : left < offset
-                    ? left
-                    : right > offset + surfaceWidth
-                        ? right - surfaceWidth
-                        : offset;
+                ? left
+                : right > offset + surfaceWidth
+                ? right - surfaceWidth
+                : offset;
             _scroll.jumpTo(target.clamp(0, _scroll.position.maxScrollExtent));
           });
         }
@@ -599,7 +616,8 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
           final lower = page.floor();
           final upper = page.ceil();
           final fraction = page - lower;
-          final left = positions[lower] +
+          final left =
+              positions[lower] +
               (positions[upper] - positions[lower]) * fraction;
           final width =
               widths[lower] + (widths[upper] - widths[lower]) * fraction;
@@ -682,10 +700,10 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     // one colour and weight; the pill alone marks the selection, so nothing
     // reflows while it moves.
     final textStyle = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-          fontSize: 15.0,
-          fontWeight: FontWeight.w500,
-          color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
-        );
+      fontSize: 15.0,
+      fontWeight: FontWeight.w500,
+      color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
+    );
     return Semantics(
       button: true,
       selected: selected,
@@ -754,7 +772,9 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             button: true,
             label: action.label,
             child: NavigationHover(
-              borderRadius: BorderRadius.circular(LiquidGlassRail.controlSize / 2),
+              borderRadius: BorderRadius.circular(
+                LiquidGlassRail.controlSize / 2,
+              ),
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
@@ -776,8 +796,9 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
 /// the native accessibility callback value, the fixed top gradient geometry
 /// and the running build for real-device comparison. Candidate deliveries
 /// never set the define, so no diagnostic output ships with them.
-const bool kLiquidGlassTopDiagnostics =
-    bool.fromEnvironment('LIQUID_GLASS_TOP_DIAGNOSTICS');
+const bool kLiquidGlassTopDiagnostics = bool.fromEnvironment(
+  'LIQUID_GLASS_TOP_DIAGNOSTICS',
+);
 
 double _topDiagSafeTop = 0;
 double _topDiagFadeEnd = 0;
@@ -801,8 +822,9 @@ void _logLiquidGlassTopState({
   LiquidGlassAccessibilitySettings.watch();
   if (!_topDiagListening) {
     _topDiagListening = true;
-    LiquidGlassAccessibilitySettings.reduceTransparency
-        .addListener(_emitLiquidGlassTopDiag);
+    LiquidGlassAccessibilitySettings.reduceTransparency.addListener(
+      _emitLiquidGlassTopDiag,
+    );
   }
   _emitLiquidGlassTopDiag();
 }
@@ -834,53 +856,101 @@ Future<void> _printLiquidGlassTopDiag(bool? reduceTransparency) async {
   );
 }
 
-/// The shared fade-out end for the fixed top-area base and scrim: the larger
-/// of the expanded rail's lower edge and 17% of the screen height, clamped to
-/// the screen so neither layer becomes a full-screen veil.
-const double _topFadeEndScreenHeightFraction = 0.17;
+/// Shared geometry for Flutter-hosted list headers.
+abstract final class LiquidGlassEdgeTokens {
+  static double get reveal => PlatformCapabilities.isDesktop ? 8 : 16;
 
+  /// Mobile lists keep their own original margins and sliver padding.
+  static double? contentGapFor(BuildContext context) =>
+      PlatformCapabilities.isDesktop ? 12 : null;
+
+  static double tailFor(BuildContext context) =>
+      PlatformCapabilities.isDesktop ? 16 : 0;
+
+  /// The scroll-only soft edge used by Flutter-hosted mobile headers.
+  /// iPad keeps its device token even when an AdaptivePane is narrow.
+  static double softTailFor(BuildContext context) {
+    if (PlatformCapabilities.isDesktop) {
+      return 0;
+    }
+    if (PlatformCapabilities.hostPlatform == TargetPlatform.android) {
+      return 20;
+    }
+    return AdaptiveEnvironment.windowSizeOf(context).shortestSide >= 600
+        ? 28
+        : 24;
+  }
+}
+
+const _restingEdge = AlwaysStoppedAnimation<double>(0);
+
+/// Tracks the rail's visible height, keeping the status area and soft tail
+/// after its controls have fully faded away.
 double _liquidGlassTopFadeEnd({
   required double safeTop,
   required LiquidGlassTopBarLayout layout,
   required bool hasCategories,
   required double screenHeight,
   required TextScaler textScaler,
+  double barFadeProgress = 0,
+  double tail = 0,
 }) {
+  final hidden = SoftScrollEdgeEffect.quantizeStrength(barFadeProgress);
   final double activeRailBottom =
-      safeTop + layout.expandedHeight(textScaler, hasCategories: hasCategories);
-  return math
-      .min(
-        screenHeight,
-        math.max(
-          activeRailBottom,
-          screenHeight * _topFadeEndScreenHeightFraction,
-        ),
-      )
-      .toDouble();
+      safeTop +
+      layout.expandedHeight(textScaler, hasCategories: hasCategories) *
+          (1 - hidden);
+  return math.min(screenHeight, activeRailBottom + tail).toDouble();
+}
+
+// Mobile Flutter headers retain the fixed wash, capped at the resting card.
+double _flutterFadeEnd(
+  BuildContext context,
+  double safeTop,
+  LiquidGlassTopBarLayout layout,
+  bool hasCategories,
+  double progress,
+  double? cardTop,
+) {
+  final screenHeight = MediaQuery.sizeOf(context).height;
+  final barBottom =
+      safeTop +
+      layout.expandedHeight(
+        MediaQuery.textScalerOf(context),
+        hasCategories: hasCategories,
+      );
+  final target = math.min(
+    screenHeight,
+    math.max(barBottom, screenHeight * .17),
+  );
+  final rest = math.min(target, cardTop ?? barBottom);
+  return rest + (target - rest) * progress;
 }
 
 /// The themed base layer that sits below the scroll content across the whole
 /// top fade region.
 ///
-/// Pages place this layer below their scroll content so the top shows the
-/// current theme background where no card is drawn, instead of the
-/// transparent scaffold's underlying gray: solid from the top of the screen
-/// through the safe area, then fading out continuously toward the shared top
-/// fade end. The previous hard edge at the safe-area lower seam is gone, so
-/// the gap background between scrolling cards recedes smoothly. Cards
-/// scrolling into the safe area are painted above it and stay visible through
-/// the top scrim.
+/// Mobile Flutter headers retain their static legacy wash, capped at the
+/// resting first card; desktop has no base layer.
 class LiquidGlassSafeAreaBase extends StatelessWidget {
   const LiquidGlassSafeAreaBase({
     super.key,
     required this.safeTop,
     required this.layout,
     this.hasCategories = true,
+    this.edgeProgress,
+    this.barFadeProgress = 0,
+    this.firstCardRestTop,
   });
 
   final double safeTop;
   final LiquidGlassTopBarLayout layout;
   final bool hasCategories;
+  final ValueListenable<double>? edgeProgress;
+
+  /// The same displayed collapse progress supplied to [LiquidGlassRail].
+  final double barFadeProgress;
+  final ValueListenable<double?>? firstCardRestTop;
 
   /// Theme-background opacity from the safe-area lower edge down. The first
   /// value continues the solid band; the remaining three sit at 25%, 65% and
@@ -894,15 +964,29 @@ class LiquidGlassSafeAreaBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (safeTop <= 0.0) {
+    if (safeTop <= 0.0 || PlatformCapabilities.isDesktop) {
       return const SizedBox.shrink();
     }
-    final double fadeEnd = _liquidGlassTopFadeEnd(
-      safeTop: safeTop,
-      layout: layout,
-      hasCategories: hasCategories,
-      screenHeight: MediaQuery.sizeOf(context).height,
-      textScaler: MediaQuery.textScalerOf(context),
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        edgeProgress ?? _restingEdge,
+        if (firstCardRestTop != null) firstCardRestTop!,
+      ]),
+      builder: (context, _) => _buildBase(
+        context,
+        SoftScrollEdgeEffect.quantizeStrength(edgeProgress?.value ?? 0),
+      ),
+    );
+  }
+
+  Widget _buildBase(BuildContext context, double progress) {
+    final effectiveEnd = _flutterFadeEnd(
+      context,
+      safeTop,
+      layout,
+      hasCategories,
+      progress,
+      firstCardRestTop?.value,
     );
     final Color background = CupertinoDynamicColor.resolve(
       CupertinoColors.systemBackground,
@@ -910,12 +994,12 @@ class LiquidGlassSafeAreaBase extends StatelessWidget {
     );
     // Solid from the top of the screen through the safe area, then the fade
     // sequence across the remaining distance to the fade end.
-    final double solidStop = (safeTop / fadeEnd).clamp(0.0, 1.0);
+    final double solidStop = (safeTop / effectiveEnd).clamp(0.0, 1.0);
     final double remaining = 1.0 - solidStop;
     return IgnorePointer(
       child: SizedBox(
         width: double.infinity,
-        height: fadeEnd,
+        height: effectiveEnd,
         child: DecoratedBox(
           key: const ValueKey<String>('liquid-glass-safe-area-base'),
           decoration: BoxDecoration(
@@ -939,56 +1023,145 @@ class LiquidGlassSafeAreaBase extends StatelessWidget {
   }
 }
 
-/// The fixed top-area background that stays behind the glass rail.
+/// Scroll-only support for the fixed mobile header.
 ///
-/// One persistent layer sits above the scroll content and below the rail for
-/// the whole time Liquid Glass is on: a fixed four-stop gradient of the theme
-/// background color, drawn continuously from the top of the screen through the
-/// safe area and rail. The layer never reacts to scroll position, mask
-/// progress, control visibility or native accessibility callbacks, and it
-/// composites no blur. The solid background shown at the page's initial
-/// position is the separate page-level solid mask driven by the top state
-/// coordinator.
+/// The legacy Base/Scrim/Mask stack remains the complete resting appearance.
+/// This layer is omitted at p=0, then sits above that stack and below the
+/// controls so content that has moved under the header is softened without
+/// changing the resting first-card geometry.
+class LiquidGlassTopSoftEdge extends StatelessWidget {
+  const LiquidGlassTopSoftEdge({
+    super.key,
+    required this.safeTop,
+    required this.layout,
+    this.hasCategories = true,
+    this.edgeProgress,
+    this.barFadeProgress = 0,
+  });
+
+  final double safeTop;
+  final LiquidGlassTopBarLayout layout;
+  final bool hasCategories;
+  final ValueListenable<double>? edgeProgress;
+  final double barFadeProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    if (PlatformCapabilities.isDesktop) {
+      return const SizedBox.shrink();
+    }
+    return AnimatedBuilder(
+      animation: edgeProgress ?? _restingEdge,
+      builder: (context, _) => _buildEdge(
+        context,
+        SoftScrollEdgeEffect.quantizeStrength(edgeProgress?.value ?? 0),
+      ),
+    );
+  }
+
+  Widget _buildEdge(BuildContext context, double progress) {
+    if (progress <= 0.0) {
+      return const SizedBox.shrink();
+    }
+    final barBottom = _liquidGlassTopFadeEnd(
+      safeTop: safeTop,
+      layout: layout,
+      hasCategories: hasCategories,
+      screenHeight: MediaQuery.sizeOf(context).height,
+      textScaler: MediaQuery.textScalerOf(context),
+      barFadeProgress: barFadeProgress,
+    );
+    final inset = math.min(safeTop, barBottom);
+    final bars = math.max(0.0, barBottom - inset);
+    final tail = LiquidGlassEdgeTokens.softTailFor(context) * progress;
+    final surfaceColor = CupertinoDynamicColor.resolve(
+      CupertinoTheme.of(context).scaffoldBackgroundColor,
+      context,
+    );
+    return IgnorePointer(
+      child: SoftScrollEdgeEffect(
+        edge: SoftEdge.top,
+        inset: inset,
+        bars: bars,
+        tail: tail,
+        strength: progress,
+        surfaceColor: surfaceColor,
+        decorationKey: const ValueKey<String>(
+          'liquid-glass-top-soft-edge',
+        ),
+      ),
+    );
+  }
+}
+
+/// The legacy mobile wash or scroll-driven desktop tint below the glass rail.
 class LiquidGlassTopScrim extends StatelessWidget {
   const LiquidGlassTopScrim({
     super.key,
     required this.safeTop,
     required this.layout,
     this.hasCategories = true,
+    this.edgeProgress,
+    this.barFadeProgress = 0,
+    this.firstCardRestTop,
   });
 
   final double safeTop;
   final LiquidGlassTopBarLayout layout;
   final bool hasCategories;
+  final ValueListenable<double>? edgeProgress;
 
-  /// The four opacity multipliers applied to the mode-specific top opacity.
-  static const List<double> _gradientOpacities = <double>[
-    1.0,
-    0.55,
-    0.22,
-    0.0,
-  ];
-  static const List<double> _gradientStops = <double>[0.0, 0.35, 0.70, 1.0];
-  static const double _lightTopOpacity = 0.32;
-  static const double _darkTopOpacity = 0.37;
+  /// The same displayed collapse progress supplied to [LiquidGlassRail].
+  final double barFadeProgress;
+  final ValueListenable<double?>? firstCardRestTop;
 
   @override
-  Widget build(BuildContext context) {
-    // The gradient keeps the previous top coverage: the larger of the
-    // expanded rail's lower edge and 17% of the screen height, never a
-    // full-screen veil. The fading base layer below the content ends at the
-    // same height so the two layers recede together.
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: Listenable.merge([
+      edgeProgress ?? _restingEdge,
+      if (firstCardRestTop != null) firstCardRestTop!,
+      if (PlatformCapabilities.isDesktop)
+        LiquidGlassAccessibilitySettings.reduceTransparency,
+    ]),
+    builder: (context, _) => _buildScrim(
+      context,
+      SoftScrollEdgeEffect.quantizeStrength(edgeProgress?.value ?? 0),
+    ),
+  );
+
+  Widget _buildScrim(BuildContext context, double progress) {
+    final double barBottom = _liquidGlassTopFadeEnd(
+      safeTop: safeTop,
+      layout: layout,
+      hasCategories: hasCategories,
+      screenHeight: MediaQuery.sizeOf(context).height,
+      textScaler: MediaQuery.textScalerOf(context),
+      barFadeProgress: barFadeProgress,
+    );
     final double fadeEnd = _liquidGlassTopFadeEnd(
       safeTop: safeTop,
       layout: layout,
       hasCategories: hasCategories,
       screenHeight: MediaQuery.sizeOf(context).height,
       textScaler: MediaQuery.textScalerOf(context),
+      barFadeProgress: barFadeProgress,
+      tail: LiquidGlassEdgeTokens.tailFor(context) * progress,
     );
+    final desktop = PlatformCapabilities.isDesktop;
+    final effectiveEnd = !desktop
+        ? _flutterFadeEnd(
+            context,
+            safeTop,
+            layout,
+            hasCategories,
+            progress,
+            firstCardRestTop?.value,
+          )
+        : fadeEnd;
     final bool isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
     _logLiquidGlassTopState(
       safeTop: safeTop,
-      fadeEnd: fadeEnd,
+      fadeEnd: effectiveEnd,
       dark: isDark,
     );
 
@@ -996,22 +1169,53 @@ class LiquidGlassTopScrim extends StatelessWidget {
       CupertinoColors.systemBackground,
       context,
     );
-    final double topOpacity = isDark ? _darkTopOpacity : _lightTopOpacity;
+    final end = effectiveEnd;
+    final List<double> alphas;
+    final List<double> stops;
+    if (!desktop) {
+      alphas = [
+        for (final a in [1.0, .55, .22, 0.0]) a * (isDark ? .37 : .32),
+      ];
+      stops = [0, .35, .70, 1];
+    } else {
+      final reduced =
+          LiquidGlassAccessibilitySettings.reduceTransparency.value ?? false;
+      final curve = SoftEdgeCurve(
+        reduced
+            ? [1, 1, .96, .40, 0]
+            : isDark
+            ? [.94, .90, .84, .36, 0]
+            : [.92, .88, .80, .32, 0],
+        maxSigma: 0,
+      );
+      alphas = curve
+          .sample(
+            inset: safeTop,
+            bars: math.max(0, barBottom - safeTop),
+            tail: end - barBottom,
+          )
+          .map((a) => a * progress)
+          .toList();
+      stops = List.generate(alphas.length, (i) => i / (alphas.length - 1));
+    }
     return IgnorePointer(
       child: SizedBox(
         width: double.infinity,
-        height: fadeEnd,
+        height: end,
         child: DecoratedBox(
           key: const ValueKey<String>('liquid-glass-top-scrim'),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: <Color>[
-                for (final opacity in _gradientOpacities)
-                  background.withValues(alpha: topOpacity * opacity),
+              colors: [
+                for (final a in alphas)
+                  (desktop
+                          ? CupertinoTheme.of(context).scaffoldBackgroundColor
+                          : background)
+                      .withValues(alpha: a),
               ],
-              stops: _gradientStops,
+              stops: stops,
             ),
           ),
         ),
@@ -1042,11 +1246,15 @@ class LiquidGlassSolidMask extends StatelessWidget {
 
   /// Fixed upper corner radius of the revealed background. The drawing region
   /// keeps this size at every progress so the painter can never shrink the
-  /// radius indirectly; only the opacity follows the reveal.
+  /// radius indirectly; only the opacity follows the reveal. Mobile Flutter
+  /// headers retain the full region below the rail for the inverse corners.
   static const double _cornerRadius = 20.0;
 
   @override
   Widget build(BuildContext context) {
+    if (PlatformCapabilities.isDesktop) {
+      return const SizedBox.shrink();
+    }
     return IgnorePointer(
       child: SizedBox(
         height: height + _cornerRadius,
@@ -1089,7 +1297,8 @@ class LiquidGlassSolidMask extends StatelessWidget {
                     opacity: reveal,
                     child: CustomPaint(
                       key: const ValueKey<String>(
-                          'liquid-glass-content-corners'),
+                        'liquid-glass-content-corners',
+                      ),
                       painter: _ContentCornerPainter(
                         background,
                         radius: _cornerRadius,
@@ -1129,8 +1338,11 @@ class _ContentCornerPainter extends CustomPainter {
       ..moveTo(size.width - r, 0)
       ..lineTo(size.width, 0)
       ..lineTo(size.width, r)
-      ..arcToPoint(Offset(size.width - r, 0),
-          radius: Radius.circular(r), clockwise: false)
+      ..arcToPoint(
+        Offset(size.width - r, 0),
+        radius: Radius.circular(r),
+        clockwise: false,
+      )
       ..close();
     canvas.drawPath(path, Paint()..color = color);
   }
@@ -1220,26 +1432,27 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
   }
 
   Map<String, Object> get _parameters => <String, Object>{
-        'ids': widget.categories.map((e) => e.id ?? e.title).toList(),
-        'selectedId': widget.selectedIndex >= 0 &&
-                widget.selectedIndex < widget.categories.length
-            ? widget.categories[widget.selectedIndex].id ??
-                widget.categories[widget.selectedIndex].title
-            : '',
-        'layout': widget.layout.name,
-        'offset': widget.initialOffset,
-        'titles': widget.categories.map((item) => item.title).toList(),
-        'longPressEnabled':
-            widget.categories.map((item) => item.onLongPress != null).toList(),
-        'selectedIndex': widget.selectedIndex,
-        'followSystemTransparency': widget.followSystemTransparency,
-        'dark': widget.brightness == Brightness.dark,
-        'fontSize': widget.fontSize,
-        'opacity': widget.opacity,
-        'interactive': widget.interactive,
-        if (widget.segmentWidths != null)
-          'segmentWidths': widget.segmentWidths!,
-      };
+    'ids': widget.categories.map((e) => e.id ?? e.title).toList(),
+    'selectedId':
+        widget.selectedIndex >= 0 &&
+            widget.selectedIndex < widget.categories.length
+        ? widget.categories[widget.selectedIndex].id ??
+              widget.categories[widget.selectedIndex].title
+        : '',
+    'layout': widget.layout.name,
+    'offset': widget.initialOffset,
+    'titles': widget.categories.map((item) => item.title).toList(),
+    'longPressEnabled': widget.categories
+        .map((item) => item.onLongPress != null)
+        .toList(),
+    'selectedIndex': widget.selectedIndex,
+    'followSystemTransparency': widget.followSystemTransparency,
+    'dark': widget.brightness == Brightness.dark,
+    'fontSize': widget.fontSize,
+    'opacity': widget.opacity,
+    'interactive': widget.interactive,
+    if (widget.segmentWidths != null) 'segmentWidths': widget.segmentWidths!,
+  };
 
   void _created(int viewId) {
     final channel = MethodChannel('eros/liquid-glass-categories/$viewId');
@@ -1301,26 +1514,31 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
     if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
         GlassMode.flutter) {
       return SegmentedRail(
-          interactive: widget.interactive,
-          initialOffset: widget.initialOffset,
-          onOffset: widget.onOffset,
-          items: widget.categories,
-          selectedIndex: widget.selectedIndex,
-          pageController: widget.pageController,
-          opacity: widget.opacity,
-          followSystemTransparency: widget.followSystemTransparency);
+        interactive: widget.interactive,
+        initialOffset: widget.initialOffset,
+        onOffset: widget.onOffset,
+        items: widget.categories,
+        selectedIndex: widget.selectedIndex,
+        pageController: widget.pageController,
+        opacity: widget.opacity,
+        followSystemTransparency: widget.followSystemTransparency,
+      );
     }
     if (!PlatformCapabilities.uiKitGlass ||
         GlassMode.of(context) == GlassMode.off) {
-      return Wrap(children: [
-        for (final category in widget.categories)
-          CupertinoButton(
+      return Wrap(
+        children: [
+          for (final category in widget.categories)
+            CupertinoButton(
               onPressed: widget.interactive ? category.onTap : null,
-              child: Text(category.title)),
-      ]);
+              child: Text(category.title),
+            ),
+        ],
+      );
     }
     return SizedBox(
-      height: widget.height ??
+      height:
+          widget.height ??
           widget.layout.categoryHeight(MediaQuery.textScalerOf(context)),
       child: UiKitView(
         viewType: 'eros/liquid-glass-categories',

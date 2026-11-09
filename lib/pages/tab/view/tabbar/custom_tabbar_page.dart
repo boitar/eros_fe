@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
-import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:blur/blur.dart';
 import 'package:english_words/english_words.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
@@ -21,6 +21,7 @@ import 'package:eros_fe/widget/desktop_sidebar.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
+import 'package:eros_fe/widget/scroll_edge_progress.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/cupertino.dart' hide CupertinoTabBar;
@@ -53,21 +54,26 @@ class _CustomTabbarListState extends State<CustomTabbarList>
 
   final EhTabController ehTabController = EhTabController();
   final _headerScrollController = LiquidGlassScrollController();
+  final _nativeEdgeProgress = ScrollEdgeProgressController(
+    revealDistance: LiquidGlassEdgeTokens.reveal,
+  );
   final GlobalKey<ExtendedNestedScrollViewState> _nestedScrollKey =
       GlobalKey<ExtendedNestedScrollViewState>();
   final Map<String, GlobalKey> _firstCardKeys = <String, GlobalKey>{};
   late final LiquidGlassTopStateCoordinator _topState =
       LiquidGlassTopStateCoordinator(
-    scrollController: _headerScrollController,
-    additionalPositions: () =>
-        _nestedScrollKey.currentState?.innerPositions ??
-        const <ScrollPosition>[],
-    firstCardTopProvider: _currentFirstCardTop,
-  );
+        scrollController: _headerScrollController,
+        additionalPositions: () =>
+            _nestedScrollKey.currentState?.innerPositions ??
+            const <ScrollPosition>[],
+        firstCardTopProvider: _currentFirstCardTop,
+        firstCardRestTopProvider: () => _currentFirstCardTop(visual: true),
+      );
 
   @override
   void dispose() {
     _topState.dispose();
+    _nativeEdgeProgress.dispose();
     _headerScrollController.dispose();
     super.dispose();
   }
@@ -101,13 +107,13 @@ class _CustomTabbarListState extends State<CustomTabbarList>
   GlobalKey _firstCardKeyFor(String profileUuid) =>
       _firstCardKeys.putIfAbsent(profileUuid, () => GlobalKey());
 
-  double? _currentFirstCardTop() {
+  double? _currentFirstCardTop({bool visual = false}) {
     final profiles = controller.profilesShow;
     if (profiles.isEmpty) {
       return null;
     }
     final index = controller.index.clamp(0, profiles.length - 1).toInt();
-    return liquidGlassScreenTop(_firstCardKeyFor(profiles[index].uuid));
+    return visual ? liquidGlassCardScreenTop(_firstCardKeyFor(profiles[index].uuid)) : liquidGlassScreenTop(_firstCardKeyFor(profiles[index].uuid));
   }
 
   Future<void> _scrollToInitialContentAnchor() async {
@@ -141,8 +147,9 @@ class _CustomTabbarListState extends State<CustomTabbarList>
     if (visibleProfiles.isEmpty) {
       return;
     }
-    final target =
-        controller.index.clamp(0, visibleProfiles.length - 1).toInt();
+    final target = controller.index
+        .clamp(0, visibleProfiles.length - 1)
+        .toInt();
     if (controller.pageController.position.isScrollingNotifier.value) {
       return;
     }
@@ -154,44 +161,46 @@ class _CustomTabbarListState extends State<CustomTabbarList>
 
   @override
   Widget build(BuildContext context) => offlineGlassPageProbe(
-        route: 'gallery',
-        page: () => controller.currProfileUuid,
-        scrollController: _headerScrollController,
-        innerPositions: () =>
-            _nestedScrollKey.currentState?.innerPositions ??
-            const <ScrollPosition>[],
-        firstCardTop: _currentFirstCardTop,
-        child: Obx(() => NativeNavigationPage(
-              tabId: EHRoutes.gallery,
-              chrome: NativePageChrome(
-                title: L10n.of(context).tab_gallery,
-                actions: [
-                  ...offlineDuoRootNavigationActions(),
-                  ...Get.find<TabHomeController>().nativeHiddenTabActions,
-                  NativeNavigationAction(
-                    id: 'search',
-                    title: L10n.of(context).search,
-                    symbol: 'magnifyingglass',
-                    onPressed: NavigatorUtil.goSearchPage,
-                  ),
-                  if (controller.afterJump)
-                    NativeNavigationAction(
-                      id: 'top',
-                      title: L10n.of(context).back_to_top,
-                      symbol: 'arrow.up.circle',
-                      onPressed: controller.jumpToTop,
-                    ),
-                  NativeNavigationAction(
-                    id: 'jump',
-                    title: L10n.of(context).jump_or_seek,
-                    symbol: 'arrow.uturn.down.circle',
-                    onPressed: () => controller.showJumpDialog(context),
-                  ),
-                ],
+    route: 'gallery',
+    page: () => controller.currProfileUuid,
+    scrollController: _headerScrollController,
+    innerPositions: () =>
+        _nestedScrollKey.currentState?.innerPositions ??
+        const <ScrollPosition>[],
+    firstCardTop: _currentFirstCardTop,
+    child: Obx(
+      () => NativeNavigationPage(
+        tabId: EHRoutes.gallery,
+        chrome: NativePageChrome(
+          title: L10n.of(context).tab_gallery,
+          actions: [
+            ...offlineDuoRootNavigationActions(),
+            ...Get.find<TabHomeController>().nativeHiddenTabActions,
+            NativeNavigationAction(
+              id: 'search',
+              title: L10n.of(context).search,
+              symbol: 'magnifyingglass',
+              onPressed: NavigatorUtil.goSearchPage,
+            ),
+            if (controller.afterJump)
+              NativeNavigationAction(
+                id: 'top',
+                title: L10n.of(context).back_to_top,
+                symbol: 'arrow.up.circle',
+                onPressed: controller.jumpToTop,
               ),
-              child: _buildPage(context),
-            )),
-      );
+            NativeNavigationAction(
+              id: 'jump',
+              title: L10n.of(context).jump_or_seek,
+              symbol: 'arrow.uturn.down.circle',
+              onPressed: () => controller.showJumpDialog(context),
+            ),
+          ],
+        ),
+        child: _buildPage(context),
+      ),
+    ),
+  );
 
   Widget _buildPage(BuildContext context) {
     return Obx(() {
@@ -208,9 +217,10 @@ class _CustomTabbarListState extends State<CustomTabbarList>
         return CupertinoPageScaffold(
           child: CanvasGrain(
             child: offlineGroupSelection(
-                uuid: controller.currProfileUuid,
-                index: controller.index,
-                child: SizeCacheWidget(child: scrollView)),
+              uuid: controller.currProfileUuid,
+              index: controller.index,
+              child: SizeCacheWidget(child: scrollView),
+            ),
           ),
         );
       }
@@ -244,12 +254,12 @@ class _CustomTabbarListState extends State<CustomTabbarList>
     final headerMaxHeight = native
         ? topInset + topTabbarHeight
         : liquidGlass
-            ? layout.safeTop +
-                _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
-                  MediaQuery.textScalerOf(context),
-                  hasCategories: _showsGroupChips(context),
-                )
-            : topInset + kHeaderMaxHeight;
+        ? layout.safeTop +
+              _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
+                MediaQuery.textScalerOf(context),
+                hasCategories: _showsGroupChips(context),
+              )
+        : topInset + kHeaderMaxHeight;
     final dockTopBar =
         liquidGlass && hideTopBarOnScroll && layout.canDockTopRail;
     if (liquidGlass) {
@@ -262,11 +272,11 @@ class _CustomTabbarListState extends State<CustomTabbarList>
     final nativeCollapsible = native && hideTopBarOnScroll;
     _headerScrollController.headerExtent = native
         ? nativeCollapsible
-            ? topTabbarHeight
-            : 0
+              ? topTabbarHeight
+              : 0
         : liquidGlass
-            ? headerMaxHeight
-            : headerMaxHeight - layout.collapsedHeaderHeight;
+        ? headerMaxHeight
+        : headerMaxHeight - layout.collapsedHeaderHeight;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _topState.setBarFadeEnabled(dockTopBar);
@@ -278,8 +288,9 @@ class _CustomTabbarListState extends State<CustomTabbarList>
     final Widget scrollView = ExtendedNestedScrollView(
       key: _nestedScrollKey,
       controller: _headerScrollController,
-      physics:
-          const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       floatHeaderSlivers: !liquidGlass,
       onlyOneScrollInBody: true,
       headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -296,20 +307,21 @@ class _CustomTabbarListState extends State<CustomTabbarList>
                     ? NativeTopTabHeader(
                         topInset: topInset,
                         railHeight: topTabbarHeight,
+                        edgeProgress: _nativeEdgeProgress,
                         child: CustomTabBar(controller: controller, opacity: 1),
                       )
                     : liquidGlass
-                        ? const SizedBox.expand()
-                        : Obx(
-                            () => _buildSliverTopBar(
-                              context,
-                              offset,
-                              headerMaxHeight,
-                              layout: layout,
-                              dockTopBar: dockTopBar,
-                              liquidGlass: false,
-                            ),
-                          ),
+                    ? const SizedBox.expand()
+                    : Obx(
+                        () => _buildSliverTopBar(
+                          context,
+                          offset,
+                          headerMaxHeight,
+                          layout: layout,
+                          dockTopBar: dockTopBar,
+                          liquidGlass: false,
+                        ),
+                      ),
                 minHeight: native
                     ? NativeTopTabHeader.minExtentFor(
                         topInset: topInset,
@@ -317,12 +329,12 @@ class _CustomTabbarListState extends State<CustomTabbarList>
                         collapsible: nativeCollapsible,
                       )
                     : liquidGlass
-                        ? 0.0
-                        : hideTopBarOnScroll
-                            ? dockTopBar
-                                ? layout.collapsedHeaderHeight
-                                : topInset + kTopTabbarHeight
-                            : headerMaxHeight,
+                    ? 0.0
+                    : hideTopBarOnScroll
+                    ? dockTopBar
+                          ? layout.collapsedHeaderHeight
+                          : topInset + kTopTabbarHeight
+                    : headerMaxHeight,
                 maxHeight: headerMaxHeight,
               ),
             ),
@@ -332,7 +344,12 @@ class _CustomTabbarListState extends State<CustomTabbarList>
       body: buildSubPages(liquidGlass, hideTopBarOnScroll),
     );
     if (!liquidGlass) {
-      return NativeBarAutoHide(enabled: nativeCollapsible, child: scrollView);
+      return ScrollEdgeProgressListener(
+        controller: _nativeEdgeProgress,
+        enabled: native,
+        activePage: controller.currProfileUuid,
+        child: NativeBarAutoHide(enabled: nativeCollapsible, child: scrollView),
+      );
     }
     return Stack(
       fit: StackFit.expand,
@@ -345,36 +362,68 @@ class _CustomTabbarListState extends State<CustomTabbarList>
           top: 0,
           left: 0,
           right: 0,
-          child: LiquidGlassSafeAreaBase(
-            safeTop: layout.safeTop,
-            layout: _ehSettingService.liquidGlassTopBarLayout,
-            hasCategories: _showsGroupChips(context),
+          child: LiquidGlassBarMotionBuilder(
+            enabled: dockTopBar,
+            builder: (context, progress) => LiquidGlassSafeAreaBase(
+              firstCardRestTop: _topState.firstCardRestTop,
+              safeTop: layout.safeTop,
+              layout: _ehSettingService.liquidGlassTopBarLayout,
+              hasCategories: _showsGroupChips(context),
+              edgeProgress: _nativeEdgeProgress,
+              barFadeProgress: progress,
+            ),
           ),
         ),
-        scrollView,
+        ScrollEdgeProgressListener(
+          controller: _nativeEdgeProgress,
+          activePage: controller.currProfileUuid,
+          child: scrollView,
+        ),
         // Fixed solid background above the scroll content and below the scrim
         // and rail. Its lower edge follows the active first card without
         // changing the list's scroll geometry.
+        if (!PlatformCapabilities.isDesktop)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: LiquidGlassSolidMask(
+              progressListenable: _topState.solidMaskProgress,
+              safeTop: layout.safeTop,
+              // The mask bottom follows the first card from safeTop to the
+              // category rail's lower edge.
+              height: headerMaxHeight,
+            ),
+          ),
         Positioned(
           top: 0,
           left: 0,
           right: 0,
-          child: LiquidGlassSolidMask(
-            progressListenable: _topState.solidMaskProgress,
-            safeTop: layout.safeTop,
-            // The mask bottom follows the first card from safeTop to the
-            // category rail's lower edge.
-            height: headerMaxHeight,
+          child: LiquidGlassBarMotionBuilder(
+            enabled: dockTopBar,
+            builder: (context, progress) => LiquidGlassTopScrim(
+              firstCardRestTop: _topState.firstCardRestTop,
+              safeTop: layout.safeTop,
+              layout: _ehSettingService.liquidGlassTopBarLayout,
+              hasCategories: _showsGroupChips(context),
+              edgeProgress: _nativeEdgeProgress,
+              barFadeProgress: progress,
+            ),
           ),
         ),
         Positioned(
           top: 0,
           left: 0,
           right: 0,
-          child: LiquidGlassTopScrim(
-            safeTop: layout.safeTop,
-            layout: _ehSettingService.liquidGlassTopBarLayout,
-            hasCategories: _showsGroupChips(context),
+          child: LiquidGlassBarMotionBuilder(
+            enabled: dockTopBar,
+            builder: (context, progress) => LiquidGlassTopSoftEdge(
+              safeTop: layout.safeTop,
+              layout: _ehSettingService.liquidGlassTopBarLayout,
+              hasCategories: _showsGroupChips(context),
+              edgeProgress: _nativeEdgeProgress,
+              barFadeProgress: progress,
+            ),
           ),
         ),
         Positioned(
@@ -408,11 +457,22 @@ class _CustomTabbarListState extends State<CustomTabbarList>
               children: controller.profilesShow.isNotEmpty
                   ? [
                       ...controller.profilesShow.map(
-                        (e) => SubListView<CustomSubListController>(
-                          profileUuid: e.uuid,
-                          firstCardKey: _firstCardKeyFor(e.uuid),
-                          scrollToInitialAnchor: _scrollToInitialContentAnchor,
+                        (e) => ScrollEdgeProgressListener(
                           key: ValueKey(e.uuid),
+                          controller: _nativeEdgeProgress,
+                          enabled:
+                              liquidGlass ||
+                              NativeNavigationScope.isEnabled(context),
+                          page: e.uuid,
+                          child: SubListView<CustomSubListController>(
+                            profileUuid: e.uuid,
+                            firstCardKey: _firstCardKeyFor(e.uuid),
+                            contentTopGap: liquidGlass
+                                ? LiquidGlassEdgeTokens.contentGapFor(context)
+                                : null,
+                            scrollToInitialAnchor:
+                                _scrollToInitialContentAnchor,
+                          ),
                         ),
                       ),
                     ]
@@ -424,6 +484,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
               onPageChanged: (index) {
                 controller.linkScrollBarController.scrollToItem(index);
                 controller.onPageChanged(index);
+                _nativeEdgeProgress.selectPage(controller.currProfileUuid);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted && _useLiquidGlass) {
                     _topState.refresh();
@@ -471,10 +532,10 @@ class _CustomTabbarListState extends State<CustomTabbarList>
     final navBarOpacity = dockTopBar
         ? 1.0 - collapseProgress
         : 1.0 -
-            (offset / (kMinInteractiveDimensionCupertino - 1)).clamp(
-              0.0,
-              1.0,
-            );
+              (offset / (kMinInteractiveDimensionCupertino - 1)).clamp(
+                0.0,
+                1.0,
+              );
     final bool collapsed = dockTopBar && collapseProgress >= 0.98;
     final customBarOpacity = navBarOpacity;
 
@@ -529,14 +590,16 @@ class _CustomTabbarListState extends State<CustomTabbarList>
         pageController: controller.pageController,
         title: chips || controller.profilesShow.isEmpty
             ? L10n.of(context).tab_gallery
-            : controller.profilesShow[controller.index
-                    .clamp(0, controller.profilesShow.length - 1)]
-                .name,
+            : controller
+                  .profilesShow[controller.index.clamp(
+                    0,
+                    controller.profilesShow.length - 1,
+                  )]
+                  .name,
         safeTop: layout.safeTop,
         fadeProgress: fadeProgress,
         selectedIndex: controller.index,
-        followSystemTransparency:
-            _ehSettingService.liquidGlassMaterial,
+        followSystemTransparency: _ehSettingService.liquidGlassMaterial,
         leading: hiddenTabsRailAction(context),
         trailing: <LiquidGlassRailAction>[
           LiquidGlassRailAction(
@@ -556,19 +619,19 @@ class _CustomTabbarListState extends State<CustomTabbarList>
         categories: !chips
             ? const <LiquidGlassRailCategory>[]
             : controller.profilesShow
-            .map(
-              (profile) => LiquidGlassRailCategory(
-                id: profile.uuid,
-                title: profile.name,
-                onLongPress: () =>
-                    showGroupActionSheet(context, controller, profile),
-                onTap: () async {
-                  final index = controller.profilesShow.indexOf(profile);
-                  await _selectProfile(index);
-                },
-              ),
-            )
-            .toList(),
+                  .map(
+                    (profile) => LiquidGlassRailCategory(
+                      id: profile.uuid,
+                      title: profile.name,
+                      onLongPress: () =>
+                          showGroupActionSheet(context, controller, profile),
+                      onTap: () async {
+                        final index = controller.profilesShow.indexOf(profile);
+                        await _selectProfile(index);
+                      },
+                    ),
+                  )
+                  .toList(),
         onTitleTap: _scrollToInitialContentAnchor,
         refreshing: controller.isBackgroundRefresh,
         search: PlatformCapabilities.topSearchCapsule
@@ -592,44 +655,44 @@ class _CustomTabbarListState extends State<CustomTabbarList>
     // Built inside the header's own Obx, which must see these reads; another
     // Obx here would leave that one observing nothing.
     return AndroidSolidTopBar(
-        opacity: opacity,
-        rowHeight: searchRow,
-        chipRowHeight: math.max(36.0, height - topInset - searchRow),
-        selectedIndex: controller.index,
-        leading: controller.getLeading(context),
-        search: LiquidGlassRailSearch(
-          label: L10n.of(context).search,
-          onTap: NavigatorUtil.goSearchPage,
-        ),
-        trailing: <LiquidGlassRailAction>[
-          if (controller.afterJump)
-            LiquidGlassRailAction(
-              icon: CupertinoIcons.arrow_up_circle,
-              label: L10n.of(context).back_to_top,
-              onPressed: controller.jumpToTop,
-            ),
+      opacity: opacity,
+      rowHeight: searchRow,
+      chipRowHeight: math.max(36.0, height - topInset - searchRow),
+      selectedIndex: controller.index,
+      leading: controller.getLeading(context),
+      search: LiquidGlassRailSearch(
+        label: L10n.of(context).search,
+        onTap: NavigatorUtil.goSearchPage,
+      ),
+      trailing: <LiquidGlassRailAction>[
+        if (controller.afterJump)
           LiquidGlassRailAction(
-            icon: CupertinoIcons.arrow_uturn_down_circle,
-            label: L10n.of(context).jump_or_seek,
-            onPressed: () => controller.showJumpDialog(context),
+            icon: CupertinoIcons.arrow_up_circle,
+            label: L10n.of(context).back_to_top,
+            onPressed: controller.jumpToTop,
           ),
-        ],
-        categoryTrailing: LiquidGlassRailAction(
-          icon: CupertinoIcons.line_horizontal_3,
-          label: L10n.of(context).group_management,
-          onPressed: controller.pressedBar,
+        LiquidGlassRailAction(
+          icon: CupertinoIcons.arrow_uturn_down_circle,
+          label: L10n.of(context).jump_or_seek,
+          onPressed: () => controller.showJumpDialog(context),
         ),
-        categories: <LiquidGlassRailCategory>[
-          for (final profile in controller.profilesShow)
-            LiquidGlassRailCategory(
-              id: profile.uuid,
-              title: profile.name,
-              onTap: () =>
-                  _selectProfile(controller.profilesShow.indexOf(profile)),
-              onLongPress: () =>
-                  showGroupActionSheet(context, controller, profile),
-            ),
-        ],
+      ],
+      categoryTrailing: LiquidGlassRailAction(
+        icon: CupertinoIcons.line_horizontal_3,
+        label: L10n.of(context).group_management,
+        onPressed: controller.pressedBar,
+      ),
+      categories: <LiquidGlassRailCategory>[
+        for (final profile in controller.profilesShow)
+          LiquidGlassRailCategory(
+            id: profile.uuid,
+            title: profile.name,
+            onTap: () =>
+                _selectProfile(controller.profilesShow.indexOf(profile)),
+            onLongPress: () =>
+                showGroupActionSheet(context, controller, profile),
+          ),
+      ],
     );
   }
 
@@ -637,7 +700,8 @@ class _CustomTabbarListState extends State<CustomTabbarList>
     BuildContext context, {
     double? opacity,
   }) {
-    final useLiquidGlass = _ehSettingService.liquidGlass &&
+    final useLiquidGlass =
+        _ehSettingService.liquidGlass &&
         (GlassMode.of(context).forComponent(flutterImplemented: true) !=
             GlassMode.off);
     return CupertinoNavigationBar(
@@ -647,8 +711,8 @@ class _CustomTabbarListState extends State<CustomTabbarList>
       backgroundColor: useLiquidGlass
           ? const Color(0x00000000)
           : kEnableImpeller
-              ? CupertinoTheme.of(context).barBackgroundColor.withOpacity(1)
-              : null,
+          ? CupertinoTheme.of(context).barBackgroundColor.withOpacity(1)
+          : null,
       border: null,
       // border: Border(
       //   bottom: BorderSide(
@@ -800,7 +864,8 @@ class CustomTabBar extends StatelessWidget {
     return Obx(() {
       // 不要删除这行
       ehTheme.isDarkMode;
-      final useLiquidGlass = ehSettingService.liquidGlass &&
+      final useLiquidGlass =
+          ehSettingService.liquidGlass &&
           (GlassMode.of(context).forComponent(flutterImplemented: true) !=
               GlassMode.off);
       final topTabbarHeight = topTabbarHeightFor(context);
@@ -818,8 +883,7 @@ class CustomTabBar extends StatelessWidget {
               opacity: opacity,
               selectedIndex: controller.index,
               pageController: controller.pageController,
-              followSystemTransparency:
-                  ehSettingService.liquidGlassMaterial,
+              followSystemTransparency: ehSettingService.liquidGlassMaterial,
               accessory: LiquidGlassRailAction(
                 icon: CupertinoIcons.line_horizontal_3,
                 label: L10n.of(context).group_management,
@@ -830,8 +894,9 @@ class CustomTabBar extends StatelessWidget {
                   LiquidGlassRailCategory(
                     id: profile.uuid,
                     title: profile.name,
-                    onTap: () => controller
-                        .selectPage(controller.profilesShow.indexOf(profile)),
+                    onTap: () => controller.selectPage(
+                      controller.profilesShow.indexOf(profile),
+                    ),
                     onLongPress: () =>
                         showGroupActionSheet(context, controller, profile),
                   ),
@@ -876,36 +941,36 @@ class CustomTabBar extends StatelessWidget {
                         pageController: controller.pageController,
                         items: controller.profilesShow.isNotEmpty
                             ? controller.profilesShow
-                                .map(
-                                  (e) => LinkTabItem(
-                                    title: e.name,
-                                    actinos: [
-                                      LinkTabItemAction(
-                                        actinoText: '编辑分组',
-                                        icon: FontAwesomeIcons.penToSquare,
-                                        onTap: () {
-                                          controller.toEditPage(uuid: e.uuid);
-                                        },
-                                      ),
-                                      LinkTabItemAction(
-                                        actinoText: '删除分组',
-                                        icon: FontAwesomeIcons.trashCan,
-                                        color: CupertinoDynamicColor.resolve(
-                                          CupertinoColors.destructiveRed,
-                                          context,
+                                  .map(
+                                    (e) => LinkTabItem(
+                                      title: e.name,
+                                      actinos: [
+                                        LinkTabItemAction(
+                                          actinoText: '编辑分组',
+                                          icon: FontAwesomeIcons.penToSquare,
+                                          onTap: () {
+                                            controller.toEditPage(uuid: e.uuid);
+                                          },
                                         ),
-                                        onTap: () {
-                                          controller
-                                              .showDeleteGroupModalBottomSheet(
-                                            e.uuid,
+                                        LinkTabItemAction(
+                                          actinoText: '删除分组',
+                                          icon: FontAwesomeIcons.trashCan,
+                                          color: CupertinoDynamicColor.resolve(
+                                            CupertinoColors.destructiveRed,
                                             context,
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                )
-                                .toList()
+                                          ),
+                                          onTap: () {
+                                            controller
+                                                .showDeleteGroupModalBottomSheet(
+                                                  e.uuid,
+                                                  context,
+                                                );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                  .toList()
                             : [LinkTabItem(title: '+++')],
                         initIndex: controller.index,
                         onItemChange: (index) {
@@ -914,9 +979,11 @@ class CustomTabBar extends StatelessWidget {
                               !controller.pageController.hasClients) {
                             return;
                           }
-                          controller.pageController.animateToPage(index,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.ease);
+                          controller.pageController.animateToPage(
+                            index,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.ease,
+                          );
                         },
                       );
                     }),
@@ -965,19 +1032,20 @@ class CustomTabBar extends StatelessWidget {
                             },
                           ),
                         offlineGroupControl(
-                            'manage',
-                            CupertinoButton(
-                              minSize: 40,
-                              padding: const EdgeInsets.all(0),
-                              onPressed: controller.pressedBar,
-                              child: Semantics(
-                                label: '分组管理',
-                                child: const FaIcon(
-                                  FontAwesomeIcons.bars,
-                                  size: 20,
-                                ),
+                          'manage',
+                          CupertinoButton(
+                            minSize: 40,
+                            padding: const EdgeInsets.all(0),
+                            onPressed: controller.pressedBar,
+                            child: Semantics(
+                              label: '分组管理',
+                              child: const FaIcon(
+                                FontAwesomeIcons.bars,
+                                size: 20,
                               ),
-                            )),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1014,10 +1082,7 @@ void showGroupActionSheet(
           isDestructiveAction: true,
           onPressed: () {
             Navigator.of(sheetContext).pop();
-            controller.showDeleteGroupModalBottomSheet(
-              profile.uuid,
-              context,
-            );
+            controller.showDeleteGroupModalBottomSheet(profile.uuid, context);
           },
           child: const Text('删除分组'),
         ),

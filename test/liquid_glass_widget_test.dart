@@ -124,6 +124,8 @@ void main() {
   testWidgets(
     'top bar fade rides the mask while the first card is inside the rail band',
     (WidgetTester tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
       final motion = LiquidGlassBarMotion();
       final scrollController = ScrollController();
       final firstCardKey = GlobalKey();
@@ -215,6 +217,8 @@ void main() {
   testWidgets(
     'mask retracts before the safe-area trigger and follows reverse scroll in both layouts',
     (WidgetTester tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
       for (final layout in LiquidGlassTopBarLayout.values) {
         final motion = LiquidGlassBarMotion();
         final scrollController = ScrollController();
@@ -401,6 +405,8 @@ void main() {
   testWidgets(
     'expanded glass header places the first item below each layout and scrolls it behind the rail',
     (tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
       final motion = LiquidGlassBarMotion();
       final headerController = LiquidGlassScrollController();
       final nestedKey = GlobalKey<ExtendedNestedScrollViewState>();

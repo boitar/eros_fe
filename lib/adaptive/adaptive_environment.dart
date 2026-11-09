@@ -74,6 +74,7 @@ enum AdaptiveLayoutKind {
 class AdaptiveEnvironmentSnapshot {
   const AdaptiveEnvironmentSnapshot({
     required this.size,
+    this.windowSize,
     this.safeArea = EdgeInsets.zero,
     this.viewPadding = EdgeInsets.zero,
     this.viewInsets = EdgeInsets.zero,
@@ -87,6 +88,12 @@ class AdaptiveEnvironmentSnapshot {
   });
 
   final Size size;
+
+  /// Window geometry before [inRect] projects it into a content pane. Root
+  /// snapshots use their live [size], so resizing never keeps a stale value.
+  final Size? windowSize;
+  Size get unpartitionedSize => windowSize ?? size;
+
   final EdgeInsets safeArea;
   final EdgeInsets viewPadding;
   final EdgeInsets viewInsets;
@@ -132,6 +139,7 @@ class AdaptiveEnvironmentSnapshot {
   }) {
     return AdaptiveEnvironmentSnapshot(
       size: size ?? this.size,
+      windowSize: windowSize,
       safeArea: safeArea ?? this.safeArea,
       viewPadding: viewPadding ?? this.viewPadding,
       viewInsets: viewInsets ?? this.viewInsets,
@@ -156,6 +164,7 @@ class AdaptiveEnvironmentSnapshot {
         );
     return AdaptiveEnvironmentSnapshot(
       size: rect.size,
+      windowSize: unpartitionedSize,
       safeArea: localInsets(safeArea),
       viewPadding: localInsets(viewPadding),
       viewInsets: localInsets(viewInsets),
@@ -385,6 +394,10 @@ class AdaptiveEnvironmentSnapshot {
   Map<String, Object> toMap() => <String, Object>{
         'width': size.width,
         'height': size.height,
+        if (windowSize != null) ...<String, Object>{
+          'windowWidth': windowSize!.width,
+          'windowHeight': windowSize!.height,
+        },
         'safeLeft': safeArea.left,
         'safeTop': safeArea.top,
         'safeRight': safeArea.right,
@@ -411,6 +424,13 @@ class AdaptiveEnvironmentSnapshot {
         AdaptiveRegion._number(map['width']),
         AdaptiveRegion._number(map['height']),
       ),
+      windowSize: map.containsKey('windowWidth') &&
+              map.containsKey('windowHeight')
+          ? Size(
+              AdaptiveRegion._number(map['windowWidth']),
+              AdaptiveRegion._number(map['windowHeight']),
+            )
+          : null,
       safeArea: EdgeInsets.fromLTRB(
         AdaptiveRegion._number(map['safeLeft']),
         AdaptiveRegion._number(map['safeTop']),
@@ -583,6 +603,12 @@ class AdaptiveEnvironment {
 
   static AdaptiveEnvironmentSnapshot of(BuildContext context) =>
       AdaptiveEnvironmentScope.of(context);
+
+  /// The current window's device metrics, independent of local pane widths.
+  static Size windowSizeOf(BuildContext context) {
+    final size = maybeOf(context)?.unpartitionedSize;
+    return size == null || size.isEmpty ? MediaQuery.sizeOf(context) : size;
+  }
 }
 
 /// Injects Flutter's live constraints and MediaQuery geometry into the

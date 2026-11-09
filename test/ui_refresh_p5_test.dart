@@ -1,20 +1,34 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/component/setting/setting_menu.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
+import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/gallery_provider.dart';
 import 'package:eros_fe/models/simple_tag.dart';
+import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
+import 'package:eros_fe/pages/item/favorite_icon.dart';
+import 'package:eros_fe/pages/item/gallery_item.dart';
+import 'package:eros_fe/pages/item/gallery_item_flow.dart';
 import 'package:eros_fe/pages/item/gallery_item_flow_large.dart';
+import 'package:eros_fe/pages/item/gallery_item_grid.dart';
+import 'package:eros_fe/pages/item/gallery_item_simple.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
+import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/pages/tab/view/list/waterfall_flow.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/cupertino/list_tile.dart';
 import 'package:eros_fe/widget/cupertino/sliver_list_section.dart';
+import 'package:eros_fe/widget/liquid_glass_rail.dart';
+import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
@@ -58,6 +72,22 @@ const GalleryProvider _second = GalleryProvider(
   colorRating: 'ir',
   postTime: '2025-01-02 08:00',
   simpleTags: [SimpleTag(text: 'tag')],
+);
+
+// Narrow-pane geometry uses short content independently of long-text fixtures.
+const GalleryProvider _paneGallery = GalleryProvider(
+  gid: 'pane-card',
+  englishTitle: 'Card',
+  category: 'Manga',
+  imgUrl: '',
+  imgWidth: 200,
+  imgHeight: 280,
+  filecount: '48',
+  rating: 4.5,
+  ratingFallBack: 4.5,
+  colorRating: 'ir',
+  postTime: '10-15',
+  simpleTags: [],
 );
 
 void _phone(WidgetTester tester, {double height = 874}) {
@@ -151,6 +181,137 @@ void main() {
     PlatformCapabilities.debugHostPlatformOverride = null;
     SettingGlassBar.debugActive = null;
     Get.reset();
+  });
+
+  group('native category content gap', () {
+    for (final mode in [
+      ListModeEnum.list,
+      ListModeEnum.simpleList,
+      ListModeEnum.grid,
+      ListModeEnum.gridTags,
+      ListModeEnum.waterfall,
+      ListModeEnum.waterfallLarge,
+    ]) {
+      for (final tablet in [false, true]) {
+        testWidgets('first $mode card starts at the gap, tablet=$tablet',
+            (tester) async {
+          final size = tablet ? const Size(1024, 1366) : const Size(402, 874);
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = size;
+          addTearDown(tester.view.reset);
+          PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+          Get.put<BlockController>(_NoBlocks());
+          Get.put<LayoutServices>(_GapLayout());
+          Get.find<EhSettingService>().listMode.value = mode;
+          final first = GlobalKey();
+          await tester.pumpWidget(GetCupertinoApp(
+            locale: const Locale('en'),
+            supportedLocales: L10n.delegate.supportedLocales,
+            localizationsDelegates: const [
+              L10n.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+            ],
+            home: Builder(
+                builder: (context) => CustomScrollView(
+                      slivers: [
+                        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                        getGallerySliverList(
+                          const [_gallery, _second],
+                          'native-gap',
+                          firstCardKey: first,
+                          contentTopGap:
+                              NativeTopTabHeader.contentGapFor(context),
+                        ),
+                      ],
+                    )),
+          ));
+          await tester.pumpAndSettle();
+          // FlutterSliverList's debug onstage visitor omits its children.
+          final firstCard = find.byKey(first, skipOffstage: false);
+          final card = mode == ListModeEnum.list
+              ? find
+                  .descendant(
+                    of: firstCard,
+                    matching: find.byWidgetPredicate(
+                        (widget) =>
+                            widget is DecoratedBox &&
+                            widget.decoration is BoxDecoration &&
+                            (widget.decoration as BoxDecoration).borderRadius !=
+                                null,
+                        skipOffstage: false),
+                    skipOffstage: false,
+                  )
+                  .first
+              : firstCard;
+          expect(tester.getRect(card).top, 100 + (tablet ? 12 : 8));
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+        });
+      }
+    }
+  });
+
+  group('mobile Flutter fade cap uses real card containers', () {
+    for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+      for (final mode in [
+        ListModeEnum.list,
+        ListModeEnum.simpleList,
+        ListModeEnum.grid,
+        ListModeEnum.gridTags,
+        ListModeEnum.waterfall,
+        ListModeEnum.waterfallLarge,
+      ]) {
+        testWidgets('$platform $mode excludes internal labels and badges',
+            (tester) => _expectMobileFirstCardCap(tester, platform, mode));
+      }
+    }
+  });
+
+  group('Flutter category content gap', () {
+    for (final platform in [
+      TargetPlatform.android,
+      TargetPlatform.macOS,
+      TargetPlatform.windows,
+      TargetPlatform.iOS,
+    ]) {
+      for (final mode in [
+        ListModeEnum.list,
+        ListModeEnum.simpleList,
+        ListModeEnum.grid,
+        ListModeEnum.gridTags,
+        ListModeEnum.waterfall,
+        ListModeEnum.waterfallLarge,
+      ]) {
+        testWidgets('$platform $mode counts the first card margin once',
+            (tester) => _expectFlutterContentGap(tester, platform, mode));
+      }
+    }
+  });
+
+  group('iPad pane category content gap', () {
+    for (final native in [false, true]) {
+      for (final width in [320.0, 400.0, 500.0]) {
+        for (final mode in [
+          ListModeEnum.list,
+          ListModeEnum.simpleList,
+          ListModeEnum.grid,
+          ListModeEnum.gridTags,
+          ListModeEnum.waterfall,
+          ListModeEnum.waterfallLarge,
+        ]) {
+          testWidgets('$mode native=$native width=$width keeps the iPad gap',
+              (tester) => _expectFlutterContentGap(
+                    tester,
+                    TargetPlatform.iOS,
+                    mode,
+                    paneWidth: width,
+                    native: native,
+                  ));
+        }
+      }
+    }
   });
 
   group('switches', () {
@@ -465,6 +626,244 @@ void main() {
       });
     }
   });
+}
+
+Future<void> _expectFlutterContentGap(
+  WidgetTester tester,
+  TargetPlatform platform,
+  ListModeEnum mode, {
+  double? paneWidth,
+  bool native = false,
+}) async {
+  const barBottom = 100.0;
+  final size =
+      paneWidth == null ? const Size(402, 874) : const Size(820, 1180);
+  PlatformCapabilities.debugHostPlatformOverride = platform;
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.reset);
+  Get.put<BlockController>(_NoBlocks());
+  Get.put<LayoutServices>(_GapLayout());
+  Get.find<EhSettingService>().listMode.value = mode;
+  final first = GlobalKey();
+  final galleries = paneWidth == null
+      ? const [_gallery, _second]
+      : const [_paneGallery];
+  final content = Builder(
+      builder: (context) => CustomScrollView(
+            slivers: [
+              const SliverToBoxAdapter(child: SizedBox(height: barBottom)),
+              getGallerySliverList(
+                galleries,
+                'flutter-gap',
+                firstCardKey: first,
+                contentTopGap: native
+                    ? NativeTopTabHeader.contentGapFor(context)
+                    : LiquidGlassEdgeTokens.contentGapFor(context),
+              ),
+            ],
+          ));
+  await tester.pumpWidget(GetCupertinoApp(
+    locale: const Locale('en'),
+    supportedLocales: L10n.delegate.supportedLocales,
+    localizationsDelegates: const [
+      L10n.delegate,
+      GlobalCupertinoLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+    ],
+    home: paneWidth == null
+        ? content
+        : Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: paneWidth,
+              child: AdaptivePane(
+                environment: AdaptiveEnvironmentSnapshot(size: size),
+                rect: Rect.fromLTWH(0, 0, paneWidth, size.height),
+                child: content,
+              ),
+            ),
+          ),
+  ));
+  await tester.pumpAndSettle();
+  // FlutterSliverList's debug onstage visitor omits its children.
+  final firstCard = find.byKey(first, skipOffstage: false);
+  expect(firstCard, findsOneWidget);
+  final card = mode == ListModeEnum.list
+      ? find
+          .descendant(
+            of: firstCard,
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is DecoratedBox &&
+                  widget.decoration is BoxDecoration &&
+                  (widget.decoration as BoxDecoration).borderRadius != null,
+              skipOffstage: false,
+            ),
+            skipOffstage: false,
+          )
+          .first
+      : firstCard;
+  final gap =
+      paneWidth != null ||
+              platform == TargetPlatform.macOS ||
+              platform == TargetPlatform.windows
+          ? 12
+          : 8;
+  final effectiveGap = !native && !PlatformCapabilities.isDesktop
+      ? switch (mode) {
+          ListModeEnum.list => 8,
+          ListModeEnum.simpleList => 0,
+          ListModeEnum.grid || ListModeEnum.gridTags => 6,
+          ListModeEnum.waterfall => 4,
+          ListModeEnum.waterfallLarge => 12,
+          _ => 0,
+        }
+      : gap;
+  expect(tester.getRect(card).top, barBottom + effectiveGap);
+  expect(tester.takeException(), isNull);
+  await tester.pumpWidget(const SizedBox());
+}
+
+Future<void> _expectMobileFirstCardCap(
+  WidgetTester tester,
+  TargetPlatform platform,
+  ListModeEnum mode,
+) async {
+  const barBottom = 153.0;
+  PlatformCapabilities.debugHostPlatformOverride = platform;
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(402, 1200);
+  addTearDown(tester.view.reset);
+  Get.put<BlockController>(_NoBlocks());
+  Get.put<LayoutServices>(_GapLayout());
+  Get.find<EhSettingService>().listMode.value = mode;
+  final first = GlobalKey();
+  final progress = ValueNotifier<double>(0);
+  final rest = ValueNotifier<double?>(null);
+  addTearDown(progress.dispose);
+  addTearDown(rest.dispose);
+  const gallery = GalleryProvider(
+    gid: 'cap-card',
+    englishTitle: 'Card',
+    category: 'Manga',
+    imgUrl: '',
+    imgWidth: 200,
+    imgHeight: 280,
+    filecount: '48',
+    rating: 4.5,
+    ratingFallBack: 4.5,
+    colorRating: 'ir',
+    postTime: '10-15',
+    simpleTags: [],
+    localFav: true,
+  );
+  await tester.pumpWidget(GetCupertinoApp(
+    locale: const Locale('en'),
+    supportedLocales: L10n.delegate.supportedLocales,
+    localizationsDelegates: const [
+      L10n.delegate,
+      GlobalCupertinoLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+    ],
+    home: Stack(children: [
+      CustomScrollView(slivers: [
+        const SliverToBoxAdapter(child: SizedBox(height: barBottom)),
+        getGallerySliverList([gallery], 'android-cap', firstCardKey: first),
+      ]),
+      LiquidGlassTopScrim(
+        safeTop: 59,
+        layout: LiquidGlassTopBarLayout.twoRow,
+        edgeProgress: progress,
+        firstCardRestTop: rest,
+      ),
+      LiquidGlassTopSoftEdge(
+        safeTop: 59,
+        layout: LiquidGlassTopBarLayout.twoRow,
+        edgeProgress: progress,
+      ),
+    ]),
+  ));
+  await tester.pumpAndSettle();
+  final firstCard = find.byKey(first, skipOffstage: false);
+  expect(firstCard, findsOneWidget);
+  final gap = switch (mode) {
+    ListModeEnum.list => 8.0,
+    ListModeEnum.simpleList => 0.0,
+    ListModeEnum.grid || ListModeEnum.gridTags => 6.0,
+    ListModeEnum.waterfall => 4.0,
+    ListModeEnum.waterfallLarge => 12.0,
+    _ => throw StateError('Unexpected test mode'),
+  };
+  final cardTop = barBottom + gap;
+  final Type cardType = switch (mode) {
+    ListModeEnum.list => GalleryItemWidget,
+    ListModeEnum.simpleList => GalleryItemSimpleWidget,
+    ListModeEnum.grid || ListModeEnum.gridTags => GalleryItemGrid,
+    ListModeEnum.waterfall => GalleryItemFlow,
+    ListModeEnum.waterfallLarge => GalleryItemFlowLarge,
+    _ => throw StateError('Unexpected test mode'),
+  };
+  expect(find.byType(cardType, skipOffstage: false), findsOneWidget);
+  if (mode == ListModeEnum.simpleList) {
+    expect(find.byType(GalleryItemSimpleWidget, skipOffstage: false),
+        findsOneWidget);
+    final category = find.text('Manga', skipOffstage: false);
+    expect(category, findsOneWidget);
+    expect(tester.getRect(category).top, greaterThan(1200 * .17));
+  }
+  if (mode == ListModeEnum.waterfall) {
+    expect(find.byType(GalleryItemFlow, skipOffstage: false), findsOneWidget);
+    expect(
+        Get.find<GalleryItemController>(tag: gallery.gid).hasFavoriteColor,
+        isTrue);
+    final badge = find.byType(FavoriteIcon, skipOffstage: false);
+    expect(badge, findsOneWidget);
+    expect(tester.getRect(badge).top, greaterThan(1200 * .17));
+  }
+  expect(liquidGlassCardScreenTop(first), closeTo(cardTop, .001));
+  rest.value = liquidGlassCardScreenTop(first);
+  const scrimKey = ValueKey<String>('liquid-glass-top-scrim');
+  for (final p in [0.0, .5, 1.0]) {
+    progress.value = p;
+    await tester.pump();
+    expect(find.byKey(scrimKey), findsOneWidget);
+    expect(tester.getRect(find.byKey(scrimKey)).bottom,
+        closeTo(cardTop + (1200 * .17 - cardTop) * p, .001));
+    if (p == 0) {
+      expect(find.byType(SoftScrollEdgeEffect), findsNothing);
+    } else {
+      final effect = tester.widget<SoftScrollEdgeEffect>(
+        find.byType(SoftScrollEdgeEffect),
+      );
+      expect(effect.inset, 59);
+      expect(effect.bars, 94);
+      expect(
+        effect.tail,
+        closeTo(
+          (platform == TargetPlatform.android ? 20 : 24) * p,
+          .001,
+        ),
+      );
+      expect(effect.strength, p);
+    }
+  }
+  expect(tester.takeException(), isNull);
+  await tester.pumpWidget(const SizedBox());
+}
+
+class _NoBlocks extends BlockController {
+  @override
+  // ignore: must_call_super
+  void onInit() {}
+}
+
+class _GapLayout extends LayoutServices {
+  @override
+  // ignore: must_call_super
+  void onInit() {}
 }
 
 class _MountCounter extends StatefulWidget {

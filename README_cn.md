@@ -2,10 +2,10 @@
 [English](./README.md) | 简体中文
 
 一个使用 Flutter 编写的非官方 E-Hentai 客户端。本仓库是 [erosTeam/eros_fe](https://github.com/erosTeam/eros_fe)
-的个人 fork，`custom` 分支专注 iOS／iPadOS 与 iPhone Duo 体验：重做主要界面，接入原生液态玻璃导航，
-并修复下载、收藏、分享、历史、头像、触感与 Cloudflare 验证等问题。
+的个人 fork，`custom` 分支重做主要界面并接入液态玻璃导航，修复下载、收藏、分享、历史、头像、触感与 Cloudflare 验证等问题。
+最初面向 iOS／iPadOS 与 iPhone Duo，**新版 UI 现已支持 Android 与桌面端（macOS）**；Windows 版正在打包，预计过几天发布。
 
-版本保持 `1.9.2+566`，iOS Bundle ID 为 `cn.honjow.fehv`。
+当前版本 `1.10.0+567`（nightly），iOS Bundle ID 为 `cn.honjow.fehv`。
 
 ## 应用截图
 
@@ -47,6 +47,13 @@
 - iOS 27.1+ 使用原生壳（原生顶栏、竖向栏、标签栏），iOS 26–27.0 使用玻璃回退栏；转场、详情闪烁和子页面顶栏已逐页核对。
 - 阅读器优化单双页、连续阅读、缩略图条、系统栏与安全区。
 
+**Android 与桌面端**
+- 新版 UI 已适配 Android 与桌面端。Android 提供玻璃版与实色（Material 3）两套界面：首页顶部搜索胶囊、大屏左侧导航轨、详情页底部操作栏、玻璃阅读器、Android 16 风格设置首页与预测性返回。
+- macOS 26+ 底栏、设置栏与菜单使用 AppKit 原生液态玻璃，标题栏与内容画布同色。
+- 桌面端新增侧边栏导航、卡片悬停快捷操作、右键菜单与键盘快捷键、设置双栏，以及桌面阅读器（版式切换、缩略图侧栏、两侧翻页按钮、滚轮翻页、Ctrl+滚轮缩放、F 全屏）。
+- 各平台都可在「液态玻璃／毛玻璃」之间切换材质，或关闭玻璃效果。
+- Windows：界面已完成适配，安装包尚未发布，预计过几天提供。
+
 **功能修复与增强**
 - Cloudflare 验证：切换 E-Hentai／ExHentai 不再请求论坛；论坛被拦截时引导到应用内验证，设置 › 站点新增「Cloudflare 验证」；报错不再弹出整页 HTML。
 - 收藏：改用 URL 编码表单避免 HTTP 403，保存与删除都以服务端回读结果为准。
@@ -57,6 +64,16 @@
 - 隐藏栏目入口：底栏隐藏的栏目在 iOS 27.1 原生导航与旧版玻璃顶栏中都按实际设置显示入口（1 项直接打开，多项弹出选择面板）。
 
 ## 更新记录
+
+### 2026-11-10：v1.10.0-nightly，UI 重构适配 Android 与桌面端
+
+Tag：`v1.10.0-nightly`（[Release](https://github.com/boitar/eros_fe/releases/tag/v1.10.0-nightly)）。
+
+- **整个 UI 重构，适配 Android 与桌面端。** 液态玻璃组件接入 Android、macOS、Windows，macOS 26+ 使用 AppKit 原生玻璃，详见上方「Android 与桌面端」。
+- **桌面端：** 侧边栏导航、卡片悬停与右键操作、键盘快捷键、设置双栏、桌面阅读器。
+- **Android：** 玻璃版首页搜索胶囊、大屏导航轨、实色 Material 3 版本、玻璃阅读器与新版设置。
+- **顶栏模糊（[#1](https://github.com/boitar/eros_fe/issues/1)）：** 列表静止时首项不再被液态玻璃模糊遮挡，内容滚入栏下后才出现软边（iOS、iPadOS、Android）；macOS 标题栏不再单独留出一条白色。
+- **安装包：** iOS（无签名 IPA）、Android（arm64-v8a、armeabi-v7a、x86_64 分架构包与通用包）、macOS（DMG）；Windows 稍后提供。
 
 ### 2026-11-03：顶栏隐藏入口与语言设置着色修复（包 94–95）
 
@@ -161,13 +178,21 @@ bash benchmark/favorites_ui_tests/run-native.sh \
 
 玻璃组合验收在收藏、头像、分组索引、触感或下载脚本前加 `EROS_VERIFY_GLASS=1`。
 
-**尚未验收**：真机 VoiceOver 与震动强度、Android 实机、OCR、旧归档下载、LiveContainer，以及真实网络下的 Cloudflare 拦截与论坛上传。模拟器结果不能替代这些验收。
+**尚未验收**：真机 VoiceOver 与震动强度、OCR、旧归档下载、LiveContainer，以及真实网络下的 Cloudflare 拦截与论坛上传。模拟器结果不能替代这些验收。
 
-## iOS 安装
+## 安装
 
-本 fork 的无签名 IPA 发布在 [Releases](https://github.com/boitar/eros_fe/releases/latest)：arm64，主应用无签名，Bundle ID `cn.honjow.fehv`，最低 iOS 15.6。
+本 fork 的安装包发布在 [Releases](https://github.com/boitar/eros_fe/releases)。
 
-1. 从 [Releases](https://github.com/boitar/eros_fe/releases/latest) 下载最新的 `Eros-FE_*-unsigned_*.ipa`。
+- **Android：** 按设备架构选择 APK（大多数手机选 `arm64-v8a`），不确定时选通用包（universal）。
+- **macOS：** 打开 DMG，把 Eros-FE 拖到「应用程序」。应用为 ad hoc 签名，首次打开可能需要右键 › 打开。
+- **Windows：** 尚未发布，预计过几天提供。
+
+### iOS
+
+无签名 IPA：arm64，主应用无签名，Bundle ID `cn.honjow.fehv`，最低 iOS 15.6。
+
+1. 从 [Releases](https://github.com/boitar/eros_fe/releases) 下载最新的 `Eros-FE_*-unsigned_*.ipa`。
 2. 使用 [AltStore](https://altstore.io) 等工具自行签名后安装。与已装应用同一 Bundle ID 时会覆盖，切换前请先备份应用数据。
 
 上游构建见 [erosTeam/eros_fe Releases](https://github.com/erosTeam/eros_fe/releases/latest) 或 [AltStore.json](https://config-feh.vercel.app/AltStore.json)，不包含本 fork 的增强。

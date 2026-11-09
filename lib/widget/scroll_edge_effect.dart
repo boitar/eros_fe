@@ -24,35 +24,65 @@ class SoftEdgeCurve {
   /// Blur at the screen edge in logical pixels; zero disables the blur.
   final double maxSigma;
 
-  static const SoftEdgeCurve light =
-      SoftEdgeCurve(<double>[0.80, 0.55, 0.38, 0.12, 0], maxSigma: 12);
-  static const SoftEdgeCurve dark =
-      SoftEdgeCurve(<double>[0.86, 0.61, 0.44, 0.15, 0], maxSigma: 12);
-  static const SoftEdgeCurve reducedTransparency =
-      SoftEdgeCurve(<double>[0.97, 0.94, 0.88, 0.35, 0], maxSigma: 0);
+  static const SoftEdgeCurve light = SoftEdgeCurve(<double>[
+    0.80,
+    0.55,
+    0.38,
+    0.12,
+    0,
+  ], maxSigma: 12);
+  static const SoftEdgeCurve dark = SoftEdgeCurve(<double>[
+    0.86,
+    0.61,
+    0.44,
+    0.15,
+    0,
+  ], maxSigma: 12);
+  static const SoftEdgeCurve reducedTransparency = SoftEdgeCurve(<double>[
+    0.97,
+    0.94,
+    0.88,
+    0.35,
+    0,
+  ], maxSigma: 0);
+
   /// For hosts without a reliable blur: denser, so the fade alone keeps
   /// content under the bars out of the way.
-  static const SoftEdgeCurve withoutBlur =
-      SoftEdgeCurve(<double>[0.96, 0.92, 0.84, 0.36, 0], maxSigma: 0);
-  static const SoftEdgeCurve mediaWithoutBlur =
-      SoftEdgeCurve(<double>[0.60, 0.40, 0.22, 0.07, 0], maxSigma: 0);
+  static const SoftEdgeCurve withoutBlur = SoftEdgeCurve(<double>[
+    0.96,
+    0.92,
+    0.84,
+    0.36,
+    0,
+  ], maxSigma: 0);
+  static const SoftEdgeCurve mediaWithoutBlur = SoftEdgeCurve(<double>[
+    0.60,
+    0.40,
+    0.22,
+    0.07,
+    0,
+  ], maxSigma: 0);
   // Media keeps more of the page readable: dimming carries legibility and
   // the blur stays light so bright pages do not turn foggy.
-  static const SoftEdgeCurve media =
-      SoftEdgeCurve(<double>[0.50, 0.30, 0.15, 0.05, 0], maxSigma: 6);
+  static const SoftEdgeCurve media = SoftEdgeCurve(<double>[
+    0.50,
+    0.30,
+    0.15,
+    0.05,
+    0,
+  ], maxSigma: 6);
 
   static List<double> positions({
     required double inset,
     required double bars,
     required double tail,
-  }) =>
-      <double>[
-        0,
-        inset + bars / 2,
-        inset + bars,
-        inset + bars + tail / 2,
-        inset + bars + tail,
-      ];
+  }) => <double>[
+    0,
+    inset + bars / 2,
+    inset + bars,
+    inset + bars + tail / 2,
+    inset + bars + tail,
+  ];
 
   /// Samples a monotone cubic through the control points at [count] evenly
   /// spaced stops, so the fade never plateaus and then drops off a cliff.
@@ -87,7 +117,9 @@ class SoftEdgeCurve {
   static List<double> _monotoneSlopes(List<double> xs, List<double> ys) {
     final n = xs.length;
     final secants = List<double>.generate(
-        n - 1, (i) => (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]));
+      n - 1,
+      (i) => (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]),
+    );
     final slopes = List<double>.filled(n, 0);
     slopes[0] = secants.first;
     slopes[n - 1] = secants.last;
@@ -115,7 +147,11 @@ class SoftEdgeCurve {
   }
 
   static double _evaluate(
-      List<double> xs, List<double> ys, List<double> slopes, double x) {
+    List<double> xs,
+    List<double> ys,
+    List<double> slopes,
+    double x,
+  ) {
     if (x <= xs.first) return ys.first;
     if (x >= xs.last) return ys.last;
     var i = 0;
@@ -146,6 +182,10 @@ class SoftScrollEdgeEffect extends StatefulWidget {
     required this.bars,
     this.tail = defaultTail,
     this.tone = SoftEdgeTone.surface,
+    this.strength = 1,
+    this.surfaceColor,
+    this.hardEdge = false,
+    this.decorationKey,
   });
 
   static const double defaultTail = 36;
@@ -162,20 +202,31 @@ class SoftScrollEdgeEffect extends StatefulWidget {
   final double tail;
   final SoftEdgeTone tone;
 
+  /// Scales both blur and tint. Geometry supplied by the caller can follow the
+  /// same quantized value, so a stationary edge has no visual effect.
+  final double strength;
+
+  /// Optional page colour and hard edge for Flutter-hosted desktop bars.
+  /// Native headers continue to use their existing surface and soft curve.
+  final Color? surfaceColor;
+  final bool hardEdge;
+  final Key? decorationKey;
+
+  static double quantizeStrength(double value) =>
+      (value.clamp(0.0, 1.0) * 64).round() / 64;
+
   static double extentOf({
     required double inset,
     required double bars,
     double tail = defaultTail,
-  }) =>
-      math.max(0, inset + bars + tail);
+  }) => math.max(0, inset + bars + tail);
 
   @override
   State<SoftScrollEdgeEffect> createState() => _SoftScrollEdgeEffectState();
 }
 
 class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
-  ui.FragmentShader? _horizontal;
-  ui.FragmentShader? _vertical;
+  final Map<Object, _SoftEdgeFilter> _filters = <Object, _SoftEdgeFilter>{};
   ui.ImageFilter? _filter;
   Object? _filterKey;
 
@@ -190,8 +241,9 @@ class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
   @override
   void dispose() {
     _SoftEdgeBlurProgram.ready.removeListener(_rebuild);
-    LiquidGlassAccessibilitySettings.reduceTransparency
-        .removeListener(_rebuild);
+    LiquidGlassAccessibilitySettings.reduceTransparency.removeListener(
+      _rebuild,
+    );
     _disposeShaders();
     super.dispose();
   }
@@ -201,15 +253,32 @@ class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
   }
 
   void _disposeShaders() {
-    _horizontal?.dispose();
-    _vertical?.dispose();
-    _horizontal = null;
-    _vertical = null;
+    for (final filter in _filters.values) {
+      filter.dispose();
+    }
+    _filters.clear();
     _filter = null;
     _filterKey = null;
   }
 
   SoftEdgeCurve _curve(BuildContext context) {
+    if (widget.hardEdge) {
+      final reduced =
+          LiquidGlassAccessibilitySettings.reduceTransparency.value ?? false;
+      final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+      return SoftEdgeCurve(
+        reduced
+            ? const <double>[1, 1, 1, 0, 0]
+            : dark
+            ? const <double>[.96, .94, .92, 0, 0]
+            : const <double>[.94, .92, .90, 0, 0],
+        maxSigma:
+            !reduced &&
+                PlatformCapabilities.hostPlatform == TargetPlatform.macOS
+            ? 20
+            : 0,
+      );
+    }
     // Android gets no blur: the shader's coordinates flip differently across
     // its backends (streaks, mirrored content), standard blur bands show
     // seams, and a gradient mask drops the blur altogether. A denser fade in
@@ -231,10 +300,16 @@ class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
   ui.ImageFilter? _shaderFilter(double maxSigma, double extent, double dpr) {
     final program = _SoftEdgeBlurProgram.program;
     if (program == null) return null;
-    final key = Object.hash(
-        maxSigma, widget.inset, extent, dpr, widget.edge, widget.tone);
+    final key = (maxSigma, widget.inset, extent, dpr, widget.edge, widget.tone);
     if (key == _filterKey && _filter != null) return _filter;
-    _disposeShaders();
+    final cached = _filters.remove(key);
+    if (cached != null) {
+      _filters[key] = cached;
+      _filterKey = key;
+      return _filter = cached.filter;
+    }
+    // Keep immutable uniform snapshots. Mutating a shader already held by an
+    // ImageFilter can compare equal to the old filter and skip a repaint.
     ui.FragmentShader pass(double dx, double dy) => program.fragmentShader()
       // Floats 0-1 are u_size, which the engine fills in.
       ..setFloat(2, dx)
@@ -243,13 +318,19 @@ class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
       ..setFloat(5, widget.inset * dpr)
       ..setFloat(6, extent * dpr)
       ..setFloat(7, widget.edge == SoftEdge.bottom ? 1 : 0);
-    _horizontal = pass(1, 0);
-    _vertical = pass(0, 1);
-    _filterKey = key;
-    return _filter = ui.ImageFilter.compose(
-      outer: ui.ImageFilter.shader(_vertical!),
-      inner: ui.ImageFilter.shader(_horizontal!),
+    final horizontal = pass(1, 0);
+    final vertical = pass(0, 1);
+    final filter = ui.ImageFilter.compose(
+      outer: ui.ImageFilter.shader(vertical),
+      inner: ui.ImageFilter.shader(horizontal),
     );
+    _filters[key] = _SoftEdgeFilter(horizontal, vertical, filter);
+    // The reveal range is quantized; bound snapshots during rail/size changes.
+    if (_filters.length > 16) {
+      _filters.remove(_filters.keys.first)!.dispose();
+    }
+    _filterKey = key;
+    return _filter = filter;
   }
 
   // Without shader filters (Skia, tests) nested bands approximate the ramp;
@@ -285,26 +366,53 @@ class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
   @override
   Widget build(BuildContext context) {
     final extent = SoftScrollEdgeEffect.extentOf(
-        inset: widget.inset, bars: widget.bars, tail: widget.tail);
+      inset: widget.inset,
+      bars: widget.bars,
+      tail: widget.tail,
+    );
     if (extent <= 0) return const SizedBox.shrink();
+    final strength = SoftScrollEdgeEffect.quantizeStrength(widget.strength);
     final curve = _curve(context);
-    final alphas =
-        curve.sample(inset: widget.inset, bars: widget.bars, tail: widget.tail);
-    final base = widget.tone == SoftEdgeTone.media
-        ? CupertinoColors.black
-        : CupertinoDynamicColor.resolve(
-            CupertinoTheme.of(context).scaffoldBackgroundColor, context);
+    final alphas = curve.sample(
+      inset: widget.inset,
+      bars: widget.bars,
+      tail: widget.tail,
+    );
+    final base =
+        widget.surfaceColor ??
+        (widget.tone == SoftEdgeTone.media
+            ? CupertinoColors.black
+            : CupertinoDynamicColor.resolve(
+                CupertinoTheme.of(context).scaffoldBackgroundColor,
+                context,
+              ));
     final top = widget.edge == SoftEdge.top;
     Widget? blur;
-    if (curve.maxSigma > 0) {
-      final filter = _shaderFilter(
-          curve.maxSigma, extent, MediaQuery.devicePixelRatioOf(context));
-      blur = filter == null
-          ? _bandedBlur(curve.maxSigma, extent)
-          : ClipRect(
-              child: BackdropFilter(
-                  filter: filter, child: const SizedBox.expand()));
-    } else if (_filter != null) {
+    final maxSigma = curve.maxSigma * strength;
+    if (maxSigma > 0) {
+      if (widget.hardEdge) {
+        blur = ClipRect(
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: maxSigma, sigmaY: maxSigma),
+            child: const SizedBox.expand(),
+          ),
+        );
+      } else {
+        final filter = _shaderFilter(
+          maxSigma,
+          extent,
+          MediaQuery.devicePixelRatioOf(context),
+        );
+        blur = filter == null
+            ? _bandedBlur(maxSigma, extent)
+            : ClipRect(
+                child: BackdropFilter(
+                  filter: filter,
+                  child: const SizedBox.expand(),
+                ),
+              );
+      }
+    } else if (curve.maxSigma == 0 && _filter != null) {
       _disposeShaders();
     }
     return IgnorePointer(
@@ -315,12 +423,14 @@ class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
           children: <Widget>[
             if (blur != null) blur,
             DecoratedBox(
+              key: widget.decorationKey,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: top ? Alignment.topCenter : Alignment.bottomCenter,
                   end: top ? Alignment.bottomCenter : Alignment.topCenter,
                   colors: <Color>[
-                    for (final alpha in alphas) base.withValues(alpha: alpha),
+                    for (final alpha in alphas)
+                      base.withValues(alpha: alpha * strength),
                   ],
                   stops: <double>[
                     for (var i = 0; i < alphas.length; i++)
@@ -333,6 +443,19 @@ class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
         ),
       ),
     );
+  }
+}
+
+class _SoftEdgeFilter {
+  _SoftEdgeFilter(this.horizontal, this.vertical, this.filter);
+
+  final ui.FragmentShader horizontal;
+  final ui.FragmentShader vertical;
+  final ui.ImageFilter filter;
+
+  void dispose() {
+    horizontal.dispose();
+    vertical.dispose();
   }
 }
 

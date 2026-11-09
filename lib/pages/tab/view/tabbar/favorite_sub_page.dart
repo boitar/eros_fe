@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/favorite/favorite_sublist_controller.dart';
 import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller.dart';
@@ -16,11 +17,13 @@ class FavoriteSubPage extends StatefulWidget {
     required this.favcat,
     this.scrollToInitialAnchor,
     this.firstCardKey,
+    this.contentTopGap,
   });
 
   final String favcat;
   final Future<void> Function()? scrollToInitialAnchor;
   final GlobalKey? firstCardKey;
+  final double? contentTopGap;
 
   @override
   State<FavoriteSubPage> createState() => _FavoriteSubPageState();
@@ -64,8 +67,9 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
     super.build(context);
     return CustomScrollView(
       // cacheExtent: context.height * 2,
-      physics:
-          const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       slivers: [
         // 刷新控件必须在 SliverOverlapInjector 之前：injector 会把吸顶头栏
         // 高度转成实际布局空间，吞掉顶部下拉越界时 viewport 给出的负 overlap，
@@ -109,9 +113,7 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
               child: Container(
                 alignment: Alignment.center,
                 padding: const EdgeInsets.only(bottom: 50),
-                child: const CupertinoActivityIndicator(
-                  radius: 14.0,
-                ),
+                child: const CupertinoActivityIndicator(radius: 14.0),
               ),
             );
           }
@@ -136,6 +138,9 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
               lastComplete: _favoriteSubListController.lastComplete,
               firstCardKey: widget.firstCardKey,
               anchorController: logic.galleryAnchor,
+              contentTopGap: NativeNavigationScope.isEnabled(context)
+                  ? NativeTopTabHeader.contentGapFor(context)
+                  : widget.contentTopGap,
               // key: _favoriteSubListController.sliverAnimatedListKey,
               keepPosition: _favoriteSubListController.keepPosition,
             );
@@ -151,7 +156,9 @@ class _FavoriteSubPageState extends State<FavoriteSubPage>
                     FontAwesomeIcons.hippo,
                     size: 100,
                     color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.systemGrey, context),
+                      CupertinoColors.systemGrey,
+                      context,
+                    ),
                   ),
                   Text(''),
                 ],

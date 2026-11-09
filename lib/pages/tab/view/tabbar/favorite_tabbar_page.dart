@@ -1,6 +1,6 @@
-import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:blur/blur.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -15,6 +15,7 @@ import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
+import 'package:eros_fe/widget/scroll_edge_progress.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/cupertino.dart';
@@ -50,21 +51,26 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
   late PageController pageController;
 
   final _headerScrollController = LiquidGlassScrollController();
+  final _nativeEdgeProgress = ScrollEdgeProgressController(
+    revealDistance: LiquidGlassEdgeTokens.reveal,
+  );
   final GlobalKey<ExtendedNestedScrollViewState> _nestedScrollKey =
       GlobalKey<ExtendedNestedScrollViewState>();
   final Map<String, GlobalKey> _firstCardKeys = <String, GlobalKey>{};
   late final LiquidGlassTopStateCoordinator _topState =
       LiquidGlassTopStateCoordinator(
-    scrollController: _headerScrollController,
-    additionalPositions: () =>
-        _nestedScrollKey.currentState?.innerPositions ??
-        const <ScrollPosition>[],
-    firstCardTopProvider: _currentFirstCardTop,
-  );
+        scrollController: _headerScrollController,
+        additionalPositions: () =>
+            _nestedScrollKey.currentState?.innerPositions ??
+            const <ScrollPosition>[],
+        firstCardTopProvider: _currentFirstCardTop,
+        firstCardRestTopProvider: () => _currentFirstCardTop(visual: true),
+      );
 
   @override
   void dispose() {
     _topState.dispose();
+    _nativeEdgeProgress.dispose();
     _headerScrollController.dispose();
     super.dispose();
   }
@@ -98,13 +104,13 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
   GlobalKey _firstCardKeyFor(String favId) =>
       _firstCardKeys.putIfAbsent(favId, () => GlobalKey());
 
-  double? _currentFirstCardTop() {
+  double? _currentFirstCardTop({bool visual = false}) {
     final favcats = controller.favcatList;
     if (favcats.isEmpty) {
       return null;
     }
     final index = controller.index.clamp(0, favcats.length - 1).toInt();
-    return liquidGlassScreenTop(_firstCardKeyFor(favcats[index].favId));
+    return visual ? liquidGlassCardScreenTop(_firstCardKeyFor(favcats[index].favId)) : liquidGlassScreenTop(_firstCardKeyFor(favcats[index].favId));
   }
 
   Future<void> _scrollToInitialContentAnchor() async {
@@ -166,52 +172,54 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
 
   @override
   Widget build(BuildContext context) => offlineGlassPageProbe(
-        route: 'favorite',
-        page: () => controller.currFavcat,
-        controllerOwner: controller,
-        scrollController: _headerScrollController,
-        innerPositions: () =>
-            _nestedScrollKey.currentState?.innerPositions ??
-            const <ScrollPosition>[],
-        firstCardTop: _currentFirstCardTop,
-        child: Obx(() => NativeNavigationPage(
-              tabId: EHRoutes.favorite,
-              chrome: NativePageChrome(
-                title: L10n.of(context).tab_favorite,
-                actions: [
-                  ...Get.find<TabHomeController>().nativeHiddenTabActions,
-                  NativeNavigationAction(
-                    id: 'search',
-                    title: L10n.of(context).search,
-                    symbol: 'magnifyingglass',
-                    onPressed: () => NavigatorUtil.goSearchPage(
-                        searchType: SearchType.favorite),
-                  ),
-                  NativeNavigationAction(
-                    id: 'order',
-                    title:
-                        '${L10n.of(context).favorites_order} (${controller.orderText})',
-                    symbol: 'arrow.down',
-                    onPressed: () => controller.setOrder(context),
-                  ),
-                  if (controller.afterJump)
-                    NativeNavigationAction(
-                      id: 'top',
-                      title: L10n.of(context).back_to_top,
-                      symbol: 'arrow.up.circle',
-                      onPressed: controller.jumpToTop,
-                    ),
-                  NativeNavigationAction(
-                    id: 'jump',
-                    title: L10n.of(context).jump_or_seek,
-                    symbol: 'arrow.uturn.down.circle',
-                    onPressed: () => controller.showJumpDialog(context),
-                  ),
-                ],
+    route: 'favorite',
+    page: () => controller.currFavcat,
+    controllerOwner: controller,
+    scrollController: _headerScrollController,
+    innerPositions: () =>
+        _nestedScrollKey.currentState?.innerPositions ??
+        const <ScrollPosition>[],
+    firstCardTop: _currentFirstCardTop,
+    child: Obx(
+      () => NativeNavigationPage(
+        tabId: EHRoutes.favorite,
+        chrome: NativePageChrome(
+          title: L10n.of(context).tab_favorite,
+          actions: [
+            ...Get.find<TabHomeController>().nativeHiddenTabActions,
+            NativeNavigationAction(
+              id: 'search',
+              title: L10n.of(context).search,
+              symbol: 'magnifyingglass',
+              onPressed: () =>
+                  NavigatorUtil.goSearchPage(searchType: SearchType.favorite),
+            ),
+            NativeNavigationAction(
+              id: 'order',
+              title:
+                  '${L10n.of(context).favorites_order} (${controller.orderText})',
+              symbol: 'arrow.down',
+              onPressed: () => controller.setOrder(context),
+            ),
+            if (controller.afterJump)
+              NativeNavigationAction(
+                id: 'top',
+                title: L10n.of(context).back_to_top,
+                symbol: 'arrow.up.circle',
+                onPressed: controller.jumpToTop,
               ),
-              child: _buildPage(context),
-            )),
-      );
+            NativeNavigationAction(
+              id: 'jump',
+              title: L10n.of(context).jump_or_seek,
+              symbol: 'arrow.uturn.down.circle',
+              onPressed: () => controller.showJumpDialog(context),
+            ),
+          ],
+        ),
+        child: _buildPage(context),
+      ),
+    ),
+  );
 
   Widget _buildPage(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
@@ -223,12 +231,12 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
       final headerMaxHeight = native
           ? mediaQuery.viewPadding.top + topTabbarHeight
           : liquidGlass
-              ? layout.safeTop +
-                  _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
-                    MediaQuery.textScalerOf(context),
-                    hasCategories: controller.favcatList.isNotEmpty,
-                  )
-              : mediaQuery.viewPadding.top + kHeaderMaxHeight;
+          ? layout.safeTop +
+                _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
+                  MediaQuery.textScalerOf(context),
+                  hasCategories: controller.favcatList.isNotEmpty,
+                )
+          : mediaQuery.viewPadding.top + kHeaderMaxHeight;
       final hideTopBarOnScroll = _ehSettingService.hideTopBarOnScroll;
 
       final scrollView = buildNestedScrollView(
@@ -268,6 +276,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
       return NativeTopTabHeader(
         topInset: MediaQuery.viewPaddingOf(context).top,
         railHeight: topTabbarHeightFor(context),
+        edgeProgress: _nativeEdgeProgress,
         child: FavoriteTabBar(
           pageController: pageController,
           linkScrollBarController: linkScrollBarController,
@@ -293,10 +302,10 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
     final navBarOpacity = dockTopBar
         ? 1.0 - collapseProgress
         : 1.0 -
-            (offset / (kMinInteractiveDimensionCupertino - 1)).clamp(
-              0.0,
-              1.0,
-            );
+              (offset / (kMinInteractiveDimensionCupertino - 1)).clamp(
+                0.0,
+                1.0,
+              );
     final collapsed = dockTopBar && collapseProgress >= 0.98;
     final customBarOpacity = navBarOpacity;
     return SizedBox(
@@ -347,8 +356,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
         safeTop: layout.safeTop,
         fadeProgress: fadeProgress,
         selectedIndex: controller.index,
-        followSystemTransparency:
-            _ehSettingService.liquidGlassMaterial,
+        followSystemTransparency: _ehSettingService.liquidGlassMaterial,
         leading: hiddenTabsRailAction(context),
         trailing: <LiquidGlassRailAction>[
           LiquidGlassRailAction(
@@ -389,8 +397,8 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
                 label: L10n.of(context).search,
                 onTap: () => NavigatorUtil.goSearchPage(
                   searchType: SearchType.favorite,
-                  fromTabItem: Get.find<TabHomeController>()
-                          .tabMap[EHRoutes.favorite] ??
+                  fromTabItem:
+                      Get.find<TabHomeController>().tabMap[EHRoutes.favorite] ??
                       false,
                 ),
               )
@@ -433,11 +441,11 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
     final topTabbarHeight = topTabbarHeightFor(context);
     _headerScrollController.headerExtent = native
         ? nativeCollapsible
-            ? topTabbarHeight
-            : 0
+              ? topTabbarHeight
+              : 0
         : liquidGlass
-            ? headerMaxHeight
-            : headerMaxHeight - layout.collapsedHeaderHeight;
+        ? headerMaxHeight
+        : headerMaxHeight - layout.collapsedHeaderHeight;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _topState.setBarFadeEnabled(dockTopBar);
@@ -449,8 +457,9 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
     final Widget scrollView = ExtendedNestedScrollView(
       key: _nestedScrollKey,
       controller: _headerScrollController,
-      physics:
-          const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       floatHeaderSlivers: !liquidGlass,
       onlyOneScrollInBody: true,
       headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
@@ -481,12 +490,12 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
                         collapsible: nativeCollapsible,
                       )
                     : liquidGlass
-                        ? 0.0
-                        : hideTopBarOnScroll
-                            ? dockTopBar
-                                ? layout.collapsedHeaderHeight
-                                : layout.safeTop + kTopTabbarHeight
-                            : headerMaxHeight,
+                    ? 0.0
+                    : hideTopBarOnScroll
+                    ? dockTopBar
+                          ? layout.collapsedHeaderHeight
+                          : layout.safeTop + kTopTabbarHeight
+                    : headerMaxHeight,
                 maxHeight: headerMaxHeight,
               ),
             ),
@@ -496,7 +505,12 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
       body: buildBody(liquidGlass, hideTopBarOnScroll),
     );
     if (!liquidGlass) {
-      return NativeBarAutoHide(enabled: nativeCollapsible, child: scrollView);
+      return ScrollEdgeProgressListener(
+        controller: _nativeEdgeProgress,
+        enabled: native,
+        activePage: controller.currFavcat,
+        child: NativeBarAutoHide(enabled: nativeCollapsible, child: scrollView),
+      );
     }
     return Stack(
       fit: StackFit.expand,
@@ -509,36 +523,67 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
           top: 0,
           left: 0,
           right: 0,
-          child: LiquidGlassSafeAreaBase(
-            safeTop: layout.safeTop,
-            layout: _ehSettingService.liquidGlassTopBarLayout,
-            hasCategories: controller.favcatList.isNotEmpty,
+          child: LiquidGlassBarMotionBuilder(
+            enabled: dockTopBar,
+            builder: (context, progress) => LiquidGlassSafeAreaBase(
+              firstCardRestTop: _topState.firstCardRestTop,
+              safeTop: layout.safeTop,
+              layout: _ehSettingService.liquidGlassTopBarLayout,
+              hasCategories: controller.favcatList.isNotEmpty,
+              edgeProgress: _nativeEdgeProgress,
+              barFadeProgress: progress,
+            ),
           ),
         ),
-        scrollView,
+        ScrollEdgeProgressListener(
+          controller: _nativeEdgeProgress,
+          activePage: controller.currFavcat,
+          child: scrollView,
+        ),
         // Fixed solid background above the scroll content and below the scrim
         // and rail. Its lower edge follows the active first card without
         // changing the list's scroll geometry.
+        if (!PlatformCapabilities.isDesktop)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: LiquidGlassSolidMask(
+              progressListenable: _topState.solidMaskProgress,
+              safeTop: layout.safeTop,
+              // The mask bottom follows the first card from safeTop to the
+              // category rail's lower edge.
+              height: headerMaxHeight,
+            ),
+          ),
         Positioned(
           top: 0,
           left: 0,
           right: 0,
-          child: LiquidGlassSolidMask(
-            progressListenable: _topState.solidMaskProgress,
-            safeTop: layout.safeTop,
-            // The mask bottom follows the first card from safeTop to the
-            // category rail's lower edge.
-            height: headerMaxHeight,
+          child: LiquidGlassBarMotionBuilder(
+            enabled: dockTopBar,
+            builder: (context, progress) => LiquidGlassTopScrim(
+              firstCardRestTop: _topState.firstCardRestTop,
+              safeTop: layout.safeTop,
+              layout: _ehSettingService.liquidGlassTopBarLayout,
+              hasCategories: controller.favcatList.isNotEmpty,
+              edgeProgress: _nativeEdgeProgress,
+              barFadeProgress: progress,
+            ),
           ),
         ),
         Positioned(
           top: 0,
           left: 0,
           right: 0,
-          child: LiquidGlassTopScrim(
-            safeTop: layout.safeTop,
-            layout: _ehSettingService.liquidGlassTopBarLayout,
-            hasCategories: controller.favcatList.isNotEmpty,
+          child: LiquidGlassBarMotionBuilder(
+            enabled: dockTopBar,
+            builder: (context, progress) => LiquidGlassTopSoftEdge(
+              safeTop: layout.safeTop,
+              layout: _ehSettingService.liquidGlassTopBarLayout,
+              edgeProgress: _nativeEdgeProgress,
+              barFadeProgress: progress,
+            ),
           ),
         ),
         Positioned(
@@ -569,16 +614,27 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
               controller: pageController,
               children: [
                 ...controller.favcatList.map(
-                  (e) => FavoriteSubPage(
-                    favcat: e.favId,
-                    firstCardKey: _firstCardKeyFor(e.favId),
-                    scrollToInitialAnchor: _scrollToInitialContentAnchor,
+                  (e) => ScrollEdgeProgressListener(
+                    key: ValueKey(e.favId),
+                    controller: _nativeEdgeProgress,
+                    enabled:
+                        liquidGlass || NativeNavigationScope.isEnabled(context),
+                    page: e.favId,
+                    child: FavoriteSubPage(
+                      favcat: e.favId,
+                      firstCardKey: _firstCardKeyFor(e.favId),
+                      contentTopGap: liquidGlass
+                          ? LiquidGlassEdgeTokens.contentGapFor(context)
+                          : null,
+                      scrollToInitialAnchor: _scrollToInitialContentAnchor,
+                    ),
                   ),
                 ),
               ],
               onPageChanged: (index) {
                 linkScrollBarController.scrollToItem(index);
                 controller.onPageChanged(index);
+                _nativeEdgeProgress.selectPage(controller.currFavcat);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted && _useLiquidGlass) {
                     _topState.refresh();
@@ -598,7 +654,8 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
 
   Widget getNavigationBar(BuildContext context, {double? opacity}) {
     return Obx(() {
-      final useLiquidGlass = _ehSettingService.liquidGlass &&
+      final useLiquidGlass =
+          _ehSettingService.liquidGlass &&
           (GlassMode.of(context).forComponent(flutterImplemented: true) !=
               GlassMode.off);
       return CupertinoNavigationBar(
@@ -607,8 +664,8 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
         backgroundColor: useLiquidGlass
             ? const Color(0x00000000)
             : kEnableImpeller
-                ? CupertinoTheme.of(context).barBackgroundColor.withOpacity(1)
-                : null,
+            ? CupertinoTheme.of(context).barBackgroundColor.withOpacity(1)
+            : null,
         transitionBetweenRoutes: false,
         border: null,
         // border: Border(
@@ -662,8 +719,9 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
                   ),
                 ),
                 onPressed: () {
-                  final bool fromTabItem = Get.find<TabHomeController>()
-                          .tabMap[controller.heroTag ?? ''] ??
+                  final bool fromTabItem =
+                      Get.find<TabHomeController>().tabMap[controller.heroTag ??
+                          ''] ??
                       false;
                   NavigatorUtil.goSearchPage(
                     searchType: SearchType.favorite,
@@ -764,7 +822,8 @@ class FavoriteTabBar extends StatelessWidget {
     return Obx(() {
       // 不要删除这行
       ehTheme.isDarkMode;
-      final useLiquidGlass = ehSettingService.liquidGlass &&
+      final useLiquidGlass =
+          ehSettingService.liquidGlass &&
           (GlassMode.of(context).forComponent(flutterImplemented: true) !=
               GlassMode.off);
       final topTabbarHeight = topTabbarHeightFor(context);
@@ -782,8 +841,7 @@ class FavoriteTabBar extends StatelessWidget {
               opacity: opacity,
               selectedIndex: controller.index,
               pageController: pageController,
-              followSystemTransparency:
-                  ehSettingService.liquidGlassMaterial,
+              followSystemTransparency: ehSettingService.liquidGlassMaterial,
               accessory: controller.showBarsBtn
                   ? LiquidGlassRailAction(
                       icon: CupertinoIcons.line_horizontal_3,
