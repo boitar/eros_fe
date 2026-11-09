@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
 import '../widget/scroll_edge_effect.dart';
+import 'adaptive_environment.dart';
 import 'native_navigation.dart';
 
 /// Header for list pages under the native shell. The tab rail and the
@@ -13,13 +15,23 @@ class NativeTopTabHeader extends StatelessWidget {
     required this.topInset,
     required this.railHeight,
     required this.child,
-    this.fadeExtent = SoftScrollEdgeEffect.defaultTail,
+    this.fadeExtent,
+    this.edgeProgress,
   });
 
   final double topInset;
   final double railHeight;
   final Widget child;
-  final double fadeExtent;
+  final double? fadeExtent;
+  final ValueListenable<double>? edgeProgress;
+
+  static bool _wideWindow(BuildContext context) =>
+      AdaptiveEnvironment.windowSizeOf(context).shortestSide >= 600;
+
+  static double contentGapFor(BuildContext context) =>
+      _wideWindow(context) ? 12 : 8;
+
+  static double tailFor(BuildContext context) => _wideWindow(context) ? 28 : 24;
 
   /// A collapsible header keeps only the bars above it while scrolling down.
   static double minExtentFor({
@@ -31,6 +43,18 @@ class NativeTopTabHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final progress = edgeProgress;
+    if (progress == null) {
+      return _buildHeader(context, 0);
+    }
+    return ValueListenableBuilder<double>(
+      valueListenable: progress,
+      builder: (context, value, _) => _buildHeader(context, value),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, double value) {
+    final progress = SoftScrollEdgeEffect.quantizeStrength(value);
     return LayoutBuilder(builder: (context, constraints) {
       final height = constraints.maxHeight;
       final shown = railHeight <= 0
@@ -48,7 +72,8 @@ class NativeTopTabHeader extends StatelessWidget {
               edge: SoftEdge.top,
               inset: topInset,
               bars: (height - topInset).clamp(0.0, railHeight),
-              tail: fadeExtent,
+              tail: (fadeExtent ?? tailFor(context)) * progress,
+              strength: progress,
             ),
           ),
           Positioned(

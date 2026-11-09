@@ -1,6 +1,6 @@
-import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/generated/l10n.dart';
@@ -18,6 +18,7 @@ import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/utils/share_service.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
+import 'package:eros_fe/widget/scroll_edge_progress.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -44,6 +45,9 @@ class DownloadTab extends StatefulWidget {
 class _DownloadTabState extends State<DownloadTab> {
   final DownloadViewController controller = Get.find();
   late PageController pageController;
+  final _nativeEdgeProgress = ScrollEdgeProgressController(
+    revealDistance: LiquidGlassEdgeTokens.reveal,
+  );
 
   int get currIndex => controller.pageList.indexOf(controller.viewType);
 
@@ -56,6 +60,7 @@ class _DownloadTabState extends State<DownloadTab> {
   @override
   void dispose() {
     pageController.dispose();
+    _nativeEdgeProgress.dispose();
     super.dispose();
   }
 
@@ -63,9 +68,19 @@ class _DownloadTabState extends State<DownloadTab> {
   Widget build(BuildContext context) {
     final String _title = L10n.of(context).tab_download;
 
+    final native = NativeNavigationScope.isEnabled(context);
+
     final viewList = [
-      const DownloadGalleryView(),
-      const DownloadArchiverView(),
+      ScrollEdgeProgressListener(
+        controller: _nativeEdgeProgress,
+        page: 0,
+        child: const DownloadGalleryView(),
+      ),
+      ScrollEdgeProgressListener(
+        controller: _nativeEdgeProgress,
+        page: 1,
+        child: const DownloadArchiverView(),
+      ),
     ];
 
     final middle = GetPlatform.isMobile
@@ -82,11 +97,14 @@ class _DownloadTabState extends State<DownloadTab> {
             },
             groupValue: controller.viewType,
             onValueChanged: (DownloadType? value) {
-              final toIndex =
-                  controller.pageList.indexOf(value ?? DownloadType.gallery);
-              pageController.animateToPage(toIndex,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.ease);
+              final toIndex = controller.pageList.indexOf(
+                value ?? DownloadType.gallery,
+              );
+              pageController.animateToPage(
+                toIndex,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.ease,
+              );
             },
           )
         : Text(L10n.of(context).download);
@@ -99,19 +117,18 @@ class _DownloadTabState extends State<DownloadTab> {
         setState(() {
           controller.viewType = controller.pageList[index];
         });
+        _nativeEdgeProgress.selectPage(index);
       },
     );
-
-    final native = NativeNavigationScope.isEnabled(context);
     return Obx(() {
       final settings = Get.find<EhSettingService>();
       void select(int index) => pageController.animateToPage(
-            index,
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-          );
+        index,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
       if (native) {
         return NativeNavigationPage(
           tabId: EHRoutes.download,
@@ -129,12 +146,12 @@ class _DownloadTabState extends State<DownloadTab> {
             ],
           ),
           child: DownloadNativeScaffold(
+            edgeProgress: _nativeEdgeProgress,
             rail: SegmentedRail(
               compact: true,
               selectedIndex: currIndex,
               pageController: pageController,
-              followSystemTransparency:
-                  settings.liquidGlassMaterial,
+              followSystemTransparency: settings.liquidGlassMaterial,
               items: [
                 LiquidGlassRailCategory(
                   id: 'gallery',
@@ -148,7 +165,11 @@ class _DownloadTabState extends State<DownloadTab> {
                 ),
               ],
             ),
-            child: pages,
+            child: ScrollEdgeProgressListener(
+              controller: _nativeEdgeProgress,
+              activePage: currIndex,
+              child: pages,
+            ),
           ),
         );
       }
@@ -158,6 +179,7 @@ class _DownloadTabState extends State<DownloadTab> {
         final layout = settings.liquidGlassTopBarLayout;
         final safeTop = MediaQuery.paddingOf(context).top;
         return DownloadGlassScaffold(
+          edgeProgress: _nativeEdgeProgress,
           header: DownloadGlassHeader(
             title: _title,
             galleryLabel: L10n.of(context).tab_gallery,
@@ -166,13 +188,16 @@ class _DownloadTabState extends State<DownloadTab> {
             layout: layout,
             selectedIndex: currIndex,
             pageController: pageController,
-            followSystemTransparency:
-                settings.liquidGlassMaterial,
+            followSystemTransparency: settings.liquidGlassMaterial,
             leading: hiddenTabsRailAction(context),
             onSelected: select,
             onExport: !kReleaseMode ? _showExportDialog : null,
           ),
-          child: pages,
+          child: ScrollEdgeProgressListener(
+            controller: _nativeEdgeProgress,
+            activePage: currIndex,
+            child: pages,
+          ),
         );
       }
       return CupertinoPageScaffold(
@@ -219,7 +244,8 @@ class _DownloadTabState extends State<DownloadTab> {
                 await ShareService.waitForModalDismissal();
                 if (pageContext.mounted) {
                   await controller.shareTaskInfoFile(
-                      sharePositionOrigin: origin);
+                    sharePositionOrigin: origin,
+                  );
                 }
               },
               child: Row(
@@ -273,10 +299,12 @@ class DownloadNativeScaffold extends StatelessWidget {
     super.key,
     required this.rail,
     required this.child,
+    this.edgeProgress,
   });
 
   final Widget rail;
   final Widget child;
+  final ValueListenable<double>? edgeProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +318,10 @@ class DownloadNativeScaffold extends StatelessWidget {
               child: MediaQuery(
                 data: MediaQuery.of(context).copyWith(
                   padding: MediaQuery.paddingOf(context).copyWith(
-                    top: topInset + railHeight + 8,
+                    top:
+                        topInset +
+                        railHeight +
+                        NativeTopTabHeader.contentGapFor(context),
                   ),
                 ),
                 child: child,
@@ -304,6 +335,7 @@ class DownloadNativeScaffold extends StatelessWidget {
               child: NativeTopTabHeader(
                 topInset: topInset,
                 railHeight: railHeight,
+                edgeProgress: edgeProgress,
                 child: Padding(
                   padding: EdgeInsets.only(
                     left: MediaQuery.paddingOf(context).left,
@@ -325,14 +357,17 @@ class DownloadGlassScaffold extends StatelessWidget {
     super.key,
     required this.header,
     required this.child,
+    this.edgeProgress,
   });
 
   final DownloadGlassHeader header;
   final Widget child;
+  final ValueListenable<double>? edgeProgress;
 
   @override
   Widget build(BuildContext context) {
-    final headerHeight = header.safeTop +
+    final headerHeight =
+        header.safeTop +
         header.layout.expandedHeight(MediaQuery.textScalerOf(context));
     return CupertinoPageScaffold(
       // Positioned children do not size a Stack. Keep the list viewport full
@@ -341,22 +376,49 @@ class DownloadGlassScaffold extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(
-              child: MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  padding: MediaQuery.paddingOf(context).copyWith(
-                    top: headerHeight + 12,
+              child: _DownloadGlassContentScope(
+                child: MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    padding: MediaQuery.paddingOf(context).copyWith(
+                      top:
+                          headerHeight +
+                          (PlatformCapabilities.hostPlatform ==
+                                  TargetPlatform.android
+                              ? 12
+                              : LiquidGlassEdgeTokens.contentGapFor(context)),
+                    ),
                   ),
+                  child: child,
                 ),
-                child: child,
               ),
             ),
-            LiquidGlassTopScrim(safeTop: header.safeTop, layout: header.layout),
+            LiquidGlassTopScrim(
+              firstCardRestTop: PlatformCapabilities.hostPlatform == TargetPlatform.android
+                  ? AlwaysStoppedAnimation<double?>(headerHeight + 17)
+                  : null,
+              safeTop: header.safeTop,
+              layout: header.layout,
+              edgeProgress: edgeProgress,
+            ),
             header,
           ],
         ),
       ),
     );
   }
+}
+
+/// Marks the lists whose existing card margin is included in the header gap.
+class _DownloadGlassContentScope extends InheritedWidget {
+  const _DownloadGlassContentScope({required super.child});
+
+  static bool of(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<_DownloadGlassContentScope>() !=
+      null;
+
+  @override
+  bool updateShouldNotify(_DownloadGlassContentScope oldWidget) => false;
 }
 
 class DownloadGlassHeader extends StatelessWidget {
@@ -389,64 +451,64 @@ class DownloadGlassHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Stack(
-        children: [
-          LiquidGlassRail(
-            title: title,
-            safeTop: safeTop,
-            layout: layout,
-            selectedIndex: selectedIndex,
-            compactCategories: true,
-            pageController: pageController,
-            followSystemTransparency: followSystemTransparency,
-            fadeProgress: 0,
-            leading: leading,
-            categories: [
-              LiquidGlassRailCategory(
-                id: 'gallery',
-                title: galleryLabel,
-                onTap: () => onSelected(0),
-              ),
-              LiquidGlassRailCategory(
-                id: 'archiver',
-                title: archiverLabel,
-                onTap: () => onSelected(1),
-              ),
-            ],
-            trailing: [
-              if (onExport != null)
-                LiquidGlassRailAction(
-                  icon: CupertinoIcons.arrow_up_arrow_down,
-                  label: 'Import & Export',
-                  onPressed: onExport!,
-                ),
-            ],
+    children: [
+      LiquidGlassRail(
+        title: title,
+        safeTop: safeTop,
+        layout: layout,
+        selectedIndex: selectedIndex,
+        compactCategories: true,
+        pageController: pageController,
+        followSystemTransparency: followSystemTransparency,
+        fadeProgress: 0,
+        leading: leading,
+        categories: [
+          LiquidGlassRailCategory(
+            id: 'gallery',
+            title: galleryLabel,
+            onTap: () => onSelected(0),
           ),
-          if (layout == LiquidGlassTopBarLayout.twoRow)
-            Positioned(
-              top: safeTop,
-              left: leading != null || onExport != null ? 60 : 16,
-              right: leading != null || onExport != null ? 60 : 16,
-              height: 44,
-              child: Center(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.label,
-                        context,
-                      ),
-                    ),
+          LiquidGlassRailCategory(
+            id: 'archiver',
+            title: archiverLabel,
+            onTap: () => onSelected(1),
+          ),
+        ],
+        trailing: [
+          if (onExport != null)
+            LiquidGlassRailAction(
+              icon: CupertinoIcons.arrow_up_arrow_down,
+              label: 'Import & Export',
+              onPressed: onExport!,
+            ),
+        ],
+      ),
+      if (layout == LiquidGlassTopBarLayout.twoRow)
+        Positioned(
+          top: safeTop,
+          left: leading != null || onExport != null ? 60 : 16,
+          right: leading != null || onExport != null ? 60 : 16,
+          height: 44,
+          child: Center(
+            child: Semantics(
+              header: true,
+              child: Text(
+                title,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoDynamicColor.resolve(
+                    CupertinoColors.label,
+                    context,
                   ),
                 ),
               ),
             ),
-        ],
-      );
+          ),
+        ),
+    ],
+  );
 }
 
 class DownloadArchiverView extends StatefulWidget {
@@ -470,7 +532,15 @@ class _DownloadArchiverViewState extends State<DownloadArchiverView>
       child: AnimatedList(
         key: controller.animatedArchiverListKey,
         padding: EdgeInsets.only(
-          top: context.mediaQueryPadding.top,
+          // Download cards already contribute a 5pt top margin.
+          top:
+              context.mediaQueryPadding.top -
+              (NativeNavigationScope.isEnabled(context) ||
+                      (_DownloadGlassContentScope.of(context) &&
+                          PlatformCapabilities.hostPlatform !=
+                              TargetPlatform.android)
+                  ? 5
+                  : 0),
           bottom: context.mediaQueryPadding.bottom,
         ),
         initialItemCount: controller.archiverTasks.length,
@@ -525,7 +595,14 @@ class _DownloadGalleryViewState extends State<DownloadGalleryView>
             child: AnimatedList(
               key: controller.animatedGalleryListKey,
               padding: EdgeInsets.only(
-                top: context.mediaQueryPadding.top,
+                top:
+                    context.mediaQueryPadding.top -
+                    (NativeNavigationScope.isEnabled(context) ||
+                            (_DownloadGlassContentScope.of(context) &&
+                                PlatformCapabilities.hostPlatform !=
+                                    TargetPlatform.android)
+                        ? 5
+                        : 0),
                 bottom: context.mediaQueryPadding.bottom,
               ),
               initialItemCount: controller.galleryTasks.length,
@@ -542,7 +619,10 @@ class _DownloadGalleryViewState extends State<DownloadGalleryView>
 }
 
 Widget downloadItemBuilder(
-    BuildContext context, int taskIndex, Animation<double> animation) {
+  BuildContext context,
+  int taskIndex,
+  Animation<double> animation,
+) {
   return _buildAnimatedListItem(
     animation,
     child: _downloadItemBuilder(context, taskIndex),
@@ -550,7 +630,10 @@ Widget downloadItemBuilder(
 }
 
 Widget downloadDelItemBuilder(
-    BuildContext context, int taskIndex, Animation<double> animation) {
+  BuildContext context,
+  int taskIndex,
+  Animation<double> animation,
+) {
   return _buildDelAnimatedListItem(
     animation,
     child: _downloadItemBuilder(context, taskIndex),
@@ -558,7 +641,10 @@ Widget downloadDelItemBuilder(
 }
 
 Widget downloadArchiverItemBuilder(
-    BuildContext context, int taskIndex, Animation<double> animation) {
+  BuildContext context,
+  int taskIndex,
+  Animation<double> animation,
+) {
   return _buildAnimatedListItem(
     animation,
     child: _downloadArchiverItemBuilder(context, taskIndex),
@@ -566,7 +652,10 @@ Widget downloadArchiverItemBuilder(
 }
 
 Widget downloadArchiverDelItemBuilder(
-    BuildContext context, int taskIndex, Animation<double> animation) {
+  BuildContext context,
+  int taskIndex,
+  Animation<double> animation,
+) {
   return _buildDelAnimatedListItem(
     animation,
     child: _downloadArchiverItemBuilder(context, taskIndex),
@@ -630,15 +719,20 @@ Widget _buildDelAnimatedListItem(
 }) {
   return FadeTransition(
     opacity: animation.drive(
-        CurveTween(curve: const Interval(0.0, 1.0, curve: Curves.easeOut))),
+      CurveTween(curve: const Interval(0.0, 1.0, curve: Curves.easeOut)),
+    ),
     child: SizeTransition(
       sizeFactor: animation.drive(
-          CurveTween(curve: const Interval(0.0, 1.0, curve: Curves.easeOut))),
+        CurveTween(curve: const Interval(0.0, 1.0, curve: Curves.easeOut)),
+      ),
       child: SlideTransition(
         position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-            .animate(CurvedAnimation(
+            .animate(
+              CurvedAnimation(
                 parent: animation,
-                curve: const Interval(0.4, 1.0, curve: Curves.easeOut))),
+                curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
+              ),
+            ),
         child: child,
       ),
     ),

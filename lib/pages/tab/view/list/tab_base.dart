@@ -370,6 +370,7 @@ Widget getGallerySliverList(
   Rx<ListModeEnum>? listMode,
   bool keepPosition = false,
   GalleryAnchorController? anchorController,
+  double? contentTopGap,
 }) {
   final EhSettingService ehSettingService = Get.find();
 
@@ -428,6 +429,7 @@ Widget getGallerySliverList(
               centerKey: centerKey,
               firstCardKey: firstCardKey,
               lastTopItemIndex: lastTopItemIndex,
+              topPadding: contentTopGap,
             );
           case ListModeEnum.waterfallLarge:
             return EhWaterfallFlow(
@@ -439,6 +441,7 @@ Widget getGallerySliverList(
               centerKey: centerKey,
               firstCardKey: firstCardKey,
               lastTopItemIndex: lastTopItemIndex,
+              topPadding: contentTopGap,
             );
           case ListModeEnum.simpleList:
             return buildGallerySliverListSimpleView(
@@ -462,6 +465,7 @@ Widget getGallerySliverList(
               centerKey: centerKey,
               firstCardKey: firstCardKey,
               lastTopItemIndex: lastTopItemIndex,
+              topPadding: contentTopGap,
             );
           case ListModeEnum.debugSimple:
             return buildDebugSimple(
@@ -480,7 +484,23 @@ Widget getGallerySliverList(
         }
       }
 
-      final sliver = buildSliver();
+      final extraTop = contentTopGap == null
+          ? 0.0
+          : switch (mod) {
+              // Count the margin outside the first card, not its inner text.
+              ListModeEnum.list => contentTopGap - 8,
+              ListModeEnum.simpleList => contentTopGap,
+              ListModeEnum.debugSimple =>
+                contentTopGap - EHConst.gridCrossAxisSpacing,
+              _ => 0.0,
+            };
+      final content = buildSliver();
+      final sliver = extraTop > 0
+          ? SliverPadding(
+              padding: EdgeInsets.only(top: extraTop),
+              sliver: content,
+            )
+          : content;
       if (mod != ListModeEnum.list &&
           mod != ListModeEnum.simpleList &&
           mod != ListModeEnum.grid &&

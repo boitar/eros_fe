@@ -67,10 +67,7 @@ void main() {
     return CupertinoApp(
       theme: CupertinoThemeData(brightness: brightness),
       home: MediaQuery(
-        data: const MediaQueryData(
-          size: Size(440, 956),
-          devicePixelRatio: 3,
-        ),
+        data: const MediaQueryData(size: Size(440, 956), devicePixelRatio: 3),
         child: RepaintBoundary(
           key: const ValueKey<String>('scrim-capture'),
           child: Stack(
@@ -82,6 +79,7 @@ void main() {
                 child: LiquidGlassTopScrim(
                   safeTop: 59,
                   layout: layout,
+                  edgeProgress: const AlwaysStoppedAnimation<double>(1),
                 ),
               ),
             ],
@@ -130,8 +128,9 @@ void main() {
             await tester.drag(scroll, const Offset(-600, 0));
             await tester.pumpAndSettle();
             expect(callbacks, 0);
-            final controller =
-                tester.widget<SingleChildScrollView>(scroll).controller!;
+            final controller = tester
+                .widget<SingleChildScrollView>(scroll)
+                .controller!;
             expect(controller.offset, greaterThan(0));
             await tester.ensureVisible(find.text('分类 ${count - 1} English 🌿'));
             await tester.tap(find.text('分类 ${count - 1} English 🌿'));
@@ -178,52 +177,53 @@ void main() {
   });
 
   testWidgets(
-      'fitted category items keep natural widths and fill the rail evenly',
-      (tester) async {
-    await tester.pumpWidget(
-      CupertinoApp(
-        home: Center(
-          child: SizedBox(
-            width: 390,
-            child: LiquidGlassRail(
-              title: 'Rail',
-              safeTop: 0,
-              fadeProgress: 0,
-              selectedIndex: 0,
-              layout: LiquidGlassTopBarLayout.inline,
-              categories: <LiquidGlassRailCategory>[
-                LiquidGlassRailCategory(title: 'A', onTap: () {}),
-                LiquidGlassRailCategory(title: 'Longer', onTap: () {}),
-                LiquidGlassRailCategory(title: 'C', onTap: () {}),
-                LiquidGlassRailCategory(title: 'D', onTap: () {}),
-              ],
+    'fitted category items keep natural widths and fill the rail evenly',
+    (tester) async {
+      await tester.pumpWidget(
+        CupertinoApp(
+          home: Center(
+            child: SizedBox(
+              width: 390,
+              child: LiquidGlassRail(
+                title: 'Rail',
+                safeTop: 0,
+                fadeProgress: 0,
+                selectedIndex: 0,
+                layout: LiquidGlassTopBarLayout.inline,
+                categories: <LiquidGlassRailCategory>[
+                  LiquidGlassRailCategory(title: 'A', onTap: () {}),
+                  LiquidGlassRailCategory(title: 'Longer', onTap: () {}),
+                  LiquidGlassRailCategory(title: 'C', onTap: () {}),
+                  LiquidGlassRailCategory(title: 'D', onTap: () {}),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    final rail = tester.getRect(
-      find.byKey(const ValueKey<String>('liquid-glass-category-selection')),
-    );
-    final slots = List<Rect>.generate(
-      4,
-      (index) => tester.getRect(
-        find.byKey(ValueKey<String>('liquid-glass-category-slot-$index')),
-      ),
-    );
-    final gaps = List<double>.generate(
-      slots.length - 1,
-      (index) => slots[index + 1].left - slots[index].right,
-    );
+      final rail = tester.getRect(
+        find.byKey(const ValueKey<String>('liquid-glass-category-selection')),
+      );
+      final slots = List<Rect>.generate(
+        4,
+        (index) => tester.getRect(
+          find.byKey(ValueKey<String>('liquid-glass-category-slot-$index')),
+        ),
+      );
+      final gaps = List<double>.generate(
+        slots.length - 1,
+        (index) => slots[index + 1].left - slots[index].right,
+      );
 
-    expect(slots.first.left, closeTo(rail.left, 0.01));
-    expect(slots.last.right, closeTo(rail.right, 0.01));
-    for (final gap in gaps.skip(1)) {
-      expect(gap, closeTo(gaps.first, 0.01));
-    }
-  });
+      expect(slots.first.left, closeTo(rail.left, 0.01));
+      expect(slots.last.right, closeTo(rail.right, 0.01));
+      for (final gap in gaps.skip(1)) {
+        expect(gap, closeTo(gaps.first, 0.01));
+      }
+    },
+  );
 
   testWidgets('top rail follows shared progress linearly in place', (
     tester,
@@ -318,6 +318,8 @@ void main() {
   testWidgets('dark top scrim spans the safe area without a color seam', (
     tester,
   ) async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+    addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
     _useIPhone18ProMaxView(tester);
     await tester.pumpWidget(
       scrimHarness(
@@ -339,18 +341,18 @@ void main() {
         (decoratedBox.decoration as BoxDecoration).gradient! as LinearGradient;
     final Rect scrimRect = tester.getRect(find.byKey(scrimKey));
 
-    expect(gradient.colors, hasLength(4));
-    expect(gradient.colors.first, systemBackground.withValues(alpha: 0.37));
-    expect(gradient.colors[1], systemBackground.withValues(alpha: 0.37 * 0.55));
-    expect(gradient.colors[2], systemBackground.withValues(alpha: 0.37 * 0.22));
-    expect(gradient.colors.last, systemBackground.withValues(alpha: 0));
-    expect(gradient.stops, <double>[0.0, 0.35, 0.70, 1.0]);
+    final expectedAlphas = [for (final a in [1.0, .55, .22, 0.0]) a * .37];
+    expect(gradient.colors, [
+      for (final alpha in expectedAlphas)
+        systemBackground.withValues(alpha: alpha),
+    ]);
+    expect(gradient.stops, [0, .35, .70, 1]);
     expect(gradient.begin, Alignment.topCenter);
     expect(gradient.end, Alignment.bottomCenter);
     expect(scrimRect.top, 0);
     expect(scrimRect.left, 0);
     expect(scrimRect.width, 440);
-    expect(scrimRect.height, closeTo(956 * 0.17, 0.001));
+    expect(scrimRect.height, 162.52);
     expect(
       find.byKey(const ValueKey<String>('liquid-glass-status-background')),
       findsNothing,
@@ -361,8 +363,9 @@ void main() {
 
     final List<List<int>> safeAreaPixels = <List<int>>[];
     for (int y = 57; y <= 61; y++) {
-      safeAreaPixels
-          .add(await _pixelAt(tester, find.byKey(captureKey), 220, y));
+      safeAreaPixels.add(
+        await _pixelAt(tester, find.byKey(captureKey), 220, y),
+      );
     }
     for (int index = 1; index < safeAreaPixels.length; index++) {
       expect(
@@ -372,16 +375,24 @@ void main() {
             'Adjacent pixels remain continuous at safeTop=59 (y=${56 + index}).',
       );
     }
-    final int beforeEdgeStep =
-        _rgbDistance(safeAreaPixels[1], safeAreaPixels[2]);
-    final int afterEdgeStep =
-        _rgbDistance(safeAreaPixels[2], safeAreaPixels[3]);
+    final int beforeEdgeStep = _rgbDistance(
+      safeAreaPixels[1],
+      safeAreaPixels[2],
+    );
+    final int afterEdgeStep = _rgbDistance(
+      safeAreaPixels[2],
+      safeAreaPixels[3],
+    );
     expect((beforeEdgeStep - afterEdgeStep).abs(), lessThanOrEqualTo(3));
 
-    final List<int> topPixel =
-        await _pixelAt(tester, find.byKey(captureKey), 220, 0);
+    final List<int> topPixel = await _pixelAt(
+      tester,
+      find.byKey(captureKey),
+      220,
+      0,
+    );
     final Color expectedTopColor = Color.alphaBlend(
-      systemBackground.withValues(alpha: 0.37),
+      systemBackground.withValues(alpha: .37),
       contentColor,
     );
     expect(
@@ -392,7 +403,7 @@ void main() {
     );
     expect(
       _pixelNearColor(
-        await _pixelAt(tester, find.byKey(captureKey), 220, 165),
+        await _pixelAt(tester, find.byKey(captureKey), 220, 180),
         contentColor,
       ),
       isTrue,
@@ -403,6 +414,8 @@ void main() {
   testWidgets('light top scrim spans the safe area without a color seam', (
     tester,
   ) async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+    addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
     _useIPhone18ProMaxView(tester);
     await tester.pumpWidget(
       scrimHarness(
@@ -424,18 +437,18 @@ void main() {
         (decoratedBox.decoration as BoxDecoration).gradient! as LinearGradient;
     final Rect scrimRect = tester.getRect(find.byKey(scrimKey));
 
-    expect(gradient.colors, hasLength(4));
-    expect(gradient.colors.first, systemBackground.withValues(alpha: 0.32));
-    expect(gradient.colors[1], systemBackground.withValues(alpha: 0.32 * 0.55));
-    expect(gradient.colors[2], systemBackground.withValues(alpha: 0.32 * 0.22));
-    expect(gradient.colors.last, systemBackground.withValues(alpha: 0));
-    expect(gradient.stops, <double>[0.0, 0.35, 0.70, 1.0]);
+    final expectedAlphas = [for (final a in [1.0, .55, .22, 0.0]) a * .32];
+    expect(gradient.colors, [
+      for (final alpha in expectedAlphas)
+        systemBackground.withValues(alpha: alpha),
+    ]);
+    expect(gradient.stops, [0, .35, .70, 1]);
     expect(gradient.begin, Alignment.topCenter);
     expect(gradient.end, Alignment.bottomCenter);
     expect(scrimRect.top, 0);
     expect(scrimRect.left, 0);
     expect(scrimRect.width, 440);
-    expect(scrimRect.height, closeTo(956 * 0.17, 0.001));
+    expect(scrimRect.height, 162.52);
     expect(
       find.byKey(const ValueKey<String>('liquid-glass-status-background')),
       findsNothing,
@@ -446,8 +459,9 @@ void main() {
 
     final List<List<int>> safeAreaPixels = <List<int>>[];
     for (int y = 57; y <= 61; y++) {
-      safeAreaPixels
-          .add(await _pixelAt(tester, find.byKey(captureKey), 220, y));
+      safeAreaPixels.add(
+        await _pixelAt(tester, find.byKey(captureKey), 220, y),
+      );
     }
     for (int index = 1; index < safeAreaPixels.length; index++) {
       expect(
@@ -457,16 +471,24 @@ void main() {
             'Adjacent pixels remain continuous at safeTop=59 (y=${56 + index}).',
       );
     }
-    final int beforeEdgeStep =
-        _rgbDistance(safeAreaPixels[1], safeAreaPixels[2]);
-    final int afterEdgeStep =
-        _rgbDistance(safeAreaPixels[2], safeAreaPixels[3]);
+    final int beforeEdgeStep = _rgbDistance(
+      safeAreaPixels[1],
+      safeAreaPixels[2],
+    );
+    final int afterEdgeStep = _rgbDistance(
+      safeAreaPixels[2],
+      safeAreaPixels[3],
+    );
     expect((beforeEdgeStep - afterEdgeStep).abs(), lessThanOrEqualTo(3));
 
-    final List<int> topPixel =
-        await _pixelAt(tester, find.byKey(captureKey), 220, 0);
+    final List<int> topPixel = await _pixelAt(
+      tester,
+      find.byKey(captureKey),
+      220,
+      0,
+    );
     final Color expectedTopColor = Color.alphaBlend(
-      systemBackground.withValues(alpha: 0.32),
+      systemBackground.withValues(alpha: .32),
       contentColor,
     );
     expect(
@@ -477,7 +499,7 @@ void main() {
     );
     expect(
       _pixelNearColor(
-        await _pixelAt(tester, find.byKey(captureKey), 220, 165),
+        await _pixelAt(tester, find.byKey(captureKey), 220, 180),
         contentColor,
       ),
       isTrue,
@@ -485,14 +507,13 @@ void main() {
     );
   });
 
-  testWidgets('top scrim never ends above the active rail', (tester) async {
+  testWidgets('top scrim ends at the active rail on a short screen', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const CupertinoApp(
         home: MediaQuery(
-          data: MediaQueryData(
-            size: Size(400, 300),
-            devicePixelRatio: 2,
-          ),
+          data: MediaQueryData(size: Size(400, 300), devicePixelRatio: 2),
           child: Center(
             child: LiquidGlassTopScrim(
               safeTop: 59,
@@ -502,83 +523,81 @@ void main() {
         ),
       ),
     );
-    // The 17% screen target is only 51pt here, so the scrim must still cover
-    // the complete 153pt expanded rail.
     expect(tester.getSize(find.byType(LiquidGlassTopScrim)).height, 153);
   });
 
-  testWidgets(
-    'top scrim ignores the accessibility callback and never blurs',
-    (tester) async {
-      final previousHostPlatform =
-          PlatformCapabilities.debugHostPlatformOverride;
-      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
-      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride =
-          previousHostPlatform);
-      final previousTargetPlatform = debugDefaultTargetPlatformOverride;
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-      addTearDown(() {
-        debugDefaultTargetPlatformOverride = previousTargetPlatform;
-      });
-      addTearDown(LiquidGlassAccessibilitySettings.stopWatching);
+  testWidgets('resting top scrim stays clear when accessibility changes', (
+    tester,
+  ) async {
+    final previousHostPlatform = PlatformCapabilities.debugHostPlatformOverride;
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    addTearDown(
+      () =>
+          PlatformCapabilities.debugHostPlatformOverride = previousHostPlatform,
+    );
+    final previousTargetPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() {
+      debugDefaultTargetPlatformOverride = previousTargetPlatform;
+    });
+    addTearDown(LiquidGlassAccessibilitySettings.stopWatching);
 
-      MockStreamHandlerEventSink? settings;
-      tester.binding.defaultBinaryMessenger.setMockStreamHandler(
-        const EventChannel('eros/accessibility-settings'),
-        MockStreamHandler.inline(
-          onListen: (Object? _, MockStreamHandlerEventSink events) {
-            settings = events;
-          },
-        ),
-      );
+    MockStreamHandlerEventSink? settings;
+    tester.binding.defaultBinaryMessenger.setMockStreamHandler(
+      const EventChannel('eros/accessibility-settings'),
+      MockStreamHandler.inline(
+        onListen: (Object? _, MockStreamHandlerEventSink events) {
+          settings = events;
+        },
+      ),
+    );
 
-      await tester.pumpWidget(
-        const CupertinoApp(
-          home: Center(
-            child: LiquidGlassTopScrim(
-              safeTop: 59,
-              layout: LiquidGlassTopBarLayout.twoRow,
-            ),
+    await tester.pumpWidget(
+      const CupertinoApp(
+        home: Center(
+          child: LiquidGlassTopScrim(
+            safeTop: 59,
+            layout: LiquidGlassTopBarLayout.twoRow,
           ),
         ),
-      );
-      await tester.pump();
+      ),
+    );
+    await tester.pump();
 
-      const scrimKey = ValueKey<String>('liquid-glass-top-scrim');
-      List<Color> gradientColors() =>
-          ((tester.widget<DecoratedBox>(find.byKey(scrimKey)).decoration
-                      as BoxDecoration)
-                  .gradient! as LinearGradient)
-              .colors;
-      final initial = gradientColors();
+    const scrimKey = ValueKey<String>('liquid-glass-top-scrim');
+    List<Color> gradientColors() =>
+        ((tester.widget<DecoratedBox>(find.byKey(scrimKey)).decoration
+                        as BoxDecoration)
+                    .gradient!
+                as LinearGradient)
+            .colors;
+    final initial = gradientColors();
 
-      // The scrim itself never subscribes to the bridge; the test subscribes
-      // so arriving values prove the gradient does not react to them.
-      LiquidGlassAccessibilitySettings.watch();
-      await tester.pump();
-      await tester.pump();
-      expect(settings, isNotNull);
+    // Accessibility changes must not reveal a resting edge.
+    LiquidGlassAccessibilitySettings.watch();
+    await tester.pump();
+    await tester.pump();
+    expect(settings, isNotNull);
 
-      // Regular transparency: no blur appears and the gradient is untouched.
-      settings!.success(false);
-      await tester.pump();
-      await tester.pump();
-      expect(find.byType(BackdropFilter), findsNothing);
-      expect(find.byType(ShaderMask), findsNothing);
-      expect(gradientColors(), initial);
-      expect(find.byKey(scrimKey), findsOneWidget);
+    // Regular transparency: no blur appears and the gradient is untouched.
+    settings!.success(false);
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(ShaderMask), findsNothing);
+    expect(gradientColors(), initial);
+    expect(find.byKey(scrimKey), findsOneWidget);
 
-      // Reduce Transparency: the fixed gradient is likewise untouched.
-      settings!.success(true);
-      await tester.pump();
-      await tester.pump();
-      expect(find.byType(BackdropFilter), findsNothing);
-      expect(find.byType(ShaderMask), findsNothing);
-      expect(gradientColors(), initial);
-      expect(find.byKey(scrimKey), findsOneWidget);
-      debugDefaultTargetPlatformOverride = previousTargetPlatform;
-    },
-  );
+    // Reduce Transparency also keeps every resting tint fully transparent.
+    settings!.success(true);
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(ShaderMask), findsNothing);
+    expect(gradientColors(), initial);
+    expect(find.byKey(scrimKey), findsOneWidget);
+    debugDefaultTargetPlatformOverride = previousTargetPlatform;
+  });
 
   testWidgets(
     'geometry update preserves half collapse and deep reading offset',
@@ -586,13 +605,13 @@ void main() {
       final controller = LiquidGlassScrollController()..headerExtent = 94;
       addTearDown(controller.dispose);
       Widget page() => CupertinoApp(
-            home: ListView.builder(
-              controller: controller,
-              itemExtent: 80,
-              itemCount: 50,
-              itemBuilder: (_, i) => Text('$i'),
-            ),
-          );
+        home: ListView.builder(
+          controller: controller,
+          itemExtent: 80,
+          itemCount: 50,
+          itemBuilder: (_, i) => Text('$i'),
+        ),
+      );
       await tester.pumpWidget(page());
       controller.jumpTo(47);
       controller.headerExtent = 44;

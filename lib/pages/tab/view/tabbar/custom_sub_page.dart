@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_sublist_controller.dart';
 import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart';
@@ -16,18 +17,21 @@ class SubListView<T extends CustomSubListController> extends StatefulWidget {
     required this.profileUuid,
     this.scrollToInitialAnchor,
     this.firstCardKey,
+    this.contentTopGap,
   });
 
   final String profileUuid;
   final Future<void> Function()? scrollToInitialAnchor;
   final GlobalKey? firstCardKey;
+  final double? contentTopGap;
 
   @override
   State<SubListView> createState() => _SubListViewState<T>();
 }
 
 class _SubListViewState<T extends CustomSubListController>
-    extends State<SubListView> with AutomaticKeepAliveClientMixin {
+    extends State<SubListView>
+    with AutomaticKeepAliveClientMixin {
   late final CustomSubListController subController;
   final CustomTabbarController controller = Get.find();
   final EhTabController ehTabController = EhTabController();
@@ -67,8 +71,9 @@ class _SubListViewState<T extends CustomSubListController>
     super.build(context);
     return CustomScrollView(
       cacheExtent: kTabViewCacheExtent,
-      physics:
-          const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       slivers: [
         // 刷新控件必须在 SliverOverlapInjector 之前：injector 会把吸顶头栏
         // 高度转成实际布局空间，吞掉顶部下拉越界时 viewport 给出的负 overlap，
@@ -85,11 +90,7 @@ class _SubListViewState<T extends CustomSubListController>
             context,
           ),
         ),
-        SliverSafeArea(
-          top: false,
-          bottom: false,
-          sliver: _buildListView(),
-        ),
+        SliverSafeArea(top: false, bottom: false, sliver: _buildListView()),
         Obx(() {
           return SliverSafeArea(
             sliver: EndIndicator(
@@ -115,9 +116,7 @@ class _SubListViewState<T extends CustomSubListController>
             child: Container(
               alignment: Alignment.center,
               padding: const EdgeInsets.only(bottom: 50),
-              child: const CupertinoActivityIndicator(
-                radius: 14.0,
-              ),
+              child: const CupertinoActivityIndicator(radius: 14.0),
             ),
           );
         }
@@ -142,6 +141,9 @@ class _SubListViewState<T extends CustomSubListController>
             lastComplete: subController.lastComplete,
             firstCardKey: widget.firstCardKey,
             anchorController: logic.galleryAnchor,
+            contentTopGap: NativeNavigationScope.isEnabled(context)
+                ? NativeTopTabHeader.contentGapFor(context)
+                : widget.contentTopGap,
             // key: subController.sliverAnimatedListKey,
             listMode: subController.listModeObs,
             // centerKey: subController.galleryGroupKey,
@@ -159,7 +161,9 @@ class _SubListViewState<T extends CustomSubListController>
                   FontAwesomeIcons.hippo,
                   size: 100,
                   color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.systemGrey, context),
+                    CupertinoColors.systemGrey,
+                    context,
+                  ),
                 ),
                 Text(''),
               ],

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/pages/item/gallery_item.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -58,6 +60,7 @@ class LiquidGlassInitialContentAnchor extends ValueNotifier<bool> {
   final Iterable<ScrollPosition> Function()? _additionalPositions;
   double _devicePixelRatio;
   double _distanceFromAnchor = 0.0;
+  bool _hasTopBounce = false;
 
   bool get isAtInitialPosition => value;
 
@@ -99,6 +102,7 @@ class LiquidGlassInitialContentAnchor extends ValueNotifier<bool> {
       distanceFromAnchor = math.max(distanceFromAnchor, delta);
     }
     _distanceFromAnchor = distanceFromAnchor;
+    _hasTopBounce = hasTopBounce;
 
     if (hasTopBounce) {
       return;
@@ -154,6 +158,7 @@ class LiquidGlassTopStateCoordinator {
     required ScrollController scrollController,
     Iterable<ScrollPosition> Function()? additionalPositions,
     double? Function()? firstCardTopProvider,
+    this.firstCardRestTopProvider,
     double devicePixelRatio = 1.0,
   })  : _anchor = LiquidGlassInitialContentAnchor(
           scrollController: scrollController,
@@ -173,6 +178,7 @@ class LiquidGlassTopStateCoordinator {
 
   final LiquidGlassInitialContentAnchor _anchor;
   final double? Function()? _firstCardTopProvider;
+  final double? Function()? firstCardRestTopProvider;
 
   /// Final top-rail fade the controls display. It is derived once per refresh
   /// from the direction-driven fade below and the solid mask coverage, and the
@@ -183,6 +189,9 @@ class LiquidGlassTopStateCoordinator {
   /// tracks the first gallery card's actual screen y-coordinate, independently
   /// from the logical initial-anchor state.
   final ValueNotifier<double> solidMaskProgress;
+
+  /// Measured only at the initial content anchor; scrolling cannot move it.
+  final firstCardRestTop = ValueNotifier<double?>(null);
 
   LiquidGlassBarMotion? _barMotion;
   bool _barFadeEnabled = false;
@@ -300,6 +309,12 @@ class LiquidGlassTopStateCoordinator {
     }
     _anchor.refresh();
     final firstCardTop = _firstCardTopProvider?.call();
+    if (PlatformCapabilities.hostPlatform == TargetPlatform.android &&
+        _anchor.distanceFromAnchor == 0 &&
+        !_anchor._hasTopBounce &&
+        firstCardTop != null) {
+      firstCardRestTop.value = firstCardRestTopProvider?.call() ?? firstCardTop;
+    }
     if (_firstCardTopProvider != null) {
       _updateSolidMaskProgress(firstCardTop);
     }
@@ -468,6 +483,7 @@ class LiquidGlassTopStateCoordinator {
     _anchor.dispose();
     barFadeProgress.dispose();
     solidMaskProgress.dispose();
+    firstCardRestTop.dispose();
   }
 }
 
@@ -492,4 +508,27 @@ double? liquidGlassScreenTop(GlobalKey key) {
   }
   final top = renderObject.localToGlobal(Offset.zero).dy;
   return top.isFinite ? top : null;
+}
+
+/// First-card keys already identify the container for SimpleList, grids and
+/// waterfalls. Only the List card has a known outer margin to exclude. Never
+/// infer this boundary from descendants such as rounded tags or favorite badges.
+double? liquidGlassCardScreenTop(GlobalKey key) {
+  final top = liquidGlassScreenTop(key);
+  if (top == null) {
+    return null;
+  }
+  var inset = 0.0;
+  void visit(Element element) {
+    if (element.widget is GalleryItemWidget) {
+      inset = GalleryItemWidget.topMargin;
+      return;
+    }
+    element.visitChildElements(visit);
+  }
+  final context = key.currentContext;
+  if (context is Element) {
+    visit(context);
+  }
+  return top + inset;
 }

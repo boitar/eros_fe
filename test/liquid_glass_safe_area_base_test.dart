@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:flutter/cupertino.dart';
@@ -7,9 +8,12 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  setUp(
+    () => PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android,
+  );
+  tearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
   const safeTop = 59.0;
-  // Default 800x600 test surface: 17% of the height (102) loses to the
-  // expanded rail's lower edge in both layouts, so the fade end is the rail.
+  // The fade end follows the expanded rail's lower edge in both layouts.
   const twoRowFadeEnd = 153.0; // safeTop + 44 + 50.
   const inlineFadeEnd = 103.0; // safeTop + 44.
   // Stands in for whatever is behind the transparent CupertinoPageScaffold.
@@ -49,11 +53,7 @@ void main() {
     return <int>[for (final channel in rgb) blendChannel(src, channel, alpha)];
   }
 
-  Future<List<int>> rgbAt(
-    GlobalKey boundary,
-    int x,
-    int y,
-  ) async {
+  Future<List<int>> rgbAt(GlobalKey boundary, int x, int y) async {
     final render =
         boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     final image = await render.toImage();
@@ -94,34 +94,36 @@ void main() {
       final fadeEnd = fadeEndFor(layout);
       final remaining = fadeEnd - safeTop;
 
-      testWidgets(
-          'base fades continuously below the safe area and ends fully '
+      testWidgets('base fades continuously below the safe area and ends fully '
           'transparent: $brightness $layout', (tester) async {
         final boundary = GlobalKey();
         // The base alone over the underlying gray, as the page Stack places
         // it below the scroll content.
-        await tester.pumpWidget(CupertinoApp(
-          theme: CupertinoThemeData(brightness: brightness),
-          home: RepaintBoundary(
-            key: boundary,
-            child: ColoredBox(
-              color: underlyingGray,
-              child: Stack(
-                children: <Widget>[
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: LiquidGlassSafeAreaBase(
-                      safeTop: safeTop,
-                      layout: layout,
+        await tester.pumpWidget(
+          CupertinoApp(
+            theme: CupertinoThemeData(brightness: brightness),
+            home: RepaintBoundary(
+              key: boundary,
+              child: ColoredBox(
+                color: underlyingGray,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LiquidGlassSafeAreaBase(
+                        edgeProgress: const AlwaysStoppedAnimation<double>(1),
+                        safeTop: safeTop,
+                        layout: layout,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ));
+        );
         await tester.pump();
 
         expect(
@@ -137,7 +139,8 @@ void main() {
           expect(
             isThemeBackground(pixel, brightness),
             isTrue,
-            reason: 'Base at y=$y must be the solid theme background, '
+            reason:
+                'Base at y=$y must be the solid theme background, '
                 'got $pixel',
           );
         }
@@ -150,7 +153,8 @@ void main() {
           expect(
             (above[i] - below[i]).abs(),
             lessThanOrEqualTo(3),
-            reason: 'The base must not form a fixed line at the safe-area '
+            reason:
+                'The base must not form a fixed line at the safe-area '
                 'edge: above $above vs below $below',
           );
         }
@@ -187,96 +191,99 @@ void main() {
         final pastEnd = (await tester.runAsync(
           () => rgbAt(boundary, 100, fadeEnd.round() + 2),
         ))!;
-        expect(
-          pastEnd,
-          <int>[136, 136, 136],
-          reason: 'The base must paint nothing below the fade end: $pastEnd',
-        );
+        expect(pastEnd, <int>[
+          136,
+          136,
+          136,
+        ], reason: 'The base must paint nothing below the fade end: $pastEnd');
       });
 
       testWidgets(
-          'base fade end matches the top scrim fade end: $brightness $layout',
-          (tester) async {
-        await tester.pumpWidget(CupertinoApp(
-          theme: CupertinoThemeData(brightness: brightness),
-          home: ColoredBox(
-            color: underlyingGray,
-            child: Stack(
-              children: <Widget>[
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: LiquidGlassSafeAreaBase(
-                    safeTop: safeTop,
-                    layout: layout,
-                  ),
+        'base fade end matches the top scrim fade end: $brightness $layout',
+        (tester) async {
+          await tester.pumpWidget(
+            CupertinoApp(
+              theme: CupertinoThemeData(brightness: brightness),
+              home: ColoredBox(
+                color: underlyingGray,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LiquidGlassSafeAreaBase(
+                        edgeProgress: const AlwaysStoppedAnimation<double>(1),
+                        safeTop: safeTop,
+                        layout: layout,
+                      ),
+                    ),
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LiquidGlassTopScrim(
+                        safeTop: safeTop,
+                        layout: LiquidGlassTopBarLayout.twoRow,
+                      ),
+                    ),
+                  ],
                 ),
-                const Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: LiquidGlassTopScrim(
-                    safeTop: safeTop,
-                    layout: LiquidGlassTopBarLayout.twoRow,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ));
-        await tester.pump();
-        // Same shared computation: the base recedes exactly where the top
-        // scrim ends, in both layouts.
-        expect(
-          tester.getRect(find.byKey(scrimKey)).bottom,
-          fadeEndFor(LiquidGlassTopBarLayout.twoRow),
-        );
-        // The harness scrim pins twoRow, so this layout's equality is
-        // checked on the widget sizes with matching parameters below.
-        await tester.pumpWidget(CupertinoApp(
-          theme: CupertinoThemeData(brightness: brightness),
-          home: ColoredBox(
-            color: underlyingGray,
-            child: Stack(
-              children: <Widget>[
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: LiquidGlassSafeAreaBase(
-                    safeTop: safeTop,
-                    layout: layout,
-                  ),
+          );
+          await tester.pump();
+          // Same shared computation: the base recedes exactly where the top
+          // scrim ends, in both layouts.
+          expect(
+            tester.getRect(find.byKey(scrimKey)).bottom,
+            fadeEndFor(LiquidGlassTopBarLayout.twoRow),
+          );
+          // The harness scrim pins twoRow, so this layout's equality is
+          // checked on the widget sizes with matching parameters below.
+          await tester.pumpWidget(
+            CupertinoApp(
+              theme: CupertinoThemeData(brightness: brightness),
+              home: ColoredBox(
+                color: underlyingGray,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LiquidGlassSafeAreaBase(
+                        edgeProgress: const AlwaysStoppedAnimation<double>(1),
+                        safeTop: safeTop,
+                        layout: layout,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LiquidGlassTopScrim(
+                        safeTop: safeTop,
+                        layout: layout,
+                      ),
+                    ),
+                  ],
                 ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: LiquidGlassTopScrim(
-                    safeTop: safeTop,
-                    layout: layout,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ));
-        await tester.pump();
-        expect(
-          tester.getRect(find.byKey(baseKey)).bottom,
-          fadeEnd,
-        );
-        expect(
-          tester.getRect(find.byKey(scrimKey)).bottom,
-          fadeEnd,
-          reason: 'The base must end exactly at the top scrim fade end',
-        );
-      });
+          );
+          await tester.pump();
+          expect(tester.getRect(find.byKey(baseKey)).bottom, fadeEnd);
+          expect(
+            tester.getRect(find.byKey(scrimKey)).bottom,
+            fadeEnd,
+            reason: 'The base must end exactly at the top scrim fade end',
+          );
+        },
+      );
     }
 
-    testWidgets(
-        'cards stay untouched and gap background fades without a fixed '
+    testWidgets('cards stay untouched and gap background fades without a fixed '
         'line: $brightness', (tester) async {
       final boundary = GlobalKey();
       final scrollController = ScrollController();
@@ -300,6 +307,7 @@ void main() {
                       left: 0,
                       right: 0,
                       child: LiquidGlassSafeAreaBase(
+                        edgeProgress: AlwaysStoppedAnimation<double>(1),
                         safeTop: safeTop,
                         layout: LiquidGlassTopBarLayout.twoRow,
                       ),
@@ -336,16 +344,15 @@ void main() {
       // In the gap the base shows through: theme background just above the
       // safe area and still near-theme below it — no fixed line at the old
       // seam.
-      final gapAbove =
-          (await tester.runAsync(() => rgbAt(boundary, 400, 57)))!;
+      final gapAbove = (await tester.runAsync(() => rgbAt(boundary, 400, 57)))!;
       expect(
         isThemeBackground(gapAbove, brightness),
         isTrue,
-        reason: 'Gap above the safe area must show the theme background, '
+        reason:
+            'Gap above the safe area must show the theme background, '
             'got $gapAbove',
       );
-      final gapBelow =
-          (await tester.runAsync(() => rgbAt(boundary, 400, 61)))!;
+      final gapBelow = (await tester.runAsync(() => rgbAt(boundary, 400, 61)))!;
       expectCloseToBlend(
         gapBelow,
         brightness,
@@ -356,13 +363,14 @@ void main() {
 
       // The second gap lies below the fade end: the base paints nothing
       // there, so it shows the plain underlying gray.
-      final gapPastEnd =
-          (await tester.runAsync(() => rgbAt(boundary, 400, 286)))!;
-      expect(
-        gapPastEnd,
-        <int>[136, 136, 136],
-        reason: 'The base must not tint below the fade end: $gapPastEnd',
-      );
+      final gapPastEnd = (await tester.runAsync(
+        () => rgbAt(boundary, 400, 286),
+      ))!;
+      expect(gapPastEnd, <int>[
+        136,
+        136,
+        136,
+      ], reason: 'The base must not tint below the fade end: $gapPastEnd');
 
       // Card pixels are identical with and without the base: the base sits
       // below the content and never tints cards, including inside the fade
@@ -378,38 +386,197 @@ void main() {
       scrollController.jumpTo(scrollOffset);
       await tester.pump();
       for (final y in [10, 30, 45, 80, 250]) {
-        final withBase =
-            (await tester.runAsync(() => rgbAt(boundary, 400, y)))!;
+        final withBase = (await tester.runAsync(
+          () => rgbAt(boundary, 400, y),
+        ))!;
         expect(
           withBase,
           cardPointsWithoutBase[y],
-          reason: 'Card pixel at y=$y must be unaffected by the base: '
+          reason:
+              'Card pixel at y=$y must be unaffected by the base: '
               'with base $withBase vs without ${cardPointsWithoutBase[y]}',
         );
       }
     });
   }
 
-  testWidgets('safe-area base draws nothing when safeTop is zero',
-      (tester) async {
-    await tester.pumpWidget(const CupertinoApp(
-      home: Stack(
-        children: <Widget>[
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: LiquidGlassSafeAreaBase(
-              safeTop: 0,
-              layout: LiquidGlassTopBarLayout.twoRow,
+  testWidgets('safe-area base draws nothing when safeTop is zero', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const CupertinoApp(
+        home: Stack(
+          children: <Widget>[
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: LiquidGlassSafeAreaBase(
+                edgeProgress: AlwaysStoppedAnimation<double>(1),
+                safeTop: 0,
+                layout: LiquidGlassTopBarLayout.twoRow,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(
+      find.byKey(const ValueKey('liquid-glass-safe-area-base')),
+      findsNothing,
+    );
+  });
+
+  testWidgets(
+    'base and scrim end at the rail on tall screens and scaled text',
+    (tester) async {
+      for (final layout in LiquidGlassTopBarLayout.values) {
+        for (final hasCategories in [true, false]) {
+          for (final scale in [1.0, 1.8]) {
+            final textScaler = TextScaler.linear(scale);
+            await tester.pumpWidget(
+              CupertinoApp(
+                home: MediaQuery(
+                  data: MediaQueryData(
+                    size: const Size(440, 1200),
+                    textScaler: textScaler,
+                  ),
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: LiquidGlassSafeAreaBase(
+                          edgeProgress: const AlwaysStoppedAnimation<double>(0),
+                          safeTop: safeTop,
+                          layout: layout,
+                          hasCategories: hasCategories,
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: LiquidGlassTopScrim(
+                          safeTop: safeTop,
+                          layout: layout,
+                          hasCategories: hasCategories,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+            final expected =
+                safeTop +
+                layout.expandedHeight(textScaler, hasCategories: hasCategories);
+            expect(
+              tester.getRect(find.byKey(baseKey)).bottom,
+              closeTo(expected, 0.001),
+            );
+            expect(
+              tester.getRect(find.byKey(scrimKey)).bottom,
+              closeTo(expected, 0.001),
+            );
+          }
+        }
+      }
+    },
+  );
+
+  for (final brightness in Brightness.values) {
+    for (final layout in LiquidGlassTopBarLayout.values) {
+      testWidgets('initial content below the rail is untinted: '
+          '$brightness $layout', (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(440, 1200);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final boundary = GlobalKey();
+        final maskProgress = ValueNotifier<double>(1);
+        addTearDown(maskProgress.dispose);
+        final headerHeight = fadeEndFor(layout);
+        await tester.pumpWidget(
+          CupertinoApp(
+            theme: CupertinoThemeData(brightness: brightness),
+            home: MediaQuery(
+              data: const MediaQueryData(size: Size(440, 1200)),
+              child: RepaintBoundary(
+                key: boundary,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LiquidGlassSafeAreaBase(
+                        edgeProgress: const AlwaysStoppedAnimation<double>(1),
+                        safeTop: safeTop,
+                        layout: layout,
+                      ),
+                    ),
+                    const Positioned.fill(child: ColoredBox(color: cardColor)),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LiquidGlassSolidMask(
+                        progressListenable: maskProgress,
+                        safeTop: safeTop,
+                        height: headerHeight,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LiquidGlassTopScrim(
+                        safeTop: safeTop,
+                        layout: layout,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ],
-      ),
-    ));
-    expect(find.byKey(const ValueKey('liquid-glass-safe-area-base')),
-        findsNothing);
-  });
+        );
+
+        await tester.runAsync(() async {
+          final render =
+              boundary.currentContext!.findRenderObject()!
+                  as RenderRepaintBoundary;
+          final image = await render.toImage();
+          final bytes = (await image.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          ))!;
+          for (final x in [0, 1, 10, 220, 429, 439]) {
+            for (final y in [
+              headerHeight.toInt(),
+              headerHeight.toInt() + 10,
+              headerHeight.toInt() + 20,
+            ]) {
+              final offset = (y * image.width + x) * 4;
+              final pixel = <int>[
+                bytes.getUint8(offset),
+                bytes.getUint8(offset + 1),
+                bytes.getUint8(offset + 2),
+              ];
+              expect(pixel, <int>[
+                255,
+                0,
+                0,
+              ], reason: 'Content at ($x, $y) must not be tinted');
+            }
+          }
+          image.dispose();
+        });
+      });
+    }
+  }
 
   testWidgets('full page stack keeps the previous top appearance with the '
       'fading base', (tester) async {
@@ -440,6 +607,7 @@ void main() {
                     left: 0,
                     right: 0,
                     child: LiquidGlassSafeAreaBase(
+                      edgeProgress: AlwaysStoppedAnimation<double>(1),
                       safeTop: safeTop,
                       layout: LiquidGlassTopBarLayout.twoRow,
                     ),
@@ -493,12 +661,14 @@ void main() {
         reason: 'Safe area at y=$y must show the theme background, got $pixel',
       );
     }
-    final belowSafeArea =
-        (await tester.runAsync(() => rgbAt(boundary, 100, 100)))!;
+    final belowSafeArea = (await tester.runAsync(
+      () => rgbAt(boundary, 100, 100),
+    ))!;
     expect(
       isThemeBackground(belowSafeArea, Brightness.light),
       isTrue,
-      reason: 'The solid mask below the safe area must stay theme-colored, '
+      reason:
+          'The solid mask below the safe area must stay theme-colored, '
           'got $belowSafeArea',
     );
 
@@ -507,12 +677,14 @@ void main() {
     progress.value = 0.0;
     scrollController.jumpTo(headerExtent - 20);
     await tester.pump();
-    final cardWithBase =
-        (await tester.runAsync(() => rgbAt(boundary, 100, 30)))!;
+    final cardWithBase = (await tester.runAsync(
+      () => rgbAt(boundary, 100, 30),
+    ))!;
     expect(
       isThemeBackground(cardWithBase, Brightness.light),
       isFalse,
-      reason: 'The card drawn inside the safe area must stay visible '
+      reason:
+          'The card drawn inside the safe area must stay visible '
           'through the scrim: $cardWithBase',
     );
 
@@ -521,12 +693,14 @@ void main() {
     await tester.pumpWidget(buildHarness(withBase: false));
     scrollController.jumpTo(headerExtent - 20);
     await tester.pump();
-    final cardWithoutBase =
-        (await tester.runAsync(() => rgbAt(boundary, 100, 30)))!;
+    final cardWithoutBase = (await tester.runAsync(
+      () => rgbAt(boundary, 100, 30),
+    ))!;
     expect(
       cardWithoutBase,
       cardWithBase,
-      reason: 'The base must not occlude or tint scrolled content: '
+      reason:
+          'The base must not occlude or tint scrolled content: '
           'with base $cardWithBase vs without $cardWithoutBase',
     );
   });

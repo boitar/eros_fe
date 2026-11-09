@@ -1,5 +1,5 @@
-import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
@@ -14,6 +14,7 @@ import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/liquid_glass_scroll_controller.dart';
+import 'package:eros_fe/widget/scroll_edge_progress.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -44,17 +45,22 @@ class _ToplistTabState extends State<ToplistTab>
   final EhSettingService _ehSettingService = Get.find();
 
   final _headerScrollController = LiquidGlassScrollController();
+  final _nativeEdgeProgress = ScrollEdgeProgressController(
+    revealDistance: LiquidGlassEdgeTokens.reveal,
+  );
   final GlobalKey _firstCardKey = GlobalKey(debugLabel: 'toplist-first-card');
   late final LiquidGlassTopStateCoordinator _topState =
       LiquidGlassTopStateCoordinator(
-    scrollController: _headerScrollController,
-    firstCardTopProvider: () => liquidGlassScreenTop(_firstCardKey),
-  );
+        scrollController: _headerScrollController,
+        firstCardTopProvider: () => liquidGlassScreenTop(_firstCardKey),
+        firstCardRestTopProvider: () => liquidGlassCardScreenTop(_firstCardKey),
+      );
 
   @override
   void dispose() {
     ehTabController.dispose();
     _topState.dispose();
+    _nativeEdgeProgress.dispose();
     _headerScrollController.dispose();
     super.dispose();
   }
@@ -69,8 +75,8 @@ class _ToplistTabState extends State<ToplistTab>
       context: context,
       ehTabController: ehTabController,
     );
-    ehTabController.hasScrollClientsCall =
-        () => mounted && _headerScrollController.hasClients;
+    ehTabController.hasScrollClientsCall = () =>
+        mounted && _headerScrollController.hasClients;
     ehTabController.scrollToTopCall = _scrollToInitialContentAnchor;
     ehTabController.scrollToTopRefreshCall = () {
       if (_headerScrollController.hasClients) {
@@ -118,42 +124,43 @@ class _ToplistTabState extends State<ToplistTab>
   /// and the page actions live in the system navigation bar.
   Widget _buildNativeRail(BuildContext context) {
     final titles = _periodTitles(context);
-    return Obx(() => SegmentedRail(
-          selectedIndex: _selectedPeriod,
-          followSystemTransparency:
-              _ehSettingService.liquidGlassMaterial,
-          items: <LiquidGlassRailCategory>[
-            for (int index = 0; index < titles.length; index++)
-              LiquidGlassRailCategory(
-                id: ToplistType.values[index].name,
-                title: titles[index],
-                onTap: () => _setToplist(type: ToplistType.values[index]),
-              ),
-          ],
-        ));
+    return Obx(
+      () => SegmentedRail(
+        selectedIndex: _selectedPeriod,
+        followSystemTransparency: _ehSettingService.liquidGlassMaterial,
+        items: <LiquidGlassRailCategory>[
+          for (int index = 0; index < titles.length; index++)
+            LiquidGlassRailCategory(
+              id: ToplistType.values[index].name,
+              title: titles[index],
+              onTap: () => _setToplist(type: ToplistType.values[index]),
+            ),
+        ],
+      ),
+    );
   }
 
   NativePageChrome _nativeChrome(BuildContext context) => NativePageChrome(
-        title: L10n.of(context).tab_toplist,
-        actions: [
-          // Hidden tabs such as History already appear here, as on gallery.
-          ...Get.find<TabHomeController>().nativeHiddenTabActions,
-          if (controller.afterJump)
-            NativeNavigationAction(
-              id: 'top',
-              title: L10n.of(context).back_to_top,
-              symbol: 'arrow.up.circle',
-              onPressed: controller.jumpToTop,
-            ),
-          if (controller.next.isNotEmpty)
-            NativeNavigationAction(
-              id: 'jump',
-              title: L10n.of(context).jump_or_seek,
-              symbol: 'arrow.uturn.down.circle',
-              onPressed: () => controller.showJumpDialog(context),
-            ),
-        ],
-      );
+    title: L10n.of(context).tab_toplist,
+    actions: [
+      // Hidden tabs such as History already appear here, as on gallery.
+      ...Get.find<TabHomeController>().nativeHiddenTabActions,
+      if (controller.afterJump)
+        NativeNavigationAction(
+          id: 'top',
+          title: L10n.of(context).back_to_top,
+          symbol: 'arrow.up.circle',
+          onPressed: controller.jumpToTop,
+        ),
+      if (controller.next.isNotEmpty)
+        NativeNavigationAction(
+          id: 'jump',
+          title: L10n.of(context).jump_or_seek,
+          symbol: 'arrow.uturn.down.circle',
+          onPressed: () => controller.showJumpDialog(context),
+        ),
+    ],
+  );
 
   Future<void> _scrollToInitialContentAnchor() async {
     if (_useLiquidGlass) {
@@ -190,8 +197,7 @@ class _ToplistTabState extends State<ToplistTab>
         safeTop: layout.safeTop,
         fadeProgress: fadeProgress,
         selectedIndex: _selectedPeriod,
-        followSystemTransparency:
-            _ehSettingService.liquidGlassMaterial,
+        followSystemTransparency: _ehSettingService.liquidGlassMaterial,
         leading: hiddenTabsRailAction(context),
         trailing: <LiquidGlassRailAction>[
           LiquidGlassRailAction(
@@ -228,16 +234,18 @@ class _ToplistTabState extends State<ToplistTab>
 
   @override
   Widget build(BuildContext context) => offlineGlassPageProbe(
-        route: 'toplist',
-        page: () => 'toplist',
-        scrollController: _headerScrollController,
-        firstCardTop: () => liquidGlassScreenTop(_firstCardKey),
-        child: Obx(() => NativeNavigationPage(
-              tabId: EHRoutes.toplist,
-              chrome: _nativeChrome(context),
-              child: _buildPage(context),
-            )),
-      );
+    route: 'toplist',
+    page: () => 'toplist',
+    scrollController: _headerScrollController,
+    firstCardTop: () => liquidGlassScreenTop(_firstCardKey),
+    child: Obx(
+      () => NativeNavigationPage(
+        tabId: EHRoutes.toplist,
+        chrome: _nativeChrome(context),
+        child: _buildPage(context),
+      ),
+    ),
+  );
 
   Widget _buildPage(BuildContext context) {
     bool isRefresh = false;
@@ -340,7 +348,8 @@ class _ToplistTabState extends State<ToplistTab>
 
     final native = NativeNavigationScope.isEnabled(context);
     return Obx(() {
-      final useLiquidGlass = _ehSettingService.liquidGlass &&
+      final useLiquidGlass =
+          _ehSettingService.liquidGlass &&
           (GlassMode.of(context).forComponent(flutterImplemented: true) !=
               GlassMode.off) &&
           !native;
@@ -353,11 +362,11 @@ class _ToplistTabState extends State<ToplistTab>
       final headerMaxHeight = native
           ? topInset + railHeight
           : useLiquidGlass
-              ? layout.safeTop +
-                  _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
-                    MediaQuery.textScalerOf(context),
-                  )
-              : topInset + kMinInteractiveDimensionCupertino;
+          ? layout.safeTop +
+                _ehSettingService.liquidGlassTopBarLayout.expandedHeight(
+                  MediaQuery.textScalerOf(context),
+                )
+          : topInset + kMinInteractiveDimensionCupertino;
       final dockTopBar =
           useLiquidGlass && hideTopBarOnScroll && layout.canDockTopRail;
 
@@ -370,11 +379,11 @@ class _ToplistTabState extends State<ToplistTab>
       }
       _headerScrollController.headerExtent = native
           ? nativeCollapsible
-              ? railHeight
-              : 0
+                ? railHeight
+                : 0
           : useLiquidGlass
-              ? headerMaxHeight
-              : headerMaxHeight - layout.collapsedHeaderHeight;
+          ? headerMaxHeight
+          : headerMaxHeight - layout.collapsedHeaderHeight;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _topState.setBarFadeEnabled(dockTopBar);
@@ -394,6 +403,7 @@ class _ToplistTabState extends State<ToplistTab>
                 builder: (context, offset, _) => NativeTopTabHeader(
                   topInset: topInset,
                   railHeight: railHeight,
+                  edgeProgress: _nativeEdgeProgress,
                   child: _buildNativeRail(context),
                 ),
                 minHeight: NativeTopTabHeader.minExtentFor(
@@ -431,7 +441,7 @@ class _ToplistTabState extends State<ToplistTab>
               top: native || useLiquidGlass || hideTopBarOnScroll
                   ? 0
                   : (kMinInteractiveDimensionCupertino +
-                      context.mediaQueryPadding.top),
+                        context.mediaQueryPadding.top),
             ),
             sliver: EhCupertinoSliverRefreshControl(
               onRefresh: controller.onRefresh,
@@ -465,35 +475,51 @@ class _ToplistTabState extends State<ToplistTab>
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: LiquidGlassSafeAreaBase(
-                    safeTop: layout.safeTop,
-                    layout: _ehSettingService.liquidGlassTopBarLayout,
+                  child: LiquidGlassBarMotionBuilder(
+                    enabled: dockTopBar,
+                    builder: (context, progress) => LiquidGlassSafeAreaBase(
+                      firstCardRestTop: _topState.firstCardRestTop,
+                      safeTop: layout.safeTop,
+                      layout: _ehSettingService.liquidGlassTopBarLayout,
+                      edgeProgress: _nativeEdgeProgress,
+                      barFadeProgress: progress,
+                    ),
                   ),
                 ),
-                customScrollView,
+                ScrollEdgeProgressListener(
+                  controller: _nativeEdgeProgress,
+                  child: customScrollView,
+                ),
                 // Fixed solid background above the scroll content and below
                 // the scrim and rail. Its lower edge follows the first card
                 // without changing the list's scroll geometry.
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: LiquidGlassSolidMask(
-                    progressListenable: _topState.solidMaskProgress,
-                    safeTop: layout.safeTop,
-                    // The mask bottom follows the first card from safeTop to
-                    // the category rail's lower edge.
-                    height: headerMaxHeight,
+                if (!PlatformCapabilities.isDesktop)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LiquidGlassSolidMask(
+                      progressListenable: _topState.solidMaskProgress,
+                      safeTop: layout.safeTop,
+                      // The mask bottom follows the first card from safeTop to
+                      // the category rail's lower edge.
+                      height: headerMaxHeight,
+                    ),
                   ),
-                ),
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: LiquidGlassTopScrim(
-                    safeTop: layout.safeTop,
-                    // The period categories are always present.
-                    layout: _ehSettingService.liquidGlassTopBarLayout,
+                  child: LiquidGlassBarMotionBuilder(
+                    enabled: dockTopBar,
+                    builder: (context, progress) => LiquidGlassTopScrim(
+                      firstCardRestTop: _topState.firstCardRestTop,
+                      safeTop: layout.safeTop,
+                      // The period categories are always present.
+                      layout: _ehSettingService.liquidGlassTopBarLayout,
+                      edgeProgress: _nativeEdgeProgress,
+                      barFadeProgress: progress,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -514,9 +540,12 @@ class _ToplistTabState extends State<ToplistTab>
         return CupertinoPageScaffold(
           child: CanvasGrain(
             child: SizeCacheWidget(
-              child: NativeBarAutoHide(
-                enabled: nativeCollapsible,
-                child: pageContent,
+              child: ScrollEdgeProgressListener(
+                controller: _nativeEdgeProgress,
+                child: NativeBarAutoHide(
+                  enabled: nativeCollapsible,
+                  child: pageContent,
+                ),
               ),
             ),
           ),
@@ -525,8 +554,9 @@ class _ToplistTabState extends State<ToplistTab>
 
       if (!useLiquidGlass) {
         return CupertinoPageScaffold(
-          navigationBar:
-              useLiquidGlass || hideTopBarOnScroll ? null : navigationBar,
+          navigationBar: useLiquidGlass || hideTopBarOnScroll
+              ? null
+              : navigationBar,
           child: CanvasGrain(child: SizeCacheWidget(child: pageContent)),
         );
       }
@@ -585,6 +615,13 @@ class _ToplistTabState extends State<ToplistTab>
             key: controller.sliverAnimatedListKey,
             lastTopItemIndex: controller.lastTopitemIndex,
             anchorController: logic.galleryAnchor,
+            contentTopGap: NativeNavigationScope.isEnabled(context)
+                ? NativeTopTabHeader.contentGapFor(context)
+                : _useLiquidGlass &&
+                      PlatformCapabilities.hostPlatform !=
+                          TargetPlatform.android
+                ? LiquidGlassEdgeTokens.contentGapFor(context)
+                : null,
           );
         }
 

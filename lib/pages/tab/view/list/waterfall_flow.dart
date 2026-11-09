@@ -23,6 +23,7 @@ class EhWaterfallFlow extends StatelessWidget {
     this.large = false,
     this.centerKey,
     this.firstCardKey,
+    this.topPadding,
     this.lastTopItemIndex,
     super.key,
   });
@@ -34,6 +35,7 @@ class EhWaterfallFlow extends StatelessWidget {
   final bool large;
   final Key? centerKey;
   final Key? firstCardKey;
+  final double? topPadding;
   final int? lastTopItemIndex;
 
   EhSettingService get _ehSettingService => Get.find();
@@ -93,7 +95,7 @@ class EhWaterfallFlow extends StatelessWidget {
         : const EdgeInsets.all(EHConst.waterfallFlowCrossAxisSpacing);
 
     return SliverPadding(
-      padding: padding,
+      padding: padding.copyWith(top: topPadding),
       sliver: SliverWaterfallFlow(
         key: key,
         gridDelegate: _gridDelegate(context, immersive: immersive),

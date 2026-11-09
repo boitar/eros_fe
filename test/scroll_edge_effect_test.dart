@@ -93,6 +93,85 @@ void main() {
           findsNWidgets(3));
     });
 
+    for (final brightness in Brightness.values) {
+      testWidgets('strength scales tint and blur together in $brightness', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          host(
+            const SoftScrollEdgeEffect(
+              edge: SoftEdge.top,
+              inset: 50,
+              bars: 44,
+              tail: 12,
+              strength: 0.5,
+            ),
+            brightness: brightness,
+          ),
+        );
+        final curve = brightness == Brightness.dark
+            ? SoftEdgeCurve.dark
+            : SoftEdgeCurve.light;
+        final box = tester.widget<DecoratedBox>(
+          find.descendant(
+            of: find.byType(SoftScrollEdgeEffect),
+            matching: find.byType(DecoratedBox),
+          ),
+        );
+        final gradient =
+            (box.decoration as BoxDecoration).gradient! as LinearGradient;
+        expect(
+          gradient.colors.first.a,
+          closeTo(curve.alphas.first * 0.5, 0.001),
+        );
+        expect(gradient.colors.last.a, 0);
+        final blur = tester.widgetList<BackdropFilter>(
+          find.descendant(
+            of: find.byType(SoftScrollEdgeEffect),
+            matching: find.byType(BackdropFilter),
+          ),
+        );
+        expect(
+          blur.first.filter,
+          ui.ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
+        );
+      });
+    }
+
+    testWidgets(
+      'zero strength disables blur and leaves every tint transparent',
+      (tester) async {
+        await tester.pumpWidget(
+          host(
+            const SoftScrollEdgeEffect(
+              edge: SoftEdge.top,
+              inset: 50,
+              bars: 44,
+              tail: 0,
+              strength: 0,
+            ),
+          ),
+        );
+        expect(find.byType(BackdropFilter), findsNothing);
+        final box = tester.widget<DecoratedBox>(
+          find.descendant(
+            of: find.byType(SoftScrollEdgeEffect),
+            matching: find.byType(DecoratedBox),
+          ),
+        );
+        final gradient =
+            (box.decoration as BoxDecoration).gradient! as LinearGradient;
+        expect(gradient.colors.every((color) => color.a == 0), isTrue);
+      },
+    );
+
+    test('nearby progress values share one shader strength', () {
+      expect(SoftScrollEdgeEffect.quantizeStrength(0.5001), 0.5);
+      expect(SoftScrollEdgeEffect.quantizeStrength(0.501), 0.5);
+      expect(SoftScrollEdgeEffect.quantizeStrength(-1), 0);
+      expect(SoftScrollEdgeEffect.quantizeStrength(2), 1);
+    });
+
     testWidgets('Android fades without any blur', (tester) async {
       PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
       addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);

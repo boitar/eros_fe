@@ -1,13 +1,10 @@
 import 'dart:math' as math;
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
-import 'package:eros_fe/common/service/ehsetting_service.dart';
-import 'package:eros_fe/utils/liquid_glass.dart';
-import 'package:eros_fe/widget/appkit_glass.dart';
+import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/detail_window_backdrop.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 
 /// Window-local logical coordinates, never screen pixels or a theme heuristic.
 @immutable
@@ -137,47 +134,15 @@ class MacOSWindowContent extends StatelessWidget {
                 children: [
                   Positioned.fill(
                     child: ColoredBox(
+                      key: const ValueKey('macos-window-canvas'),
                       color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+                      // Window chrome shares the page canvas, including its
+                      // grain. An independent glass surface changes this tint.
+                      child: const CanvasGrain(child: SizedBox.expand()),
                     ),
                   ),
-                  if (top > 0 && Get.isRegistered<EhSettingService>())
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: top,
-                      child: Obx(() {
-                        final settings = Get.find<EhSettingService>();
-                        if (!settings.liquidGlass) {
-                          return const SizedBox.shrink();
-                        }
-                        if (!PlatformCapabilities.appKitGlass) {
-                          return const IgnorePointer(
-                            child: LiquidGlassSurface(
-                              enabled: true,
-                              useNativeGlass: false,
-                              child: SizedBox.expand(),
-                            ),
-                          );
-                        }
-                        return IgnorePointer(
-                          child: ExcludeSemantics(
-                            child: AppKitGlassView(
-                              kind: 'surface',
-                              configuration: {
-                                'dark': CupertinoTheme.brightnessOf(context) ==
-                                    Brightness.dark,
-                                'followSystemTransparency': settings
-                                    .liquidGlassMaterial,
-                              },
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  // The optional glass band before this child disappears in
-                  // fullscreen. Keep the Navigator/SmartDialog Overlay mounted
-                  // when its sibling index changes; OverlayEntries have owners.
+                  // Preserve the Navigator/SmartDialog Overlay when entering
+                  // fullscreen or switching to a detail backdrop.
                   Positioned.fill(
                     key: const ValueKey('macos-window-content'),
                     top: top,

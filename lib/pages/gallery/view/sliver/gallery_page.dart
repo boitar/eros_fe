@@ -46,6 +46,8 @@ class GalleryPage extends StatefulWidget {
 }
 
 class _GalleryPageState extends State<GalleryPage> {
+  static const double _floatingHeaderHeight = 56;
+
   late final GalleryPageController _controller;
   late final String _tag;
   ScrollController? _pageScrollController;
@@ -234,7 +236,10 @@ class _GalleryPageState extends State<GalleryPage> {
           slivers: [
             if (_floatingGlass(context))
               SliverToBoxAdapter(
-                child: SizedBox(height: MediaQuery.paddingOf(context).top + 56),
+                child: SizedBox(
+                  height:
+                      MediaQuery.paddingOf(context).top + _floatingHeaderHeight,
+                ),
               )
             else if (native)
               // UIKit owns the bar, but this custom sliver view still owns its
@@ -276,7 +281,8 @@ class _GalleryPageState extends State<GalleryPage> {
             right: 0,
             child: IgnorePointer(
               child: Container(
-                height: MediaQuery.paddingOf(context).top + 68,
+                height:
+                    MediaQuery.paddingOf(context).top + _floatingHeaderHeight,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,

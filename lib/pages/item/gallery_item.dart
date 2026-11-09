@@ -28,6 +28,9 @@ class GalleryItemWidget extends StatelessWidget {
       {Key? key, required this.tabTag, required this.galleryProvider})
       : super(key: key);
 
+  /// The only outer top margin excluded from the list card container.
+  static const double topMargin = 8.0;
+
   final GalleryProvider galleryProvider;
   final dynamic tabTag;
 
@@ -81,7 +84,7 @@ class GalleryItemWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(kCardRadius),
           ),
           padding: const EdgeInsets.only(right: kPaddingHorizontal),
-          margin: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+          margin: const EdgeInsets.fromLTRB(10, topMargin, 10, 4),
           child: IntrinsicHeight(
             child: Row(
               children: <Widget>[
