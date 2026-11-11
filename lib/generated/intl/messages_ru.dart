@@ -300,7 +300,11 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Japanese Title in Gallery"),
         "japanese_title_in_gallery_summary":
             MessageLookupByLibrary.simpleMessage(
-                "Only effective in gallery page"),
+                "Японское название — только на странице галереи"),
+        "full_title_in_gallery":
+            MessageLookupByLibrary.simpleMessage("Показывать полное название"),
+        "full_title_in_gallery_subtitle":
+            MessageLookupByLibrary.simpleMessage("Второе название — отдельной строкой в списках и на странице галереи"),
         "jump_next": MessageLookupByLibrary.simpleMessage("Next"),
         "jump_or_seek": MessageLookupByLibrary.simpleMessage("Jump or Seek"),
         "jump_prev": MessageLookupByLibrary.simpleMessage("Prev"),

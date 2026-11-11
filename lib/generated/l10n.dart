@@ -4314,11 +4314,31 @@ class L10n {
     );
   }
 
-  /// `Only effective in gallery page`
+  /// `Japanese title only applies to the gallery page`
   String get japanese_title_in_gallery_summary {
     return Intl.message(
-      'Only effective in gallery page',
+      'Japanese title only applies to the gallery page',
       name: 'japanese_title_in_gallery_summary',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show Full Title`
+  String get full_title_in_gallery {
+    return Intl.message(
+      'Show Full Title',
+      name: 'full_title_in_gallery',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Alternate title on its own line, in lists and gallery pages`
+  String get full_title_in_gallery_subtitle {
+    return Intl.message(
+      'Alternate title on its own line, in lists and gallery pages',
+      name: 'full_title_in_gallery_subtitle',
       desc: '',
       args: [],
     );

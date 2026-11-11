@@ -246,7 +246,11 @@ class MessageLookup extends MessageLookupByLibrary {
         "japanese_title_in_gallery":
             MessageLookupByLibrary.simpleMessage("画廊页面显示日文标题"),
         "japanese_title_in_gallery_summary":
-            MessageLookupByLibrary.simpleMessage("仅在画廊页面有效"),
+            MessageLookupByLibrary.simpleMessage("日文标题仅在画廊页面生效"),
+        "full_title_in_gallery":
+            MessageLookupByLibrary.simpleMessage("显示完整标题"),
+        "full_title_in_gallery_subtitle":
+            MessageLookupByLibrary.simpleMessage("在列表和画廊页面分行显示另一语言标题"),
         "jump_next": MessageLookupByLibrary.simpleMessage("后面"),
         "jump_or_seek": MessageLookupByLibrary.simpleMessage("跳转/搜寻"),
         "jump_prev": MessageLookupByLibrary.simpleMessage("前面"),

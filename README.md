@@ -7,7 +7,7 @@ screens with Liquid Glass navigation and fixes downloads, favorites, sharing, hi
 haptics and Cloudflare verification. It started on iOS/iPadOS and iPhone Duo; **the new UI now also
 supports Android and desktop (macOS)**. A Windows build is in progress and will follow in a few days.
 
-The current version is `1.10.0+567` (nightly). The iOS Bundle ID is `cn.honjow.fehv`.
+The current version is `1.10.1+568`. The iOS Bundle ID is `cn.honjow.fehv`.
 
 ## Screenshots
 
@@ -92,6 +92,18 @@ The native vertical bars sit on the right edge.
   shell and the older glass top bar (one hidden tab opens directly; several open a picker).
 
 ## Changelog
+
+### 2026-11-11: v1.10.1, show full title
+
+Tag: `v1.10.1` ([release](https://github.com/boitar/eros_fe/releases/tag/v1.10.1)).
+
+- **Show Full Title** (Settings › Appearance and Layout, below the Japanese title switch, off by
+  default). Many gallery titles look like `(Event) [Circle (Artist)] Romanized Title | Original Title
+  [Language]`, and the romanized part alone is often hard to read. With the switch on:
+  - gallery cards (list, small list, grid, waterfall) put the event/circle prefix on its own dimmed
+    line, then the main title, then the title after `|` on its own line;
+  - the gallery page title shows the full title in two parts instead of only the English part.
+  With the switch off, everything looks as before.
 
 ### 2026-11-10: v1.10.0-nightly, UI redesign for Android and desktop
 
@@ -296,7 +308,7 @@ Simulator results do not substitute for these checks.
 
 ## Installation
 
-Packages of this fork are published on [Releases](https://github.com/boitar/eros_fe/releases).
+Packages of this fork are published on [Releases](https://github.com/boitar/eros_fe/releases/latest).
 
 - **Android:** pick the APK for your device's architecture (`arm64-v8a` for most phones), or the
   universal APK if unsure.
@@ -308,7 +320,7 @@ Packages of this fork are published on [Releases](https://github.com/boitar/eros
 
 Unsigned IPAs are arm64, main app unsigned, Bundle ID `cn.honjow.fehv`, iOS 15.6 or later.
 
-1. Download the latest `Eros-FE_*-unsigned_*.ipa` from [Releases](https://github.com/boitar/eros_fe/releases).
+1. Download the latest `Eros-FE_*-unsigned_*.ipa` from [Releases](https://github.com/boitar/eros_fe/releases/latest).
 2. Sign and install it yourself with a tool such as [AltStore](https://altstore.io). It replaces any
    installed app with the same Bundle ID, so back up the app data before switching.
 

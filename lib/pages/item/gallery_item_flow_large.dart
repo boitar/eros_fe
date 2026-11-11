@@ -13,6 +13,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 import 'cover_ratio.dart';
+import 'gallery_card_title.dart';
 import 'gallery_item.dart';
 import 'item_base.dart';
 
@@ -21,8 +22,9 @@ import 'item_base.dart';
 const double kCardRadius = 16.0;
 const int kTitleMaxLines = 2;
 
-const BorderRadius _coverRadius =
-    BorderRadius.vertical(top: Radius.circular(kCardRadius));
+const BorderRadius _coverRadius = BorderRadius.vertical(
+  top: Radius.circular(kCardRadius),
+);
 
 /// Overlays on cover art stop growing here; title, meta and tags still
 /// follow Dynamic Type in full.
@@ -44,9 +46,11 @@ class GalleryItemFlowLarge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final EhSettingService settings = Get.find();
-    return Obx(() => settings.immersiveLargeCards
-        ? _buildImmersive(context)
-        : _buildStandard(context));
+    return Obx(
+      () => settings.immersiveLargeCards
+          ? _buildImmersive(context)
+          : _buildStandard(context),
+    );
   }
 
   Widget _buildStandard(BuildContext context) {
@@ -61,17 +65,10 @@ class GalleryItemFlowLarge extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            _Cover(
-              provider: provider,
-              controller: controller,
-              tabTag: tabTag,
-            ),
+            _Cover(provider: provider, controller: controller, tabTag: tabTag),
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
-              child: _Info(
-                controller: controller,
-                provider: provider,
-              ),
+              child: _Info(controller: controller, provider: provider),
             ),
           ],
         ),
@@ -113,7 +110,9 @@ class _CardFrame extends StatelessWidget {
     final hairline = CupertinoDynamicColor.resolve(palette.hairline, context);
     final edgeTop = dark
         ? Color.alphaBlend(
-            CupertinoDynamicColor.resolve(palette.edgeLight, context), hairline)
+            CupertinoDynamicColor.resolve(palette.edgeLight, context),
+            hairline,
+          )
         : hairline;
 
     return DecoratedBox(
@@ -165,7 +164,9 @@ class _CardEdgePainter extends CustomPainter {
     }
     canvas.drawRSuperellipse(
       RSuperellipse.fromRectAndRadius(
-          rect, const Radius.circular(kCardRadius - stroke / 2)),
+        rect,
+        const Radius.circular(kCardRadius - stroke / 2),
+      ),
       paint,
     );
   }
@@ -241,8 +242,9 @@ class _Cover extends StatelessWidget {
     final language = provider.translated?.trim() ?? '';
     final count = provider.filecount?.trim() ?? '';
     final category = provider.category?.trim() ?? '';
-    final BorderRadius radius =
-        immersive ? BorderRadius.circular(kCardRadius) : _coverRadius;
+    final BorderRadius radius = immersive
+        ? BorderRadius.circular(kCardRadius)
+        : _coverRadius;
 
     return AspectRatio(
       aspectRatio: coverAspectRatio(
@@ -250,93 +252,97 @@ class _Cover extends StatelessWidget {
         imgHeight: provider.imgHeight ?? 0,
         maxRatio: kMaxLargeCoverAspectRatio,
       ),
-      child: LayoutBuilder(builder: (context, constraints) {
-        final decodeWidth = constraints.maxWidth.isFinite
-            ? (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context))
-                .ceil()
-            : null;
-        return Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            // Static placeholder: one quiet tint instead of a spinner per card.
-            DecoratedBox(
-              decoration: ShapeDecoration(
-                color: CupertinoDynamicColor.resolve(palette.fill, context),
-                shape: RoundedSuperellipseBorder(borderRadius: radius),
-              ),
-            ),
-            Hero(
-              tag: '${provider.gid}_cover_$tabTag',
-              child: ClipRSuperellipse(
-                borderRadius: radius,
-                child: CoverImg(
-                  imgUrl: provider.imgUrl ?? '',
-                  fit: BoxFit.cover,
-                  // Very tall covers keep their top, where titles usually are.
-                  alignment: Alignment.topCenter,
-                  decodeWidth: decodeWidth,
-                  fadeInDuration: const Duration(milliseconds: 180),
-                  placeholder: (_) => const SizedBox.expand(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final decodeWidth = constraints.maxWidth.isFinite
+              ? (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context))
+                    .ceil()
+              : null;
+          return Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              // Static placeholder: one quiet tint instead of a spinner per card.
+              DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: CupertinoDynamicColor.resolve(palette.fill, context),
+                  shape: RoundedSuperellipseBorder(borderRadius: radius),
                 ),
               ),
-            ),
-            MediaQuery.withClampedTextScaling(
-              maxScaleFactor: _kOverlayMaxTextScale,
-              child: Stack(
-                fit: StackFit.expand,
-                children: <Widget>[
-                  if (immersive)
-                    _BottomShade.deep(radius: radius)
-                  else if (language.isNotEmpty || count.isNotEmpty)
-                    const _BottomShade(),
-                  if (category.isNotEmpty)
-                    PositionedDirectional(
-                      top: 7,
-                      start: 7,
-                      child: _CategoryChip(category: category),
-                    ),
-                  PositionedDirectional(
-                    top: 6,
-                    end: 6,
-                    child: _FavoriteBadge(controller: controller),
+              Hero(
+                tag: '${provider.gid}_cover_$tabTag',
+                child: ClipRSuperellipse(
+                  borderRadius: radius,
+                  child: CoverImg(
+                    imgUrl: provider.imgUrl ?? '',
+                    fit: BoxFit.cover,
+                    // Very tall covers keep their top, where titles usually are.
+                    alignment: Alignment.topCenter,
+                    decodeWidth: decodeWidth,
+                    fadeInDuration: const Duration(milliseconds: 180),
+                    placeholder: (_) => const SizedBox.expand(),
                   ),
-                  if (immersive)
-                    PositionedDirectional(
-                      start: 10,
-                      end: 10,
-                      bottom: 9,
-                      child: _ImmersiveCaption(
-                        controller: controller,
-                        language: language,
-                        count: count,
+                ),
+              ),
+              MediaQuery.withClampedTextScaling(
+                maxScaleFactor: _kOverlayMaxTextScale,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    if (immersive)
+                      _BottomShade.deep(radius: radius)
+                    else if (language.isNotEmpty || count.isNotEmpty)
+                      const _BottomShade(),
+                    if (category.isNotEmpty)
+                      PositionedDirectional(
+                        top: 7,
+                        start: 7,
+                        child: _CategoryChip(category: category),
                       ),
-                    )
-                  else
                     PositionedDirectional(
-                      start: 8,
-                      end: 8,
-                      bottom: 6,
-                      child: Row(
-                        children: <Widget>[
-                          if (language.isNotEmpty)
-                            Text(language, style: _overlayText),
-                          const Spacer(),
-                          if (count.isNotEmpty)
-                            Text('${count}P',
+                      top: 6,
+                      end: 6,
+                      child: _FavoriteBadge(controller: controller),
+                    ),
+                    if (immersive)
+                      PositionedDirectional(
+                        start: 10,
+                        end: 10,
+                        bottom: 9,
+                        child: _ImmersiveCaption(
+                          controller: controller,
+                          language: language,
+                          count: count,
+                        ),
+                      )
+                    else
+                      PositionedDirectional(
+                        start: 8,
+                        end: 8,
+                        bottom: 6,
+                        child: Row(
+                          children: <Widget>[
+                            if (language.isNotEmpty)
+                              Text(language, style: _overlayText),
+                            const Spacer(),
+                            if (count.isNotEmpty)
+                              Text(
+                                '${count}P',
                                 style: _overlayText.copyWith(
                                   fontFeatures: const <FontFeature>[
-                                    FontFeature.tabularFigures()
+                                    FontFeature.tabularFigures(),
                                   ],
-                                )),
-                        ],
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        );
-      }),
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -355,9 +361,7 @@ const TextStyle _overlayText = TextStyle(
 /// Darkens the bottom third of the cover so white labels stay legible on
 /// bright art.
 class _BottomShade extends StatelessWidget {
-  const _BottomShade()
-      : deep = false,
-        radius = BorderRadius.zero;
+  const _BottomShade() : deep = false, radius = BorderRadius.zero;
 
   /// Covers the lower half, deep enough for a two-line title.
   const _BottomShade.deep({required this.radius}) : deep = true;
@@ -430,14 +434,18 @@ class _ImmersiveCaption extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          controller.title,
-          maxLines: kTitleMaxLines,
-          overflow: TextOverflow.ellipsis,
-          style: _overlayText.copyWith(
-            fontSize: 14,
-            height: 1.25,
-            letterSpacing: -0.1,
+        GalleryCardTitle(
+          waterfall: true,
+          immersive: true,
+          legacy: Text(
+            controller.title,
+            maxLines: kTitleMaxLines,
+            overflow: TextOverflow.ellipsis,
+            style: _overlayText.copyWith(
+              fontSize: 14,
+              height: 1.25,
+              letterSpacing: -0.1,
+            ),
           ),
         ),
         const SizedBox(height: 5),
@@ -446,7 +454,7 @@ class _ImmersiveCaption extends StatelessWidget {
           final filled = colorRating.isEmpty || colorRating == 'ir'
               ? EhPalette.star.darkColor
               : ThemeColors.colorRatingMap[colorRating] ??
-                  EhPalette.star.darkColor;
+                    EhPalette.star.darkColor;
           final score = controller.rating > 0
               ? controller.rating
               : controller.ratingFallBack;
@@ -472,7 +480,7 @@ class _ImmersiveCaption extends StatelessWidget {
                   textAlign: TextAlign.end,
                   style: _overlayText.copyWith(
                     fontFeatures: const <FontFeature>[
-                      FontFeature.tabularFigures()
+                      FontFeature.tabularFigures(),
                     ],
                   ),
                 ),
@@ -511,8 +519,10 @@ class _CategoryChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           DecoratedBox(
-            decoration:
-                ShapeDecoration(color: dot, shape: const CircleBorder()),
+            decoration: ShapeDecoration(
+              color: dot,
+              shape: const CircleBorder(),
+            ),
             child: const SizedBox.square(dimension: 6),
           ),
           const SizedBox(width: 4),
@@ -565,10 +575,7 @@ class _FavoriteBadge extends StatelessWidget {
 }
 
 class _Info extends StatelessWidget {
-  const _Info({
-    required this.controller,
-    required this.provider,
-  });
+  const _Info({required this.controller, required this.provider});
 
   final GalleryItemController controller;
   final GalleryProvider provider;
@@ -590,16 +597,20 @@ class _Info extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          controller.title,
-          maxLines: kTitleMaxLines,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 14,
-            height: 1.3,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.1,
-            color: CupertinoDynamicColor.resolve(palette.text1, context),
+        GalleryCardTitle(
+          waterfall: true,
+          immersive: false,
+          legacy: Text(
+            controller.title,
+            maxLines: kTitleMaxLines,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.3,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.1,
+              color: CupertinoDynamicColor.resolve(palette.text1, context),
+            ),
           ),
         ),
         const SizedBox(height: 6),
@@ -650,9 +661,10 @@ class _MetaRow extends StatelessWidget {
       final filled = colorRating.isEmpty || colorRating == 'ir'
           ? CupertinoDynamicColor.resolve(EhPalette.star, context)
           : ThemeColors.colorRatingMap[colorRating] ??
-              CupertinoDynamicColor.resolve(EhPalette.star, context);
-      final score =
-          controller.rating > 0 ? controller.rating : controller.ratingFallBack;
+                CupertinoDynamicColor.resolve(EhPalette.star, context);
+      final score = controller.rating > 0
+          ? controller.rating
+          : controller.ratingFallBack;
 
       return Row(
         children: <Widget>[
@@ -737,8 +749,7 @@ class _CardTags extends StatelessWidget {
             children: <Widget>[
               for (final tag in tags)
                 _CardTag(
-                  text:
-                      (translate ? tag.translat : tag.text) ?? tag.text ?? '',
+                  text: (translate ? tag.translat : tag.text) ?? tag.text ?? '',
                   userColor: ColorsUtil.getTagColor(tag.backgrondColor),
                   userTextColor: ColorsUtil.getTagColor(tag.color),
                 ),

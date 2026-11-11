@@ -13,6 +13,7 @@ import '../../const/theme_colors.dart';
 import '../../index.dart';
 import '../../widget/rating_bar.dart';
 import 'controller/galleryitem_controller.dart';
+import 'gallery_card_title.dart';
 import 'gallery_grid_tags.dart';
 import 'gallery_item.dart';
 import 'item_base.dart';
@@ -26,6 +27,34 @@ const double kMinFixCoverRatio = 0.8;
 const double kMaxFixCoverRatio = 2.2;
 
 final EhSettingService _ehSettingService = Get.find();
+
+/// The plain grid's title and date share this size; the tile floor measures it.
+const TextStyle kGridTextStyle = TextStyle(fontSize: 12);
+
+/// The smallest tile that fits the cover plus the full-title text block.
+///
+/// The grid delegate needs the height before the cards build, so this mirrors
+/// the card's own text styles instead of measuring a rendered card. Narrow
+/// columns and large text otherwise push the third title line out of the tile.
+double gridFullTitleMinHeight(BuildContext context, double width) {
+  final scaler = MediaQuery.textScalerOf(context);
+  final base = DefaultTextStyle.of(context).style;
+  double lineHeight(TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(text: 'Mg国', style: base.merge(style)),
+      textDirection: Directionality.of(context),
+      textScaler: scaler,
+    )..layout();
+    final height = painter.height;
+    painter.dispose();
+    return height;
+  }
+
+  final titleLine = lineHeight(kGridTextStyle);
+  final timeLine = lineHeight(kGridTextStyle);
+  final gap = scaler.scale(12) > 13.2 ? 0.0 : 4.0;
+  return kCoverRatio * width + titleLine * 3 + gap + timeLine + 4;
+}
 
 class GalleryItemGrid extends StatelessWidget {
   const GalleryItemGrid({
@@ -45,137 +74,163 @@ class GalleryItemGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-      final Color _colorCategory = CupertinoDynamicColor.resolve(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final Color _colorCategory = CupertinoDynamicColor.resolve(
           ThemeColors.catColor[galleryProvider.category ?? 'default'] ??
               CupertinoColors.systemBackground,
-          context);
+          context,
+        );
 
-      // 获取图片高度
-      final coverHeight = kCoverRatio * constraints.maxWidth;
+        // 获取图片高度
+        final coverHeight = kCoverRatio * constraints.maxWidth;
 
-      final Widget container = Container(
-        decoration: BoxDecoration(
-          color: ehTheme.itemBackgroundColor,
-          borderRadius: BorderRadius.circular(kRadius), //圆角
-          boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            /// 画廊封面
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(kRadius),
-                topRight: Radius.circular(kRadius),
-              ),
-              child: Container(
-                foregroundDecoration: RotatedCornerDecoration.withColor(
-                  color: _colorCategory.withOpacity(0.8),
-                  // labelInsets: const LabelInsets(baselineShift: 0.2, start: 2),
-                  // geometry: const BadgeGeometry(
-                  //     width: kCategoryWidth, height: kCategoryHeight),
-                  spanBaselineShift: 0.2,
-                  spanHorizontalOffset: 2,
-                  badgeSize: const Size(kCategoryWidth, kCategoryHeight),
-                  textSpan: TextSpan(
-                    text: galleryProvider.translated ?? '',
-                    style: const TextStyle(
-                        fontSize: 8, fontWeight: FontWeight.bold),
-                  ),
+        final Widget container = Container(
+          decoration: BoxDecoration(
+            color: ehTheme.itemBackgroundColor,
+            borderRadius: BorderRadius.circular(kRadius), //圆角
+            boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              /// 画廊封面
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(kRadius),
+                  topRight: Radius.circular(kRadius),
                 ),
-                child: Stack(
-                  alignment: Alignment.topRight,
-                  children: <Widget>[
-                    HeroMode(
-                      enabled: !isLayoutLarge,
-                      child: Container(
-                        alignment: Alignment.center,
-                        height: coverHeight,
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: _CoverImage(
-                                galleryProviderController:
-                                    galleryProviderController,
-                                tabTag: tabTag,
-                                coverImageHeight: coverHeight,
-                                coverImageWidth: constraints.maxWidth,
+                child: Container(
+                  foregroundDecoration: RotatedCornerDecoration.withColor(
+                    color: _colorCategory.withOpacity(0.8),
+                    // labelInsets: const LabelInsets(baselineShift: 0.2, start: 2),
+                    // geometry: const BadgeGeometry(
+                    //     width: kCategoryWidth, height: kCategoryHeight),
+                    spanBaselineShift: 0.2,
+                    spanHorizontalOffset: 2,
+                    badgeSize: const Size(kCategoryWidth, kCategoryHeight),
+                    textSpan: TextSpan(
+                      text: galleryProvider.translated ?? '',
+                      style: const TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.topRight,
+                    children: <Widget>[
+                      HeroMode(
+                        enabled: !isLayoutLarge,
+                        child: Container(
+                          alignment: Alignment.center,
+                          height: coverHeight,
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: _CoverImage(
+                                  galleryProviderController:
+                                      galleryProviderController,
+                                  tabTag: tabTag,
+                                  coverImageHeight: coverHeight,
+                                  coverImageWidth: constraints.maxWidth,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    // Positioned(bottom: 4, left: 4, child: _buildRating()),
-                    Positioned(
-                      bottom: 4,
-                      right: 4,
-                      child: Row(
-                        children: [
-                          _buildFavCatIcon(),
-                          _buildCount(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            /// 画廊信息等
-            if (showTags)
-              GalleryGridTagsInfo(
-                title: galleryProviderController.title,
-                simpleTags:
-                    galleryProviderController.galleryProvider.simpleTags,
-                postTime: galleryProviderController.galleryProvider.postTime,
-                expunged: galleryProviderController.galleryProvider.expunged,
-                backgroundColor: ehTheme.itemBackgroundColor ??
-                    CupertinoColors.systemBackground,
-              )
-            else
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(child: _buildTitle()),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      PostTime(
-                        postTime: galleryProviderController
-                                .galleryProvider.postTime ??
-                            '',
-                        expunged:
-                            galleryProviderController.galleryProvider.expunged,
+                      // Positioned(bottom: 4, left: 4, child: _buildRating()),
+                      Positioned(
+                        bottom: 4,
+                        right: 4,
+                        child: Row(
+                          children: [_buildFavCatIcon(), _buildCount()],
+                        ),
                       ),
                     ],
-                  ).paddingSymmetric(horizontal: 4, vertical: 2),
+                  ),
                 ),
               ),
-          ],
-        ),
-      );
 
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        child: container,
-        onTap: () => galleryProviderController.onTap(tabTag),
-        onLongPress: galleryProviderController.onLongPress,
-      ).autoCompressKeyboard(context);
-    });
+              /// 画廊信息等
+              if (showTags)
+                GalleryGridTagsInfo(
+                  title: galleryProviderController.title,
+                  simpleTags:
+                      galleryProviderController.galleryProvider.simpleTags,
+                  postTime: galleryProviderController.galleryProvider.postTime,
+                  expunged: galleryProviderController.galleryProvider.expunged,
+                  backgroundColor:
+                      ehTheme.itemBackgroundColor ??
+                      CupertinoColors.systemBackground,
+                )
+              else
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [Expanded(child: _buildTitle())]),
+                        Obx(() {
+                          final full = Get.find<EhSettingService>()
+                              .fullTitleInGalleryPage;
+                          return SizedBox(
+                            height:
+                                full &&
+                                    MediaQuery.textScalerOf(context).scale(12) >
+                                        13.2
+                                ? 0
+                                : 4,
+                          );
+                        }),
+                        Obx(() {
+                          final time = PostTime(
+                            postTime:
+                                galleryProviderController
+                                    .galleryProvider
+                                    .postTime ??
+                                '',
+                            expunged: galleryProviderController
+                                .galleryProvider
+                                .expunged,
+                          );
+                          // The fixed grid budget is for the title and one date
+                          // line. A wrapped timestamp otherwise crowds the title.
+                          return Get.find<EhSettingService>()
+                                  .fullTitleInGalleryPage
+                              ? DefaultTextStyle.merge(
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  child: time,
+                                )
+                              : time;
+                        }),
+                      ],
+                    ).paddingSymmetric(horizontal: 4, vertical: 2),
+                  ),
+                ),
+            ],
+          ),
+        );
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          child: container,
+          onTap: () => galleryProviderController.onTap(tabTag),
+          onLongPress: galleryProviderController.onLongPress,
+        ).autoCompressKeyboard(context);
+      },
+    );
   }
 
   Widget _buildFavCatIcon({bool blur = false}) {
     return Obx(() {
-      Widget icon =
-          FavoriteIcon(category: galleryProviderController.favCat, size: 12);
+      Widget icon = FavoriteIcon(
+        category: galleryProviderController.favCat,
+        size: 12,
+      );
 
       if (blur) {
         icon = icon.frosted(
@@ -214,8 +269,11 @@ class GalleryItemGrid extends StatelessWidget {
             size: 14.0,
             rate: galleryProviderController.galleryProvider.ratingFallBack ?? 0,
             radiusRatio: 1.5,
-            colorLight: ThemeColors.colorRatingMap[
-                galleryProviderController.galleryProvider.colorRating?.trim() ??
+            colorLight:
+                ThemeColors.colorRatingMap[galleryProviderController
+                        .galleryProvider
+                        .colorRating
+                        ?.trim() ??
                     'ir'],
             colorDark: ehTheme.palette.text3.resolveFrom(Get.context!),
           ),
@@ -261,15 +319,14 @@ class GalleryItemGrid extends StatelessWidget {
 
   /// 构建标题
   Widget _buildTitle() {
-    return Text(
-      galleryProviderController.title,
-      maxLines: kTitleMaxLines,
-      textAlign: TextAlign.left, // 对齐方式
-      overflow: TextOverflow.ellipsis, // 超出部分
-      style: const TextStyle(
-        fontSize: 12,
-        // height: 1.3,
-        // fontWeight: FontWeight.w500,
+    return GalleryCardTitle(
+      lines: 3,
+      legacy: Text(
+        galleryProviderController.title,
+        maxLines: kTitleMaxLines,
+        textAlign: TextAlign.left, // 对齐方式
+        overflow: TextOverflow.ellipsis, // 超出部分
+        style: kGridTextStyle,
       ),
     );
   }
@@ -285,7 +342,9 @@ class _PostTime extends StatelessWidget {
       postTime ?? '',
       textAlign: TextAlign.right,
       style: TextStyle(
-          fontSize: 12, color: ehTheme.palette.text2.resolveFrom(context)),
+        fontSize: 12,
+        color: ehTheme.palette.text2.resolveFrom(context),
+      ),
     );
   }
 }
@@ -315,9 +374,11 @@ class _CoverImage extends StatelessWidget {
         ? _provider.imgHeight! / _provider.imgWidth!
         : containRatio;
 
-    logger.t('iRatio:$ratio\n'
-        'w:${_provider.imgWidth} h:${_provider.imgHeight}\n'
-        'cW:$coverImageWidth  cH:$coverImageHeight');
+    logger.t(
+      'iRatio:$ratio\n'
+      'w:${_provider.imgWidth} h:${_provider.imgHeight}\n'
+      'cW:$coverImageWidth  cH:$coverImageHeight',
+    );
 
     // 默认为contain裁切
     BoxFit _fit = BoxFit.contain;
@@ -351,8 +412,8 @@ class _CoverImage extends StatelessWidget {
         child: imageBlureFittedBox.blurred(
           blur: 10,
           colorOpacity: ehTheme.isDarkMode ? 0.5 : 0.1,
-          blurColor:
-              CupertinoTheme.of(context).barBackgroundColor.withOpacity(1),
+          blurColor: CupertinoTheme.of(context).barBackgroundColor
+              .withOpacity(1),
         ),
       );
 

@@ -199,6 +199,19 @@ class LayoutSettingList extends StatelessWidget {
               );
             }),
           ),
+          // full_title_in_gallery
+          EhCupertinoListTile(
+            title: Text(L10n.of(context).full_title_in_gallery),
+            subtitle: Text(L10n.of(context).full_title_in_gallery_subtitle),
+            trailing: Obx(() {
+              return CupertinoSwitch(
+                value: _ehSettingService.fullTitleInGalleryPage,
+                onChanged: (bool val) {
+                  _ehSettingService.fullTitleInGalleryPage = val;
+                },
+              );
+            }),
+          ),
         ],
       ),
       SliverCupertinoListSection.listInsetGrouped(
