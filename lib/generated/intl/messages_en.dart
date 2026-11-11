@@ -293,7 +293,11 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Japanese Title in Gallery"),
         "japanese_title_in_gallery_summary":
             MessageLookupByLibrary.simpleMessage(
-                "Only effective in gallery page"),
+                "Japanese title only applies to the gallery page"),
+        "full_title_in_gallery":
+            MessageLookupByLibrary.simpleMessage("Show Full Title"),
+        "full_title_in_gallery_subtitle":
+            MessageLookupByLibrary.simpleMessage("Alternate title on its own line, in lists and gallery pages"),
         "jump_next": MessageLookupByLibrary.simpleMessage("Next"),
         "jump_or_seek": MessageLookupByLibrary.simpleMessage("Jump or Seek"),
         "jump_prev": MessageLookupByLibrary.simpleMessage("Prev"),

@@ -409,6 +409,11 @@ class EhSettingService extends ProfileService {
   bool get jpnTitleInGalleryPage => _jpnTitleInGalleryPage.value;
   set jpnTitleInGalleryPage(bool val) => _jpnTitleInGalleryPage.value = val;
 
+  // fullTitleInGalleryPage
+  final _fullTitleInGalleryPage = false.obs;
+  bool get fullTitleInGalleryPage => _fullTitleInGalleryPage.value;
+  set fullTitleInGalleryPage(bool val) => _fullTitleInGalleryPage.value = val;
+
   // _showComments
   final _showComments = true.obs;
   bool get showComments => _showComments.value;
@@ -507,6 +512,13 @@ class EhSettingService extends ProfileService {
         ehConfig.jpnTitleInGalleryPage ?? jpnTitleInGalleryPage;
     everProfile<bool>(_jpnTitleInGalleryPage, (val) {
       ehConfig = ehConfig.copyWith(jpnTitleInGalleryPage: val.oN);
+    });
+
+    // fullTitleInGalleryPage
+    fullTitleInGalleryPage =
+        ehConfig.fullTitleInGalleryPage ?? fullTitleInGalleryPage;
+    everProfile<bool>(_fullTitleInGalleryPage, (val) {
+      ehConfig = ehConfig.copyWith(fullTitleInGalleryPage: val.oN);
     });
 
     // nativeHttpClientAdapter

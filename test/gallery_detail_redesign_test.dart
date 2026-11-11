@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_widget.dart';
@@ -10,13 +12,14 @@ import 'package:eros_fe/pages/tab/view/gallery_base.dart';
 import 'package:eros_fe/widget/image/eh_cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
 import 'support/waterfall_fixture.dart';
 
-Widget _host(Widget child, {double scale = 1}) => CupertinoApp(
+Widget _host(Widget child, {double scale = 1, double width = 320}) =>
+    CupertinoApp(
       locale: const Locale('en'),
       supportedLocales: L10n.delegate.supportedLocales,
       localizationsDelegates: const [
@@ -31,7 +34,7 @@ Widget _host(Widget child, {double scale = 1}) => CupertinoApp(
         child: child!,
       ),
       home: CupertinoPageScaffold(
-        child: Center(child: SizedBox(width: 320, child: child)),
+        child: Center(child: SizedBox(width: width, child: child)),
       ),
     );
 
@@ -183,6 +186,155 @@ void main() {
     const detail = GalleryProvider(imgWidth: 250, imgHeight: 250);
     expect(heroCoverSource(list, detail), same(list));
     expect(heroCoverSource(const GalleryProvider(), detail), same(detail));
+  });
+
+  group('full title hero', () {
+    const raw =
+        '(C104) [Circle (Artist)] Roman Title | Readable Title [Chinese]';
+
+    GalleryHeroTitle title({bool full = false}) => GalleryHeroTitle(
+          title: 'Roman Title',
+          fullTitle: raw,
+          showFullTitle: full,
+          onPressed: () {},
+        );
+
+    testWidgets('keeps the existing single title when disabled',
+        (tester) async {
+      await tester.pumpWidget(_host(title()));
+
+      final rendered = tester.widget<Text>(find.text('Roman Title'));
+      expect(rendered.maxLines, 3);
+      expect(rendered.style?.fontSize, 22);
+      expect(rendered.style?.fontWeight, FontWeight.w600);
+      expect(find.text('Readable Title', findRichText: true), findsNothing);
+      expect(
+        tester.getSemantics(find.byType(GalleryHeroTitle)),
+        matchesSemantics(
+          label: raw,
+          isButton: true,
+        ),
+      );
+    });
+
+    testWidgets('renders two styled sections and a pipe-free label',
+        (tester) async {
+      await tester.pumpWidget(_host(title(full: true)));
+
+      final texts = tester.widgetList<Text>(find.byType(Text)).toList();
+      expect(texts, hasLength(2));
+      final first = texts[0].textSpan! as TextSpan;
+      final second = texts[1].textSpan! as TextSpan;
+      final context = tester.element(find.byType(GalleryHeroTitle));
+      final text1 =
+          CupertinoDynamicColor.resolve(ehTheme.palette.text1, context);
+      final text2 =
+          CupertinoDynamicColor.resolve(ehTheme.palette.text2, context);
+
+      expect(first.style?.fontSize, 20);
+      expect(first.style?.fontWeight, FontWeight.w600);
+      expect(first.style?.color, text1);
+      expect(texts[0].maxLines, 4);
+      expect(second.style?.fontSize, 17);
+      expect(second.style?.fontWeight, FontWeight.w500);
+      expect(second.style?.color, text2);
+      expect(texts[1].maxLines, 3);
+      expect(first.toPlainText(), contains('Roman Title'));
+      expect(second.toPlainText(), contains('Readable Title'));
+      expect(
+        tester.getSemantics(find.byType(GalleryHeroTitle)),
+        matchesSemantics(
+          label: '(C104) [Circle (Artist)] Roman Title\n'
+              'Readable Title [Chinese]',
+          isButton: true,
+        ),
+      );
+      expect((first.children!.first as TextSpan).style?.color, text2);
+      expect((second.children!.last as TextSpan).style?.fontWeight,
+          FontWeight.w400);
+    });
+
+    testWidgets('includes a single title suffix in the semantics label',
+        (tester) async {
+      await tester.pumpWidget(_host(
+        GalleryHeroTitle(
+          title: 'Single Title',
+          fullTitle: '[Circle] Single Title [Chinese]',
+          showFullTitle: true,
+          onPressed: () {},
+        ),
+      ));
+
+      expect(
+        tester.getSemantics(find.byType(GalleryHeroTitle)),
+        matchesSemantics(
+          label: '[Circle] Single Title [Chinese]',
+          isButton: true,
+        ),
+      );
+    });
+
+    testWidgets('keeps the title tap callback when full title is enabled',
+        (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(_host(
+        GalleryHeroTitle(
+          title: 'Roman Title',
+          fullTitle: raw,
+          showFullTitle: true,
+          onPressed: () => taps++,
+        ),
+      ));
+
+      await tester.tap(find.byType(GalleryHeroTitle));
+      expect(taps, 1);
+    });
+
+    testWidgets('uses narrow sidebar sizes and adds lines for large text',
+        (tester) async {
+      await tester.pumpWidget(
+          _host(title(full: true), width: 280, scale: 2.0));
+
+      final texts = tester.widgetList<Text>(find.byType(Text)).toList();
+      final first = texts[0].textSpan! as TextSpan;
+      final second = texts[1].textSpan! as TextSpan;
+      expect(first.style?.fontSize, 18);
+      expect(second.style?.fontSize, 15);
+      expect(texts[0].maxLines, 6);
+      expect(texts[1].maxLines, 5);
+      expect(
+        MediaQuery.textScalerOf(tester.element(find.byType(GalleryHeroTitle)))
+            .scale(20),
+        40,
+      );
+    });
+
+    testWidgets('does not clamp large text when full title is disabled',
+        (tester) async {
+      await tester.pumpWidget(_host(title(), scale: 3.0));
+
+      final context = tester.element(find.byType(GalleryHeroTitle));
+      expect(MediaQuery.textScalerOf(context).scale(22), 66);
+      expect(tester.widget<Text>(find.text('Roman Title')).maxLines, 3);
+    });
+
+    testWidgets('reacts to the setting while the detail title is open',
+        (tester) async {
+      final settings = Get.find<EhSettingService>();
+      await tester.pumpWidget(_host(Obx(() {
+        return GalleryHeroTitle(
+          title: 'Roman Title',
+          fullTitle: raw,
+          showFullTitle: settings.fullTitleInGalleryPage,
+          onPressed: () {},
+        );
+      })));
+
+      expect(tester.widgetList<Text>(find.byType(Text)), hasLength(1));
+      settings.fullTitleInGalleryPage = true;
+      await tester.pump();
+      expect(tester.widgetList<Text>(find.byType(Text)), hasLength(2));
+    });
   });
 
   group('detail columns', () {

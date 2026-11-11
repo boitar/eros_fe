@@ -163,6 +163,7 @@ const GalleryImage kDefGalleryImage = GalleryImage(
 
 const EhConfig kDefEhConfig = EhConfig(
   jpnTitleInGalleryPage: false,
+  fullTitleInGalleryPage: false,
   tagTranslat: false,
   tagTranslatVer: '',
   favoritesOrder: '',

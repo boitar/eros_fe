@@ -143,62 +143,80 @@ class _GalleryHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = controller.gState;
-    final provider = state.galleryProvider ?? initProvider;
-    final fullTitle = state.displayTitle.isNotEmpty
-        ? state.displayTitle
-        : (provider.englishTitle ?? '');
-    final parts = GalleryTitleParts.parse(fullTitle);
+    final setting = Get.find<EhSettingService>();
+    return Obx(() {
+      final state = controller.gState;
+      final provider = state.galleryProvider ?? initProvider;
+      final fullTitle = state.displayTitle.isNotEmpty
+          ? state.displayTitle
+          : (provider.englishTitle ?? '');
+      final parts = GalleryTitleParts.parse(fullTitle);
+      final showFullTitle = setting.fullTitleInGalleryPage;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        HeroMode(
-          enabled: state.hideNavigationBtn || isLayoutLarge,
-          child: _HeroCover(
-            // The list hands over the cover it already shows, so the flight
-            // lands on the same image before the detail page has loaded.
-            imageUrl: initProvider.imgUrl ?? provider.imgUrl ?? '',
-            size: heroCoverSize(heroCoverSource(initProvider, provider)),
-            heroTag: '${initProvider.gid}_cover_$tabTag',
-            category: provider.category,
+      final titleAndMeta = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          GalleryHeroTitle(
+            title: parts.title,
+            fullTitle: fullTitle,
+            showFullTitle: showFullTitle,
+            onPressed: () => showGalleryTitleSheet(
+              context,
+              englishTitle: provider.englishTitle ?? '',
+              japaneseTitle: provider.japaneseTitle ?? '',
+              showingJapanese: state.showingJapaneseTitle,
+              onToggleLanguage: state.hasBothTitles
+                  ? () {
+                      state.toggleDisplayTitleLanguage();
+                      controller.update([GetIds.PAGE_VIEW_HEADER]);
+                    }
+                  : null,
+              onSearch: () => NavigatorUtil.goSearchPageWithParam(
+                  simpleSearch: 'title:"${parts.title}"'),
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
-        _HeroTitle(
-          title: parts.title,
-          fullTitle: fullTitle,
-          onPressed: () => showGalleryTitleSheet(
-            context,
-            englishTitle: provider.englishTitle ?? '',
-            japaneseTitle: provider.japaneseTitle ?? '',
-            showingJapanese: state.showingJapaneseTitle,
-            onToggleLanguage: state.hasBothTitles
-                ? () {
-                    state.toggleDisplayTitleLanguage();
-                    controller.update([GetIds.PAGE_VIEW_HEADER]);
-                  }
-                : null,
-            onSearch: () => NavigatorUtil.goSearchPageWithParam(
-                simpleSearch: 'title:"${parts.title}"'),
-          ),
-        ),
-        if (parts.byline.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 6),
-          _Byline(parts: parts),
+          if (parts.byline.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 6),
+            _Byline(parts: parts),
+          ],
+          const SizedBox(height: 8),
+          _MetaLine(provider: provider),
         ],
-        const SizedBox(height: 8),
-        _MetaLine(provider: provider),
-        if (usesGalleryActionDock(context))
-          const SizedBox(height: 22)
-        else ...<Widget>[
+      );
+      final scaledTitleAndMeta = showFullTitle
+          ? MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 2.0,
+              child: titleAndMeta,
+            )
+          : titleAndMeta;
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          HeroMode(
+            enabled: state.hideNavigationBtn || isLayoutLarge,
+            child: _HeroCover(
+              // The list hands over the cover it already shows, so the flight
+              // lands on the same image before the detail page has loaded.
+              imageUrl: initProvider.imgUrl ?? provider.imgUrl ?? '',
+              size: heroCoverSize(heroCoverSource(initProvider, provider)),
+              heroTag: '${initProvider.gid}_cover_$tabTag',
+              category: provider.category,
+            ),
+          ),
           const SizedBox(height: 20),
-          _PrimaryActions(controller: controller),
-          const SizedBox(height: 18),
+          scaledTitleAndMeta,
+          if (usesGalleryActionDock(context))
+            const SizedBox(height: 22)
+          else ...<Widget>[
+            const SizedBox(height: 20),
+            _PrimaryActions(controller: controller),
+            const SizedBox(height: 18),
+          ],
+          _DataStrip(provider: provider, state: state),
         ],
-        _DataStrip(provider: provider, state: state),
-      ],
-    );
+      );
+    });
   }
 }
 
@@ -268,41 +286,127 @@ class _HeroCover extends StatelessWidget {
   }
 }
 
-class _HeroTitle extends StatelessWidget {
-  const _HeroTitle({
+class GalleryHeroTitle extends StatelessWidget {
+  const GalleryHeroTitle({
+    super.key,
     required this.title,
     required this.fullTitle,
+    this.showFullTitle = false,
     required this.onPressed,
   });
 
   final String title;
   final String fullTitle;
+  final bool showFullTitle;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
+    final label = showFullTitle
+        ? GalleryTitleDisplay.split(fullTitle).accessibilityLabel
+        : fullTitle;
     return Semantics(
-      label: fullTitle,
+      label: label,
       button: true,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onPressed,
-        child: Text(
-          title,
-          maxLines: 3,
+        child: showFullTitle
+            ? LayoutBuilder(
+                builder: (context, constraints) =>
+                    _buildFullTitle(context, constraints),
+              )
+            : Text(
+                title,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  height: 1.25,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
+                  color:
+                      CupertinoDynamicColor.resolve(
+                          ehTheme.palette.text1, context),
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildFullTitle(BuildContext context, BoxConstraints constraints) {
+    final parts = GalleryTitleDisplay.split(fullTitle);
+    final text1 =
+        CupertinoDynamicColor.resolve(ehTheme.palette.text1, context);
+    final text2 =
+        CupertinoDynamicColor.resolve(ehTheme.palette.text2, context);
+    final narrow = constraints.hasBoundedWidth && constraints.maxWidth < 320;
+    final firstFontSize = narrow ? 18.0 : 20.0;
+    final secondFontSize = narrow ? 15.0 : 17.0;
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    final extraLines = scale > 1.35 ? 2 : 0;
+    final firstMaxLines = (parts.hasSecondary ? 4 : 5) + extraLines;
+    final secondaryMaxLines = 3 + extraLines;
+
+    final firstStyle = TextStyle(
+      fontSize: firstFontSize,
+      height: 1.3,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.2,
+      color: text1,
+    );
+    final secondaryStyle = TextStyle(
+      fontSize: secondFontSize,
+      height: 1.3,
+      fontWeight: FontWeight.w500,
+      color: text2,
+    );
+
+    TextSpan dimSpan(String text, FontWeight weight) => TextSpan(
+          text: text,
+          style: TextStyle(color: text2, fontWeight: weight),
+        );
+
+    final primary = Text.rich(
+      TextSpan(
+        style: firstStyle,
+        children: <InlineSpan>[
+          if (parts.prefix.isNotEmpty) dimSpan(parts.prefix, FontWeight.w500),
+          TextSpan(text: parts.primary),
+          if (!parts.hasSecondary && parts.suffix.isNotEmpty)
+            dimSpan(parts.suffix, FontWeight.w500),
+        ],
+      ),
+      maxLines: firstMaxLines,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+    );
+
+    if (!parts.hasSecondary) {
+      return primary;
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        primary,
+        const SizedBox(height: 4),
+        Text.rich(
+          TextSpan(
+            style: secondaryStyle,
+            children: <InlineSpan>[
+              TextSpan(text: parts.secondary),
+              if (parts.suffix.isNotEmpty)
+                dimSpan(parts.suffix, FontWeight.w400),
+            ],
+          ),
+          maxLines: secondaryMaxLines,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 22,
-            height: 1.25,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.2,
-            color:
-                CupertinoDynamicColor.resolve(ehTheme.palette.text1, context),
-          ),
         ),
-      ),
+      ],
     );
   }
 }

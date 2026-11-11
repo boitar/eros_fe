@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 
+import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
+import 'package:get/get.dart';
 
 import '../../const/const.dart';
 import '../../models/simple_tag.dart';
+import 'gallery_card_title.dart';
 import 'item_base.dart';
 
 /// Shared geometry for the grid, its real cards, and its width preview.
@@ -13,6 +16,7 @@ class GalleryGridTagsMetrics {
     required this.titleLineHeight,
     required this.tagRowExtent,
     required this.timeLineHeight,
+    this.fullTitle = false,
   });
 
   factory GalleryGridTagsMetrics.of(BuildContext context) {
@@ -32,11 +36,16 @@ class GalleryGridTagsMetrics {
     }
 
     return GalleryGridTagsMetrics(
+      fullTitle:
+          Get.isRegistered<EhSettingService>() &&
+          Get.find<EhSettingService>().fullTitleInGalleryPage,
       titleLineHeight: math.max(16, lineHeight(titleStyle)),
       tagRowExtent: math.max(
         18,
-        lineHeight(const TextStyle(fontSize: 12, height: 1),
-                strutStyle: const StrutStyle(height: 1)) +
+        lineHeight(
+              const TextStyle(fontSize: 12, height: 1),
+              strutStyle: const StrutStyle(height: 1),
+            ) +
             4,
       ),
       timeLineHeight: math.max(14, lineHeight(timeStyle)),
@@ -53,11 +62,12 @@ class GalleryGridTagsMetrics {
   static const titleStyle = TextStyle(fontSize: 12, height: 4 / 3);
   static const timeStyle = TextStyle(fontSize: 12, height: 7 / 6);
 
+  final bool fullTitle;
   final double titleLineHeight;
   final double tagRowExtent;
   final double timeLineHeight;
 
-  double get titleHeight => titleLines * titleLineHeight;
+  double get titleHeight => (fullTitle ? 3 : titleLines) * titleLineHeight;
   double get tagsHeight => tagRows * tagRowExtent + tagGap;
   double get informationHeight =>
       padding * 2 +
@@ -91,19 +101,21 @@ class GalleryGridTagsSliver extends StatelessWidget {
       mainAxisSpacing: EHConst.gridMainAxisSpacing,
     );
 
-    return SliverLayoutBuilder(builder: (context, constraints) {
-      final layout =
-          widthDelegate.getLayout(constraints) as SliverGridRegularTileLayout;
-      return SliverGrid(
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: maxCrossAxisExtent,
-          crossAxisSpacing: EHConst.gridCrossAxisSpacing,
-          mainAxisSpacing: EHConst.gridMainAxisSpacing,
-          mainAxisExtent: metrics.cardHeight(layout.childCrossAxisExtent),
-        ),
-        delegate: delegate,
-      );
-    });
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final layout =
+            widthDelegate.getLayout(constraints) as SliverGridRegularTileLayout;
+        return SliverGrid(
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: maxCrossAxisExtent,
+            crossAxisSpacing: EHConst.gridCrossAxisSpacing,
+            mainAxisSpacing: EHConst.gridMainAxisSpacing,
+            mainAxisExtent: metrics.cardHeight(layout.childCrossAxisExtent),
+          ),
+          delegate: delegate,
+        );
+      },
+    );
   }
 }
 
@@ -124,7 +136,9 @@ class GalleryGridTagsInfo extends StatelessWidget {
   final bool? expunged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     final metrics = GalleryGridTagsMetrics.of(context);
     final background = CupertinoDynamicColor.resolve(backgroundColor, context);
     return Padding(
@@ -136,12 +150,15 @@ class GalleryGridTagsInfo extends StatelessWidget {
             key: const ValueKey('grid-tags-title'),
             height: metrics.titleHeight,
             width: double.infinity,
-            child: Text(
-              title,
-              maxLines: GalleryGridTagsMetrics.titleLines,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.start,
-              style: GalleryGridTagsMetrics.titleStyle,
+            child: GalleryCardTitle(
+              lines: 3,
+              legacy: Text(
+                title,
+                maxLines: GalleryGridTagsMetrics.titleLines,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.start,
+                style: GalleryGridTagsMetrics.titleStyle,
+              ),
             ),
           ),
           const SizedBox(height: GalleryGridTagsMetrics.titleGap),
@@ -187,10 +204,12 @@ class GalleryGridTagsInfo extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: GalleryGridTagsMetrics.timeStyle.copyWith(
                 color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.label, context)
-                    .withValues(alpha: .65),
-                decoration:
-                    expunged == true ? TextDecoration.lineThrough : null,
+                  CupertinoColors.label,
+                  context,
+                ).withValues(alpha: .65),
+                decoration: expunged == true
+                    ? TextDecoration.lineThrough
+                    : null,
               ),
             ),
           ),

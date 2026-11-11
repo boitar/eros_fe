@@ -12,6 +12,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'gallery_card_title.dart';
 import 'item_base.dart';
 
 const double kCoverImageWidth = 90.0;
@@ -42,80 +43,83 @@ class GalleryItemSimpleWidget extends StatelessWidget {
         color: galleryProviderController.colorTap.value,
         height: showTag ? kItemHeight + 10 : kItemHeight,
         padding: const EdgeInsets.fromLTRB(kPaddingLeft, 10, 8, 10),
-        child: Row(children: <Widget>[
-          // 封面图片
-          _buildCoverImage(),
-          const SizedBox(width: 8),
-          // 右侧信息
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                // 标题
-                _buildTitle(),
-                const SizedBox(height: 4),
-                // 上传者
-                Text(
-                  galleryProvider.uploader ?? '',
-                  style: TextStyle(
+        child: Row(
+          children: <Widget>[
+            // 封面图片
+            _buildCoverImage(),
+            const SizedBox(width: 8),
+            // 右侧信息
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // 标题
+                  _buildTitle(context),
+                  const SizedBox(height: 4),
+                  // 上传者
+                  Text(
+                    galleryProvider.uploader ?? '',
+                    style: TextStyle(
                       fontSize: 12,
-                      color: ehTheme.palette.text2.resolveFrom(context)),
-                ),
-                // tag
-                const Spacer(),
-                if (showTag)
-                  // TagListViewBox(
-                  //   simpleTags:
-                  //       galleryProviderController.galleryProvider.simpleTags ?? [],
-                  // ),
-                  TagWaterfallFlowViewBox(
-                    simpleTags: galleryProvider.simpleTags ?? [],
-                    crossAxisCount: 1,
+                      color: ehTheme.palette.text2.resolveFrom(context),
+                    ),
                   ),
-                const Spacer(),
-                // 评分行
-                GetBuilder(
-                  init: galleryProviderController,
-                  tag: galleryProviderController.galleryProvider.gid,
-                  builder: (_) => Row(
+                  // tag
+                  const Spacer(),
+                  if (showTag)
+                    // TagListViewBox(
+                    //   simpleTags:
+                    //       galleryProviderController.galleryProvider.simpleTags ?? [],
+                    // ),
+                    TagWaterfallFlowViewBox(
+                      simpleTags: galleryProvider.simpleTags ?? [],
+                      crossAxisCount: 1,
+                    ),
+                  const Spacer(),
+                  // 评分行
+                  GetBuilder(
+                    init: galleryProviderController,
+                    tag: galleryProviderController.galleryProvider.gid,
+                    builder: (_) => Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: <Widget>[
+                        // 评分
+                        _buildRating(),
+                        // 占位
+                        const Spacer(),
+                        // 收藏图标
+                        _buildFavcatIcon(),
+                        // 图片数量
+                        _buildFileCountWidget(),
+                      ],
+                    ),
+                  ),
+                  Container(height: 4),
+                  // 类型和时间
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: <Widget>[
-                      // 评分
-                      _buildRating(),
-                      // 占位
+                      // 类型
+                      _buildCategory(),
                       const Spacer(),
-                      // 收藏图标
-                      _buildFavcatIcon(),
-                      // 图片数量
-                      _buildFileCountWidget(),
+                      // 上传时间
+                      PostTime(
+                        postTime:
+                            galleryProviderController
+                                .galleryProvider
+                                .postTime ??
+                            '',
+                        expunged:
+                            galleryProviderController.galleryProvider.expunged,
+                        fontSize: 11,
+                      ),
                     ],
                   ),
-                ),
-                Container(
-                  height: 4,
-                ),
-                // 类型和时间
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    // 类型
-                    _buildCategory(),
-                    const Spacer(),
-                    // 上传时间
-                    PostTime(
-                      postTime:
-                          galleryProviderController.galleryProvider.postTime ??
-                              '',
-                      expunged:
-                          galleryProviderController.galleryProvider.expunged,
-                      fontSize: 11,
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
       );
     });
 
@@ -141,15 +145,24 @@ class GalleryItemSimpleWidget extends StatelessWidget {
   }
 
   /// 构建标题
-  Widget _buildTitle() {
-    return Text(
-      galleryProviderController.title,
-      maxLines: 2,
-      textAlign: TextAlign.left, // 对齐方式
-      overflow: TextOverflow.ellipsis, // 超出部分省略号
-      style: const TextStyle(
-        fontSize: 13.5,
-        // fontWeight: FontWeight.w500,
+  Widget _buildTitle(BuildContext context) {
+    return GalleryCardTitle(
+      lines: 3,
+      small: true,
+      showTags: showTag,
+      // The full title adds a third line to a fixed-height card. Pinning the
+      // line height to the design's 16pt keeps it inside the Spacer slack on
+      // real fonts; the switch-off style stays untouched.
+      fullTitleStyle: const TextStyle(height: 1.18),
+      legacy: Text(
+        galleryProviderController.title,
+        maxLines: 2,
+        textAlign: TextAlign.left, // 对齐方式
+        overflow: TextOverflow.ellipsis, // 超出部分省略号
+        style: const TextStyle(
+          fontSize: 13.5,
+          // fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -172,10 +185,10 @@ class GalleryItemSimpleWidget extends StatelessWidget {
               // 圆角
               borderRadius: BorderRadius.circular(6),
               child: CoverImg(
-                  height: _item.imgHeight?.toDouble(),
-                  width: _item.imgWidth?.toDouble(),
-                  imgUrl:
-                      galleryProviderController.galleryProvider.imgUrl ?? ''),
+                height: _item.imgHeight?.toDouble(),
+                width: _item.imgWidth?.toDouble(),
+                imgUrl: galleryProviderController.galleryProvider.imgUrl ?? '',
+              ),
             ),
           ),
         ),
@@ -192,8 +205,11 @@ class GalleryItemSimpleWidget extends StatelessWidget {
             size: 12.0,
             rate: galleryProviderController.galleryProvider.ratingFallBack ?? 0,
             radiusRatio: 1.5,
-            colorLight: ThemeColors.colorRatingMap[
-                galleryProviderController.galleryProvider.colorRating?.trim() ??
+            colorLight:
+                ThemeColors.colorRatingMap[galleryProviderController
+                        .galleryProvider
+                        .colorRating
+                        ?.trim() ??
                     'ir'],
             colorDark: ehTheme.palette.text3.resolveFrom(Get.context!),
           ),
@@ -217,8 +233,9 @@ class GalleryItemSimpleWidget extends StatelessWidget {
           child: Text(
             galleryProviderController.galleryProvider.translated ?? '',
             style: TextStyle(
-                fontSize: 11,
-                color: ehTheme.palette.text2.resolveFrom(Get.context!)),
+              fontSize: 11,
+              color: ehTheme.palette.text2.resolveFrom(Get.context!),
+            ),
           ),
         ),
         Icon(
@@ -231,8 +248,9 @@ class GalleryItemSimpleWidget extends StatelessWidget {
           child: Text(
             galleryProviderController.galleryProvider.filecount ?? '',
             style: TextStyle(
-                fontSize: 11,
-                color: ehTheme.palette.text2.resolveFrom(Get.context!)),
+              fontSize: 11,
+              color: ehTheme.palette.text2.resolveFrom(Get.context!),
+            ),
           ),
         ),
       ],
@@ -245,7 +263,9 @@ class GalleryItemSimpleWidget extends StatelessWidget {
           ? Container(
               padding: const EdgeInsets.only(bottom: 2.5, right: 8),
               child: FavoriteIcon(
-                  category: galleryProviderController.favCat, size: 11),
+                category: galleryProviderController.favCat,
+                size: 11,
+              ),
             )
           : Container(),
     );
@@ -255,17 +275,19 @@ class GalleryItemSimpleWidget extends StatelessWidget {
     return Text(
       galleryProviderController.galleryProvider.postTime ?? '',
       style: TextStyle(
-          fontSize: 11, color: ehTheme.palette.text2.resolveFrom(Get.context!)),
+        fontSize: 11,
+        color: ehTheme.palette.text2.resolveFrom(Get.context!),
+      ),
     );
   }
 
   Widget _buildCategory() {
     final Color _colorCategory = CupertinoDynamicColor.resolve(
-        ThemeColors.catColor[
-                galleryProviderController.galleryProvider.category ??
-                    'default'] ??
-            CupertinoColors.systemBackground,
-        Get.context!);
+      ThemeColors.catColor[galleryProviderController.galleryProvider.category ??
+              'default'] ??
+          CupertinoColors.systemBackground,
+      Get.context!,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -287,12 +309,8 @@ class GalleryItemSimpleWidget extends StatelessWidget {
 
 /// 封面图片Widget
 class CoverImg extends StatelessWidget {
-  const CoverImg({
-    Key? key,
-    required this.imgUrl,
-    this.height,
-    this.width,
-  }) : super(key: key);
+  const CoverImg({Key? key, required this.imgUrl, this.height, this.width})
+    : super(key: key);
 
   final String imgUrl;
   final double? height;

@@ -260,7 +260,11 @@ class MessageLookup extends MessageLookupByLibrary {
         "japanese_title_in_gallery":
             MessageLookupByLibrary.simpleMessage("日本語のタイトル"),
         "japanese_title_in_gallery_summary":
-            MessageLookupByLibrary.simpleMessage("ギャラリーページのみ"),
+            MessageLookupByLibrary.simpleMessage("日本語のタイトルはギャラリーページのみ"),
+        "full_title_in_gallery":
+            MessageLookupByLibrary.simpleMessage("完全なタイトルを表示"),
+        "full_title_in_gallery_subtitle":
+            MessageLookupByLibrary.simpleMessage("一覧とギャラリーページで別言語のタイトルを改行して表示"),
         "jump_next": MessageLookupByLibrary.simpleMessage("次"),
         "jump_or_seek": MessageLookupByLibrary.simpleMessage("日付に飛び込む"),
         "jump_prev": MessageLookupByLibrary.simpleMessage("前"),

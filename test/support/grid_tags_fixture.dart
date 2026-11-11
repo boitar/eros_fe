@@ -33,6 +33,11 @@ class GridTagsFixtureSettings extends GetxService implements EhSettingService {
   set listViewTagLimit(int value) => tagLimit.value = value;
   @override
   bool get isPureDarkTheme => false;
+  final fullTitle = false.obs;
+  @override
+  bool get fullTitleInGalleryPage => fullTitle.value;
+  @override
+  set fullTitleInGalleryPage(bool value) => fullTitle.value = value;
   @override
   bool get debugMode => false;
   @override
@@ -46,7 +51,9 @@ class GridTagsFixtureSettings extends GetxService implements EhSettingService {
       configs[mode ?? listMode.value];
   @override
   void setItemConfig(
-      ListModeEnum mode, ItemConfig Function(ItemConfig) change) {
+    ListModeEnum mode,
+    ItemConfig Function(ItemConfig) change,
+  ) {
     configs[mode] = change(configs[mode] ?? ItemConfig(type: mode.name));
   }
 
@@ -74,7 +81,7 @@ class GridTagsFixtureLayout extends LayoutServices {
 
 class GridTagsFixtureController extends GalleryItemController {
   GridTagsFixtureController(GalleryProvider galleryProvider)
-      : super(galleryProvider: galleryProvider);
+    : super(galleryProvider: galleryProvider);
 
   int taps = 0;
   int longPresses = 0;
@@ -121,8 +128,9 @@ List<GalleryProvider> gridTagsFixtureGalleries({int count = 6}) {
         filecount: '${24 + i * 20}',
         translated: i.isEven ? 'ZH' : 'JP',
         postTime: '2026-10-12 08:26',
-        simpleTags:
-            i % 6 == 5 ? [] : (i % 6 == 4 ? tags.take(1).toList() : tags),
+        simpleTags: i % 6 == 5
+            ? []
+            : (i % 6 == 4 ? tags.take(1).toList() : tags),
         expunged: i % 6 == 5,
         favcat: i % 6 == 0 ? '4' : '',
       ),
