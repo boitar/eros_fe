@@ -5,7 +5,7 @@
 的个人 fork，`custom` 分支重做主要界面并接入液态玻璃导航，修复下载、收藏、分享、历史、头像、触感与 Cloudflare 验证等问题。
 最初面向 iOS／iPadOS 与 iPhone Duo，**新版 UI 现已支持 Android 与桌面端（macOS）**；Windows 版正在打包，预计过几天发布。
 
-当前版本 `1.10.0+567`（nightly），iOS Bundle ID 为 `cn.honjow.fehv`。
+当前版本 `1.10.1+568`，iOS Bundle ID 为 `cn.honjow.fehv`。
 
 ## 应用截图
 
@@ -64,6 +64,15 @@
 - 隐藏栏目入口：底栏隐藏的栏目在 iOS 27.1 原生导航与旧版玻璃顶栏中都按实际设置显示入口（1 项直接打开，多项弹出选择面板）。
 
 ## 更新记录
+
+### 2026-11-11：v1.10.1，显示完整标题
+
+Tag：`v1.10.1`（[Release](https://github.com/boitar/eros_fe/releases/tag/v1.10.1)）。
+
+- **显示完整标题**（设置 › 外观与布局，位于「画廊页面显示日文标题」下方，默认关闭）。很多画廊标题形如 `(展会) [社团 (作者)] 罗马音标题 | 原文标题 [语言]`，只看罗马音往往读不懂。开启后：
+  - 画廊卡片（列表、小列表、网格、瀑布流）把展会和社团前缀单独弱化成一行，接着是主标题，`|` 后面的另一语言标题另起一行；
+  - 画廊详情页的大标题显示完整标题并分两段，不再只显示英文部分。
+  关闭时与原来完全一致。
 
 ### 2026-11-10：v1.10.0-nightly，UI 重构适配 Android 与桌面端
 
@@ -182,7 +191,7 @@ bash benchmark/favorites_ui_tests/run-native.sh \
 
 ## 安装
 
-本 fork 的安装包发布在 [Releases](https://github.com/boitar/eros_fe/releases)。
+本 fork 的安装包发布在 [Releases](https://github.com/boitar/eros_fe/releases/latest)。
 
 - **Android：** 按设备架构选择 APK（大多数手机选 `arm64-v8a`），不确定时选通用包（universal）。
 - **macOS：** 打开 DMG，把 Eros-FE 拖到「应用程序」。应用为 ad hoc 签名，首次打开可能需要右键 › 打开。
@@ -192,7 +201,7 @@ bash benchmark/favorites_ui_tests/run-native.sh \
 
 无签名 IPA：arm64，主应用无签名，Bundle ID `cn.honjow.fehv`，最低 iOS 15.6。
 
-1. 从 [Releases](https://github.com/boitar/eros_fe/releases) 下载最新的 `Eros-FE_*-unsigned_*.ipa`。
+1. 从 [Releases](https://github.com/boitar/eros_fe/releases/latest) 下载最新的 `Eros-FE_*-unsigned_*.ipa`。
 2. 使用 [AltStore](https://altstore.io) 等工具自行签名后安装。与已装应用同一 Bundle ID 时会覆盖，切换前请先备份应用数据。
 
 上游构建见 [erosTeam/eros_fe Releases](https://github.com/erosTeam/eros_fe/releases/latest) 或 [AltStore.json](https://config-feh.vercel.app/AltStore.json)，不包含本 fork 的增强。
