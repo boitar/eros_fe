@@ -1,6 +1,7 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
@@ -41,6 +42,8 @@ class SettingScaffold extends StatefulWidget {
     this.actions = const <NativeNavigationAction>[],
     this.trailing,
     this.nativeChrome = true,
+    this.nativeBars = 0,
+    this.nativeForeground,
   });
 
   final String title;
@@ -58,6 +61,12 @@ class SettingScaffold extends StatefulWidget {
   /// sit beside another page with its own buttons; the native shell has only
   /// one bar. The native bar then stays empty for this page.
   final bool nativeChrome;
+
+  /// Flutter-owned bar height between the native row and scroll content.
+  final double nativeBars;
+
+  /// Native-only content that must stay sharp above the scroll edge.
+  final Widget? nativeForeground;
 
   @override
   State<SettingScaffold> createState() => _SettingScaffoldState();
@@ -80,14 +89,22 @@ class _SettingScaffoldState extends State<SettingScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final split =
-        context.dependOnInheritedWidgetOfExactType<BrowsePaneScope>()?.split;
+    final split = context
+        .dependOnInheritedWidgetOfExactType<BrowsePaneScope>()
+        ?.split;
     final bool nativeBar =
         widget.nativeChrome && NativeNavigationScope.isEnabled(context);
     final Widget child = CanvasGrain(child: widget.child);
     final Widget page = nativeBar
-        ? CupertinoPageScaffold(child: child)
-        : SettingGlassBar.observe(() => CupertinoPageScaffold(
+        ? CupertinoPageScaffold(
+            child: NativeSingleBarEdge(
+              bars: widget.nativeBars,
+              foreground: widget.nativeForeground,
+              child: child,
+            ),
+          )
+        : SettingGlassBar.observe(
+            () => CupertinoPageScaffold(
               navigationBar: SettingGlassBar.isActive
                   ? SettingGlassBar(
                       title: widget.title,
@@ -109,7 +126,8 @@ class _SettingScaffoldState extends State<SettingScaffold> {
                 onNotification: _onScroll,
                 child: child,
               ),
-            ));
+            ),
+          );
     if (!widget.nativeChrome) {
       return NativeNavigationPage(
         chrome: NativePageChrome(
@@ -140,7 +158,8 @@ class _OwnBarInsets extends StatelessWidget {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final environment = AdaptiveEnvironment.maybeOf(context);
-    final double? top = environment == null ||
+    final double? top =
+        environment == null ||
             environment.hasVerticalBar ||
             !NativeNavigationScope.isEnabled(context)
         ? null
@@ -218,14 +237,16 @@ class SettingGlassBar extends StatelessWidget
   Widget build(BuildContext context) {
     final double safeTop = MediaQuery.paddingOf(context).top;
     final route = ModalRoute.of(context);
-    final bool canPop = (route?.impliesAppBarDismissal ?? false) &&
+    final bool canPop =
+        (route?.impliesAppBarDismissal ?? false) &&
         !isDesktopSettingPaneRoot(
           route,
           split: context
               .dependOnInheritedWidgetOfExactType<BrowsePaneScope>()
               ?.split,
         );
-    final bool followSystem = !Get.isRegistered<EhSettingService>() ||
+    final bool followSystem =
+        !Get.isRegistered<EhSettingService>() ||
         Get.find<EhSettingService>().liquidGlassMaterial;
     final Color iconColor = ehTheme.palette.text1.resolveFrom(context);
     final TextStyle titleStyle = CupertinoTheme.of(context)
@@ -257,45 +278,46 @@ class SettingGlassBar extends StatelessWidget
           child: SizedBox(
             height: barHeight,
             child: _toolbarSurface(
-                context,
-                NavigationToolbar(
-                  leading: canPop
-                      ? _GlassCircle(
-                          followSystemTransparency: followSystem,
-                          label: CupertinoLocalizations.of(context)
-                              .backButtonLabel,
-                          onPressed: () => Navigator.maybePop(context),
-                          child: Icon(
-                            CupertinoIcons.chevron_back,
-                            size: 24,
-                            color: iconColor,
-                          ),
-                        )
-                      : null,
-                  middle: AnimatedOpacity(
-                    opacity: titleVisible ? 1 : 0,
-                    duration: const Duration(milliseconds: 180),
-                    child: Semantics(
-                      header: true,
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: titleStyle,
-                      ),
+              context,
+              NavigationToolbar(
+                leading: canPop
+                    ? _GlassCircle(
+                        followSystemTransparency: followSystem,
+                        label: CupertinoLocalizations.of(context)
+                            .backButtonLabel,
+                        onPressed: () => Navigator.maybePop(context),
+                        child: Icon(
+                          CupertinoIcons.chevron_back,
+                          size: 24,
+                          color: iconColor,
+                        ),
+                      )
+                    : null,
+                middle: AnimatedOpacity(
+                  opacity: titleVisible ? 1 : 0,
+                  duration: const Duration(milliseconds: 180),
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: titleStyle,
                     ),
                   ),
-                  trailing: trailing == null
-                      ? null
-                      : _GlassCapsule(
-                          followSystemTransparency: followSystem,
-                          child: IconTheme.merge(
-                            data: IconThemeData(color: iconColor),
-                            child: trailing!,
-                          ),
+                ),
+                trailing: trailing == null
+                    ? null
+                    : _GlassCapsule(
+                        followSystemTransparency: followSystem,
+                        child: IconTheme.merge(
+                          data: IconThemeData(color: iconColor),
+                          child: trailing!,
                         ),
-                  middleSpacing: 12,
-                )),
+                      ),
+                middleSpacing: 12,
+              ),
+            ),
           ),
         ),
       ],
@@ -332,8 +354,7 @@ class SettingGlassBar extends StatelessWidget
                         CupertinoTheme.brightnessOf(context) == Brightness.dark,
                     'followSystemTransparency':
                         !Get.isRegistered<EhSettingService>() ||
-                        Get.find<EhSettingService>()
-                            .liquidGlassMaterial,
+                        Get.find<EhSettingService>().liquidGlassMaterial,
                   },
                 ),
               ),

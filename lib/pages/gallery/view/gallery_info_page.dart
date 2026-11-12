@@ -1,3 +1,7 @@
+import 'dart:math' as math;
+
+import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/const.dart';
@@ -16,6 +20,10 @@ class GalleryInfoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final nativeBar = NativeNavigationScope.isEnabled(context);
+    final topMargin = nativeBar
+        ? math.max(10.0, NativeTopTabHeader.contentGapFor(context))
+        : 10.0;
     return SettingScaffold(
       title: L10n.of(context).gallery_info,
       child: SafeArea(
@@ -58,12 +66,11 @@ class GalleryInfoPage extends StatelessWidget {
 
               return CupertinoFormSection.insetGrouped(
                 backgroundColor: Colors.transparent,
-                margin: const EdgeInsets.fromLTRB(16, 10, 16, 30),
+                margin: EdgeInsets.fromLTRB(16, topMargin, 16, 30),
                 children: _infoMap.entries
-                    .map((e) => TextItem(
-                          prefixText: e.key,
-                          initialValue: e.value,
-                        ))
+                    .map(
+                      (e) => TextItem(prefixText: e.key, initialValue: e.value),
+                    )
                     .toList(),
               );
             },
@@ -76,7 +83,7 @@ class GalleryInfoPage extends StatelessWidget {
 
 class TextItem extends StatelessWidget {
   const TextItem({Key? key, required this.prefixText, this.initialValue})
-      : super(key: key);
+    : super(key: key);
   final String prefixText;
   final String? initialValue;
 
@@ -93,10 +100,7 @@ class TextItem extends StatelessWidget {
           prefixText,
           style: kTextStyle.copyWith(fontWeight: FontWeight.w500),
         ).paddingOnly(right: 20),
-        child: SelectableText(
-          initialValue ?? '',
-          style: kTextStyle,
-        ),
+        child: SelectableText(initialValue ?? '', style: kTextStyle),
       ).paddingSymmetric(horizontal: 8, vertical: 8),
     );
   }

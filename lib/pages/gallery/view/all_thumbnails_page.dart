@@ -1,4 +1,5 @@
-import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/all_thumbnails_controller.dart';
@@ -7,6 +8,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 import 'const.dart';
+
+const double _kThumbnailGridTopPadding = 4;
 
 class AllThumbnailsPage extends StatefulWidget {
   const AllThumbnailsPage({super.key});
@@ -69,6 +72,12 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
   Widget build(BuildContext context) {
     final int _count = int.parse(controller.fileCount);
     final bool nativeBar = NativeNavigationScope.isEnabled(context);
+    final double contentTopGap = nativeBar
+        ? NativeTopTabHeader.contentGapFor(context)
+        : 0;
+    final double topInset = nativeBar
+        ? MediaQuery.viewPaddingOf(context).top
+        : context.mediaQueryPadding.top;
     final page = CupertinoPageScaffold(
       navigationBar: nativeBar
           ? null
@@ -114,41 +123,48 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
                     )
                   : const SizedBox(),
             ),
-      child: CupertinoScrollbar(
-        controller: controller.scrollController,
-        child: controller.obx(
-          ((List<GalleryImage>, List<GalleryImage>)? state) {
-            final previewPreviousList = state?.$1;
-            final previewList = state?.$2;
-            // logger.d('${previewPreviousList?.length}  ${previewList?.length}');
-            if (previewList != null) {
-              return CustomScrollView(
-                // center: centerKey,
-                physics: const AlwaysScrollableScrollPhysics(),
-                controller: controller.scrollController,
-                slivers: <Widget>[
-                  SliverPadding(
-                    padding: EdgeInsets.only(
-                        top: context.mediaQueryPadding.top +
-                            (nativeBar
-                                ? 0
-                                : kMinInteractiveDimensionCupertino)),
-                    sliver: CupertinoSliverRefreshControl(
-                      onRefresh: controller.fetchPreviewsPrevious,
+      child: NativeSingleBarEdge(
+        child: CupertinoScrollbar(
+          controller: controller.scrollController,
+          child: controller.obx(
+            ((List<GalleryImage>, List<GalleryImage>)? state) {
+              final previewPreviousList = state?.$1;
+              final previewList = state?.$2;
+              final previousList = previewPreviousList ?? <GalleryImage>[];
+              final hasPrevious = previousList.isNotEmpty;
+              // logger.d('${previewPreviousList?.length}  ${previewList?.length}');
+              if (previewList != null) {
+                return CustomScrollView(
+                  // center: centerKey,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  controller: controller.scrollController,
+                  slivers: <Widget>[
+                    SliverPadding(
+                      padding: EdgeInsets.only(
+                        top:
+                            topInset +
+                            contentTopGap +
+                            (nativeBar ? 0 : kMinInteractiveDimensionCupertino),
+                      ),
+                      sliver: CupertinoSliverRefreshControl(
+                        onRefresh: controller.fetchPreviewsPrevious,
+                      ),
                     ),
-                  ),
 
-                  // 前一页网格视图
-                  if (previewPreviousList!.isNotEmpty)
-                    SliverSafeArea(
-                      top: false,
-                      bottom: false,
-                      sliver: SliverPadding(
-                        padding:
-                            const EdgeInsets.only(top: 4, left: 8, right: 8),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                    // 前一页网格视图
+                    if (hasPrevious)
+                      SliverSafeArea(
+                        top: false,
+                        bottom: false,
+                        sliver: SliverPadding(
+                          padding: EdgeInsets.only(
+                            top: nativeBar ? 0 : _kThumbnailGridTopPadding,
+                            left: 8,
+                            right: 8,
+                          ),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                const SliverGridDelegateWithMaxCrossAxisExtent(
                                   maxCrossAxisExtent: kMaxCrossAxisExtent,
                                   mainAxisSpacing: kMainAxisSpacing,
                                   crossAxisSpacing: kCrossAxisSpacing,
@@ -157,13 +173,12 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
                             (BuildContext context, int index) {
                               return Center(
                                 child: ThumbBox(
-                                  galleryImageList: previewPreviousList,
+                                  galleryImageList: previousList,
                                   index: index,
                                   gid: controller.gid,
                                   onLoadComplete: () {
                                     final thumbUrl =
-                                        previewPreviousList[index].thumbUrl ??
-                                            '';
+                                        previousList[index].thumbUrl ?? '';
                                     Future.delayed(
                                             const Duration(milliseconds: 50))
                                         .then(
@@ -183,30 +198,36 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
                                   },
                                 ),
                               );
-                            },
-                            childCount: previewPreviousList.length,
+                            }, childCount: previousList.length),
                           ),
                         ),
                       ),
-                    ),
 
-                  // 主网格视图
-                  SliverSafeArea(
-                    key: centerKey,
-                    top: false,
-                    sliver: SliverPadding(
-                      padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
-                      sliver: SliverGrid(
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                    // 主网格视图
+                    SliverSafeArea(
+                      key: centerKey,
+                      top: false,
+                      sliver: SliverPadding(
+                        padding: EdgeInsets.only(
+                          top: nativeBar && !hasPrevious
+                              ? 0
+                              : _kThumbnailGridTopPadding,
+                          left: 8,
+                          right: 8,
+                        ),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
                                 maxCrossAxisExtent: kMaxCrossAxisExtent,
                                 mainAxisSpacing: kMainAxisSpacing, //主轴方向的间距
                                 crossAxisSpacing:
                                     kCrossAxisSpacing, //交叉轴方向子元素的间距
-                                childAspectRatio: kChildAspectRatio //显示区域宽高比
-                                ),
-                        delegate: SliverChildBuilderDelegate(
-                          (BuildContext context, int index) {
+                                childAspectRatio: kChildAspectRatio, //显示区域宽高比
+                              ),
+                          delegate: SliverChildBuilderDelegate((
+                            BuildContext context,
+                            int index,
+                          ) {
                             //如果显示到最后一个 获取下一页缩略图
                             if ((index == previewList.length - 1 ||
                                     previewList[index + 1].ser -
@@ -245,47 +266,45 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
                                 },
                               ),
                             );
-                          },
-                          childCount: previewList.length,
+                          }, childCount: previewList.length),
                         ),
                       ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Container(
-                      padding: const EdgeInsets.only(bottom: 50, top: 10),
-                      child: Column(
-                        children: <Widget>[
-                          if (controller.isLoadingNext)
-                            const CupertinoActivityIndicator(
-                              radius: 14,
-                            )
-                          else
-                            Container(),
-                          if (controller.isLoadFinsh)
-                            Container(
-                              padding: const EdgeInsets.only(top: 0),
-                              child: Text(
-                                L10n.of(context).no_more_thumbnails,
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            )
-                          else
-                            Container(),
-                        ],
+                    SliverToBoxAdapter(
+                      child: Container(
+                        padding: const EdgeInsets.only(bottom: 50, top: 10),
+                        child: Column(
+                          children: <Widget>[
+                            if (controller.isLoadingNext)
+                              const CupertinoActivityIndicator(radius: 14)
+                            else
+                              Container(),
+                            if (controller.isLoadFinsh)
+                              Container(
+                                padding: const EdgeInsets.only(top: 0),
+                                child: Text(
+                                  L10n.of(context).no_more_thumbnails,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              )
+                            else
+                              Container(),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            } else {
-              return const SizedBox.shrink();
-            }
-          },
-          onLoading: Container(
-            alignment: Alignment.center,
-            child: const CupertinoActivityIndicator(
-              radius: 18,
+                  ],
+                );
+              } else {
+                return const SizedBox.shrink();
+              }
+            },
+            onLoading: Container(
+              alignment: Alignment.center,
+              padding: nativeBar
+                  ? EdgeInsets.only(top: topInset + contentTopGap)
+                  : EdgeInsets.zero,
+              child: const CupertinoActivityIndicator(radius: 18),
             ),
           ),
         ),

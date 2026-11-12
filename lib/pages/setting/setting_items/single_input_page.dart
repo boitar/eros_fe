@@ -1,6 +1,8 @@
-import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -49,45 +51,61 @@ class _SingleInputPageState extends State<SingleInputPage> {
   @override
   Widget build(BuildContext context) {
     logger.d('ehTheme.isDarkMode ${ehTheme.isDarkMode}');
+    final nativeBar = NativeNavigationScope.isEnabled(context);
+    final backgroundColor = !ehTheme.isDarkMode
+        ? CupertinoDynamicColor.resolve(
+            CupertinoColors.secondarySystemBackground,
+            context,
+          )
+        : null;
 
     return RetainedDraft(
-        controller: textController,
-        child: NativeNavigationPage(
-          chrome: NativePageChrome(title: widget.title ?? ''),
-          child: CupertinoPageScaffold(
-            backgroundColor: !ehTheme.isDarkMode
-                ? CupertinoColors.secondarySystemBackground
-                : null,
-            navigationBar: NativeNavigationScope.isEnabled(context)
-                ? null
-                : CupertinoNavigationBar(
-                    middle: Text(widget.title ?? ''),
-                    // previousPageTitle: previousPageTitle,
-                  ),
+      controller: textController,
+      child: NativeNavigationPage(
+        chrome: NativePageChrome(title: widget.title ?? ''),
+        child: CupertinoPageScaffold(
+          backgroundColor: backgroundColor,
+          navigationBar: nativeBar
+              ? null
+              : CupertinoNavigationBar(
+                  middle: Text(widget.title ?? ''),
+                  // previousPageTitle: previousPageTitle,
+                ),
+          child: NativeSingleBarEdge(
+            surfaceColor: backgroundColor,
             child: CustomScrollView(
               slivers: [
                 SliverSafeArea(
                   minimum: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      padding: EdgeInsets.only(
+                        top: nativeBar
+                            ? NativeTopTabHeader.contentGapFor(context)
+                            : 8,
+                        bottom: 8,
+                      ),
                       child: CupertinoTextField(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14.0, vertical: 8.0),
+                          horizontal: 14.0,
+                          vertical: 8.0,
+                        ),
                         maxLines: widget.maxLines,
                         // minLines: 1,
                         suffix: widget.suffixText != null
                             ? Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
                                 child: Text(widget.suffixText!),
                               )
                             : null,
                         // textInputAction: TextInputAction.done,
                         decoration: BoxDecoration(
                           color: ehTheme.textFieldBackgroundColor,
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(8.0)),
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(8.0),
+                          ),
                         ),
                         controller: textController,
                         placeholderStyle: const TextStyle(
@@ -105,10 +123,12 @@ class _SingleInputPageState extends State<SingleInputPage> {
                       ),
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

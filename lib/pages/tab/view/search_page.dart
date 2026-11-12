@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:blur/blur.dart';
 import 'package:eros_fe/adaptive/browse_layout.dart';
+import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
@@ -23,9 +25,9 @@ import 'package:get/get.dart';
 
 const CupertinoDynamicColor _kClearButtonColor =
     CupertinoDynamicColor.withBrightness(
-  color: Color(0xFF636366),
-  darkColor: Color(0xFFAEAEB2),
-);
+      color: Color(0xFF636366),
+      darkColor: Color(0xFFAEAEB2),
+    );
 
 const Color _kDefaultNavBarBorderColor = Color(0x4D000000);
 const Border _kDefaultNavBarBorder = Border(
@@ -36,11 +38,7 @@ const Border _kDefaultNavBarBorder = Border(
   ),
 );
 
-enum SearchMenuEnum {
-  filter,
-  quickSearchList,
-  addToQuickSearch,
-}
+enum SearchMenuEnum { filter, quickSearchList, addToQuickSearch }
 
 class GallerySearchPage extends StatefulWidget {
   const GallerySearchPage({super.key});
@@ -53,8 +51,66 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   late final String _tag;
   late SearchPageController controller;
   final Map<int, double> _keyboardFreeHeights = <int, double>{};
+  final GlobalKey _searchFieldKey = GlobalKey();
+  final GlobalKey _nativeSearchRowKey = GlobalKey();
+  double _nativeSearchRowHeight = 0;
+  String? _nativeSearchRowLayoutSignature;
+  bool _nativeSearchRowMeasured = false;
+  bool _searchRowMeasurePending = false;
+  bool _nativeKeyboardVisible = false;
 
   GlobalKey centerKey = GlobalKey();
+
+  String _nativeSearchLayoutSignature(
+    BuildContext context, {
+    required bool keyboardVisible,
+  }) {
+    final media = MediaQuery.of(context);
+    return '${media.size.width}|${media.textScaler}|${media.devicePixelRatio}|'
+        '${Localizations.localeOf(context)}|$keyboardVisible';
+  }
+
+  void _scheduleNativeSearchRowMeasure() {
+    if (_searchRowMeasurePending) {
+      return;
+    }
+    _searchRowMeasurePending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _searchRowMeasurePending = false;
+      if (!mounted) {
+        return;
+      }
+      final rowContext = _nativeSearchRowKey.currentContext;
+      final height = rowContext?.size?.height;
+      if (rowContext == null || height == null) {
+        return;
+      }
+      final signature = _nativeSearchLayoutSignature(
+        rowContext,
+        keyboardVisible: _nativeKeyboardVisible,
+      );
+      if (_nativeSearchRowMeasured &&
+          (height - _nativeSearchRowHeight).abs() < 0.5 &&
+          signature == _nativeSearchRowLayoutSignature) {
+        return;
+      }
+      setState(() {
+        _nativeSearchRowHeight = height;
+        _nativeSearchRowLayoutSignature = signature;
+        _nativeSearchRowMeasured = true;
+      });
+    });
+  }
+
+  void _onNativeSearchTextChanged() {
+    if (!mounted || !NativeNavigationScope.isEnabled(context)) {
+      return;
+    }
+    if (_nativeSearchRowMeasured) {
+      setState(() => _nativeSearchRowMeasured = false);
+    }
+    _scheduleNativeSearchRowMeasure();
+  }
 
   @override
   void initState() {
@@ -68,22 +124,28 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       logger.d('put SearchPageController $_tag');
       controller = Get.put(
         SearchPageController(
-            controllerTag: _tag, repository: SearchRepository()),
+          controllerTag: _tag,
+          repository: SearchRepository(),
+        ),
         tag: _tag,
       );
     }
+    controller.searchTextController.addListener(_onNativeSearchTextChanged);
 
     // controller.initStateAddPostFrameCallback(context);
   }
 
   @override
   void dispose() {
+    controller.searchTextController.removeListener(_onNativeSearchTextChanged);
     super.dispose();
     Get.delete<SearchPageController>(tag: _tag);
   }
 
-  CupertinoNavigationBar getNavigationBar(BuildContext context,
-      {bool keyboardVisible = false}) {
+  CupertinoNavigationBar getNavigationBar(
+    BuildContext context, {
+    bool keyboardVisible = false,
+  }) {
     return CupertinoNavigationBar(
       padding: const EdgeInsetsDirectional.only(end: 10),
       border: null,
@@ -96,7 +158,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   }
 
   bool _softwareKeyboardVisible(
-      BuildContext context, bool reportedKeyboardVisible) {
+    BuildContext context,
+    bool reportedKeyboardVisible,
+  ) {
     final mediaQuery = MediaQuery.of(context);
     final size = mediaQuery.size;
     final widthKey = size.width.round();
@@ -118,7 +182,8 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final native = NativeNavigationScope.isEnabled(context) &&
+    final native =
+        NativeNavigationScope.isEnabled(context) &&
         !BrowsePaneScope.isSplit(context);
     final Widget body = Column(
       children: [
@@ -142,20 +207,27 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               border: _kDefaultNavBarBorder,
               color: CupertinoTheme.of(context).barBackgroundColor,
             ),
-            child: const SearchTextFieldIn(iconOpacity: 1.0, multiline: true)
-                .paddingSymmetric(horizontal: 12, vertical: 4),
+            child: SearchTextFieldIn(
+              key: _searchFieldKey,
+              iconOpacity: 1,
+              multiline: true,
+            ).paddingSymmetric(horizontal: 12, vertical: 4),
           ),
         ),
         Expanded(child: _buildSearchResult(context)),
       ],
     );
 
-    return KeyboardVisibilityBuilder(builder: (context, keyboardVisible) {
-      final softwareKeyboardVisible =
-          _softwareKeyboardVisible(context, keyboardVisible);
-      return RetainedDraft(
-        controller: controller.searchTextController,
-        child: Obx(() => NativeNavigationPage(
+    return KeyboardVisibilityBuilder(
+      builder: (context, keyboardVisible) {
+        final softwareKeyboardVisible = _softwareKeyboardVisible(
+          context,
+          keyboardVisible,
+        );
+        return RetainedDraft(
+          controller: controller.searchTextController,
+          child: Obx(
+            () => NativeNavigationPage(
               chrome: NativePageChrome(
                 title: controller.placeholderText,
                 navigationBarVisible: native,
@@ -200,52 +272,123 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               child: offlineDuoRouteProbe(
                 id: 'search',
                 listenable: controller.searchTextController,
-                label: () => 'native=$native;'
+                label: () =>
+                    'native=$native;'
                     'split=${BrowsePaneScope.isSplit(context)};tag=$_tag;'
                     'draft=${controller.searchTextController.text}',
                 child: CupertinoPageScaffold(
                   navigationBar: native
                       ? null
-                      : getNavigationBar(context,
-                          keyboardVisible: softwareKeyboardVisible),
-                  child: body,
+                      : getNavigationBar(
+                          context,
+                          keyboardVisible: softwareKeyboardVisible,
+                        ),
+                  child: native
+                      ? _buildNativeBody(
+                          context,
+                          keyboardVisible: softwareKeyboardVisible,
+                        )
+                      : body,
                 ),
               ),
-            )),
-      );
-    });
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  Widget _buildSearchResult(BuildContext context) {
-    return CustomScrollView(
-      // cacheExtent: context.height * 2,
-      slivers: <Widget>[
-        // todo android上会有一次删除多个字符的问题
-        // if (GetPlatform.isIOS)
-        //   SliverFloatingPinnedPersistentHeader(
-        //     delegate: SliverFloatingPinnedPersistentHeaderBuilder(
-        //       minExtentProtoType: SizedBox(
-        //         height: context.mediaQueryPadding.top,
-        //       ),
-        //       maxExtentProtoType: _maxExtentProtoTypeBar(context),
-        //       builder: (_, __, maxExtent) =>
-        //           _buildSearchBar(_, __, maxExtent),
-        //     ),
-        //   ),
-        Obx(() {
-          return EhCupertinoSliverRefreshControl(
+  Widget _buildNativeBody(
+    BuildContext context, {
+    required bool keyboardVisible,
+  }) {
+    _nativeKeyboardVisible = keyboardVisible;
+    _scheduleNativeSearchRowMeasure();
+    final safeTop = MediaQuery.viewPaddingOf(context).top;
+    final contentTopGap = NativeTopTabHeader.contentGapFor(context);
+    final layoutSignature = _nativeSearchLayoutSignature(
+      context,
+      keyboardVisible: keyboardVisible,
+    );
+    return NativeSingleBarEdge(
+      bars: _nativeSearchRowHeight,
+      foreground: Positioned(
+        top: safeTop,
+        left: 0,
+        right: 0,
+        child: NotificationListener<SizeChangedLayoutNotification>(
+          onNotification: (_) {
+            _scheduleNativeSearchRowMeasure();
+            return false;
+          },
+          child: SizeChangedLayoutNotifier(
+            key: _nativeSearchRowKey,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: SearchTextFieldIn(
+                key: _searchFieldKey,
+                iconOpacity: 1,
+                multiline: true,
+                keyboardVisible: keyboardVisible,
+              ),
+            ),
+          ),
+        ),
+      ),
+      child: _buildSearchResult(
+        context,
+        topPadding: safeTop + _nativeSearchRowHeight + contentTopGap,
+        visible:
+            _nativeSearchRowMeasured &&
+            _nativeSearchRowLayoutSignature == layoutSignature &&
+            _nativeSearchRowHeight > 0,
+      ),
+    );
+  }
+
+  Widget _buildSearchResult(
+    BuildContext context, {
+    double? topPadding,
+    bool visible = true,
+  }) {
+    return Offstage(
+      key: const ValueKey('search.nativeResultsVisibility'),
+      offstage: !visible,
+      child: CustomScrollView(
+        // cacheExtent: context.height * 2,
+        slivers: <Widget>[
+          if (topPadding != null)
+            SliverToBoxAdapter(
+              child: SizedBox(
+                key: const ValueKey('search.nativeContentStart'),
+                height: topPadding,
+              ),
+            ),
+          // todo android上会有一次删除多个字符的问题
+          // if (GetPlatform.isIOS)
+          //   SliverFloatingPinnedPersistentHeader(
+          //     delegate: SliverFloatingPinnedPersistentHeaderBuilder(
+          //       minExtentProtoType: SizedBox(
+          //         height: context.mediaQueryPadding.top,
+          //       ),
+          //       maxExtentProtoType: _maxExtentProtoTypeBar(context),
+          //       builder: (_, __, maxExtent) =>
+          //           _buildSearchBar(_, __, maxExtent),
+          //     ),
+          //   ),
+          Obx(() {
+            return EhCupertinoSliverRefreshControl(
               // onRefresh: controller.listType == ListType.gallery
               //     ? () => controller.onEditingComplete(clear: false)
               //     : null);
               onRefresh: controller.listType == ListType.gallery
                   ? () => controller.onRefresh()
-                  : null);
-        }),
-        SliverPadding(
-          padding: EdgeInsets.zero,
-          key: centerKey,
-        ),
-        Obx(() => SliverSafeArea(
+                  : null,
+            );
+          }),
+          SliverPadding(padding: EdgeInsets.zero, key: centerKey),
+          Obx(
+            () => SliverSafeArea(
               // key: UniqueKey(),
               bottom: false,
               top: false,
@@ -260,51 +403,58 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                     return _getInitView();
                 }
               }(),
-            )),
-        Obx(() {
-          if (controller.listType != ListType.tag) {
-            return EndIndicator(
-              pageState: controller.pageState,
-              loadDataMore: controller.loadDataMore,
-            );
-          } else {
-            return SliverSafeArea(
-              bottom: false,
-              top: false,
-              sliver: SliverToBoxAdapter(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: controller.onEditingComplete,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FaIcon(
-                        FontAwesomeIcons.magnifyingGlass,
-                        size: 20,
-                        color: CupertinoDynamicColor.resolve(
-                            CupertinoColors.inactiveGray, context),
-                      ).paddingOnly(right: 8),
-                      Expanded(
-                        child: Text(
-                          '${L10n.of(context).search} ${controller.searchText}',
-                          maxLines: 1,
-                          softWrap: true,
-                          overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Obx(() {
+            if (controller.listType != ListType.tag) {
+              return EndIndicator(
+                pageState: controller.pageState,
+                loadDataMore: controller.loadDataMore,
+              );
+            } else {
+              return SliverSafeArea(
+                bottom: false,
+                top: false,
+                sliver: SliverToBoxAdapter(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: controller.onEditingComplete,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FaIcon(
+                          FontAwesomeIcons.magnifyingGlass,
+                          size: 20,
+                          color: CupertinoDynamicColor.resolve(
+                            CupertinoColors.inactiveGray,
+                            context,
+                          ),
+                        ).paddingOnly(right: 8),
+                        Expanded(
+                          child: Text(
+                            '${L10n.of(context).search} ${controller.searchText}',
+                            maxLines: 1,
+                            softWrap: true,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
-                  ).paddingSymmetric(vertical: 10, horizontal: 16),
-                ).autoCompressKeyboard(context),
-              ),
-            );
-          }
-        }),
-      ],
+                      ],
+                    ).paddingSymmetric(vertical: 10, horizontal: 16),
+                  ).autoCompressKeyboard(context),
+                ),
+              );
+            }
+          }),
+        ],
+      ),
     );
   }
 
   Widget _buildSearchBar(
-      BuildContext context, double offset, double maxExtentCallBackValue) {
+    BuildContext context,
+    double offset,
+    double maxExtentCallBackValue,
+  ) {
     // logger.t('offset $offset');
     double iconOpacity = 0.0;
     final transparentOffset = maxExtentCallBackValue - 60;
@@ -319,10 +469,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // const SizedBox(),
-          Expanded(
-            flex: barHeight ~/ 1,
-            child: getNavigationBar(context),
-          ),
+          Expanded(flex: barHeight ~/ 1, child: getNavigationBar(context)),
           Expanded(
             flex: (maxExtentCallBackValue - barHeight) ~/ 1,
             child: Stack(
@@ -330,38 +477,42 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               alignment: Alignment.topCenter,
               children: [
                 ClipRect(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      border: _kDefaultNavBarBorder,
-                    ),
-                    padding: EdgeInsets.only(
-                      left: 8 + context.mediaQueryPadding.left,
-                      right: 8 + context.mediaQueryPadding.right,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                                left: 4, top: 4, bottom: 4),
-                            child: SearchTextFieldIn(
-                              multiline: true,
-                              iconOpacity: iconOpacity,
-                            ),
-                            // child: getSearchTextField(
-                            //   multiline: true,
-                            // ),
-                          ),
+                  child:
+                      Container(
+                        decoration: const BoxDecoration(
+                          border: _kDefaultNavBarBorder,
                         ),
-                      ],
-                    ),
-                  ).frosted(
-                    blur: 8,
-                    frostColor: CupertinoTheme.of(context)
-                        .barBackgroundColor
-                        .withOpacity(1),
-                    frostOpacity: 0.55,
-                  ),
+                        padding: EdgeInsets.only(
+                          left: 8 + context.mediaQueryPadding.left,
+                          right: 8 + context.mediaQueryPadding.right,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 4,
+                                  top: 4,
+                                  bottom: 4,
+                                ),
+                                child: SearchTextFieldIn(
+                                  multiline: true,
+                                  iconOpacity: iconOpacity,
+                                ),
+                                // child: getSearchTextField(
+                                //   multiline: true,
+                                // ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ).frosted(
+                        blur: 8,
+                        frostColor: CupertinoTheme.of(context)
+                            .barBackgroundColor
+                            .withOpacity(1),
+                        frostOpacity: 0.55,
+                      ),
                 ),
               ],
             ),
@@ -381,8 +532,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         Container(
           decoration: BoxDecoration(
             color: CupertinoDynamicColor.resolve(
-                    ehTheme.themeData!.barBackgroundColor, context)
-                .withOpacity(1),
+              ehTheme.themeData!.barBackgroundColor,
+              context,
+            ).withOpacity(1),
             border: _kDefaultNavBarBorder,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -414,72 +566,63 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     final translateStyle = TextStyle(
       fontSize: 14,
       color: CupertinoDynamicColor.resolve(
-          CupertinoColors.secondaryLabel, Get.context!),
+        CupertinoColors.secondaryLabel,
+        Get.context!,
+      ),
     );
 
     final highLightTextStyle = TextStyle(
       fontSize: 16,
       color: CupertinoDynamicColor.resolve(
-          CupertinoColors.systemBlue, Get.context!),
+        CupertinoColors.systemBlue,
+        Get.context!,
+      ),
     );
 
     final highLightTranslateStyle = TextStyle(
       fontSize: 14,
       color: CupertinoDynamicColor.resolve(
-          CupertinoColors.systemBlue, Get.context!),
+        CupertinoColors.systemBlue,
+        Get.context!,
+      ),
     );
 
     final textSpans = text
         .split(input)
-        .map((e) => TextSpan(
-              text: e,
-              style: textStyle,
-            ))
+        .map((e) => TextSpan(text: e, style: textStyle))
         .separat(
-            separator: TextSpan(
-          text: input,
-          style: highLightTextStyle,
-        ));
+          separator: TextSpan(text: input, style: highLightTextStyle),
+        );
 
     final translateTextSpans = translate
         ?.split(input)
-        .map((e) => TextSpan(
-              text: e,
-              style: translateStyle,
-            ))
+        .map((e) => TextSpan(text: e, style: translateStyle))
         .separat(
-            separator: TextSpan(
-          text: input,
-          style: highLightTranslateStyle,
-        ));
+          separator: TextSpan(text: input, style: highLightTranslateStyle),
+        );
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        FaIcon(FontAwesomeIcons.magnifyingGlass,
-                size: 20,
-                color: CupertinoDynamicColor.resolve(
-                    CupertinoColors.inactiveGray, Get.context!))
-            .paddingOnly(right: 10, top: 4),
+        FaIcon(
+          FontAwesomeIcons.magnifyingGlass,
+          size: 20,
+          color: CupertinoDynamicColor.resolve(
+            CupertinoColors.inactiveGray,
+            Get.context!,
+          ),
+        ).paddingOnly(right: 10, top: 4),
         Expanded(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              RichText(
-                text: TextSpan(
-                  children: textSpans,
-                ),
-              ),
+              RichText(text: TextSpan(children: textSpans)),
               if (translate != null) const SizedBox(height: 6),
               if (translate != null)
-                RichText(
-                  text: TextSpan(
-                    children: translateTextSpans,
-                  ),
-                ),
+                RichText(text: TextSpan(children: translateTextSpans)),
             ],
           ),
         ),
@@ -490,34 +633,31 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   /// tag匹配view
   Widget _getTagQryList() {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (BuildContext context, int index) {
-          final _text = controller.qryTags[index].fullTagText ?? '';
-          // 开启tag翻译的是情况才去查询翻译
-          final _tagRults = controller.isTagTranslat
-              ? controller.qryTags[index].fullTagTranslate
-              : null;
+      delegate: SliverChildBuilderDelegate((BuildContext context, int index) {
+        final _text = controller.qryTags[index].fullTagText ?? '';
+        // 开启tag翻译的是情况才去查询翻译
+        final _tagRults = controller.isTagTranslat
+            ? controller.qryTags[index].fullTagTranslate
+            : null;
 
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              controller.addQryTag(index);
-            },
-            child: _tagItem(
-              input: controller.currQryText,
-              text: _text,
-              translate: _tagRults,
-            ),
-          );
-        },
-        childCount: controller.qryTags.length,
-      ),
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            controller.addQryTag(index);
+          },
+          child: _tagItem(
+            input: controller.currQryText,
+            text: _text,
+            translate: _tagRults,
+          ),
+        );
+      }, childCount: controller.qryTags.length),
     );
   }
 
   Future<String?> _getTextTranslate(String text) async {
-    final String? tranText =
-        await Get.find<TagTransController>().getTranTagWithNameSpaseAuto(text);
+    final String? tranText = await Get.find<TagTransController>()
+        .getTranTagWithNameSpaseAuto(text);
     if (tranText != null && tranText.trim() != text) {
       return tranText;
     } else {
@@ -562,9 +702,12 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                   child: Text(
                     L10n.of(Get.context!).delete,
                     style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: CupertinoDynamicColor.resolve(
-                            CupertinoColors.destructiveRed, Get.context!)),
+                      fontWeight: FontWeight.bold,
+                      color: CupertinoDynamicColor.resolve(
+                        CupertinoColors.destructiveRed,
+                        Get.context!,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -576,7 +719,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   }
 
   Widget _searchHistoryBtnWithTranslate(
-      String text, VoidCallback removeHistory) {
+    String text,
+    VoidCallback removeHistory,
+  ) {
     return FutureBuilder<String?>(
       future: _getTextTranslate(text),
       initialData: '',
@@ -592,41 +737,44 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
           onLongPress: () {
             vibrateUtil.light();
             showCupertinoDialog(
-                context: Get.overlayContext!,
-                barrierDismissible: true,
-                builder: (_) {
-                  return EhAlertDialog(
-                    content: Column(
-                      children: [
-                        Text(text),
-                        if (tranText != null) const SizedBox(height: 12),
-                        if (tranText != null) Text(tranText),
-                      ],
+              context: Get.overlayContext!,
+              barrierDismissible: true,
+              builder: (_) {
+                return EhAlertDialog(
+                  content: Column(
+                    children: [
+                      Text(text),
+                      if (tranText != null) const SizedBox(height: 12),
+                      if (tranText != null) Text(tranText),
+                    ],
+                  ),
+                  actions: [
+                    CupertinoDialogAction(
+                      onPressed: () async {
+                        Get.back();
+                      },
+                      child: Text(L10n.of(Get.context!).cancel),
                     ),
-                    actions: [
-                      CupertinoDialogAction(
-                        onPressed: () async {
-                          Get.back();
-                        },
-                        child: Text(L10n.of(Get.context!).cancel),
-                      ),
-                      CupertinoDialogAction(
-                        onPressed: () async {
-                          removeHistory();
-                          Get.back();
-                        },
-                        child: Text(
-                          L10n.of(Get.context!).delete,
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: CupertinoDynamicColor.resolve(
-                                  CupertinoColors.destructiveRed,
-                                  Get.context!)),
+                    CupertinoDialogAction(
+                      onPressed: () async {
+                        removeHistory();
+                        Get.back();
+                      },
+                      child: Text(
+                        L10n.of(Get.context!).delete,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: CupertinoDynamicColor.resolve(
+                            CupertinoColors.destructiveRed,
+                            Get.context!,
+                          ),
                         ),
                       ),
-                    ],
-                  );
-                });
+                    ),
+                  ],
+                );
+              },
+            );
           },
         );
       },
@@ -634,15 +782,19 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   }
 
   Widget _searchHistoryBtnAnimated(
-      String text, VoidCallback removeHistory, bool translate) {
+    String text,
+    VoidCallback removeHistory,
+    bool translate,
+  ) {
     return AnimatedCrossFade(
       duration: const Duration(milliseconds: 200),
       firstCurve: Curves.easeIn,
       secondCurve: Curves.easeOut,
       firstChild: _searchHistoryBtnWithTranslate(text, removeHistory),
       secondChild: _searchHistoryBtn(text, removeHistory),
-      crossFadeState:
-          translate ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+      crossFadeState: translate
+          ? CrossFadeState.showFirst
+          : CrossFadeState.showSecond,
     );
   }
 
@@ -651,21 +803,24 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       tag: _tag,
       id: GetIds.SEARCH_INIT_VIEW,
       builder: (SearchPageController sPageController) {
-        final List<Widget> searchHistoryButtonList =
-            List<Widget>.from(sPageController.searchHistory
-                .map(
-                  (String text) => _searchHistoryBtnAnimated(
-                    text,
-                    () => sPageController.removeHistory(text),
-                    sPageController.translateSearchHistory,
-                  ),
-                )
-                .toList());
+        final List<Widget> searchHistoryButtonList = List<Widget>.from(
+          sPageController.searchHistory
+              .map(
+                (String text) => _searchHistoryBtnAnimated(
+                  text,
+                  () => sPageController.removeHistory(text),
+                  sPageController.translateSearchHistory,
+                ),
+              )
+              .toList(),
+        );
 
         final Widget searchHistoryBox = SliverToBoxAdapter(
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20.0),
+            padding: const EdgeInsets.symmetric(
+              vertical: 8.0,
+              horizontal: 20.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -675,9 +830,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                     children: [
                       Text(
                         L10n.of(Get.context!).search_history,
-                        style: const TextStyle(
-                          fontSize: 14,
-                        ),
+                        style: const TextStyle(fontSize: 14),
                       ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -725,9 +878,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                     spacing: 8, //主轴上子控件的间距
                     runSpacing: 8, //交叉轴上子控件之间的间距
                     children: searchHistoryButtonList.sublist(
-                        0,
-                        min<int>(
-                            30, searchHistoryButtonList.length)), //要显示的子控件集合
+                      0,
+                      min<int>(30, searchHistoryButtonList.length),
+                    ), //要显示的子控件集合
                   ),
                 ),
               ],
@@ -752,9 +905,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
             child: Container(
               alignment: Alignment.center,
               padding: const EdgeInsets.only(bottom: 50),
-              child: const CupertinoActivityIndicator(
-                radius: 14.0,
-              ),
+              child: const CupertinoActivityIndicator(radius: 14.0),
             ),
           );
         }
@@ -771,8 +922,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         }
 
         if (status.isSuccess) {
-          logger
-              .t('>>>>>>> controller.keepPosition ${controller.keepPosition}');
+          logger.t(
+            '>>>>>>> controller.keepPosition ${controller.keepPosition}',
+          );
           return getGallerySliverList(
             logic.state,
             controller.heroTag,
@@ -796,7 +948,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                   FontAwesomeIcons.hippo,
                   size: 100,
                   color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.systemGrey, context),
+                    CupertinoColors.systemGrey,
+                    context,
+                  ),
                 ),
                 Text(''),
               ],
@@ -821,8 +975,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                 onPressed: controller.searchFocusNode.unfocus,
                 child: Semantics(
                   label: '收起键盘',
-                  child:
-                      const Icon(CupertinoIcons.keyboard_chevron_compact_down),
+                  child: const Icon(
+                    CupertinoIcons.keyboard_chevron_compact_down,
+                  ),
                 ),
               ),
             // 页码
@@ -878,11 +1033,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                   minSize: 40,
                   padding: const EdgeInsets.all(0),
                   child: Semantics(
-                      label: '回到顶部',
-                      child: const Icon(
-                        CupertinoIcons.arrow_up_circle,
-                        size: 28,
-                      )),
+                    label: '回到顶部',
+                    child: const Icon(CupertinoIcons.arrow_up_circle, size: 28),
+                  ),
                   onPressed: () {
                     controller.jumpToTop();
                   },
@@ -897,11 +1050,12 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                   minSize: 40,
                   padding: const EdgeInsets.all(0),
                   child: Semantics(
-                      label: '跳转/搜寻',
-                      child: const Icon(
-                        CupertinoIcons.arrow_uturn_down_circle,
-                        size: 28,
-                      )),
+                    label: '跳转/搜寻',
+                    child: const Icon(
+                      CupertinoIcons.arrow_uturn_down_circle,
+                      size: 28,
+                    ),
+                  ),
                   onPressed: () {
                     controller.showJumpDialog(context);
                   },
@@ -914,15 +1068,11 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               minSize: 36,
               padding: const EdgeInsets.all(0),
               child: Semantics(
-                  label: '以图搜图',
-                  child: const FaIcon(
-                    FontAwesomeIcons.image,
-                    size: 20,
-                  )),
+                label: '以图搜图',
+                child: const FaIcon(FontAwesomeIcons.image, size: 20),
+              ),
               onPressed: () async {
-                await Get.toNamed(
-                  EHRoutes.searchImage,
-                );
+                await Get.toNamed(EHRoutes.searchImage);
               },
             ),
             // 筛选
@@ -930,11 +1080,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               minSize: 36,
               padding: const EdgeInsets.all(0),
               child: Semantics(
-                  label: '筛选',
-                  child: const FaIcon(
-                    FontAwesomeIcons.filter,
-                    size: 20,
-                  )),
+                label: '筛选',
+                child: const FaIcon(FontAwesomeIcons.filter, size: 20),
+              ),
               onPressed: () {
                 showFilterSetting();
               },
@@ -978,11 +1126,13 @@ class SearchTextFieldIn extends StatelessWidget {
     super.key,
     this.multiline = false,
     this.iconOpacity = 0.0,
+    this.keyboardVisible,
   });
 
   // SearchPageController get controller => Get.find(tag: tag);
   final bool multiline;
   final double iconOpacity;
+  final bool? keyboardVisible;
 
   @override
   Widget build(BuildContext context) {
@@ -991,166 +1141,194 @@ class SearchTextFieldIn extends StatelessWidget {
     if (Get.isRegistered(tag: tag)) {
       controller = Get.find(tag: tag);
     } else {
-      controller = Get.put(
-        SearchPageController(),
-        tag: tag,
-      );
+      controller = Get.put(SearchPageController(), tag: tag);
     }
 
     return Obx(() {
       ehTheme.isDarkMode;
-      return KeyboardVisibilityBuilder(builder: (context, isKeyboardVisible) {
-        return CupertinoTextField(
-          style: const TextStyle(height: 1.25),
-          decoration: BoxDecoration(
-            color: ehTheme.textFieldBackgroundColor!.withOpacity(0.6),
-            borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-          ),
-          placeholder: L10n.of(context).search,
-          placeholderStyle: const TextStyle(
-            fontWeight: FontWeight.w400,
-            color: CupertinoColors.placeholderText,
-            height: 1.25,
-          ),
-          // clearButtonMode: OverlayVisibilityMode.editing,
-          // This prefix is decorative; its existing callback does nothing.
-          // Keep its visual/tap behavior without advertising a phantom action.
-          prefix: ExcludeSemantics(
-            child: CupertinoButton(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              minSize: 0,
-              child: FaIcon(
-                FontAwesomeIcons.magnifyingGlass,
-                size: 20.0,
-                color: CupertinoColors.systemGrey.withOpacity(iconOpacity),
-              ),
-              onPressed: () {},
+      return KeyboardVisibilityBuilder(
+        builder: (context, pluginKeyboardVisible) {
+          return CupertinoTextField(
+            style: const TextStyle(height: 1.25),
+            decoration: BoxDecoration(
+              color: ehTheme.textFieldBackgroundColor!.withOpacity(0.6),
+              borderRadius: const BorderRadius.all(Radius.circular(8.0)),
             ),
-          ),
-          suffix: GetBuilder<SearchPageController>(
-            id: GetIds.SEARCH_CLEAR_BTN,
-            tag: tag,
-            builder: (SearchPageController controller) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (GetPlatform.isDesktop)
-                    Builder(builder: (context) {
-                      bool isRefresh = false;
-                      return StatefulBuilder(builder: (context, setState) {
-                        return GestureDetector(
-                          onTap: () async {
-                            setState(() {
-                              isRefresh = true;
-                            });
-                            await controller.reloadData();
-                            setState(() {
-                              isRefresh = false;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: isRefresh
-                                ? const CupertinoActivityIndicator(radius: 8)
-                                : Semantics(
-                                    label: '刷新',
-                                    child: FaIcon(
-                                      FontAwesomeIcons.rotateRight,
-                                      size: 18.0,
-                                      color: CupertinoDynamicColor.resolve(
-                                              _kClearButtonColor, Get.context!)
-                                          .withOpacity(iconOpacity),
-                                    )),
-                          ),
-                        );
-                      });
-                    }),
-                  if (controller.textIsGalleryUrl)
-                    GestureDetector(
-                      onTap: controller.jumpToGallery,
-                      child: Semantics(
+            placeholder: L10n.of(context).search,
+            placeholderStyle: const TextStyle(
+              fontWeight: FontWeight.w400,
+              color: CupertinoColors.placeholderText,
+              height: 1.25,
+            ),
+            // clearButtonMode: OverlayVisibilityMode.editing,
+            // This prefix is decorative; its existing callback does nothing.
+            // Keep its visual/tap behavior without advertising a phantom action.
+            prefix: ExcludeSemantics(
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                minSize: 0,
+                child: FaIcon(
+                  FontAwesomeIcons.magnifyingGlass,
+                  size: 20.0,
+                  color: CupertinoColors.systemGrey.withOpacity(iconOpacity),
+                ),
+                onPressed: () {},
+              ),
+            ),
+            suffix: GetBuilder<SearchPageController>(
+              id: GetIds.SEARCH_CLEAR_BTN,
+              tag: tag,
+              builder: (SearchPageController controller) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (GetPlatform.isDesktop)
+                      Builder(
+                        builder: (context) {
+                          bool isRefresh = false;
+                          return StatefulBuilder(
+                            builder: (context, setState) {
+                              return GestureDetector(
+                                onTap: () async {
+                                  setState(() {
+                                    isRefresh = true;
+                                  });
+                                  await controller.reloadData();
+                                  setState(() {
+                                    isRefresh = false;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  child: isRefresh
+                                      ? const CupertinoActivityIndicator(
+                                          radius: 8,
+                                        )
+                                      : Semantics(
+                                          label: '刷新',
+                                          child: FaIcon(
+                                            FontAwesomeIcons.rotateRight,
+                                            size: 18.0,
+                                            color:
+                                                CupertinoDynamicColor.resolve(
+                                                  _kClearButtonColor,
+                                                  Get.context!,
+                                                ).withOpacity(iconOpacity),
+                                          ),
+                                        ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    if (controller.textIsGalleryUrl)
+                      GestureDetector(
+                        onTap: controller.jumpToGallery,
+                        child: Semantics(
                           label: '打开画廊链接',
                           child: FaIcon(
                             FontAwesomeIcons.circleArrowRight,
                             size: 20.0,
                             color: CupertinoDynamicColor.resolve(
-                                    _kClearButtonColor, Get.context!)
-                                .withOpacity(iconOpacity),
-                          )).paddingSymmetric(horizontal: 6),
-                    ),
-                  if (controller.textIsNotEmpty && !controller.textIsGalleryUrl)
-                    GestureDetector(
-                      onTap: controller.addToQuickSearch,
-                      child: Semantics(
+                              _kClearButtonColor,
+                              Get.context!,
+                            ).withOpacity(iconOpacity),
+                          ),
+                        ).paddingSymmetric(horizontal: 6),
+                      ),
+                    if (controller.textIsNotEmpty &&
+                        !controller.textIsGalleryUrl)
+                      GestureDetector(
+                        onTap: controller.addToQuickSearch,
+                        child: Semantics(
                           label: '加入快速搜索',
                           child: FaIcon(
                             FontAwesomeIcons.circlePlus,
                             size: 20.0,
                             color: CupertinoDynamicColor.resolve(
-                                    _kClearButtonColor, Get.context!)
-                                .withOpacity(iconOpacity),
-                          )).paddingSymmetric(horizontal: 4),
-                    ),
-                  if (controller.textIsNotEmpty)
-                    GestureDetector(
-                      onTap: controller.clearText,
-                      child: Semantics(
+                              _kClearButtonColor,
+                              Get.context!,
+                            ).withOpacity(iconOpacity),
+                          ),
+                        ).paddingSymmetric(horizontal: 4),
+                      ),
+                    if (controller.textIsNotEmpty)
+                      GestureDetector(
+                        onTap: controller.clearText,
+                        child: Semantics(
                           label: '清空搜索词',
                           child: FaIcon(
                             FontAwesomeIcons.circleXmark,
                             size: 20.0,
                             color: CupertinoDynamicColor.resolve(
-                                    _kClearButtonColor, Get.context!)
-                                .withOpacity(iconOpacity),
-                          )).paddingSymmetric(horizontal: 6),
-                    ),
-                  GestureDetector(
-                    onTap: controller.quickSearchList,
-                    child: Semantics(
+                              _kClearButtonColor,
+                              Get.context!,
+                            ).withOpacity(iconOpacity),
+                          ),
+                        ).paddingSymmetric(horizontal: 6),
+                      ),
+                    GestureDetector(
+                      onTap: controller.quickSearchList,
+                      child: Semantics(
                         label: '快速搜索列表',
                         child: FaIcon(
                           FontAwesomeIcons.listUl,
                           size: 18.0,
                           color: CupertinoDynamicColor.resolve(
-                                  _kClearButtonColor, Get.context!)
-                              .withOpacity(iconOpacity),
-                        )).paddingOnly(right: 10, left: 6),
-                  ),
-                ],
-              );
-            },
-          ),
-          padding: const EdgeInsetsDirectional.fromSTEB(0, 6, 5, 6),
-          controller: controller.searchTextController,
-          autofocus: controller.autofocus,
-          onEditingComplete: controller.onEditingComplete,
-          focusNode: controller.searchFocusNode,
-          onTapOutside: (_) => controller.searchFocusNode.unfocus(),
-          maxLines: (isKeyboardVisible && multiline) ? null : 1,
-          textInputAction: TextInputAction.search,
-        );
-      });
+                            _kClearButtonColor,
+                            Get.context!,
+                          ).withOpacity(iconOpacity),
+                        ),
+                      ).paddingOnly(right: 10, left: 6),
+                    ),
+                  ],
+                );
+              },
+            ),
+            padding: const EdgeInsetsDirectional.fromSTEB(0, 6, 5, 6),
+            controller: controller.searchTextController,
+            autofocus: controller.autofocus,
+            onEditingComplete: controller.onEditingComplete,
+            focusNode: controller.searchFocusNode,
+            onTapOutside: (_) => controller.searchFocusNode.unfocus(),
+            maxLines: ((keyboardVisible ?? pluginKeyboardVisible) && multiline)
+                ? null
+                : 1,
+            textInputAction: TextInputAction.search,
+          );
+        },
+      );
     });
   }
 }
 
 class SearchSliverPinnedPersistentHeaderDelegate
     extends SliverPinnedPersistentHeaderDelegate {
-  SearchSliverPinnedPersistentHeaderDelegate(
-      {required this.child,
-      required super.minExtentProtoType,
-      required super.maxExtentProtoType});
+  SearchSliverPinnedPersistentHeaderDelegate({
+    required this.child,
+    required super.minExtentProtoType,
+    required super.maxExtentProtoType,
+  });
   final Widget child;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, double? minExtent,
-      double maxExtent, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    double? minExtent,
+    double maxExtent,
+    bool overlapsContent,
+  ) {
     return child;
   }
 
   @override
   bool shouldRebuild(
-      covariant SliverPinnedPersistentHeaderDelegate oldDelegate) {
+    covariant SliverPinnedPersistentHeaderDelegate oldDelegate,
+  ) {
     return false;
   }
 }

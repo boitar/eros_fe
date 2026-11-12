@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
@@ -90,6 +91,12 @@ class _CommentPageState extends State<CommentPage>
               onRefresh: controller.onRefresh,
             ),
           ),
+          if (NativeNavigationScope.isEnabled(context))
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: NativeTopTabHeader.contentGapFor(context),
+              ),
+            ),
           if (comments.isEmpty)
             const SliverFillRemaining()
           else
@@ -197,39 +204,40 @@ class _CommentPageState extends State<CommentPage>
                           ? L10n.of(context).edit_comment
                           : '${L10n.of(context).reply_to_comment} '
                               '${controller.reptyUser}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: caption,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      controller.isEditStat
-                          ? controller.oriComment
-                          : controller.reptyCommentText,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 14, color: secondary),
-                    ),
-                  ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: caption,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    controller.isEditStat
+                        ? controller.oriComment
+                        : controller.reptyCommentText,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 14, color: secondary),
+                  ),
+                ],
+              ),
+            ),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              minSize: 32,
+              onPressed: controller.pressCancel,
+              child: Icon(
+                CupertinoIcons.xmark_circle_fill,
+                size: 22,
+                semanticLabel: L10n.of(context).cancel,
+                color: CupertinoDynamicColor.resolve(
+                  CupertinoColors.tertiaryLabel,
+                  context,
                 ),
               ),
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                minSize: 32,
-                onPressed: controller.pressCancel,
-                child: Icon(
-                  CupertinoIcons.xmark_circle_fill,
-                  size: 22,
-                  semanticLabel: L10n.of(context).cancel,
-                  color: CupertinoDynamicColor.resolve(
-                      CupertinoColors.tertiaryLabel, context),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   /// Like Messages, the field floats on glass at the foot of the page; the

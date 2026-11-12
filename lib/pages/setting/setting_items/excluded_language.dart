@@ -1,3 +1,5 @@
+import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/extension.dart';
@@ -18,17 +20,25 @@ class ExcludedLanguagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final nativeBar = NativeNavigationScope.isEnabled(context);
     return SettingScaffold(
       title: L10n.of(context).uc_exc_lang,
-      child: const CustomScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverSafeArea(
             bottom: false,
             sliver: SliverToBoxAdapter(
-              child: ExcludedLanguageWidget(),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: nativeBar
+                      ? NativeTopTabHeader.contentGapFor(context)
+                      : 0,
+                ),
+                child: const ExcludedLanguageWidget(),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -43,33 +53,33 @@ class ExcludedLanguageWidget extends GetView<EhMySettingsController> {
     Widget _heard = Row(
       children: [
         const Expanded(
-            flex: _kElFlexLang,
-            child: Text(
-              '',
-              textAlign: TextAlign.right,
-              style: _kElStyle,
-            )),
+          flex: _kElFlexLang,
+          child: Text('', textAlign: TextAlign.right, style: _kElStyle),
+        ),
         Expanded(
-            flex: _kElFlexSwitch,
-            child: Text(
-              L10n.of(context).uc_Original,
-              textAlign: TextAlign.center,
-              style: _kElStyle,
-            )),
+          flex: _kElFlexSwitch,
+          child: Text(
+            L10n.of(context).uc_Original,
+            textAlign: TextAlign.center,
+            style: _kElStyle,
+          ),
+        ),
         Expanded(
-            flex: _kElFlexSwitch,
-            child: Text(
-              L10n.of(context).uc_Translated,
-              textAlign: TextAlign.center,
-              style: _kElStyle,
-            )),
+          flex: _kElFlexSwitch,
+          child: Text(
+            L10n.of(context).uc_Translated,
+            textAlign: TextAlign.center,
+            style: _kElStyle,
+          ),
+        ),
         Expanded(
-            flex: _kElFlexSwitch,
-            child: Text(
-              L10n.of(context).uc_Rewrite,
-              textAlign: TextAlign.center,
-              style: _kElStyle,
-            )),
+          flex: _kElFlexSwitch,
+          child: Text(
+            L10n.of(context).uc_Rewrite,
+            textAlign: TextAlign.center,
+            style: _kElStyle,
+          ),
+        ),
       ],
     ).paddingOnly(bottom: 8.0);
 
@@ -98,12 +108,12 @@ class ExcludedLanguageWidget extends GetView<EhMySettingsController> {
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         width: double.infinity,
         color: CupertinoDynamicColor.resolve(
-            ehTheme.itemBackgroundColor!, context),
+          ehTheme.itemBackgroundColor!,
+          context,
+        ),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(
-              maxWidth: 800,
-            ),
+            constraints: const BoxConstraints(maxWidth: 800),
             child: Column(
               children: [
                 _heard,
@@ -144,29 +154,20 @@ class ExcludedLanguageBody extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-              flex: _kElFlexLang,
-              child: Text(
-                language,
-                textAlign: TextAlign.right,
-                style: _kElStyle,
-              )),
-          Expanded(
-            flex: _kElFlexSwitch,
-            child: ExcludedLanguageCheckBox(
-              id: oriId,
-            ),
+            flex: _kElFlexLang,
+            child: Text(language, textAlign: TextAlign.right, style: _kElStyle),
           ),
           Expanded(
             flex: _kElFlexSwitch,
-            child: ExcludedLanguageCheckBox(
-              id: transId,
-            ),
+            child: ExcludedLanguageCheckBox(id: oriId),
           ),
           Expanded(
             flex: _kElFlexSwitch,
-            child: ExcludedLanguageCheckBox(
-              id: rewId,
-            ),
+            child: ExcludedLanguageCheckBox(id: transId),
+          ),
+          Expanded(
+            flex: _kElFlexSwitch,
+            child: ExcludedLanguageCheckBox(id: rewId),
           ),
         ],
       ),
@@ -175,10 +176,7 @@ class ExcludedLanguageBody extends StatelessWidget {
 }
 
 class ExcludedLanguageCheckBox extends GetView<EhMySettingsController> {
-  const ExcludedLanguageCheckBox({
-    Key? key,
-    this.id,
-  }) : super(key: key);
+  const ExcludedLanguageCheckBox({Key? key, this.id}) : super(key: key);
   final String? id;
 
   @override
@@ -204,7 +202,9 @@ class ExcludedLanguageCheckBox extends GetView<EhMySettingsController> {
                       inactiveBgColor: Colors.transparent,
                       activeBorderColor: GFColors.DANGER,
                       inactiveBorderColor: CupertinoDynamicColor.resolve(
-                          CupertinoColors.label, context),
+                        CupertinoColors.label,
+                        context,
+                      ),
                       type: GFCheckboxType.circle,
                       onChanged: (val) {
                         vibrateUtil.light();
@@ -215,7 +215,8 @@ class ExcludedLanguageCheckBox extends GetView<EhMySettingsController> {
                       inactiveIcon: null,
                     ),
                   );
-                })
+                },
+              )
             : const SizedBox.shrink(),
       ),
     );

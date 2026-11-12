@@ -1,4 +1,6 @@
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/controller/history_controller.dart';
 import 'package:eros_fe/debug/offline_history.dart';
 import 'package:eros_fe/generated/l10n.dart';
@@ -28,6 +30,7 @@ class HistoryTab extends StatefulWidget {
 class _HistoryTabState extends State<HistoryTab> {
   final controller = Get.find<HistoryViewController>();
   final EhTabController ehTabController = EhTabController();
+  static const Key _firstCardKey = ValueKey<String>('history-first-card');
 
   @override
   void initState() {
@@ -67,32 +70,29 @@ class _HistoryTabState extends State<HistoryTab> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (GetPlatform.isDesktop)
-            StatefulBuilder(builder: (context, setState) {
-              return CupertinoButton(
-                padding: const EdgeInsets.all(0),
-                minSize: 40,
-                child: isRefresh
-                    ? const CupertinoActivityIndicator(
-                        radius: 10,
-                      )
-                    : const Icon(
-                        CupertinoIcons.arrow_clockwise,
-                        size: 24,
-                      ),
-                onPressed: () async {
-                  setState(() {
-                    isRefresh = true;
-                  });
-                  try {
-                    await controller.reloadData();
-                  } finally {
+            StatefulBuilder(
+              builder: (context, setState) {
+                return CupertinoButton(
+                  padding: const EdgeInsets.all(0),
+                  minSize: 40,
+                  child: isRefresh
+                      ? const CupertinoActivityIndicator(radius: 10)
+                      : const Icon(CupertinoIcons.arrow_clockwise, size: 24),
+                  onPressed: () async {
                     setState(() {
-                      isRefresh = false;
+                      isRefresh = true;
                     });
-                  }
-                },
-              );
-            }),
+                    try {
+                      await controller.reloadData();
+                    } finally {
+                      setState(() {
+                        isRefresh = false;
+                      });
+                    }
+                  },
+                );
+              },
+            ),
           // 清除按钮
           CupertinoButton(
             minSize: 40,
@@ -114,7 +114,7 @@ class _HistoryTabState extends State<HistoryTab> {
       slivers: <Widget>[
         if (nativeBar)
           SliverToBoxAdapter(
-            child: SizedBox(height: context.mediaQueryPadding.top),
+            child: SizedBox(height: MediaQuery.viewPaddingOf(context).top),
           )
         else
           SliverFloatingPinnedPersistentHeader(
@@ -145,6 +145,10 @@ class _HistoryTabState extends State<HistoryTab> {
                   logic.histories,
                   controller.heroTag,
                   key: controller.sliverAnimatedListKey,
+                  firstCardKey: nativeBar ? _firstCardKey : null,
+                  contentTopGap: nativeBar
+                      ? NativeTopTabHeader.contentGapFor(context)
+                      : null,
                 ),
               );
             },
@@ -170,7 +174,11 @@ class _HistoryTabState extends State<HistoryTab> {
         ],
       ),
       child: CupertinoPageScaffold(
-        child: CanvasGrain(child: SizeCacheWidget(child: customScrollView)),
+        child: CanvasGrain(
+          child: SizeCacheWidget(
+            child: NativeSingleBarEdge(child: customScrollView),
+          ),
+        ),
       ),
     );
   }

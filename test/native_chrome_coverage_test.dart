@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:eros_fe/adaptive/native_navigation.dart';
+import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -58,10 +60,11 @@ class _Page extends GetxController implements GalleryPageController {
 void main() {
   test('every page with a Flutter bar says what the native bar shows', () {
     final sources = {
-      for (final file in Directory('lib')
-          .listSync(recursive: true)
-          .whereType<File>()
-          .where((file) => file.path.endsWith('.dart')))
+      for (final file
+          in Directory('lib')
+              .listSync(recursive: true)
+              .whereType<File>()
+              .where((file) => file.path.endsWith('.dart')))
         file.path: _code(file),
     };
     final bar = RegExp(r'\bCupertino(Sliver)?NavigationBar\(');
@@ -74,9 +77,13 @@ void main() {
             !_unreachable.containsKey(path))
           path,
     ];
-    expect(missing, isEmpty,
-        reason: 'Use SettingScaffold, or publish NativePageChrome and keep '
-            'the Flutter bar for when the native shell is off.');
+    expect(
+      missing,
+      isEmpty,
+      reason:
+          'Use SettingScaffold, or publish NativePageChrome and keep '
+          'the Flutter bar for when the native shell is off.',
+    );
 
     for (final MapEntry(key: exempt, value: token) in _unreachable.entries) {
       final openers = [
@@ -88,8 +95,9 @@ void main() {
   });
 
   test('a pushed page without chrome keeps the bar band', () {
-    final route =
-        PageRouteBuilder<void>(pageBuilder: (_, __, ___) => const SizedBox());
+    final route = PageRouteBuilder<void>(
+      pageBuilder: (_, _, _) => const SizedBox(),
+    );
     final fallback = pushedPageChrome(route);
     expect(fallback.ownBar, isTrue);
     expect(fallback.navigationBarVisible, isFalse);
@@ -107,8 +115,10 @@ void main() {
       Get.reset();
     });
 
-    Future<Future<String?>> open(WidgetTester tester,
-        {required bool native}) async {
+    Future<Future<String?>> open(
+      WidgetTester tester, {
+      required bool native,
+    }) async {
       Get.testMode = true;
       NativeNavigationBridge.enabled.value = native;
       Get.put<EhSettingService>(_Settings());
@@ -116,25 +126,80 @@ void main() {
       Get.put(ThemeService());
       Get.put<GalleryPageController>(_Page(GalleryPageState()), tag: '42');
       Get.put(TagInfoController(galleryTag: '42'), tag: '42');
-      await tester.pumpWidget(GetCupertinoApp(
-        locale: const Locale('en'),
-        localizationsDelegates: const [L10n.delegate],
-        home: NativeNavigationScope(child: const SizedBox()),
-      ));
-      final result = Get.to<String>(() => NativeNavigationScope(
-            child: const ControllerTagScope(
-              snapshot: ControllerTagSnapshot(galleryTag: '42'),
-              child: AddTagPage(),
-            ),
-          ));
+      await tester.pumpWidget(
+        GetCupertinoApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [L10n.delegate],
+          home: NativeNavigationScope(child: const SizedBox()),
+        ),
+      );
+      final result = Get.to<String>(
+        () => NativeNavigationScope(
+          child: const ControllerTagScope(
+            snapshot: ControllerTagSnapshot(galleryTag: '42'),
+            child: AddTagPage(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
       return result!;
     }
 
-    testWidgets('the native bar carries the title and a prominent Done',
-        (tester) async {
+    testWidgets('the native bar carries the title and a prominent Done', (
+      tester,
+    ) async {
       final result = await open(tester, native: true);
       expect(find.byType(CupertinoNavigationBar), findsNothing);
+      final pageContext = tester.element(find.byType(AddTagPage));
+      final safeTop = MediaQuery.viewPaddingOf(pageContext).top;
+      final rowRect = tester.getRect(
+        find.byKey(const ValueKey<String>('nativeAddTags.inputRow')),
+      );
+      final contentGapRect = tester.getRect(
+        find.byKey(const ValueKey<String>('nativeAddTags.contentGap')),
+      );
+      final edge = tester.widget<NativeSingleBarEdge>(
+        find.byType(NativeSingleBarEdge),
+      );
+      expect(rowRect.top, closeTo(safeTop, 0.5));
+      expect(edge.bars, closeTo(rowRect.height, 0.5));
+      expect(contentGapRect.top, closeTo(safeTop, 0.5));
+      expect(
+        contentGapRect.height,
+        closeTo(edge.bars + NativeTopTabHeader.contentGapFor(pageContext), 0.5),
+      );
+      final suggestionsVisibility = find.byKey(
+        const ValueKey<String>('nativeAddTags.suggestionsVisibility'),
+      );
+      expect(tester.widget<Offstage>(suggestionsVisibility).offstage, isFalse);
+      final initialRowHeight = rowRect.height;
+      await tester.enterText(
+        find.byType(CupertinoTextField),
+        'neutral\nsecond line\nthird line',
+      );
+      await tester.pump();
+      expect(tester.widget<Offstage>(suggestionsVisibility).offstage, isTrue);
+      await tester.pumpAndSettle();
+      final expandedRow = tester.getRect(
+        find.byKey(const ValueKey<String>('nativeAddTags.inputRow')),
+      );
+      final expandedEdge = tester.widget<NativeSingleBarEdge>(
+        find.byType(NativeSingleBarEdge),
+      );
+      final expandedGap = tester.getRect(
+        find.byKey(const ValueKey<String>('nativeAddTags.contentGap')),
+      );
+      expect(expandedRow.height, greaterThan(initialRowHeight));
+      expect(expandedEdge.bars, closeTo(expandedRow.height, 0.5));
+      expect(
+        expandedGap.height,
+        closeTo(
+          expandedEdge.bars + NativeTopTabHeader.contentGapFor(pageContext),
+          0.5,
+        ),
+      );
+      expect(tester.widget<Offstage>(suggestionsVisibility).offstage, isFalse);
+
       final route = ModalRoute.of(tester.element(find.byType(AddTagPage)))!;
       final chrome = NativeNavigationBridge.chromeFor(route)!;
       expect(chrome.title, 'Add tags');
@@ -150,14 +215,19 @@ void main() {
       expect(await result, 'f:glasses');
     });
 
-    testWidgets('without the native shell a Flutter bar shows them',
-        (tester) async {
+    testWidgets('without the native shell a Flutter bar shows them', (
+      tester,
+    ) async {
       await open(tester, native: false);
       final bar = find.byType(CupertinoNavigationBar);
-      expect(find.descendant(of: bar, matching: find.text('Add tags')),
-          findsOneWidget);
-      expect(find.descendant(of: bar, matching: find.text('Done')),
-          findsOneWidget);
+      expect(
+        find.descendant(of: bar, matching: find.text('Add tags')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: bar, matching: find.text('Done')),
+        findsOneWidget,
+      );
     });
   });
 }
