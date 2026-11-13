@@ -57,6 +57,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m11(page, total) => "第 ${page} 页，共 ${total} 页";
 
+  static String sp1(avg, count) => "均分 ${avg} · ${count} 人评分";
+
+  static String sp2(count) => "共 ${count} 页";
+
+  static String sp8(count, per) => "共 ${count} 页 · 每页 ${per} 张";
+
+  static String sp27(text) => "搜索 “${text}”";
+
+  static String sp38(count) => "已添加 ${count} 个 · 用逗号分隔";
+
+  static String sp40(tag) => "添加 ${tag}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("上传头像"),
@@ -699,6 +711,47 @@ class MessageLookup extends MessageLookupByLibrary {
         "portrait": MessageLookupByLibrary.simpleMessage("竖屏"),
         "column_count": m9,
         "column_range": m10,
-        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分栏随分割条")
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分栏随分割条"),
+        "sp_rate_submit": MessageLookupByLibrary.simpleMessage("提交评分"),
+        "sp_rating_summary": sp1,
+        "sp_page_total": sp2,
+        "sp_first_page": MessageLookupByLibrary.simpleMessage("第一页"),
+        "sp_middle_page": MessageLookupByLibrary.simpleMessage("中间"),
+        "sp_last_page": MessageLookupByLibrary.simpleMessage("最后一页"),
+        "sp_go": MessageLookupByLibrary.simpleMessage("跳转"),
+        "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("跳到预览页"),
+        "sp_thumbs_per_page": sp8,
+        "sp_date": MessageLookupByLibrary.simpleMessage("日期"),
+        "sp_optional": MessageLookupByLibrary.simpleMessage("可选"),
+        "sp_seek_hint": MessageLookupByLibrary.simpleMessage("日期 2024-05-01 · 偏移 3d 2w 1y · 或直接填 GID"),
+        "sp_show_date_picker": MessageLookupByLibrary.simpleMessage("选择日期"),
+        "sp_archiver_local": MessageLookupByLibrary.simpleMessage("下载到本机"),
+        "sp_archiver_hath": MessageLookupByLibrary.simpleMessage("H@H 远程下载"),
+        "sp_archive_original": MessageLookupByLibrary.simpleMessage("原图归档"),
+        "sp_archive_resample": MessageLookupByLibrary.simpleMessage("重采样归档"),
+        "sp_original": MessageLookupByLibrary.simpleMessage("原图"),
+        "sp_free": MessageLookupByLibrary.simpleMessage("免费"),
+        "sp_archiver_loading": MessageLookupByLibrary.simpleMessage("正在读取归档信息"),
+        "sp_archiver_error": MessageLookupByLibrary.simpleMessage("读取失败"),
+        "sp_retry": MessageLookupByLibrary.simpleMessage("重试"),
+        "sp_clear": MessageLookupByLibrary.simpleMessage("清除"),
+        "sp_translate": MessageLookupByLibrary.simpleMessage("翻译"),
+        "sp_all": MessageLookupByLibrary.simpleMessage("全部"),
+        "sp_recent_searches": MessageLookupByLibrary.simpleMessage("最近搜索"),
+        "sp_search_placeholder": MessageLookupByLibrary.simpleMessage("搜索标题、标签或粘贴链接"),
+        "sp_search_for": sp27,
+        "sp_image_search": MessageLookupByLibrary.simpleMessage("以图搜图"),
+        "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("快速搜索列表"),
+        "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("加入快速搜索"),
+        "sp_filter": MessageLookupByLibrary.simpleMessage("筛选"),
+        "sp_more": MessageLookupByLibrary.simpleMessage("更多"),
+        "sp_hide_keyboard": MessageLookupByLibrary.simpleMessage("收起键盘"),
+        "sp_open_link": MessageLookupByLibrary.simpleMessage("打开画廊链接"),
+        "sp_clear_text": MessageLookupByLibrary.simpleMessage("清空搜索词"),
+        "sp_refresh": MessageLookupByLibrary.simpleMessage("刷新"),
+        "sp_suggestions": MessageLookupByLibrary.simpleMessage("建议"),
+        "sp_tags_added": sp38,
+        "sp_tags_example": MessageLookupByLibrary.simpleMessage("例如 female:glasses, full color"),
+        "sp_add_tag": sp40,
       };
 }

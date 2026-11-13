@@ -57,6 +57,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m11(page, total) => "Стр. ${page} из ${total}";
 
+  static String sp1(avg, count) => "Средняя ${avg} · ${count} оценок";
+
+  static String sp2(count) => "Всего ${count} стр.";
+
+  static String sp8(count, per) => "${count} стр. · по ${per}";
+
+  static String sp27(text) => "Искать «${text}»";
+
+  static String sp38(count) => "Добавлено: ${count} · через запятую";
+
+  static String sp40(tag) => "Добавить ${tag}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Загрузить аватар"),
@@ -877,6 +889,47 @@ class MessageLookup extends MessageLookupByLibrary {
         "portrait": MessageLookupByLibrary.simpleMessage("Портретная"),
         "column_count": m9,
         "column_range": m10,
-        "split_follows_divider": MessageLookupByLibrary.simpleMessage("разделение по разделителю")
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("разделение по разделителю"),
+        "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Оценить"),
+        "sp_rating_summary": sp1,
+        "sp_page_total": sp2,
+        "sp_first_page": MessageLookupByLibrary.simpleMessage("Первая"),
+        "sp_middle_page": MessageLookupByLibrary.simpleMessage("Середина"),
+        "sp_last_page": MessageLookupByLibrary.simpleMessage("Последняя"),
+        "sp_go": MessageLookupByLibrary.simpleMessage("Перейти"),
+        "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("К странице превью"),
+        "sp_thumbs_per_page": sp8,
+        "sp_date": MessageLookupByLibrary.simpleMessage("Дата"),
+        "sp_optional": MessageLookupByLibrary.simpleMessage("Необязательно"),
+        "sp_seek_hint": MessageLookupByLibrary.simpleMessage("Дата 2024-05-01 · смещение 3d 2w 1y · или GID"),
+        "sp_show_date_picker": MessageLookupByLibrary.simpleMessage("Выбрать дату"),
+        "sp_archiver_local": MessageLookupByLibrary.simpleMessage("Скачать на устройство"),
+        "sp_archiver_hath": MessageLookupByLibrary.simpleMessage("Загрузка через H@H"),
+        "sp_archive_original": MessageLookupByLibrary.simpleMessage("Оригинальный архив"),
+        "sp_archive_resample": MessageLookupByLibrary.simpleMessage("Сжатый архив"),
+        "sp_original": MessageLookupByLibrary.simpleMessage("Оригинал"),
+        "sp_free": MessageLookupByLibrary.simpleMessage("Бесплатно"),
+        "sp_archiver_loading": MessageLookupByLibrary.simpleMessage("Загрузка сведений об архиве"),
+        "sp_archiver_error": MessageLookupByLibrary.simpleMessage("Не удалось загрузить"),
+        "sp_retry": MessageLookupByLibrary.simpleMessage("Повторить"),
+        "sp_clear": MessageLookupByLibrary.simpleMessage("Очистить"),
+        "sp_translate": MessageLookupByLibrary.simpleMessage("Перевод"),
+        "sp_all": MessageLookupByLibrary.simpleMessage("Все"),
+        "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Недавние"),
+        "sp_search_placeholder": MessageLookupByLibrary.simpleMessage("Название, теги или ссылка"),
+        "sp_search_for": sp27,
+        "sp_image_search": MessageLookupByLibrary.simpleMessage("Поиск по картинке"),
+        "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("Быстрые запросы"),
+        "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("В быстрые запросы"),
+        "sp_filter": MessageLookupByLibrary.simpleMessage("Фильтр"),
+        "sp_more": MessageLookupByLibrary.simpleMessage("Ещё"),
+        "sp_hide_keyboard": MessageLookupByLibrary.simpleMessage("Скрыть клавиатуру"),
+        "sp_open_link": MessageLookupByLibrary.simpleMessage("Открыть галерею"),
+        "sp_clear_text": MessageLookupByLibrary.simpleMessage("Очистить текст"),
+        "sp_refresh": MessageLookupByLibrary.simpleMessage("Обновить"),
+        "sp_suggestions": MessageLookupByLibrary.simpleMessage("Подсказки"),
+        "sp_tags_added": sp38,
+        "sp_tags_example": MessageLookupByLibrary.simpleMessage("Напр. female:glasses, full color"),
+        "sp_add_tag": sp40,
       };
 }

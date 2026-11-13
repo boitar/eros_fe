@@ -57,6 +57,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m11(page, total) => "Page ${page} of ${total}";
 
+  static String sp1(avg, count) => "Avg ${avg} · ${count} ratings";
+
+  static String sp2(count) => "${count} pages";
+
+  static String sp8(count, per) => "${count} pages · ${per} per page";
+
+  static String sp27(text) => "Search “${text}”";
+
+  static String sp38(count) => "${count} added · separate with commas";
+
+  static String sp40(tag) => "Add ${tag}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
@@ -842,6 +854,47 @@ class MessageLookup extends MessageLookupByLibrary {
         "portrait": MessageLookupByLibrary.simpleMessage("Portrait"),
         "column_count": m9,
         "column_range": m10,
-        "split_follows_divider": MessageLookupByLibrary.simpleMessage("Split, set by divider")
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("Split, set by divider"),
+        "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Submit rating"),
+        "sp_rating_summary": sp1,
+        "sp_page_total": sp2,
+        "sp_first_page": MessageLookupByLibrary.simpleMessage("First"),
+        "sp_middle_page": MessageLookupByLibrary.simpleMessage("Middle"),
+        "sp_last_page": MessageLookupByLibrary.simpleMessage("Last"),
+        "sp_go": MessageLookupByLibrary.simpleMessage("Go"),
+        "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("Go to preview page"),
+        "sp_thumbs_per_page": sp8,
+        "sp_date": MessageLookupByLibrary.simpleMessage("Date"),
+        "sp_optional": MessageLookupByLibrary.simpleMessage("Optional"),
+        "sp_seek_hint": MessageLookupByLibrary.simpleMessage("Date 2024-05-01 · offset 3d 2w 1y · or a GID"),
+        "sp_show_date_picker": MessageLookupByLibrary.simpleMessage("Choose date"),
+        "sp_archiver_local": MessageLookupByLibrary.simpleMessage("Download to device"),
+        "sp_archiver_hath": MessageLookupByLibrary.simpleMessage("H@H remote download"),
+        "sp_archive_original": MessageLookupByLibrary.simpleMessage("Original archive"),
+        "sp_archive_resample": MessageLookupByLibrary.simpleMessage("Resample archive"),
+        "sp_original": MessageLookupByLibrary.simpleMessage("Original"),
+        "sp_free": MessageLookupByLibrary.simpleMessage("Free"),
+        "sp_archiver_loading": MessageLookupByLibrary.simpleMessage("Loading archive info"),
+        "sp_archiver_error": MessageLookupByLibrary.simpleMessage("Failed to load"),
+        "sp_retry": MessageLookupByLibrary.simpleMessage("Retry"),
+        "sp_clear": MessageLookupByLibrary.simpleMessage("Clear"),
+        "sp_translate": MessageLookupByLibrary.simpleMessage("Translate"),
+        "sp_all": MessageLookupByLibrary.simpleMessage("All"),
+        "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Recent"),
+        "sp_search_placeholder": MessageLookupByLibrary.simpleMessage("Search titles, tags or paste a link"),
+        "sp_search_for": sp27,
+        "sp_image_search": MessageLookupByLibrary.simpleMessage("Search by image"),
+        "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("Quick searches"),
+        "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("Add to quick searches"),
+        "sp_filter": MessageLookupByLibrary.simpleMessage("Filter"),
+        "sp_more": MessageLookupByLibrary.simpleMessage("More"),
+        "sp_hide_keyboard": MessageLookupByLibrary.simpleMessage("Hide keyboard"),
+        "sp_open_link": MessageLookupByLibrary.simpleMessage("Open gallery link"),
+        "sp_clear_text": MessageLookupByLibrary.simpleMessage("Clear text"),
+        "sp_refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
+        "sp_suggestions": MessageLookupByLibrary.simpleMessage("Suggestions"),
+        "sp_tags_added": sp38,
+        "sp_tags_example": MessageLookupByLibrary.simpleMessage("e.g. female:glasses, full color"),
+        "sp_add_tag": sp40,
       };
 }

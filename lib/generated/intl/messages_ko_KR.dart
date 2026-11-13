@@ -57,6 +57,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m11(page, total) => "${page} / ${total}쪽";
 
+  static String sp1(avg, count) => "평균 ${avg} · ${count}명";
+
+  static String sp2(count) => "총 ${count}페이지";
+
+  static String sp8(count, per) => "총 ${count}페이지 · 페이지당 ${per}장";
+
+  static String sp27(text) => "“${text}” 검색";
+
+  static String sp38(count) => "${count}개 추가됨 · 쉼표로 구분";
+
+  static String sp40(tag) => "${tag} 추가";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
@@ -794,6 +806,47 @@ class MessageLookup extends MessageLookupByLibrary {
         "portrait": MessageLookupByLibrary.simpleMessage("세로"),
         "column_count": m9,
         "column_range": m10,
-        "split_follows_divider": MessageLookupByLibrary.simpleMessage("분할 · 구분선에 따름")
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("분할 · 구분선에 따름"),
+        "sp_rate_submit": MessageLookupByLibrary.simpleMessage("평가 제출"),
+        "sp_rating_summary": sp1,
+        "sp_page_total": sp2,
+        "sp_first_page": MessageLookupByLibrary.simpleMessage("처음"),
+        "sp_middle_page": MessageLookupByLibrary.simpleMessage("중간"),
+        "sp_last_page": MessageLookupByLibrary.simpleMessage("마지막"),
+        "sp_go": MessageLookupByLibrary.simpleMessage("이동"),
+        "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("미리보기 페이지로"),
+        "sp_thumbs_per_page": sp8,
+        "sp_date": MessageLookupByLibrary.simpleMessage("날짜"),
+        "sp_optional": MessageLookupByLibrary.simpleMessage("선택"),
+        "sp_seek_hint": MessageLookupByLibrary.simpleMessage("날짜 2024-05-01 · 오프셋 3d 2w 1y · 또는 GID"),
+        "sp_show_date_picker": MessageLookupByLibrary.simpleMessage("날짜 선택"),
+        "sp_archiver_local": MessageLookupByLibrary.simpleMessage("기기에 다운로드"),
+        "sp_archiver_hath": MessageLookupByLibrary.simpleMessage("H@H 원격 다운로드"),
+        "sp_archive_original": MessageLookupByLibrary.simpleMessage("원본 아카이브"),
+        "sp_archive_resample": MessageLookupByLibrary.simpleMessage("리샘플 아카이브"),
+        "sp_original": MessageLookupByLibrary.simpleMessage("원본"),
+        "sp_free": MessageLookupByLibrary.simpleMessage("무료"),
+        "sp_archiver_loading": MessageLookupByLibrary.simpleMessage("아카이브 정보를 불러오는 중"),
+        "sp_archiver_error": MessageLookupByLibrary.simpleMessage("불러오지 못했습니다"),
+        "sp_retry": MessageLookupByLibrary.simpleMessage("다시 시도"),
+        "sp_clear": MessageLookupByLibrary.simpleMessage("지우기"),
+        "sp_translate": MessageLookupByLibrary.simpleMessage("번역"),
+        "sp_all": MessageLookupByLibrary.simpleMessage("전체"),
+        "sp_recent_searches": MessageLookupByLibrary.simpleMessage("최근 검색"),
+        "sp_search_placeholder": MessageLookupByLibrary.simpleMessage("제목, 태그 검색 또는 링크 붙여넣기"),
+        "sp_search_for": sp27,
+        "sp_image_search": MessageLookupByLibrary.simpleMessage("이미지로 검색"),
+        "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("빠른 검색 목록"),
+        "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("빠른 검색에 추가"),
+        "sp_filter": MessageLookupByLibrary.simpleMessage("필터"),
+        "sp_more": MessageLookupByLibrary.simpleMessage("더 보기"),
+        "sp_hide_keyboard": MessageLookupByLibrary.simpleMessage("키보드 닫기"),
+        "sp_open_link": MessageLookupByLibrary.simpleMessage("갤러리 링크 열기"),
+        "sp_clear_text": MessageLookupByLibrary.simpleMessage("검색어 지우기"),
+        "sp_refresh": MessageLookupByLibrary.simpleMessage("새로고침"),
+        "sp_suggestions": MessageLookupByLibrary.simpleMessage("추천"),
+        "sp_tags_added": sp38,
+        "sp_tags_example": MessageLookupByLibrary.simpleMessage("예: female:glasses, full color"),
+        "sp_add_tag": sp40,
       };
 }

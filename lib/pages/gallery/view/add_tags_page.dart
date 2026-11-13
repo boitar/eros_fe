@@ -6,20 +6,14 @@ import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/const.dart';
-import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/generated/l10n.dart';
-import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/gallery/controller/taginfo_controller.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
+import 'package:eros_fe/widget/eh_buttons.dart';
+import 'package:eros_fe/widget/tag_suggestions.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-
-const CupertinoDynamicColor _kClearButtonColor =
-    CupertinoDynamicColor.withBrightness(
-      color: Color(0xFF636366),
-      darkColor: Color(0xFFAEAEB2),
-    );
 
 class AddTagPage extends StatefulWidget {
   const AddTagPage({super.key});
@@ -101,49 +95,100 @@ class _AddTagPageState extends State<AddTagPage> {
     _scheduleNativeInputRowMeasure();
   }
 
-  Widget _inputRow({Key? key}) => Padding(
-    key: key,
-    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-    child: CupertinoTextField(
-      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
-      maxLines: null,
-      textInputAction: TextInputAction.done,
-      decoration: BoxDecoration(
-        color: ehTheme.textFieldBackgroundColor,
-        borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+  Widget _inputRow({Key? key}) {
+    final l10n = L10n.of(context);
+    final palette = ehTheme.palette;
+    final base = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+          letterSpacing: 0,
+          fontVariations: const [],
+        );
+    controller.tagsTextController.tokenColor =
+        EhPalette.accent.resolveFrom(context);
+    return Padding(
+      key: key,
+      padding: const EdgeInsets.fromLTRB(14, 6, 14, 8),
+      child: Container(
+        decoration: ehCardDecoration(context),
+        padding: const EdgeInsets.fromLTRB(4, 4, 6, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CupertinoTextField(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+              minLines: 2,
+              maxLines: 6,
+              textInputAction: TextInputAction.done,
+              decoration: null,
+              cursorColor: EhPalette.accent.resolveFrom(context),
+              controller: controller.tagsTextController,
+              focusNode: controller.focusNode,
+              placeholder: l10n.add_tag_placeholder,
+              placeholderStyle: base.copyWith(
+                fontSize: 16,
+                height: 1.4,
+                color: palette.text3.resolveFrom(context),
+              ),
+              autofocus: true,
+              style: base.copyWith(
+                fontSize: 16,
+                height: 1.4,
+                color: palette.text1.resolveFrom(context),
+              ),
+              onEditingComplete: _done,
+            ),
+            GetBuilder<TagInfoController>(
+              id: GetIds.TAG_ADD_CLEAR_BTN,
+              tag: _tag,
+              builder: (TagInfoController controller) {
+                final count = TagTokenTextEditingController.finishedTags(
+                        controller.tagsTextController.text)
+                    .length;
+                return Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 10, top: 2),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          controller.showClearButton
+                              ? l10n.sp_tags_added(count)
+                              : l10n.sp_tags_example,
+                          style: base.copyWith(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            color: palette.text2.resolveFrom(context),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 30,
+                        height: 30,
+                        child: controller.showClearButton
+                            ? Semantics(
+                                button: true,
+                                label: l10n.sp_clear,
+                                excludeSemantics: true,
+                                onTap: controller.clear,
+                                child: EhPressable(
+                                  onPressed: controller.clear,
+                                  child: Icon(
+                                    CupertinoIcons.xmark_circle_fill,
+                                    size: 19,
+                                    color: palette.text3.resolveFrom(context),
+                                  ),
+                                ),
+                              )
+                            : null,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
-      controller: controller.tagsTextController,
-      focusNode: controller.focusNode,
-      placeholder: L10n.of(context).add_tag_placeholder,
-      placeholderStyle: const TextStyle(
-        fontWeight: FontWeight.w400,
-        color: CupertinoColors.placeholderText,
-        height: 1.25,
-      ),
-      suffix: GetBuilder<TagInfoController>(
-        id: GetIds.TAG_ADD_CLEAR_BTN,
-        tag: _tag,
-        builder: (TagInfoController controller) {
-          return controller.showClearButton
-              ? GestureDetector(
-                  onTap: controller.clear,
-                  child: FaIcon(
-                    FontAwesomeIcons.circleXmark,
-                    size: 16.0,
-                    color: CupertinoDynamicColor.resolve(
-                      _kClearButtonColor,
-                      context,
-                    ),
-                  ).paddingSymmetric(horizontal: 9),
-                )
-              : const SizedBox();
-        },
-      ),
-      autofocus: true,
-      style: const TextStyle(height: 1.25),
-      onEditingComplete: _done,
-    ),
-  );
+    );
+  }
 
   Widget _nativeInputRow() =>
       NotificationListener<SizeChangedLayoutNotification>(
@@ -159,7 +204,10 @@ class _AddTagPageState extends State<AddTagPage> {
         ),
       );
 
-  Widget _suggestions({List<Widget> slivers = const [QryTagSliverList()]}) =>
+  Widget _suggestions({List<Widget> slivers = const [
+    QryTagSliverList(),
+    SliverToBoxAdapter(child: SizedBox(height: 24)),
+  ]}) =>
       GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
@@ -192,18 +240,21 @@ class _AddTagPageState extends State<AddTagPage> {
             onPressed: _done,
           ),
         ],
-        trailing: CupertinoButton(
-          minSize: 40,
-          padding: const EdgeInsets.only(left: 4),
-          onPressed: _done,
-          child: Text(L10n.of(context).done),
+        trailing: Padding(
+          padding: const EdgeInsetsDirectional.only(start: 4),
+          child: EhButton(
+            label: L10n.of(context).done,
+            size: 32,
+            style: EhButtonStyle.prominent,
+            onPressed: _done,
+          ),
         ),
         nativeBars: nativeBar ? _nativeInputRowHeight : 0,
         nativeForeground: nativeBar
             ? Positioned(
                 top: safeTop,
-                left: 0,
-                right: 0,
+                left: MediaQuery.viewPaddingOf(context).left,
+                right: MediaQuery.viewPaddingOf(context).right,
                 child: CanvasGrain(child: _nativeInputRow()),
               )
             : null,
@@ -229,6 +280,7 @@ class _AddTagPageState extends State<AddTagPage> {
                         ),
                       ),
                       const QryTagSliverList(),
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     ],
                   ),
                 )
@@ -250,72 +302,25 @@ class QryTagSliverList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<TagInfoController>(tag: pageCtrlTagOf(context));
-    final textStyle = TextStyle(
-      fontSize: 16,
-      color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
-    );
-
-    final translateStyle = TextStyle(
-      fontSize: 14,
-      color: CupertinoDynamicColor.resolve(
-        CupertinoColors.secondaryLabel,
-        context,
-      ),
-    );
-
-    final highLightTextStyle = TextStyle(
-      fontSize: 16,
-      color: CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context),
-    );
-
-    final highLightTranslateStyle = TextStyle(
-      fontSize: 14,
-      color: CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context),
-    );
-
-    return Obx(
-      () => SliverList(
-        delegate: SliverChildBuilderDelegate((BuildContext context, int index) {
-          final input = controller.currQry;
-          final text = controller.qryTags[index].fullTagText ?? '';
-          final translate = controller.qryTags[index].fullTagTranslate;
-
-          final textSpans = text
-              .split(input)
-              .map((e) => TextSpan(text: e, style: textStyle))
-              .separat(
-                separator: TextSpan(text: input, style: highLightTextStyle),
-              );
-
-          final translateTextSpans = translate
-              ?.split(input)
-              .map((e) => TextSpan(text: e, style: translateStyle))
-              .separat(
-                separator: TextSpan(
-                  text: input,
-                  style: highLightTranslateStyle,
-                ),
-              );
-
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              controller.addQryTag(index);
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(text: TextSpan(children: textSpans)),
-                if (translate != null) const SizedBox(height: 6),
-                if (translate != null)
-                  RichText(text: TextSpan(children: translateTextSpans)),
-              ],
-            ).paddingSymmetric(vertical: 4, horizontal: 20),
-          );
-        }, childCount: controller.qryTags.length),
-      ),
-    );
+    return Obx(() {
+      if (controller.qryTags.isEmpty) {
+        return const SliverToBoxAdapter(child: SizedBox.shrink());
+      }
+      return SliverMainAxisGroup(
+        slivers: [
+          SliverToBoxAdapter(
+            child: EhSectionHeader(
+              title: L10n.of(context).sp_suggestions,
+              padding: const EdgeInsets.fromLTRB(20, 10, 16, 10),
+            ),
+          ),
+          SliverTagSuggestions(
+            tags: controller.qryTags.toList(),
+            query: controller.currQry,
+            onSelected: controller.addQryTag,
+          ),
+        ],
+      );
+    });
   }
 }

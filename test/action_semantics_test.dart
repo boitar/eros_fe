@@ -170,16 +170,15 @@ void main() {
     expect(find.byType(CupertinoTextField), findsOneWidget);
   });
 
-  semanticsTest(
-      'empty input exposes the quick search list without edit actions',
+  semanticsTest('empty input shows no edit actions inside the field',
       (tester) async {
     final controller = _Search('');
     await mount(tester, controller);
     expect(find.bySemanticsLabel('清空搜索词'), findsNothing);
     expect(find.bySemanticsLabel('加入快速搜索'), findsNothing);
     expect(find.bySemanticsLabel('打开画廊链接'), findsNothing);
-    await activate(tester, '快速搜索列表');
-    expect(controller.lists, 1);
+    // Quick searches moved to the page's "More" menu in the redesign.
+    expect(find.bySemanticsLabel('快速搜索列表'), findsNothing);
   });
 
   for (final stress in [false, true]) {
@@ -188,10 +187,11 @@ void main() {
         (tester) async {
       final controller = _Search('neutral query');
       await mount(tester, controller, dark: stress, scale: stress ? 2.5 : 1);
-      await activate(tester, '加入快速搜索');
-      expect(controller.added, 1);
+      // "Add to quick searches" lives in the page's "More" menu now.
+      expect(find.bySemanticsLabel('加入快速搜索'), findsNothing);
       await activate(tester, '清空搜索词');
       expect(controller.cleared, 1);
+      expect(controller.added, 0);
       expect(controller.searchTextController.text, isEmpty);
       expect(find.bySemanticsLabel('加入快速搜索'), findsNothing);
       expect(find.bySemanticsLabel('清空搜索词'), findsNothing);

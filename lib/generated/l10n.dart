@@ -5679,6 +5679,415 @@ class L10n {
     );
   }
 
+  /// `Submit rating`
+  String get sp_rate_submit {
+    return Intl.message(
+      'Submit rating',
+      name: 'sp_rate_submit',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Avg {avg} · {count} ratings`
+  String sp_rating_summary(Object avg, Object count) {
+    return Intl.message(
+      'Avg $avg · $count ratings',
+      name: 'sp_rating_summary',
+      desc: '',
+      args: [avg, count],
+    );
+  }
+
+  /// `{count} pages`
+  String sp_page_total(Object count) {
+    return Intl.message(
+      '$count pages',
+      name: 'sp_page_total',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `First`
+  String get sp_first_page {
+    return Intl.message(
+      'First',
+      name: 'sp_first_page',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Middle`
+  String get sp_middle_page {
+    return Intl.message(
+      'Middle',
+      name: 'sp_middle_page',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Last`
+  String get sp_last_page {
+    return Intl.message(
+      'Last',
+      name: 'sp_last_page',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Go`
+  String get sp_go {
+    return Intl.message(
+      'Go',
+      name: 'sp_go',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Go to preview page`
+  String get sp_thumbs_jump {
+    return Intl.message(
+      'Go to preview page',
+      name: 'sp_thumbs_jump',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} pages · {per} per page`
+  String sp_thumbs_per_page(Object count, Object per) {
+    return Intl.message(
+      '$count pages · $per per page',
+      name: 'sp_thumbs_per_page',
+      desc: '',
+      args: [count, per],
+    );
+  }
+
+  /// `Date`
+  String get sp_date {
+    return Intl.message(
+      'Date',
+      name: 'sp_date',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Optional`
+  String get sp_optional {
+    return Intl.message(
+      'Optional',
+      name: 'sp_optional',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Date 2024-05-01 · offset 3d 2w 1y · or a GID`
+  String get sp_seek_hint {
+    return Intl.message(
+      'Date 2024-05-01 · offset 3d 2w 1y · or a GID',
+      name: 'sp_seek_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose date`
+  String get sp_show_date_picker {
+    return Intl.message(
+      'Choose date',
+      name: 'sp_show_date_picker',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Download to device`
+  String get sp_archiver_local {
+    return Intl.message(
+      'Download to device',
+      name: 'sp_archiver_local',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `H@H remote download`
+  String get sp_archiver_hath {
+    return Intl.message(
+      'H@H remote download',
+      name: 'sp_archiver_hath',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Original archive`
+  String get sp_archive_original {
+    return Intl.message(
+      'Original archive',
+      name: 'sp_archive_original',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Resample archive`
+  String get sp_archive_resample {
+    return Intl.message(
+      'Resample archive',
+      name: 'sp_archive_resample',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Original`
+  String get sp_original {
+    return Intl.message(
+      'Original',
+      name: 'sp_original',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Free`
+  String get sp_free {
+    return Intl.message(
+      'Free',
+      name: 'sp_free',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Loading archive info`
+  String get sp_archiver_loading {
+    return Intl.message(
+      'Loading archive info',
+      name: 'sp_archiver_loading',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed to load`
+  String get sp_archiver_error {
+    return Intl.message(
+      'Failed to load',
+      name: 'sp_archiver_error',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Retry`
+  String get sp_retry {
+    return Intl.message(
+      'Retry',
+      name: 'sp_retry',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clear`
+  String get sp_clear {
+    return Intl.message(
+      'Clear',
+      name: 'sp_clear',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Translate`
+  String get sp_translate {
+    return Intl.message(
+      'Translate',
+      name: 'sp_translate',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `All`
+  String get sp_all {
+    return Intl.message(
+      'All',
+      name: 'sp_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Recent`
+  String get sp_recent_searches {
+    return Intl.message(
+      'Recent',
+      name: 'sp_recent_searches',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search titles, tags or paste a link`
+  String get sp_search_placeholder {
+    return Intl.message(
+      'Search titles, tags or paste a link',
+      name: 'sp_search_placeholder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search “{text}”`
+  String sp_search_for(Object text) {
+    return Intl.message(
+      'Search “$text”',
+      name: 'sp_search_for',
+      desc: '',
+      args: [text],
+    );
+  }
+
+  /// `Search by image`
+  String get sp_image_search {
+    return Intl.message(
+      'Search by image',
+      name: 'sp_image_search',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Quick searches`
+  String get sp_quick_search_list {
+    return Intl.message(
+      'Quick searches',
+      name: 'sp_quick_search_list',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add to quick searches`
+  String get sp_add_quick_search {
+    return Intl.message(
+      'Add to quick searches',
+      name: 'sp_add_quick_search',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Filter`
+  String get sp_filter {
+    return Intl.message(
+      'Filter',
+      name: 'sp_filter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `More`
+  String get sp_more {
+    return Intl.message(
+      'More',
+      name: 'sp_more',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hide keyboard`
+  String get sp_hide_keyboard {
+    return Intl.message(
+      'Hide keyboard',
+      name: 'sp_hide_keyboard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open gallery link`
+  String get sp_open_link {
+    return Intl.message(
+      'Open gallery link',
+      name: 'sp_open_link',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clear text`
+  String get sp_clear_text {
+    return Intl.message(
+      'Clear text',
+      name: 'sp_clear_text',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refresh`
+  String get sp_refresh {
+    return Intl.message(
+      'Refresh',
+      name: 'sp_refresh',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Suggestions`
+  String get sp_suggestions {
+    return Intl.message(
+      'Suggestions',
+      name: 'sp_suggestions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} added · separate with commas`
+  String sp_tags_added(Object count) {
+    return Intl.message(
+      '$count added · separate with commas',
+      name: 'sp_tags_added',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `e.g. female:glasses, full color`
+  String get sp_tags_example {
+    return Intl.message(
+      'e.g. female:glasses, full color',
+      name: 'sp_tags_example',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add {tag}`
+  String sp_add_tag(Object tag) {
+    return Intl.message(
+      'Add $tag',
+      name: 'sp_add_tag',
+      desc: '',
+      args: [tag],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

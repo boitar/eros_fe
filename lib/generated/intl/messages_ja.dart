@@ -57,6 +57,18 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m11(page, total) => "${page} / ${total} ページ";
 
+  static String sp1(avg, count) => "平均 ${avg} · ${count} 件";
+
+  static String sp2(count) => "全 ${count} ページ";
+
+  static String sp8(count, per) => "全 ${count} ページ · 1ページ ${per} 枚";
+
+  static String sp27(text) => "「${text}」を検索";
+
+  static String sp38(count) => "${count} 件追加 · カンマ区切り";
+
+  static String sp40(tag) => "${tag} を追加";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
@@ -739,6 +751,47 @@ class MessageLookup extends MessageLookupByLibrary {
         "portrait": MessageLookupByLibrary.simpleMessage("縦向き"),
         "column_count": m9,
         "column_range": m10,
-        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分割・仕切りで変化")
+        "split_follows_divider": MessageLookupByLibrary.simpleMessage("分割・仕切りで変化"),
+        "sp_rate_submit": MessageLookupByLibrary.simpleMessage("評価を送信"),
+        "sp_rating_summary": sp1,
+        "sp_page_total": sp2,
+        "sp_first_page": MessageLookupByLibrary.simpleMessage("最初"),
+        "sp_middle_page": MessageLookupByLibrary.simpleMessage("中間"),
+        "sp_last_page": MessageLookupByLibrary.simpleMessage("最後"),
+        "sp_go": MessageLookupByLibrary.simpleMessage("移動"),
+        "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("プレビューページへ"),
+        "sp_thumbs_per_page": sp8,
+        "sp_date": MessageLookupByLibrary.simpleMessage("日付"),
+        "sp_optional": MessageLookupByLibrary.simpleMessage("任意"),
+        "sp_seek_hint": MessageLookupByLibrary.simpleMessage("日付 2024-05-01 · オフセット 3d 2w 1y · または GID"),
+        "sp_show_date_picker": MessageLookupByLibrary.simpleMessage("日付を選択"),
+        "sp_archiver_local": MessageLookupByLibrary.simpleMessage("端末にダウンロード"),
+        "sp_archiver_hath": MessageLookupByLibrary.simpleMessage("H@H リモートダウンロード"),
+        "sp_archive_original": MessageLookupByLibrary.simpleMessage("オリジナルアーカイブ"),
+        "sp_archive_resample": MessageLookupByLibrary.simpleMessage("リサンプルアーカイブ"),
+        "sp_original": MessageLookupByLibrary.simpleMessage("オリジナル"),
+        "sp_free": MessageLookupByLibrary.simpleMessage("無料"),
+        "sp_archiver_loading": MessageLookupByLibrary.simpleMessage("アーカイブ情報を読み込み中"),
+        "sp_archiver_error": MessageLookupByLibrary.simpleMessage("読み込みに失敗しました"),
+        "sp_retry": MessageLookupByLibrary.simpleMessage("再試行"),
+        "sp_clear": MessageLookupByLibrary.simpleMessage("クリア"),
+        "sp_translate": MessageLookupByLibrary.simpleMessage("翻訳"),
+        "sp_all": MessageLookupByLibrary.simpleMessage("すべて"),
+        "sp_recent_searches": MessageLookupByLibrary.simpleMessage("最近の検索"),
+        "sp_search_placeholder": MessageLookupByLibrary.simpleMessage("タイトル・タグを検索、またはリンクを貼り付け"),
+        "sp_search_for": sp27,
+        "sp_image_search": MessageLookupByLibrary.simpleMessage("画像で検索"),
+        "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("クイック検索一覧"),
+        "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("クイック検索に追加"),
+        "sp_filter": MessageLookupByLibrary.simpleMessage("フィルター"),
+        "sp_more": MessageLookupByLibrary.simpleMessage("その他"),
+        "sp_hide_keyboard": MessageLookupByLibrary.simpleMessage("キーボードを閉じる"),
+        "sp_open_link": MessageLookupByLibrary.simpleMessage("ギャラリーリンクを開く"),
+        "sp_clear_text": MessageLookupByLibrary.simpleMessage("テキストを消去"),
+        "sp_refresh": MessageLookupByLibrary.simpleMessage("更新"),
+        "sp_suggestions": MessageLookupByLibrary.simpleMessage("候補"),
+        "sp_tags_added": sp38,
+        "sp_tags_example": MessageLookupByLibrary.simpleMessage("例: female:glasses, full color"),
+        "sp_add_tag": sp40,
       };
 }

@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:blur/blur.dart';
 import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
@@ -9,25 +7,21 @@ import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/pages/filter/filter.dart';
-import 'package:eros_fe/pages/gallery/view/gallery_widget.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/view/gallery_base.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
+import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
+import 'package:eros_fe/widget/tag_suggestions.dart';
 import 'package:extended_sliver/extended_sliver.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-
-const CupertinoDynamicColor _kClearButtonColor =
-    CupertinoDynamicColor.withBrightness(
-      color: Color(0xFF636366),
-      darkColor: Color(0xFFAEAEB2),
-    );
 
 const Color _kDefaultNavBarBorderColor = Color(0x4D000000);
 const Border _kDefaultNavBarBorder = Border(
@@ -58,6 +52,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   bool _nativeSearchRowMeasured = false;
   bool _searchRowMeasurePending = false;
   bool _nativeKeyboardVisible = false;
+  bool _hasText = false;
 
   GlobalKey centerKey = GlobalKey();
 
@@ -103,7 +98,14 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   }
 
   void _onNativeSearchTextChanged() {
-    if (!mounted || !NativeNavigationScope.isEnabled(context)) {
+    if (!mounted) {
+      return;
+    }
+    final hasText = controller.searchTextController.text.trim().isNotEmpty;
+    if (hasText != _hasText) {
+      setState(() => _hasText = hasText);
+    }
+    if (!NativeNavigationScope.isEnabled(context)) {
       return;
     }
     if (_nativeSearchRowMeasured) {
@@ -131,6 +133,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       );
     }
     controller.searchTextController.addListener(_onNativeSearchTextChanged);
+    _hasText = controller.searchTextController.text.trim().isNotEmpty;
 
     // controller.initStateAddPostFrameCallback(context);
   }
@@ -202,16 +205,13 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         //   ),
         SafeArea(
           bottom: false,
-          child: Container(
-            decoration: BoxDecoration(
-              border: _kDefaultNavBarBorder,
-              color: CupertinoTheme.of(context).barBackgroundColor,
-            ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 6, 14, 8),
             child: SearchTextFieldIn(
               key: _searchFieldKey,
               iconOpacity: 1,
               multiline: true,
-            ).paddingSymmetric(horizontal: 12, vertical: 4),
+            ),
           ),
         ),
         Expanded(child: _buildSearchResult(context)),
@@ -232,41 +232,25 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                 title: controller.placeholderText,
                 navigationBarVisible: native,
                 actions: [
-                  if (controller.afterJump)
-                    NativeNavigationAction(
-                      id: 'top',
-                      title: '回到顶部',
-                      symbol: 'arrow.up.circle',
-                      onPressed: controller.jumpToTop,
-                    ),
-                  if (controller.next.isNotEmpty)
-                    NativeNavigationAction(
-                      id: 'jump',
-                      title: '跳转/搜寻',
-                      symbol: 'arrow.uturn.down.circle',
-                      onPressed: () => controller.showJumpDialog(context),
-                    ),
-                  NativeNavigationAction(
-                    id: 'imageSearch',
-                    title: '以图搜图',
-                    symbol: 'photo',
-                    onPressed: () async {
-                      await Get.toNamed<void>(EHRoutes.searchImage);
-                    },
-                  ),
-                  NativeNavigationAction(
-                    id: 'filter',
-                    title: '筛选',
-                    symbol: 'line.3.horizontal.decrease',
-                    onPressed: showFilterSetting,
-                  ),
                   if (softwareKeyboardVisible)
                     NativeNavigationAction(
                       id: 'dismissKeyboard',
-                      title: '收起键盘',
+                      title: L10n.of(context).sp_hide_keyboard,
                       symbol: 'keyboard.chevron.compact.down',
                       onPressed: controller.searchFocusNode.unfocus,
                     ),
+                  NativeNavigationAction(
+                    id: 'filter',
+                    title: L10n.of(context).sp_filter,
+                    symbol: 'line.3.horizontal.decrease',
+                    onPressed: showFilterSetting,
+                  ),
+                  NativeNavigationAction(
+                    id: 'search.more',
+                    title: L10n.of(context).more_actions,
+                    symbol: 'ellipsis',
+                    children: _moreActions(context),
+                  ),
                 ],
               ),
               child: offlineDuoRouteProbe(
@@ -314,8 +298,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       bars: _nativeSearchRowHeight,
       foreground: Positioned(
         top: safeTop,
-        left: 0,
-        right: 0,
+        // Duo's outer display keeps a side bar region; stay clear of it.
+        left: MediaQuery.viewPaddingOf(context).left,
+        right: MediaQuery.viewPaddingOf(context).right,
         child: NotificationListener<SizeChangedLayoutNotification>(
           onNotification: (_) {
             _scheduleNativeSearchRowMeasure();
@@ -324,7 +309,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
           child: SizeChangedLayoutNotifier(
             key: _nativeSearchRowKey,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
               child: SearchTextFieldIn(
                 key: _searchFieldKey,
                 iconOpacity: 1,
@@ -416,30 +401,12 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                 bottom: false,
                 top: false,
                 sliver: SliverToBoxAdapter(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: controller.onEditingComplete,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        FaIcon(
-                          FontAwesomeIcons.magnifyingGlass,
-                          size: 20,
-                          color: CupertinoDynamicColor.resolve(
-                            CupertinoColors.inactiveGray,
-                            context,
-                          ),
-                        ).paddingOnly(right: 8),
-                        Expanded(
-                          child: Text(
-                            '${L10n.of(context).search} ${controller.searchText}',
-                            maxLines: 1,
-                            softWrap: true,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ).paddingSymmetric(vertical: 10, horizontal: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                    child: _SearchForRow(
+                      text: controller.searchText,
+                      onPressed: controller.onEditingComplete,
+                    ),
                   ).autoCompressKeyboard(context),
                 ),
               );
@@ -553,105 +520,17 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     );
   }
 
-  Widget _tagItem({
-    required String input,
-    required String text,
-    String? translate,
-  }) {
-    final textStyle = TextStyle(
-      fontSize: 16,
-      color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
-    );
-
-    final translateStyle = TextStyle(
-      fontSize: 14,
-      color: CupertinoDynamicColor.resolve(
-        CupertinoColors.secondaryLabel,
-        Get.context!,
-      ),
-    );
-
-    final highLightTextStyle = TextStyle(
-      fontSize: 16,
-      color: CupertinoDynamicColor.resolve(
-        CupertinoColors.systemBlue,
-        Get.context!,
-      ),
-    );
-
-    final highLightTranslateStyle = TextStyle(
-      fontSize: 14,
-      color: CupertinoDynamicColor.resolve(
-        CupertinoColors.systemBlue,
-        Get.context!,
-      ),
-    );
-
-    final textSpans = text
-        .split(input)
-        .map((e) => TextSpan(text: e, style: textStyle))
-        .separat(
-          separator: TextSpan(text: input, style: highLightTextStyle),
-        );
-
-    final translateTextSpans = translate
-        ?.split(input)
-        .map((e) => TextSpan(text: e, style: translateStyle))
-        .separat(
-          separator: TextSpan(text: input, style: highLightTranslateStyle),
-        );
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        FaIcon(
-          FontAwesomeIcons.magnifyingGlass,
-          size: 20,
-          color: CupertinoDynamicColor.resolve(
-            CupertinoColors.inactiveGray,
-            Get.context!,
-          ),
-        ).paddingOnly(right: 10, top: 4),
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RichText(text: TextSpan(children: textSpans)),
-              if (translate != null) const SizedBox(height: 6),
-              if (translate != null)
-                RichText(text: TextSpan(children: translateTextSpans)),
-            ],
-          ),
-        ),
-      ],
-    ).paddingSymmetric(vertical: 12, horizontal: 16);
-  }
-
   /// tag匹配view
   Widget _getTagQryList() {
-    return SliverList(
-      delegate: SliverChildBuilderDelegate((BuildContext context, int index) {
-        final _text = controller.qryTags[index].fullTagText ?? '';
-        // 开启tag翻译的是情况才去查询翻译
-        final _tagRults = controller.isTagTranslat
-            ? controller.qryTags[index].fullTagTranslate
-            : null;
-
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            controller.addQryTag(index);
-          },
-          child: _tagItem(
-            input: controller.currQryText,
-            text: _text,
-            translate: _tagRults,
-          ),
-        );
-      }, childCount: controller.qryTags.length),
+    return SliverPadding(
+      padding: EdgeInsets.only(top: NativeNavigationScope.isEnabled(context) ? 0 : 4),
+      sliver: SliverTagSuggestions(
+        // Read inside the enclosing Obx so new completions rebuild the list.
+        tags: controller.qryTags.toList(),
+        query: controller.currQryText,
+        showTranslation: controller.isTagTranslat,
+        onSelected: controller.addQryTag,
+      ),
     );
   }
 
@@ -665,136 +544,59 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     }
   }
 
-  Widget _searchHistoryBtn(String text, VoidCallback removeHistory) {
-    return SearchHisTagButton(
-      text: text,
-      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
-      onPressed: () {
-        controller.appendTextToSearch(text);
-      },
-      onLongPress: () async {
-        final String? tranText = await _getTextTranslate(text);
-        vibrateUtil.light();
-        showCupertinoDialog(
-          context: Get.overlayContext!,
-          barrierDismissible: true,
-          builder: (_) {
-            return EhAlertDialog(
-              content: Column(
-                children: [
-                  Text(text),
-                  if (tranText != null) const SizedBox(height: 12),
-                  if (tranText != null) Text(tranText),
-                ],
-              ),
-              actions: [
-                CupertinoDialogAction(
-                  onPressed: () async {
-                    Get.back();
-                  },
-                  child: Text(L10n.of(Get.context!).cancel),
-                ),
-                CupertinoDialogAction(
-                  onPressed: () async {
-                    removeHistory();
-                    Get.back();
-                  },
-                  child: Text(
-                    L10n.of(Get.context!).delete,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.destructiveRed,
-                        Get.context!,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
+  Future<void> _confirmRemoveHistory(
+    String text,
+    String? translation,
+    VoidCallback removeHistory,
+  ) async {
+    vibrateUtil.light();
+    final l10n = L10n.of(context);
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (sheetContext) => EhActionSheet(
+        title: Text(text),
+        message: translation == null ? null : Text(translation),
+        actions: [
+          EhActionSheetAction(
+            isDestructiveAction: true,
+            icon: CupertinoIcons.delete,
+            systemIcon: 'trash',
+            onPressed: () {
+              Navigator.of(sheetContext).pop();
+              removeHistory();
+            },
+            child: Text(l10n.delete),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(sheetContext).pop(),
+          child: Text(l10n.cancel),
+        ),
+      ),
     );
   }
 
-  Widget _searchHistoryBtnWithTranslate(
-    String text,
-    VoidCallback removeHistory,
-  ) {
+  Widget _historyChip(String text, VoidCallback removeHistory, bool translate) {
+    if (!translate) {
+      return SearchHistoryChip(
+        text: text,
+        onPressed: () => controller.appendTextToSearch(text),
+        onLongPress: () async => _confirmRemoveHistory(
+          text,
+          await _getTextTranslate(text),
+          removeHistory,
+        ),
+      );
+    }
     return FutureBuilder<String?>(
       future: _getTextTranslate(text),
-      initialData: '',
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
-        String? tranText = snapshot.data as String?;
-        return SearchHisTagButton(
-          text: text,
-          desc: tranText,
-          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
-          onPressed: () {
-            controller.appendTextToSearch(text);
-          },
-          onLongPress: () {
-            vibrateUtil.light();
-            showCupertinoDialog(
-              context: Get.overlayContext!,
-              barrierDismissible: true,
-              builder: (_) {
-                return EhAlertDialog(
-                  content: Column(
-                    children: [
-                      Text(text),
-                      if (tranText != null) const SizedBox(height: 12),
-                      if (tranText != null) Text(tranText),
-                    ],
-                  ),
-                  actions: [
-                    CupertinoDialogAction(
-                      onPressed: () async {
-                        Get.back();
-                      },
-                      child: Text(L10n.of(Get.context!).cancel),
-                    ),
-                    CupertinoDialogAction(
-                      onPressed: () async {
-                        removeHistory();
-                        Get.back();
-                      },
-                      child: Text(
-                        L10n.of(Get.context!).delete,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: CupertinoDynamicColor.resolve(
-                            CupertinoColors.destructiveRed,
-                            Get.context!,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _searchHistoryBtnAnimated(
-    String text,
-    VoidCallback removeHistory,
-    bool translate,
-  ) {
-    return AnimatedCrossFade(
-      duration: const Duration(milliseconds: 200),
-      firstCurve: Curves.easeIn,
-      secondCurve: Curves.easeOut,
-      firstChild: _searchHistoryBtnWithTranslate(text, removeHistory),
-      secondChild: _searchHistoryBtn(text, removeHistory),
-      crossFadeState: translate
-          ? CrossFadeState.showFirst
-          : CrossFadeState.showSecond,
+      builder: (context, snapshot) => SearchHistoryChip(
+        text: text,
+        translation: snapshot.data,
+        onPressed: () => controller.appendTextToSearch(text),
+        onLongPress: () =>
+            _confirmRemoveHistory(text, snapshot.data, removeHistory),
+      ),
     );
   }
 
@@ -803,91 +605,110 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       tag: _tag,
       id: GetIds.SEARCH_INIT_VIEW,
       builder: (SearchPageController sPageController) {
-        final List<Widget> searchHistoryButtonList = List<Widget>.from(
-          sPageController.searchHistory
-              .map(
-                (String text) => _searchHistoryBtnAnimated(
-                  text,
-                  () => sPageController.removeHistory(text),
-                  sPageController.translateSearchHistory,
-                ),
-              )
-              .toList(),
-        );
-
-        final Widget searchHistoryBox = SliverToBoxAdapter(
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              vertical: 8.0,
-              horizontal: 20.0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (sPageController.searchHistory.isNotEmpty)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        L10n.of(Get.context!).search_history,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (sPageController.isTagTranslat)
-                            GestureDetector(
-                              onTap: sPageController.switchTranslateHistory,
-                              child: Container(
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 6.0,
-                                  horizontal: 16,
-                                ),
-                                child: Icon(
-                                  Icons.language,
-                                  size: 17,
-                                  color: sPageController.translateSearchHistory
-                                      ? CupertinoColors.activeBlue
-                                      : CupertinoColors.systemGrey,
-                                ),
-                              ),
-                            ),
-                          GestureDetector(
-                            onTap: sPageController.clearHistory,
-                            child: Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 6.0,
-                                horizontal: 6,
-                              ),
-                              child: const Icon(
-                                Icons.delete,
-                                size: 17,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+        final l10n = L10n.of(context);
+        final history = sPageController.searchHistory;
+        final translate = sPageController.isTagTranslat &&
+            sPageController.translateSearchHistory;
+        return SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (history.isNotEmpty) ...[
+                EhSectionHeader(
+                  title: l10n.sp_recent_searches,
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    NativeNavigationScope.isEnabled(context) ? 6 : 12,
+                    16,
+                    10,
                   ),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Wrap(
-                    spacing: 8, //主轴上子控件的间距
-                    runSpacing: 8, //交叉轴上子控件之间的间距
-                    children: searchHistoryButtonList.sublist(
-                      0,
-                      min<int>(30, searchHistoryButtonList.length),
-                    ), //要显示的子控件集合
+                  actions: [
+                    if (sPageController.isTagTranslat)
+                      EhButton(
+                        icon: CupertinoIcons.globe,
+                        label: l10n.sp_translate,
+                        size: 28,
+                        style: EhButtonStyle.tonal,
+                        selected: sPageController.translateSearchHistory,
+                        onPressed: sPageController.switchTranslateHistory,
+                      ),
+                    EhButton(
+                      label: l10n.sp_clear,
+                      size: 28,
+                      style: EhButtonStyle.fill,
+                      semanticLabel: l10n.clear_search_history,
+                      onPressed: sPageController.clearHistory,
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 200),
+                    alignment: Alignment.topCenter,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final text in history.take(30))
+                          _historyChip(
+                            text,
+                            () => sPageController.removeHistory(text),
+                            translate,
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ],
-            ),
+              Obx(() {
+                final quick = sPageController
+                    .quickSearchController.searchTextList
+                    .where((e) => e.trim().isNotEmpty)
+                    .take(3)
+                    .toList();
+                if (quick.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    EhSectionHeader(
+                      title: l10n.quick_search,
+                      padding: EdgeInsets.fromLTRB(
+                          20, history.isEmpty ? 12 : 26, 16, 10),
+                      actions: [
+                        EhButton(
+                          label: l10n.sp_all,
+                          size: 28,
+                          style: EhButtonStyle.fill,
+                          semanticLabel: l10n.sp_quick_search_list,
+                          onPressed: sPageController.quickSearchList,
+                        ),
+                      ],
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: ehCardDecoration(context),
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < quick.length; i++)
+                            _QuickSearchRow(
+                              text: quick[i].trim(),
+                              divider: i > 0,
+                              onPressed: () => sPageController
+                                  .applyQuickSearch(quick[i].trim()),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }),
+              const SizedBox(height: 24),
+            ],
           ),
         );
-        return searchHistoryBox;
       },
     );
   }
@@ -961,164 +782,108 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     );
   }
 
-  Widget _buildTrailing(BuildContext context, {bool keyboardVisible = false}) {
-    Widget buildListButtons() {
-      return GestureDetector(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            if (keyboardVisible)
-              CupertinoButton(
-                minimumSize: const Size(44, 44),
-                padding: EdgeInsets.zero,
-                onPressed: controller.searchFocusNode.unfocus,
-                child: Semantics(
-                  label: '收起键盘',
-                  child: const Icon(
-                    CupertinoIcons.keyboard_chevron_compact_down,
-                  ),
-                ),
-              ),
-            // 页码
-            // Obx(() {
-            //   if (controller.curPage > -1) {
-            //     return Container(
-            //       margin: const EdgeInsets.only(left: 8, right: 4),
-            //       child: CupertinoButton(
-            //         minSize: 36,
-            //         padding: const EdgeInsets.all(0),
-            //         child: Container(
-            //           padding: const EdgeInsets.symmetric(
-            //               horizontal: 4, vertical: 0),
-            //           constraints: const BoxConstraints(minWidth: 24),
-            //           decoration: BoxDecoration(
-            //             border: Border.all(
-            //               color: CupertinoDynamicColor.resolve(
-            //                   CupertinoColors.activeBlue, context),
-            //               width: 2.0,
-            //             ),
-            //             borderRadius: BorderRadius.circular(8),
-            //           ),
-            //           child: Obx(() => Text(
-            //                 '${controller.curPage + 1}',
-            //                 textAlign: TextAlign.center,
-            //                 textScaler: const TextScaler.linear(0.85),
-            //                 style: TextStyle(
-            //                   fontWeight: FontWeight.bold,
-            //                   color: CupertinoDynamicColor.resolve(
-            //                       CupertinoColors.activeBlue, context),
-            //                   // height: 1.2,
-            //                   // textBaseline: TextBaseline.ideographic,
-            //                 ),
-            //                 // strutStyle: const StrutStyle(
-            //                 //   leading: 0.2,
-            //                 //   height: 1.2,
-            //                 //   forceStrutHeight: true,
-            //                 // ),
-            //               )),
-            //         ),
-            //         onPressed: () {
-            //           controller.showJumpToPage();
-            //         },
-            //       ),
-            //     );
-            //   } else {
-            //     return const SizedBox.shrink();
-            //   }
-            // }),
-            Obx(() {
-              if (controller.afterJump) {
-                return CupertinoButton(
-                  minSize: 40,
-                  padding: const EdgeInsets.all(0),
-                  child: Semantics(
-                    label: '回到顶部',
-                    child: const Icon(CupertinoIcons.arrow_up_circle, size: 28),
-                  ),
-                  onPressed: () {
-                    controller.jumpToTop();
-                  },
-                );
-              } else {
-                return const SizedBox();
-              }
-            }),
-            Obx(() {
-              if (controller.next.isNotEmpty) {
-                return CupertinoButton(
-                  minSize: 40,
-                  padding: const EdgeInsets.all(0),
-                  child: Semantics(
-                    label: '跳转/搜寻',
-                    child: const Icon(
-                      CupertinoIcons.arrow_uturn_down_circle,
-                      size: 28,
-                    ),
-                  ),
-                  onPressed: () {
-                    controller.showJumpDialog(context);
-                  },
-                );
-              } else {
-                return const SizedBox.shrink();
-              }
-            }),
-            CupertinoButton(
-              minSize: 36,
-              padding: const EdgeInsets.all(0),
-              child: Semantics(
-                label: '以图搜图',
-                child: const FaIcon(FontAwesomeIcons.image, size: 20),
-              ),
-              onPressed: () async {
-                await Get.toNamed(EHRoutes.searchImage);
-              },
-            ),
-            // 筛选
-            CupertinoButton(
-              minSize: 36,
-              padding: const EdgeInsets.all(0),
-              child: Semantics(
-                label: '筛选',
-                child: const FaIcon(FontAwesomeIcons.filter, size: 20),
-              ),
-              onPressed: () {
-                showFilterSetting();
-              },
-            ),
-
-            // 添加到快捷搜索
-            // CupertinoButton(
-            //   minSize: 36,
-            //   padding: const EdgeInsets.all(0),
-            //   child: const Icon(
-            //     LineIcons.plusCircle,
-            //     size: 26,
-            //   ),
-            //   onPressed: () {
-            //     controller.addToQuickSearch();
-            //   },
-            // ),
-            // 打开快捷搜索
-            // CupertinoButton(
-            //   minSize: 36,
-            //   padding: const EdgeInsets.all(0),
-            //   child: const Icon(
-            //     FontAwesomeIcons.listUl,
-            //     size: 20,
-            //   ),
-            //   onPressed: () {
-            //     controller.quickSearchList();
-            //   },
-            // ),
-          ],
-        ),
-      );
-    }
-
-    return buildListButtons();
+  /// The occasional actions, shared by the native "…" menu and the Flutter
+  /// bar's pull-down.
+  List<NativeNavigationAction> _moreActions(BuildContext context) {
+    final l10n = L10n.of(context);
+    return [
+      NativeNavigationAction(
+        id: 'imageSearch',
+        title: l10n.sp_image_search,
+        symbol: 'photo.on.rectangle',
+        onPressed: () => Get.toNamed<void>(EHRoutes.searchImage),
+      ),
+      NativeNavigationAction(
+        id: 'quickSearchList',
+        title: l10n.sp_quick_search_list,
+        symbol: 'list.bullet',
+        onPressed: controller.quickSearchList,
+      ),
+      NativeNavigationAction(
+        id: 'addQuickSearch',
+        title: l10n.sp_add_quick_search,
+        symbol: 'plus.circle',
+        enabled: _hasText && !controller.textIsGalleryUrl,
+        onPressed: controller.addToQuickSearch,
+      ),
+      NativeNavigationAction(
+        id: 'jump',
+        title: l10n.jump_or_seek,
+        symbol: 'arrow.uturn.down.circle',
+        enabled: controller.next.isNotEmpty,
+        onPressed: () => controller.showJumpDialog(context),
+      ),
+      NativeNavigationAction(
+        id: 'top',
+        title: l10n.back_to_top,
+        symbol: 'arrow.up.to.line',
+        enabled: controller.afterJump,
+        onPressed: controller.jumpToTop,
+      ),
+    ];
   }
+
+  Widget _buildTrailing(BuildContext context, {bool keyboardVisible = false}) {
+    final l10n = L10n.of(context);
+    final color = ehTheme.palette.text1.resolveFrom(context);
+    Widget icon(IconData data, String label, VoidCallback onPressed) =>
+        CupertinoButton(
+          minimumSize: const Size(40, 40),
+          padding: EdgeInsets.zero,
+          onPressed: onPressed,
+          child: Semantics(
+            label: label,
+            button: true,
+            excludeSemantics: true,
+            onTap: onPressed,
+            child: Icon(data, size: 22, color: color),
+          ),
+        );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (keyboardVisible)
+          icon(
+            CupertinoIcons.keyboard_chevron_compact_down,
+            l10n.sp_hide_keyboard,
+            controller.searchFocusNode.unfocus,
+          ),
+        icon(
+          CupertinoIcons.line_horizontal_3_decrease,
+          l10n.sp_filter,
+          showFilterSetting,
+        ),
+        Obx(() {
+          final actions = _moreActions(context);
+          return CupertinoMenuAnchor(
+            menuChildren: [
+              for (final action in actions)
+                CupertinoMenuItem(
+                  onPressed: action.enabled && action.onPressed != null
+                      ? () => action.onPressed!()
+                      : null,
+                  trailing: Icon(_menuIcon(action.id)),
+                  child: Text(action.title),
+                ),
+            ],
+            builder: (context, menu, _) => icon(
+              CupertinoIcons.ellipsis,
+              l10n.more_actions,
+              () => menu.isOpen ? menu.close() : menu.open(),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  static IconData _menuIcon(String id) => switch (id) {
+        'imageSearch' => CupertinoIcons.photo_on_rectangle,
+        'quickSearchList' => CupertinoIcons.list_bullet,
+        'addQuickSearch' => CupertinoIcons.plus_circle,
+        'jump' => CupertinoIcons.arrow_uturn_down_circle,
+        _ => CupertinoIcons.arrow_up_to_line,
+      };
 }
 
 class SearchTextFieldIn extends StatelessWidget {
@@ -1129,7 +894,6 @@ class SearchTextFieldIn extends StatelessWidget {
     this.keyboardVisible,
   });
 
-  // SearchPageController get controller => Get.find(tag: tag);
   final bool multiline;
   final double iconOpacity;
   final bool? keyboardVisible;
@@ -1138,170 +902,303 @@ class SearchTextFieldIn extends StatelessWidget {
   Widget build(BuildContext context) {
     final tag = searchPageCtrlTagOf(context);
     SearchPageController controller;
-    if (Get.isRegistered(tag: tag)) {
+    if (Get.isRegistered<SearchPageController>(tag: tag)) {
       controller = Get.find(tag: tag);
     } else {
       controller = Get.put(SearchPageController(), tag: tag);
     }
+    final l10n = L10n.of(context);
 
     return Obx(() {
       ehTheme.isDarkMode;
+      final palette = ehTheme.palette;
+      final base = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+            letterSpacing: 0,
+            fontVariations: const [],
+          );
+      final iconColor = palette.text2
+          .resolveFrom(context)
+          .withValues(alpha: iconOpacity.clamp(0, 1));
       return KeyboardVisibilityBuilder(
         builder: (context, pluginKeyboardVisible) {
+          final expanded =
+              (keyboardVisible ?? pluginKeyboardVisible) && multiline;
           return CupertinoTextField(
-            style: const TextStyle(height: 1.25),
+            style: base.copyWith(
+              fontSize: 16,
+              height: 1.3,
+              color: palette.text1.resolveFrom(context),
+            ),
+            cursorColor: EhPalette.accent.resolveFrom(context),
             decoration: BoxDecoration(
-              color: ehTheme.textFieldBackgroundColor!.withOpacity(0.6),
-              borderRadius: const BorderRadius.all(Radius.circular(8.0)),
+              color: palette.field.resolveFrom(context),
+              borderRadius: BorderRadius.circular(expanded ? 16 : 21),
             ),
-            placeholder: L10n.of(context).search,
-            placeholderStyle: const TextStyle(
-              fontWeight: FontWeight.w400,
-              color: CupertinoColors.placeholderText,
-              height: 1.25,
+            placeholder: l10n.sp_search_placeholder,
+            placeholderStyle: base.copyWith(
+              fontSize: 16,
+              height: 1.3,
+              color: palette.text3.resolveFrom(context),
             ),
-            // clearButtonMode: OverlayVisibilityMode.editing,
-            // This prefix is decorative; its existing callback does nothing.
-            // Keep its visual/tap behavior without advertising a phantom action.
+            // Decorative magnifier; the field itself is the control.
             prefix: ExcludeSemantics(
-              child: CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                minSize: 0,
-                child: FaIcon(
-                  FontAwesomeIcons.magnifyingGlass,
-                  size: 20.0,
-                  color: CupertinoColors.systemGrey.withOpacity(iconOpacity),
-                ),
-                onPressed: () {},
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 13, end: 2),
+                child: Icon(CupertinoIcons.search, size: 18, color: iconColor),
               ),
             ),
             suffix: GetBuilder<SearchPageController>(
               id: GetIds.SEARCH_CLEAR_BTN,
               tag: tag,
               builder: (SearchPageController controller) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (GetPlatform.isDesktop)
-                      Builder(
-                        builder: (context) {
-                          bool isRefresh = false;
-                          return StatefulBuilder(
-                            builder: (context, setState) {
-                              return GestureDetector(
-                                onTap: () async {
-                                  setState(() {
-                                    isRefresh = true;
-                                  });
-                                  await controller.reloadData();
-                                  setState(() {
-                                    isRefresh = false;
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                  ),
-                                  child: isRefresh
-                                      ? const CupertinoActivityIndicator(
-                                          radius: 8,
-                                        )
-                                      : Semantics(
-                                          label: '刷新',
-                                          child: FaIcon(
-                                            FontAwesomeIcons.rotateRight,
-                                            size: 18.0,
-                                            color:
-                                                CupertinoDynamicColor.resolve(
-                                                  _kClearButtonColor,
-                                                  Get.context!,
-                                                ).withOpacity(iconOpacity),
-                                          ),
-                                        ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    if (controller.textIsGalleryUrl)
-                      GestureDetector(
-                        onTap: controller.jumpToGallery,
-                        child: Semantics(
-                          label: '打开画廊链接',
-                          child: FaIcon(
-                            FontAwesomeIcons.circleArrowRight,
-                            size: 20.0,
-                            color: CupertinoDynamicColor.resolve(
-                              _kClearButtonColor,
-                              Get.context!,
-                            ).withOpacity(iconOpacity),
+                Widget circle({
+                  required IconData icon,
+                  required String label,
+                  required VoidCallback onPressed,
+                  bool prominent = false,
+                }) =>
+                    Semantics(
+                      button: true,
+                      label: label,
+                      excludeSemantics: true,
+                      onTap: onPressed,
+                      child: EhPressable(
+                        onPressed: onPressed,
+                        child: SizedBox(
+                          width: 34,
+                          height: 34,
+                          child: Center(
+                            child: prominent
+                                ? Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: EhPalette.accent
+                                          .resolveFrom(context),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      CupertinoIcons.arrow_right,
+                                      size: 15,
+                                      color: EhPalette.onAccent
+                                          .resolveFrom(context),
+                                    ),
+                                  )
+                                : Icon(icon, size: 19, color: iconColor),
                           ),
-                        ).paddingSymmetric(horizontal: 6),
-                      ),
-                    if (controller.textIsNotEmpty &&
-                        !controller.textIsGalleryUrl)
-                      GestureDetector(
-                        onTap: controller.addToQuickSearch,
-                        child: Semantics(
-                          label: '加入快速搜索',
-                          child: FaIcon(
-                            FontAwesomeIcons.circlePlus,
-                            size: 20.0,
-                            color: CupertinoDynamicColor.resolve(
-                              _kClearButtonColor,
-                              Get.context!,
-                            ).withOpacity(iconOpacity),
-                          ),
-                        ).paddingSymmetric(horizontal: 4),
-                      ),
-                    if (controller.textIsNotEmpty)
-                      GestureDetector(
-                        onTap: controller.clearText,
-                        child: Semantics(
-                          label: '清空搜索词',
-                          child: FaIcon(
-                            FontAwesomeIcons.circleXmark,
-                            size: 20.0,
-                            color: CupertinoDynamicColor.resolve(
-                              _kClearButtonColor,
-                              Get.context!,
-                            ).withOpacity(iconOpacity),
-                          ),
-                        ).paddingSymmetric(horizontal: 6),
-                      ),
-                    GestureDetector(
-                      onTap: controller.quickSearchList,
-                      child: Semantics(
-                        label: '快速搜索列表',
-                        child: FaIcon(
-                          FontAwesomeIcons.listUl,
-                          size: 18.0,
-                          color: CupertinoDynamicColor.resolve(
-                            _kClearButtonColor,
-                            Get.context!,
-                          ).withOpacity(iconOpacity),
                         ),
-                      ).paddingOnly(right: 10, left: 6),
-                    ),
-                  ],
+                      ),
+                    );
+                return Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (GetPlatform.isDesktop)
+                        _DesktopRefreshButton(
+                          color: iconColor,
+                          label: l10n.sp_refresh,
+                          onPressed: controller.reloadData,
+                        ),
+                      if (controller.textIsGalleryUrl)
+                        circle(
+                          icon: CupertinoIcons.arrow_right,
+                          label: l10n.sp_open_link,
+                          prominent: true,
+                          onPressed: controller.jumpToGallery,
+                        ),
+                      if (controller.textIsNotEmpty)
+                        circle(
+                          icon: CupertinoIcons.xmark_circle_fill,
+                          label: l10n.sp_clear_text,
+                          onPressed: controller.clearText,
+                        ),
+                    ],
+                  ),
                 );
               },
             ),
-            padding: const EdgeInsetsDirectional.fromSTEB(0, 6, 5, 6),
+            padding: const EdgeInsetsDirectional.fromSTEB(6, 11, 6, 11),
             controller: controller.searchTextController,
             autofocus: controller.autofocus,
             onEditingComplete: controller.onEditingComplete,
             focusNode: controller.searchFocusNode,
             onTapOutside: (_) => controller.searchFocusNode.unfocus(),
-            maxLines: ((keyboardVisible ?? pluginKeyboardVisible) && multiline)
-                ? null
-                : 1,
+            maxLines: expanded ? null : 1,
             textInputAction: TextInputAction.search,
           );
         },
       );
     });
+  }
+}
+
+class _DesktopRefreshButton extends StatefulWidget {
+  const _DesktopRefreshButton({
+    required this.color,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final Color color;
+  final String label;
+  final Future<void> Function() onPressed;
+
+  @override
+  State<_DesktopRefreshButton> createState() => _DesktopRefreshButtonState();
+}
+
+class _DesktopRefreshButtonState extends State<_DesktopRefreshButton> {
+  bool _busy = false;
+
+  Future<void> _refresh() async {
+    setState(() => _busy = true);
+    try {
+      await widget.onPressed();
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: widget.label,
+      excludeSemantics: true,
+      onTap: _busy ? null : _refresh,
+      child: EhPressable(
+        onPressed: _busy ? null : _refresh,
+        child: SizedBox(
+          width: 34,
+          height: 34,
+          child: Center(
+            child: _busy
+                ? const CupertinoActivityIndicator(radius: 8)
+                : Icon(CupertinoIcons.arrow_clockwise,
+                    size: 18, color: widget.color),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Search “…”" at the end of the tag completions.
+class _SearchForRow extends StatelessWidget {
+  const _SearchForRow({required this.text, required this.onPressed});
+
+  final String text;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = EhPalette.accent.resolveFrom(context);
+    final label = L10n.of(context).sp_search_for(text.trim());
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      onTap: onPressed,
+      child: EhPressable(
+        onPressed: onPressed,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            color: EhPalette.accentSoft.resolveFrom(context),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Icon(CupertinoIcons.search, size: 18, color: accent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0,
+                        color: accent,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickSearchRow extends StatelessWidget {
+  const _QuickSearchRow({
+    required this.text,
+    required this.onPressed,
+    this.divider = false,
+  });
+
+  final String text;
+  final VoidCallback onPressed;
+  final bool divider;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ehTheme.palette;
+    return Semantics(
+      button: true,
+      label: text,
+      excludeSemantics: true,
+      onTap: onPressed,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: Column(
+          children: [
+            if (divider)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 14),
+                child: Container(
+                  height: .5,
+                  color: EhPalette.separator.resolveFrom(context),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      text,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: CupertinoTheme.of(context)
+                          .textTheme
+                          .textStyle
+                          .copyWith(
+                            fontSize: 15,
+                            letterSpacing: 0,
+                            color: palette.text1.resolveFrom(context),
+                          ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    CupertinoIcons.arrow_up_left,
+                    size: 16,
+                    color: palette.text2.resolveFrom(context),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

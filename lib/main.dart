@@ -8,6 +8,7 @@ import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/debug/offline_sheets.dart';
 import 'package:eros_fe/debug/offline_acceptance.dart';
 import 'package:eros_fe/debug/offline_accessibility.dart';
 import 'package:eros_fe/debug/offline_avatar.dart';
@@ -86,10 +87,14 @@ Future<void> main() async {
           // ..debug = kDebugMode
           ..diagnosticLevel = SentryLevel.warning;
       },
-      appRunner: () => runApp(const MyApp()),
+      appRunner: () {
+        runApp(const MyApp());
+        scheduleOfflineSheetPreview();
+      },
     );
   } else {
     runApp(const MyApp());
+    scheduleOfflineSheetPreview();
   }
 
   if (GetPlatform.isDesktop) {

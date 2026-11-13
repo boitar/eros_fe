@@ -138,11 +138,11 @@ void main() {
       keyboardInsets.value = const EdgeInsets.only(bottom: 280);
       KeyboardVisibilityTesting.setVisibilityForTesting(true);
       await tester.pumpAndSettle();
-      expect(find.bySemanticsLabel('收起键盘'), findsOneWidget);
+      expect(find.bySemanticsLabel(_hideKeyboard), findsOneWidget);
       search.searchFocusNode.requestFocus();
       await tester.pump();
       expect(search.searchFocusNode.hasFocus, isTrue);
-      await tester.tap(find.bySemanticsLabel('收起键盘'));
+      await tester.tap(find.bySemanticsLabel(_hideKeyboard));
       await tester.pumpAndSettle();
       expect(search.searchFocusNode.hasFocus, isFalse);
       expect(search.searchTextController.text, draft.text);
@@ -236,7 +236,14 @@ class _TagTranslations extends GetxController implements TagTransController {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Localized now (sp_hide_keyboard); the test app runs in English.
+final _hideKeyboard = RegExp('^(收起键盘|Hide keyboard)\$');
+
 class _QuickSearch extends GetxController implements QuickSearchController {
+  // The start view lists the first saved quick searches.
+  @override
+  RxList<String> searchTextList = <String>[].obs;
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

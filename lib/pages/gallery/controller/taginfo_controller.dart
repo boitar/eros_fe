@@ -9,6 +9,7 @@ import 'package:eros_fe/store/db/entity/tag_translat.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/utils/toast.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/tag_suggestions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -24,7 +25,8 @@ class TagInfoController extends GetxController {
   GalleryPageState get _pageState => pageController.gState;
   GalleryProvider? get _item => _pageState.galleryProvider;
 
-  final TextEditingController tagsTextController = TextEditingController();
+  final TagTokenTextEditingController tagsTextController =
+      TagTokenTextEditingController();
   FocusNode focusNode = FocusNode();
 
   String get tags => tagsTextController.text;

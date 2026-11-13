@@ -37,6 +37,9 @@ import flutter_downloader
         if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosMenu") {
             ErosMenuPlugin.register(with: registrar)
         }
+        if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosNativeSheet") {
+            ErosNativeSheetPlugin.register(with: registrar)
+        }
         ErosAdaptiveEnvironmentPlugin.register(with: engineBridge.pluginRegistry.registrar(
             forPlugin: "ErosAdaptiveEnvironment"
         )!)
