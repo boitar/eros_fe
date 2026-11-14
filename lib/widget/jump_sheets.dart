@@ -12,11 +12,78 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-/// Page picker for list pages and the thumbnail grid: a number field and a
-/// slider kept in step, with first / middle / last shortcuts.
+/// Quick navigation actions shared by the top row of both jump sheets.
+enum JumpNavAction {
+  first,
+  prev,
+  next,
+  last;
+
+  static JumpNavAction? tryParse(Object? raw) {
+    return switch (raw) {
+      'first' => JumpNavAction.first,
+      'prev' => JumpNavAction.prev,
+      'next' => JumpNavAction.next,
+      'last' => JumpNavAction.last,
+      _ => null,
+    };
+  }
+}
+
+/// Outcome of [showPageJumpSheet]: either an exact 1-based [PageJumpTarget]
+/// or a quick-navigation [PageJumpNav] with its resolved 1-based [page].
+sealed class PageJumpResult {
+  const PageJumpResult({required this.page, this.nav});
+
+  const factory PageJumpResult.page(int page) = PageJumpTarget;
+
+  const factory PageJumpResult.nav(
+    JumpNavAction action, {
+    required int page,
+  }) = PageJumpNav;
+
+  /// Resolved 1-based target page.
+  final int page;
+
+  /// Non-null when triggered by one of the 4 quick-navigation buttons.
+  final JumpNavAction? nav;
+
+  bool get isNav => nav != null;
+
+  @override
+  String toString() =>
+      nav == null ? '$page' : '${nav!.name}($page)';
+}
+
+final class PageJumpTarget extends PageJumpResult {
+  const PageJumpTarget(int page) : super(page: page);
+}
+
+final class PageJumpNav extends PageJumpResult {
+  const PageJumpNav(JumpNavAction action, {required super.page})
+      : super(nav: action);
+
+  JumpNavAction get action => nav!;
+}
+
+int _resolveNavPage(
+  JumpNavAction action, {
+  required int current,
+  required int max,
+}) {
+  return switch (action) {
+    JumpNavAction.first => 1,
+    JumpNavAction.prev => (current - 1).clamp(1, max),
+    JumpNavAction.next => (current + 1).clamp(1, max),
+    JumpNavAction.last => max,
+  };
+}
+
+/// Page picker for list pages and the thumbnail grid: a top 4-key navigation
+/// row plus a number field and slider kept in step.
 ///
-/// Returns the chosen 1-based page, or null when dismissed.
-Future<int?> showPageJumpSheet(
+/// Returns the chosen [PageJumpResult], or null when dismissed.
+Future<PageJumpResult?> showPageJumpSheet(
   BuildContext context, {
   required String title,
   required String subtitle,
@@ -27,8 +94,10 @@ Future<int?> showPageJumpSheet(
   final l10n = L10n.of(context);
   final maxPage = max < 1 ? 1 : max;
   final start = current.clamp(1, maxPage);
+  final canPrev = start > 1;
+  final canNext = start < maxPage;
   if (NativeSheet.available) {
-    int? result;
+    PageJumpResult? result;
     final session = await NativeSheet.present(
       kind: 'pageJump',
       config: {
@@ -39,13 +108,24 @@ Future<int?> showPageJumpSheet(
         'max': maxPage,
         'autofocus': autofocus,
         'go': l10n.sp_go,
-        'first': l10n.sp_first_page,
-        'middle': l10n.sp_middle_page,
-        'last': l10n.sp_last_page,
+        'navFirst': l10n.sp_page_first,
+        'navPrev': l10n.sp_page_prev,
+        'navNext': l10n.sp_page_next,
+        'navLast': l10n.sp_page_last,
+        'canPrev': canPrev,
+        'canNext': canNext,
       },
       onEvent: (_, name, value) {
         if (name == 'jump' && value is int) {
-          result = value;
+          result = PageJumpResult.page(value);
+        } else if (name == 'nav') {
+          final action = JumpNavAction.tryParse(value);
+          if (action != null) {
+            result = PageJumpResult.nav(
+              action,
+              page: _resolveNavPage(action, current: start, max: maxPage),
+            );
+          }
         }
       },
     );
@@ -57,7 +137,7 @@ Future<int?> showPageJumpSheet(
   if (!context.mounted) {
     return null;
   }
-  return showEhSheet<int>(
+  return showEhSheet<PageJumpResult>(
     context: context,
     builder: (_) => _PageJumpSheet(
       title: title,
@@ -67,6 +147,100 @@ Future<int?> showPageJumpSheet(
       autofocus: autofocus,
     ),
   );
+}
+
+class _JumpNavRow extends StatelessWidget {
+  const _JumpNavRow({
+    required this.canPrev,
+    required this.canNext,
+    required this.onSelect,
+  });
+
+  final bool canPrev;
+  final bool canNext;
+  final ValueChanged<JumpNavAction> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final buttonWidth = (constraints.maxWidth - 18) / 4;
+          final scale = ((buttonWidth - 44) / 42).clamp(0.8, 1.0);
+          final row = Row(
+            children: [
+              Expanded(
+                child: EhButton(
+                  key: const ValueKey('jump_nav_first'),
+                  icon: CupertinoIcons.backward_end,
+                  label: l10n.sp_page_first,
+                  size: 34,
+                  expand: true,
+                  style: EhButtonStyle.tonal,
+                  selected: canPrev,
+                  onPressed:
+                      canPrev ? () => onSelect(JumpNavAction.first) : null,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: EhButton(
+                  key: const ValueKey('jump_nav_prev'),
+                  icon: CupertinoIcons.chevron_left,
+                  label: l10n.sp_page_prev,
+                  size: 34,
+                  expand: true,
+                  style: EhButtonStyle.tonal,
+                  selected: canPrev,
+                  onPressed:
+                      canPrev ? () => onSelect(JumpNavAction.prev) : null,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: EhButton(
+                  key: const ValueKey('jump_nav_next'),
+                  trailingIcon: CupertinoIcons.chevron_right,
+                  label: l10n.sp_page_next,
+                  size: 34,
+                  expand: true,
+                  style: EhButtonStyle.tonal,
+                  selected: canNext,
+                  onPressed:
+                      canNext ? () => onSelect(JumpNavAction.next) : null,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: EhButton(
+                  key: const ValueKey('jump_nav_last'),
+                  trailingIcon: CupertinoIcons.forward_end,
+                  label: l10n.sp_page_last,
+                  size: 34,
+                  expand: true,
+                  style: EhButtonStyle.tonal,
+                  selected: canNext,
+                  onPressed:
+                      canNext ? () => onSelect(JumpNavAction.last) : null,
+                ),
+              ),
+            ],
+          );
+          if (scale >= 1.0) {
+            return row;
+          }
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(scale),
+            ),
+            child: row,
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _PageJumpSheet extends StatefulWidget {
@@ -116,21 +290,24 @@ class _PageJumpSheetState extends State<_PageJumpSheet> {
     super.dispose();
   }
 
-  void _set(int page) {
+  void _nav(JumpNavAction action) {
     vibrateUtil.selection();
-    setState(() {
-      _text.value = TextEditingValue(
-        text: '$page',
-        selection: TextSelection.collapsed(offset: '$page'.length),
-      );
-      _slider = page.toDouble();
-    });
+    Navigator.of(context).pop(
+      PageJumpResult.nav(
+        action,
+        page: _resolveNavPage(
+          action,
+          current: widget.current,
+          max: widget.max,
+        ),
+      ),
+    );
   }
 
   void _go() {
     final page = _page;
     if (page != null) {
-      Navigator.of(context).pop(page);
+      Navigator.of(context).pop(PageJumpResult.page(page));
     }
   }
 
@@ -139,6 +316,8 @@ class _PageJumpSheetState extends State<_PageJumpSheet> {
     final l10n = L10n.of(context);
     final palette = ehTheme.palette;
     final valid = _page != null;
+    final canPrev = widget.current > 1;
+    final canNext = widget.current < widget.max;
     final accent = EhPalette.accent.resolveFrom(context);
     final error = CupertinoDynamicColor.resolve(
       CupertinoColors.systemRed,
@@ -166,6 +345,12 @@ class _PageJumpSheetState extends State<_PageJumpSheet> {
               ),
             ),
             const SizedBox(height: 6),
+            _JumpNavRow(
+              canPrev: canPrev,
+              canNext: canNext,
+              onSelect: _nav,
+            ),
+            const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -256,31 +441,6 @@ class _PageJumpSheetState extends State<_PageJumpSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  for (final (label, page) in [
-                    (l10n.sp_first_page, 1),
-                    (l10n.sp_middle_page, (widget.max + 1) ~/ 2),
-                    (l10n.sp_last_page, widget.max),
-                  ]) ...[
-                    if (page != 1) const SizedBox(width: 8),
-                    Expanded(
-                      child: EhButton(
-                        label: label,
-                        size: 34,
-                        expand: true,
-                        style: EhButtonStyle.tonal,
-                        selected: _page == page,
-                        onPressed: () => _set(page),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -291,11 +451,46 @@ class _PageJumpSheetState extends State<_PageJumpSheet> {
 /// Where a date / GID seek goes from the current list.
 enum SeekDirection { prev, next }
 
-class SeekRequest {
-  const SeekRequest(this.direction, this.text, this.gid);
+sealed class SeekRequest {
+  const SeekRequest({
+    required this.direction,
+    this.text = '',
+    this.gid = '',
+    this.nav,
+  });
+
+  const factory SeekRequest.seek(
+    SeekDirection direction,
+    String text,
+    String gid,
+  ) = SeekTargetRequest;
+
+  const factory SeekRequest.nav(JumpNavAction action) = SeekNavRequest;
+
   final SeekDirection direction;
   final String text;
   final String gid;
+  final JumpNavAction? nav;
+
+  bool get isNav => nav != null;
+}
+
+final class SeekTargetRequest extends SeekRequest {
+  const SeekTargetRequest(SeekDirection direction, String text, String gid)
+      : super(direction: direction, text: text, gid: gid);
+}
+
+final class SeekNavRequest extends SeekRequest {
+  const SeekNavRequest(JumpNavAction action)
+      : super(
+          direction: action == JumpNavAction.first ||
+                  action == JumpNavAction.prev
+              ? SeekDirection.prev
+              : SeekDirection.next,
+          nav: action,
+        );
+
+  JumpNavAction get action => nav!;
 }
 
 bool _validSeekText(String text) =>
@@ -315,6 +510,8 @@ Future<SeekRequest?> showSeekSheet(
   ValueChanged<bool>? onPickerVisibleChanged,
 }) async {
   final l10n = L10n.of(context);
+  final canPrev = prevGid.isNotEmpty;
+  final canNext = nextGid.isNotEmpty;
   if (NativeSheet.available) {
     SeekRequest? result;
     final session = await NativeSheet.present(
@@ -322,6 +519,13 @@ Future<SeekRequest?> showSeekSheet(
       config: {
         ...NativeSheet.style(context),
         'title': l10n.jump_or_seek,
+        'navFirst': l10n.sp_page_first,
+        'navPrev': l10n.sp_page_prev,
+        'navNext': l10n.sp_page_next,
+        'navLast': l10n.sp_page_last,
+        'canPrev': canPrev,
+        'canNext': canNext,
+        'section': l10n.sp_seek_section,
         'dateLabel': l10n.sp_date,
         'datePlaceholder': l10n.date_or_offset,
         'gidPlaceholder': l10n.sp_optional,
@@ -331,19 +535,21 @@ Future<SeekRequest?> showSeekSheet(
         'pickerLabel': l10n.sp_show_date_picker,
         'pickerDate': DateFormat('yyyy-MM-dd').format(pickerDate),
         'hint': l10n.sp_seek_hint,
-        'prevLabel': l10n.jump_prev,
-        'nextLabel': l10n.jump_next,
-        'prevCaption': _gidCaption(prevGid),
-        'nextCaption': _gidCaption(nextGid),
+        'newer': l10n.sp_seek_newer,
+        'older': l10n.sp_seek_older,
         'errorEmpty': l10n.input_empty,
         'errorFormat': l10n.input_error,
       },
       onEvent: (_, name, value) {
         if (name == 'pickerVisible' && value is bool) {
           onPickerVisibleChanged?.call(value);
-        }
-        if ((name == 'prev' || name == 'next') && value is Map) {
-          result = SeekRequest(
+        } else if (name == 'nav') {
+          final action = JumpNavAction.tryParse(value);
+          if (action != null) {
+            result = SeekRequest.nav(action);
+          }
+        } else if ((name == 'prev' || name == 'next') && value is Map) {
+          result = SeekRequest.seek(
             name == 'prev' ? SeekDirection.prev : SeekDirection.next,
             '${value['text'] ?? ''}',
             '${value['gid'] ?? ''}',
@@ -372,8 +578,6 @@ Future<SeekRequest?> showSeekSheet(
     ),
   );
 }
-
-String _gidCaption(String gid) => gid.split('-').first;
 
 class _SeekSheet extends StatefulWidget {
   const _SeekSheet({
@@ -417,6 +621,11 @@ class _SeekSheetState extends State<_SeekSheet> {
     super.dispose();
   }
 
+  void _nav(JumpNavAction action) {
+    vibrateUtil.selection();
+    Navigator.of(context).pop(SeekRequest.nav(action));
+  }
+
   void _go(SeekDirection direction) {
     final text = _text.text.trim();
     final gid = _gid.text.trim();
@@ -431,7 +640,7 @@ class _SeekSheetState extends State<_SeekSheet> {
       setState(() => _error = l10n.input_error);
       return;
     }
-    Navigator.of(context).pop(SeekRequest(direction, text, gid));
+    Navigator.of(context).pop(SeekRequest.seek(direction, text, gid));
   }
 
   Widget _field({
@@ -523,7 +732,13 @@ class _SeekSheetState extends State<_SeekSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             EhSheetHeader(title: l10n.jump_or_seek),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
+            _JumpNavRow(
+              canPrev: widget.prevGid.isNotEmpty,
+              canNext: widget.nextGid.isNotEmpty,
+              onSelect: _nav,
+            ),
+            EhSheetSectionLabel(l10n.sp_seek_section),
             EhSheetGroup(
               children: [
                 _field(
@@ -629,11 +844,9 @@ class _SeekSheetState extends State<_SeekSheet> {
                 children: [
                   Expanded(
                     child: EhButton(
-                      icon: CupertinoIcons.arrow_left,
-                      label: l10n.jump_prev,
-                      caption: widget.prevGid.isEmpty
-                          ? null
-                          : _gidCaption(widget.prevGid),
+                      key: const ValueKey('seek_newer'),
+                      icon: CupertinoIcons.arrow_up,
+                      label: l10n.sp_seek_newer,
                       style: EhButtonStyle.glass,
                       size: 52,
                       expand: true,
@@ -643,11 +856,9 @@ class _SeekSheetState extends State<_SeekSheet> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: EhButton(
-                      trailingIcon: CupertinoIcons.arrow_right,
-                      label: l10n.jump_next,
-                      caption: widget.nextGid.isEmpty
-                          ? null
-                          : _gidCaption(widget.nextGid),
+                      key: const ValueKey('seek_older'),
+                      trailingIcon: CupertinoIcons.arrow_down,
+                      label: l10n.sp_seek_older,
                       style: EhButtonStyle.prominent,
                       size: 52,
                       expand: true,

@@ -104,7 +104,10 @@ void main() {
         find.byType(NativeNavigationPage),
       );
       expect(page.chrome.navigationBarVisible, isTrue);
-      expect(find.byType(CupertinoNavigationBar), findsNothing);
+      expect(
+        find.byKey(const ValueKey('search.floatingTopBar')),
+        findsNothing,
+      );
       search.searchTextController.value = const TextEditingValue(
         text: 'Unsent search draft',
         selection: TextSelection(baseOffset: 1, extentOffset: 7),
@@ -128,8 +131,12 @@ void main() {
             !isSplit,
           );
           expect(
-            find.byType(CupertinoNavigationBar),
+            find.byKey(const ValueKey('search.floatingTopBar')),
             isSplit ? findsOneWidget : findsNothing,
+          );
+          expect(
+            find.byType(SoftScrollEdgeEffect),
+            findsOneWidget,
           );
           expect(tester.takeException(), isNull);
         }

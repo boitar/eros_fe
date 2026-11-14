@@ -12,14 +12,20 @@ class NativeSingleBarEdge extends StatefulWidget {
     super.key,
     required this.child,
     this.bars = 0,
+    this.inset,
     this.surfaceColor,
     this.foreground,
+    this.enabled,
   });
 
   final Widget child;
 
-  /// Flutter-owned bar height between the native row and the scroll content.
+  /// Flutter-owned bar height between the top inset and the scroll content.
   final double bars;
+
+  /// Overrides the top inset passed to [SoftScrollEdgeEffect]. Defaults to
+  /// `MediaQuery.viewPaddingOf(context).top`.
+  final double? inset;
 
   /// The surface visible below the scrolling content, when it differs from
   /// the Cupertino scaffold background.
@@ -28,6 +34,10 @@ class NativeSingleBarEdge extends StatefulWidget {
   /// Optional Stack child painted above the effect, used by floating controls.
   final Widget? foreground;
 
+  /// Overrides [NativeNavigationScope.isEnabled] so Flutter floating bars can
+  /// share the same fade geometry when native chrome is off (e.g. split view).
+  final bool? enabled;
+
   @override
   State<NativeSingleBarEdge> createState() => _NativeSingleBarEdgeState();
 }
@@ -35,15 +45,29 @@ class NativeSingleBarEdge extends StatefulWidget {
 class _NativeSingleBarEdgeState extends State<NativeSingleBarEdge> {
   ScrollEdgeProgressController? _progress;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final enabled = NativeNavigationScope.isEnabled(context);
+  bool get _isEnabled => widget.enabled ?? NativeNavigationScope.isEnabled(context);
+
+  void _syncProgress() {
+    final enabled = _isEnabled;
     if (enabled && _progress == null) {
       _progress = ScrollEdgeProgressController();
     } else if (!enabled && _progress != null) {
       _progress!.dispose();
       _progress = null;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncProgress();
+  }
+
+  @override
+  void didUpdateWidget(covariant NativeSingleBarEdge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enabled != widget.enabled) {
+      _syncProgress();
     }
   }
 
@@ -56,11 +80,20 @@ class _NativeSingleBarEdgeState extends State<NativeSingleBarEdge> {
   @override
   Widget build(BuildContext context) {
     final progress = _progress;
-    if (!NativeNavigationScope.isEnabled(context) || progress == null) {
-      return widget.child;
+    if (!_isEnabled || progress == null) {
+      if (widget.foreground == null) {
+        return widget.child;
+      }
+      return Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          widget.child,
+          widget.foreground!,
+        ],
+      );
     }
 
-    final inset = MediaQuery.viewPaddingOf(context).top;
+    final inset = widget.inset ?? MediaQuery.viewPaddingOf(context).top;
     return ScrollEdgeProgressListener(
       controller: progress,
       child: Stack(

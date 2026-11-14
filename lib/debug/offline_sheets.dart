@@ -3,9 +3,12 @@ import 'package:eros_fe/common/controller/quicksearch_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/pages/filter/filter.dart';
 import 'package:eros_fe/pages/gallery/controller/archiver_controller.dart';
+import 'package:eros_fe/pages/gallery/controller/torrent_controller.dart';
 import 'package:eros_fe/pages/gallery/view/archiver_dialog.dart';
 import 'package:eros_fe/pages/gallery/view/rate_dialog.dart';
+import 'package:eros_fe/pages/gallery/view/torrent_dialog.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/jump_sheets.dart';
 import 'package:flutter/cupertino.dart';
@@ -112,6 +115,90 @@ class _FixtureArchiverSource extends ArchiverSheetSource {
   void downloadRemote(String dlres) => showToast('hath $dlres');
 }
 
+class _FixtureTorrentSource extends TorrentSheetSource {
+  _FixtureTorrentSource({required this.fail, this.delay});
+
+  bool fail;
+  final Duration? delay;
+  final List<VoidCallback> _listeners = [];
+  RxStatus _status = RxStatus.loading();
+  TorrentProvider? _provider;
+
+  void start() {
+    Future<void>.delayed(delay ?? Duration.zero, () {
+      if (fail) {
+        _status = RxStatus.error('offline');
+      } else {
+        _provider = TorrentProvider()
+          ..torrentToken = 'offline-token'
+          ..torrents = const [
+            GalleryTorrent(
+              hash: 'a1b2c3d4e5f60001',
+              name: '[C105] Offline Sample Anthology [Chinese]',
+              sizeText: '512.3 MiB',
+              posted: '2026-11-02',
+              seeds: '18',
+              peerd: '3',
+              downloads: '1204',
+            ),
+            GalleryTorrent(
+              hash: 'a1b2c3d4e5f60002',
+              name: '[C105] Offline Sample Anthology (RAW)',
+              sizeText: '384.0 MiB',
+              posted: '2026-11-01',
+              seeds: '4',
+              peerd: '1',
+              downloads: '420',
+            ),
+            GalleryTorrent(
+              hash: 'a1b2c3d4e5f60003',
+              name: '[C105] Offline Sample Extras.zip',
+              sizeText: '96.5 MiB',
+              posted: '2026-10-30',
+              seeds: '0',
+              peerd: '2',
+              downloads: '89',
+            ),
+          ];
+        _status = RxStatus.success();
+      }
+      for (final listener in List.of(_listeners)) {
+        listener();
+      }
+    });
+  }
+
+  @override
+  RxStatus get status => _status;
+
+  @override
+  TorrentProvider? get provider => _provider;
+
+  @override
+  void addListener(VoidCallback listener) => _listeners.add(listener);
+
+  @override
+  void removeListener(VoidCallback listener) => _listeners.remove(listener);
+
+  @override
+  void retry() {
+    _status = RxStatus.loading();
+    for (final listener in List.of(_listeners)) {
+      listener();
+    }
+    fail = false;
+    start();
+  }
+
+  @override
+  Future<void> downloadTorrent(String token, GalleryTorrent torrent) async =>
+      showToast('download ${torrent.hash}');
+
+  @override
+  Future<void> shareMagnet(GalleryTorrent torrent, BuildContext context) async =>
+      showToast('magnet ${torrent.hash}');
+}
+
 enum _Backdrop { dark, light, stripes }
 
 class OfflineSheetPreviewPage extends StatefulWidget {
@@ -158,32 +245,57 @@ class _OfflineSheetPreviewPageState extends State<OfflineSheetPreviewPage> {
       ),
       (
         'page',
-        () async => _report(await showPageJumpSheet(context,
+        () async {
+          final r = await showPageJumpSheet(
+            context,
             title: L10n.of(context).jump_to_page,
             subtitle: L10n.of(context).sp_page_total(1284),
             current: 642,
-            max: 1284))
+            max: 1284,
+          );
+          _report(switch (r) {
+            PageJumpTarget(:final page) => 'page $page',
+            PageJumpNav(:final action) => 'nav ${action.name}',
+            null => null,
+          });
+        }
       ),
       (
         'thumbs',
-        () async => _report(await showPageJumpSheet(context,
+        () async {
+          final r = await showPageJumpSheet(
+            context,
             title: L10n.of(context).sp_thumbs_jump,
             subtitle: L10n.of(context).sp_thumbs_per_page(12, 40),
             current: 5,
             max: 12,
-            autofocus: false))
+            autofocus: false,
+          );
+          _report(switch (r) {
+            PageJumpTarget(:final page) => 'page $page',
+            PageJumpNav(:final action) => 'nav ${action.name}',
+            null => null,
+          });
+        }
       ),
       (
         'seek',
         () async {
-          final r = await showSeekSheet(context,
-              text: '2024-05-01',
-              gid: '',
-              pickerVisible: true,
-              pickerDate: DateTime(2024, 5, 1),
-              prevGid: '2741230',
-              nextGid: '2740988');
-          _report(r == null ? null : '${r.direction.name} ${r.text} ${r.gid}');
+          final r = await showSeekSheet(
+            context,
+            text: '2024-05-01',
+            gid: '',
+            pickerVisible: true,
+            pickerDate: DateTime(2024, 5, 1),
+            prevGid: '2741230',
+            nextGid: '2740988',
+          );
+          _report(switch (r) {
+            SeekTargetRequest(:final direction, :final text, :final gid) =>
+              '${direction.name} $text $gid',
+            SeekNavRequest(:final action) => 'nav ${action.name}',
+            null => null,
+          });
         }
       ),
       (
@@ -205,6 +317,37 @@ class _OfflineSheetPreviewPageState extends State<OfflineSheetPreviewPage> {
           await presentArchiverSheet(context, source);
           _report('archiver closed');
         }
+      ),
+      (
+        'torrent',
+        () async {
+          final source = _FixtureTorrentSource(
+              fail: false, delay: const Duration(milliseconds: 800))
+            ..start();
+          await presentTorrentSheet(context, source);
+          _report('torrent closed');
+        }
+      ),
+      (
+        'torrentError',
+        () async {
+          final source = _FixtureTorrentSource(
+              fail: true, delay: const Duration(milliseconds: 600))
+            ..start();
+          await presentTorrentSheet(context, source);
+          _report('torrent closed');
+        }
+      ),
+      (
+        'filter',
+        () async {
+          await presentFilterSheet(context);
+          _report('filter closed');
+        }
+      ),
+      (
+        'searchImage',
+        () async => Get.toNamed<void>(EHRoutes.searchImage)
       ),
       (
         'search',

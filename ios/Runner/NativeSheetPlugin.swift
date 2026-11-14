@@ -75,6 +75,8 @@ final class ErosNativeSheetPlugin: NSObject, FlutterPlugin {
             sheet = ErosSeekSheet(config: config, emit: emit, dismissed: dismissed)
         case "archiver":
             sheet = ErosArchiverSheet(config: config, emit: emit, dismissed: dismissed)
+        case "torrent":
+            sheet = ErosTorrentSheet(config: config, emit: emit, dismissed: dismissed)
         default:
             return false
         }
@@ -449,6 +451,42 @@ class ErosSheetController: UIViewController, UISheetPresentationControllerDelega
         return view
     }
 
+    /// Four equal tonal capsule buttons for First / Prev / Next / Last navigation.
+    func jumpNavRow(canPrev: Bool, canNext: Bool, onSelect: @escaping (String) -> Void) -> UIView {
+        func navButton(_ title: String, symbol: String, trailing: Bool,
+                       enabled: Bool, action: String) -> UIButton {
+            var style = UIButton.Configuration.filled()
+            style.cornerStyle = .capsule
+            style.baseBackgroundColor = enabled ? tint.withAlphaComponent(0.14) : .tertiarySystemFill
+            style.baseForegroundColor = enabled ? tint : .tertiaryLabel
+            style.contentInsets = NSDirectionalEdgeInsets(top: 7, leading: 6, bottom: 7, trailing: 6)
+            style.image = UIImage(systemName: symbol,
+                                  withConfiguration: UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold))
+            style.imagePlacement = trailing ? .trailing : .leading
+            style.imagePadding = 3
+            style.titleLineBreakMode = .byTruncatingTail
+            style.attributedTitle = AttributedString(title, attributes: AttributeContainer([
+                .font: UIFontMetrics(forTextStyle: .footnote).scaledFont(
+                    for: .systemFont(ofSize: 12.5, weight: .semibold), maximumPointSize: 15)
+            ]))
+            let button = UIButton(configuration: style, primaryAction: UIAction { _ in onSelect(action) })
+            button.isEnabled = enabled
+            button.accessibilityLabel = title
+            button.heightAnchor.constraint(greaterThanOrEqualToConstant: 34).isActive = true
+            return button
+        }
+        let stack = UIStackView(arrangedSubviews: [
+            navButton(string("navFirst"), symbol: "backward.end", trailing: false, enabled: canPrev, action: "first"),
+            navButton(string("navPrev"), symbol: "chevron.left", trailing: false, enabled: canPrev, action: "prev"),
+            navButton(string("navNext"), symbol: "chevron.right", trailing: true, enabled: canNext, action: "next"),
+            navButton(string("navLast"), symbol: "forward.end", trailing: true, enabled: canNext, action: "last"),
+        ])
+        stack.axis = .horizontal
+        stack.spacing = 6
+        stack.distribution = .fillEqually
+        return stack
+    }
+
     /// Accent text on a soft accent fill, or a neutral fill when unselected.
     func tonalButton(_ title: String, selected: Bool = true,
                      action: @escaping () -> Void) -> UIButton {
@@ -729,32 +767,21 @@ final class ErosPageJumpSheet: ErosSheetController, UITextFieldDelegate {
         let ends = UIStackView(arrangedSubviews: [minLabel, UIView(), maxLabel])
         ends.axis = .horizontal
 
-        let presets = UIStackView(arrangedSubviews: [
-            tonalButton(string("first"), selected: false) { [weak self] in self?.set(1) },
-            tonalButton(string("middle"), selected: false) { [weak self] in
-                guard let self else { return }
-                self.set((self.maxPage + 1) / 2)
-            },
-            tonalButton(string("last"), selected: false) { [weak self] in
-                guard let self else { return }
-                self.set(self.maxPage)
-            },
-        ])
-        presets.axis = .horizontal
-        presets.spacing = 8
-        presets.distribution = .fillEqually
-
         let sliderBox = UIStackView(arrangedSubviews: [slider, ends])
         sliderBox.axis = .vertical
         sliderBox.spacing = 2
         sliderBox.isLayoutMarginsRelativeArrangement = true
         sliderBox.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6)
 
+        let navRow = jumpNavRow(canPrev: current > 1, canNext: current < maxPage) { [weak self] action in
+            self?.finishWith("nav", action)
+        }
+        content.addArrangedSubview(spacer(6))
+        content.addArrangedSubview(navRow)
+        content.addArrangedSubview(spacer(14))
         content.addArrangedSubview(number)
         content.addArrangedSubview(spacer(22))
         content.addArrangedSubview(sliderBox)
-        content.addArrangedSubview(spacer(16))
-        content.addArrangedSubview(presets)
         content.addArrangedSubview(spacer(6))
         validate()
     }
@@ -907,7 +934,12 @@ final class ErosSeekSheet: ErosSheetController, UITextFieldDelegate {
         ])
         let lower = UIStackView(arrangedSubviews: [pickerRow, gidRow])
         lower.axis = .vertical
-        content.addArrangedSubview(spacer(4))
+        let navRow = jumpNavRow(canPrev: bool("canPrev"), canNext: bool("canNext")) { [weak self] action in
+            self?.finishWith("nav", action)
+        }
+        content.addArrangedSubview(spacer(6))
+        content.addArrangedSubview(navRow)
+        content.addArrangedSubview(sectionLabel(string("section")))
         content.addArrangedSubview(tray([dateRow, lower]))
 
         hint.numberOfLines = 0
@@ -926,12 +958,12 @@ final class ErosSeekSheet: ErosSheetController, UITextFieldDelegate {
         content.addArrangedSubview(hintBox)
         content.addArrangedSubview(spacer(18))
 
-        prevButton = prominentButton(string("prevLabel"), subtitle: string("prevCaption"),
-                                     symbol: "arrow.left", glassOnly: true) { [weak self] in
+        prevButton = prominentButton(string("newer"),
+                                     symbol: "arrow.up", glassOnly: true) { [weak self] in
             self?.go("prev")
         }
-        nextButton = prominentButton(string("nextLabel"), subtitle: string("nextCaption"),
-                                     symbol: "arrow.right", trailingSymbol: true) { [weak self] in
+        nextButton = prominentButton(string("older"),
+                                     symbol: "arrow.down", trailingSymbol: true) { [weak self] in
             self?.go("next")
         }
         let pair = UIStackView(arrangedSubviews: [prevButton, nextButton])
@@ -1251,6 +1283,186 @@ final class ErosArchiverSheet: ErosSheetController {
             self?.finishWith("hath", id)
         })
         button.contentHorizontalAlignment = .leading
+        return button
+    }
+}
+
+// MARK: - Torrent
+
+@available(iOS 26.0, *)
+final class ErosTorrentSheet: ErosSheetController {
+    override var allowsLarge: Bool { true }
+    private var signature = ""
+
+    override func apply() {
+        let state = string("state")
+        let torrents = config["torrents"] as? [[String: Any]] ?? []
+        let next = "\(state)|\(string("title"))|\(torrents.count)|"
+            + torrents.map { "\($0["hash"] ?? "")\($0["seeds"] ?? "")\($0["peers"] ?? "")" }.joined()
+        guard next != signature else { return }
+        signature = next
+        content.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        switch state {
+        case "ready":
+            buildReady(torrents: torrents)
+        case "empty":
+            buildMessage(symbol: "tray", text: string("emptyText"), retry: false)
+        case "error":
+            buildMessage(symbol: "exclamationmark.triangle", text: string("errorText"), retry: true)
+        default:
+            buildMessage(symbol: nil, text: string("loadingText"), retry: false)
+        }
+        UIAccessibility.post(notification: .layoutChanged, argument: content)
+    }
+
+    private func buildMessage(symbol: String?, text: String, retry: Bool) {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 12
+        if let symbol {
+            let image = UIImageView(image: UIImage(systemName: symbol))
+            image.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 26, weight: .regular)
+            image.tintColor = .secondaryLabel
+            stack.addArrangedSubview(image)
+        } else {
+            let spinner = UIActivityIndicatorView(style: .medium)
+            spinner.startAnimating()
+            stack.addArrangedSubview(spinner)
+        }
+        let label = UILabel()
+        label.text = text
+        label.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(
+            for: .systemFont(ofSize: 14, weight: .medium))
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        stack.addArrangedSubview(label)
+        if retry {
+            stack.addArrangedSubview(tonalButton(string("retryLabel")) { [weak self] in
+                self?.emit("retry", nil)
+            })
+        }
+        content.addArrangedSubview(spacer(26))
+        content.addArrangedSubview(stack)
+        content.addArrangedSubview(spacer(30))
+    }
+
+    private func buildReady(torrents: [[String: Any]]) {
+        content.addArrangedSubview(spacer(4))
+        for (index, item) in torrents.enumerated() {
+            if index > 0 {
+                content.addArrangedSubview(spacer(10))
+            }
+            content.addArrangedSubview(tray([torrentCard(item, primary: index == 0)]))
+        }
+    }
+
+    private func torrentCard(_ item: [String: Any], primary: Bool) -> UIView {
+        let hash = item["hash"] as? String ?? ""
+        let title = UILabel()
+        title.text = item["name"] as? String ?? ""
+        title.font = UIFontMetrics(forTextStyle: .body).scaledFont(
+            for: .systemFont(ofSize: 15, weight: .semibold))
+        title.adjustsFontForContentSizeCategory = true
+        title.textColor = .label
+        title.numberOfLines = 3
+
+        let metaText = item["meta"] as? String ?? ""
+        let meta = UILabel()
+        meta.text = metaText
+        meta.font = UIFontMetrics(forTextStyle: .caption1).scaledFont(
+            for: .monospacedDigitSystemFont(ofSize: 12.5, weight: .medium))
+        meta.adjustsFontForContentSizeCategory = true
+        meta.textColor = .secondaryLabel
+        meta.isHidden = metaText.isEmpty
+
+        func stat(_ symbol: String, _ value: String, _ label: String) -> UIView {
+            let icon = UIImageView(image: UIImage(systemName: symbol))
+            icon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 12.5, weight: .medium)
+            icon.tintColor = .secondaryLabel
+            let text = UILabel()
+            text.text = value
+            text.font = UIFontMetrics(forTextStyle: .caption1).scaledFont(
+                for: .monospacedDigitSystemFont(ofSize: 12.5, weight: .medium))
+            text.adjustsFontForContentSizeCategory = true
+            text.textColor = .secondaryLabel
+            let row = UIStackView(arrangedSubviews: [icon, text])
+            row.spacing = 4
+            row.alignment = .center
+            row.isAccessibilityElement = true
+            row.accessibilityLabel = "\(label) \(value)"
+            return row
+        }
+
+        let stats = UIStackView(arrangedSubviews: [
+            stat("arrow.up.circle", item["seeds"] as? String ?? "0", string("seedsLabel")),
+            stat("arrow.down.circle", item["peers"] as? String ?? "0", string("peersLabel")),
+            stat("checkmark.circle", item["downloads"] as? String ?? "0", string("completedLabel")),
+            UIView(),
+        ])
+        stats.axis = .horizontal
+        stats.spacing = 14
+        stats.alignment = .center
+
+        let download = actionButton(
+            title: string("downloadLabel"),
+            symbol: "arrow.down.circle",
+            prominent: primary
+        ) { [weak self] in
+            self?.finishWith("download", hash)
+        }
+        let magnet = actionButton(
+            title: string("magnetLabel"),
+            symbol: "link",
+            prominent: false,
+            neutral: true
+        ) { [weak self] in
+            self?.finishWith("magnet", hash)
+        }
+        let buttons = UIStackView(arrangedSubviews: [download, magnet])
+        buttons.axis = .horizontal
+        buttons.spacing = 10
+        buttons.distribution = .fillEqually
+
+        let card = UIStackView(arrangedSubviews: [title, meta, stats, buttons])
+        card.axis = .vertical
+        card.spacing = 8
+        card.setCustomSpacing(4, after: title)
+        card.setCustomSpacing(12, after: stats)
+        card.isLayoutMarginsRelativeArrangement = true
+        card.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14)
+        return card
+    }
+
+    private func actionButton(title: String, symbol: String, prominent: Bool,
+                              neutral: Bool = false, action: @escaping () -> Void) -> UIButton {
+        var style: UIButton.Configuration
+        if prominent {
+            style = .prominentGlass()
+            style.baseBackgroundColor = tint
+            style.baseForegroundColor = onTint
+        } else {
+            style = .filled()
+            style.baseBackgroundColor = neutral ? .tertiarySystemFill : tint.withAlphaComponent(0.14)
+            style.baseForegroundColor = neutral ? .secondaryLabel : tint
+        }
+        style.cornerStyle = .capsule
+        style.image = UIImage(systemName: symbol,
+                              withConfiguration: UIImage.SymbolConfiguration(pointSize: 13.5, weight: .semibold))
+        style.imagePadding = 5
+        style.titleLineBreakMode = .byTruncatingTail
+        style.contentInsets = NSDirectionalEdgeInsets(top: 9, leading: 10, bottom: 9, trailing: 10)
+        style.attributedTitle = AttributedString(title, attributes: AttributeContainer([
+            .font: UIFontMetrics(forTextStyle: .subheadline).scaledFont(
+                for: .systemFont(ofSize: 13.5, weight: .semibold))
+        ]))
+        let button = UIButton(configuration: style, primaryAction: UIAction { _ in action() })
+        if prominent {
+            button.tintColor = tint
+        }
+        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
         return button
     }
 }

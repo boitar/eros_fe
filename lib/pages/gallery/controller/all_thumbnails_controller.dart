@@ -223,20 +223,31 @@ class AllThumbnailsPageController extends GetxController
       _pageState.filecount > _pageState.firstPageImage.length;
 
   // 显示跳页面板
-  Future<int?> showJumpDialog(BuildContext context) {
+  Future<int?> showJumpDialog(BuildContext context) async {
     final perPage = _pageState.firstPageImage.length;
     final maxPage = perPage <= 0
         ? 1
         : ((_pageState.filecount + perPage - 1) ~/ perPage).clamp(1, 1 << 20);
+    final current = currPage.clamp(1, maxPage);
     final l10n = L10n.of(context);
-    return showPageJumpSheet(
+    final result = await showPageJumpSheet(
       context,
       title: l10n.sp_thumbs_jump,
       subtitle: l10n.sp_thumbs_per_page(maxPage, perPage),
-      current: currPage.clamp(1, maxPage),
+      current: current,
       max: maxPage,
       // Dragging the slider is the main gesture here; tap the number to type.
       autofocus: false,
     );
+    return switch (result) {
+      null => null,
+      PageJumpTarget(:final page) => page,
+      PageJumpNav(:final action) => switch (action) {
+          JumpNavAction.first => 1,
+          JumpNavAction.prev => (current - 1).clamp(1, maxPage),
+          JumpNavAction.next => (current + 1).clamp(1, maxPage),
+          JumpNavAction.last => maxPage,
+        },
+    };
   }
 }

@@ -20,93 +20,363 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
-  static String m0(site) => "Current ${site}";
+  static String m0(count) => "${count} columns";
 
-  static String m1(modelName) => "Model ${modelName}";
+  static String m1(min, max) => "${min}–${max} columns";
 
-  static String m2(rating) => "${rating} ⭐";
+  static String m2(count) => "${count} comments";
 
-  static String m3(tagNamespace) => "${Intl.select(tagNamespace, {
-            'reclass': 'reclass',
-            'language': 'language',
-            'parody': 'parody',
-            'character': 'character',
-            'group': 'group',
-            'artist': 'artist',
-            'male': 'male',
-            'female': 'female',
-            'mixed': 'mixed',
-            'cosplayer': 'cosplayer',
-            'other': 'other',
-            'temp': 'temp',
-          })}";
+  static String m3(page) => "Continue · Page ${page}";
 
-  static String m4(version) => "Update to ${version}";
+  static String m4(site) => "Current ${site}";
 
-  static String m5(seconds) => "${seconds} s";
+  static String m5(modelName) => "Model ${modelName}";
 
-  static String m6(page) => "Continue · Page ${page}";
+  static String m6(count) => "${count} pages";
 
-  static String m7(count) => "${count} pages";
+  static String m7(seconds) => "${seconds} s";
 
-  static String m8(count) => "${count} comments";
+  static String m8(page, total) => "Page ${page} of ${total}";
 
-  static String m9(count) => "${count} columns";
+  static String m9(rating) => "${rating} ⭐";
 
-  static String m10(min, max) => "${min}–${max} columns";
+  static String m10(tag) => "Add ${tag}";
 
-  static String m11(page, total) => "Page ${page} of ${total}";
+  static String m11(count) => "${count} pages";
 
-  static String sp1(avg, count) => "Avg ${avg} · ${count} ratings";
+  static String m12(avg, count) => "Avg ${avg} · ${count} ratings";
 
-  static String sp2(count) => "${count} pages";
+  static String m13(text) => "Search “${text}”";
 
-  static String sp8(count, per) => "${count} pages · ${per} per page";
+  static String m14(count) => "${count} added · separate with commas";
 
-  static String sp27(text) => "Search “${text}”";
+  static String m15(count, per) => "${count} pages · ${per} per page";
 
-  static String sp38(count) => "${count} added · separate with commas";
+  static String m16(count) => "Torrents · ${count}";
 
-  static String sp40(tag) => "Add ${tag}";
+  static String m17(tagNamespace) =>
+      "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
+
+  static String m18(version) => "Update to ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-        "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
-        "avatar_source": MessageLookupByLibrary.simpleMessage("Choose Image Source"),
-        "avatar_from_album": MessageLookupByLibrary.simpleMessage("Photo Library"),
-        "avatar_from_file": MessageLookupByLibrary.simpleMessage("Files"),
-        "avatar_from_url": MessageLookupByLibrary.simpleMessage("Image URL"),
-        "avatar_target": MessageLookupByLibrary.simpleMessage("Where to use this avatar?"),
-        "avatar_use_forum": MessageLookupByLibrary.simpleMessage("Upload to EH Forum"),
-        "avatar_use_local": MessageLookupByLibrary.simpleMessage("Use on This Device Only"),
-        "avatar_upload_success": MessageLookupByLibrary.simpleMessage("Avatar uploaded"),
-        "avatar_local_success": MessageLookupByLibrary.simpleMessage("Avatar updated"),
-        "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare Verification Required"),
-        "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage("The forum is protected by Cloudflare. Complete the verification in the built-in browser; the upload will retry automatically afterwards."),
-        "cf_verify_title": MessageLookupByLibrary.simpleMessage("Cloudflare Verification"),
-        "cf_verify_summary": MessageLookupByLibrary.simpleMessage("Complete the human check in-app when forum requests are blocked"),
-        "cf_verify_required": MessageLookupByLibrary.simpleMessage("Forum Verification Required"),
-        "cf_verify_prompt": MessageLookupByLibrary.simpleMessage("Forum requests are blocked by Cloudflare. Complete the verification in the built-in browser now?"),
-        "cf_verify_action": MessageLookupByLibrary.simpleMessage("Verify"),
-        "cf_verify_success": MessageLookupByLibrary.simpleMessage("Verification complete"),
-        "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage("Verification saved, but the forum is still blocked. Try again later or after switching networks."),
-        "glass_effect": MessageLookupByLibrary.simpleMessage("Glass effect"),
-        "liquid_glass_description": MessageLookupByLibrary.simpleMessage("Use glass for navigation bars, tab bars, buttons and menus. Frosted glass uses less power and scrolls more smoothly."),
-        "glass_material": MessageLookupByLibrary.simpleMessage("Glass material"),
-        "glass_material_liquid": MessageLookupByLibrary.simpleMessage("Liquid glass"),
-        "glass_material_liquid_detail": MessageLookupByLibrary.simpleMessage("Refraction and highlights; uses more power"),
-        "glass_material_frosted": MessageLookupByLibrary.simpleMessage("Frosted glass"),
-        "glass_material_frosted_detail": MessageLookupByLibrary.simpleMessage("Soft blur; better performance"),
-        "glass_system_bar_note": MessageLookupByLibrary.simpleMessage("Vertical tab bars drawn by the system, such as the side bar on the iPhone Duo outer display, always use Liquid Glass."),
-        "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage("Top category layout"),
-        "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage("Two rows (default)"),
-        "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage("Actions and categories on separate rows"),
-        "liquid_glass_inline": MessageLookupByLibrary.simpleMessage("Compact row"),
-        "liquid_glass_inline_detail": MessageLookupByLibrary.simpleMessage("Actions and categories share one row"),
-        "favorite_note_hint": MessageLookupByLibrary.simpleMessage("Note (optional)"),
-        "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("KEEP IT SAFE"),
-        "QR_code_block": MessageLookupByLibrary.simpleMessage(
-            "Block images containing QR codes"),
+    "KEEP_IT_SAFE": MessageLookupByLibrary.simpleMessage("KEEP IT SAFE"),
+    "QR_code_block": MessageLookupByLibrary.simpleMessage(
+      "Block images containing QR codes",
+    ),
+    "about": MessageLookupByLibrary.simpleMessage("About"),
+    "add": MessageLookupByLibrary.simpleMessage("Add"),
+    "add_quick_search": MessageLookupByLibrary.simpleMessage("Add to search"),
+    "add_tag_placeholder": MessageLookupByLibrary.simpleMessage(
+      "Enter new tags, separated with comma",
+    ),
+    "add_tags": MessageLookupByLibrary.simpleMessage("Add tags"),
+    "add_to_favorites": MessageLookupByLibrary.simpleMessage(
+      "Add to favorites",
+    ),
+    "add_to_phash_block_list": MessageLookupByLibrary.simpleMessage(
+      "Add to Perceptual Hash Block List",
+    ),
+    "advanced": MessageLookupByLibrary.simpleMessage("Advanced"),
+    "aggregate": MessageLookupByLibrary.simpleMessage("Aggregate"),
+    "aggregate_groups": MessageLookupByLibrary.simpleMessage(
+      "Aggregate groups",
+    ),
+    "all_Favorites": MessageLookupByLibrary.simpleMessage("All Favorites"),
+    "all_comment": MessageLookupByLibrary.simpleMessage("All Comment"),
+    "all_thumbnails": MessageLookupByLibrary.simpleMessage("All Thumbnails"),
+    "allow_media_scan": MessageLookupByLibrary.simpleMessage(
+      "Allow media scan",
+    ),
+    "always": MessageLookupByLibrary.simpleMessage("Always"),
+    "app_title": MessageLookupByLibrary.simpleMessage("Eros-FE"),
+    "appearance_and_layout": MessageLookupByLibrary.simpleMessage(
+      "Appearance & Layout",
+    ),
+    "ask_me": MessageLookupByLibrary.simpleMessage("Ask for Me"),
+    "auth_biometricHint": MessageLookupByLibrary.simpleMessage(
+      "Verify Identity",
+    ),
+    "auth_signInTitle": MessageLookupByLibrary.simpleMessage(
+      "Authentication Required",
+    ),
+    "author": MessageLookupByLibrary.simpleMessage("Author"),
+    "autoLock": MessageLookupByLibrary.simpleMessage("Auto-lock"),
+    "auto_scroll": MessageLookupByLibrary.simpleMessage("Auto Scroll"),
+    "auto_select_profile": MessageLookupByLibrary.simpleMessage(
+      "Auto select profile",
+    ),
+    "automatic": MessageLookupByLibrary.simpleMessage("Automatic"),
+    "avatar": MessageLookupByLibrary.simpleMessage("Avatar"),
+    "avatar_cf_verify_message": MessageLookupByLibrary.simpleMessage(
+      "The forum is protected by Cloudflare. Complete the verification in the built-in browser; the upload will retry automatically afterwards.",
+    ),
+    "avatar_cf_verify_title": MessageLookupByLibrary.simpleMessage(
+      "Cloudflare Verification Required",
+    ),
+    "avatar_from_album": MessageLookupByLibrary.simpleMessage("Photo Library"),
+    "avatar_from_file": MessageLookupByLibrary.simpleMessage("Files"),
+    "avatar_from_url": MessageLookupByLibrary.simpleMessage("Image URL"),
+    "avatar_local_success": MessageLookupByLibrary.simpleMessage(
+      "Avatar updated",
+    ),
+    "avatar_source": MessageLookupByLibrary.simpleMessage(
+      "Choose Image Source",
+    ),
+    "avatar_target": MessageLookupByLibrary.simpleMessage(
+      "Where to use this avatar?",
+    ),
+    "avatar_upload_success": MessageLookupByLibrary.simpleMessage(
+      "Avatar uploaded",
+    ),
+    "avatar_use_forum": MessageLookupByLibrary.simpleMessage(
+      "Upload to EH Forum",
+    ),
+    "avatar_use_local": MessageLookupByLibrary.simpleMessage(
+      "Use on This Device Only",
+    ),
+    "back": MessageLookupByLibrary.simpleMessage("Back"),
+    "back_to_top": MessageLookupByLibrary.simpleMessage("Back to Top"),
+    "block_rule": MessageLookupByLibrary.simpleMessage("Block Rule"),
+    "block_rules": MessageLookupByLibrary.simpleMessage("Block Rules"),
+    "blockers": MessageLookupByLibrary.simpleMessage("Blockers"),
+    "blurring_cover_background": MessageLookupByLibrary.simpleMessage(
+      "Blurring of cover background",
+    ),
+    "cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
+    "card_size": MessageLookupByLibrary.simpleMessage("Card Size"),
+    "card_size_footer": MessageLookupByLibrary.simpleMessage(
+      "Columns are counted from the width of the pane the list is in, so they change when you switch displays, rotate or drag the divider. Standard matches the previous automatic columns.",
+    ),
+    "card_size_large": MessageLookupByLibrary.simpleMessage("Large"),
+    "card_size_larger": MessageLookupByLibrary.simpleMessage("Larger"),
+    "card_size_small": MessageLookupByLibrary.simpleMessage("Small"),
+    "card_size_smaller": MessageLookupByLibrary.simpleMessage("Smaller"),
+    "card_size_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+    "card_style": MessageLookupByLibrary.simpleMessage("Card Style"),
+    "card_style_immersive": MessageLookupByLibrary.simpleMessage("Immersive"),
+    "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage(
+      "Cover only, with the title and rating on it",
+    ),
+    "card_style_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+    "card_style_standard_detail": MessageLookupByLibrary.simpleMessage(
+      "Cover, title, details and tags",
+    ),
+    "cf_verify_action": MessageLookupByLibrary.simpleMessage("Verify"),
+    "cf_verify_prompt": MessageLookupByLibrary.simpleMessage(
+      "Forum requests are blocked by Cloudflare. Complete the verification in the built-in browser now?",
+    ),
+    "cf_verify_required": MessageLookupByLibrary.simpleMessage(
+      "Forum Verification Required",
+    ),
+    "cf_verify_still_blocked": MessageLookupByLibrary.simpleMessage(
+      "Verification saved, but the forum is still blocked. Try again later or after switching networks.",
+    ),
+    "cf_verify_success": MessageLookupByLibrary.simpleMessage(
+      "Verification complete",
+    ),
+    "cf_verify_summary": MessageLookupByLibrary.simpleMessage(
+      "Complete the human check in-app when forum requests are blocked",
+    ),
+    "cf_verify_title": MessageLookupByLibrary.simpleMessage(
+      "Cloudflare Verification",
+    ),
+    "change_to_favorites": MessageLookupByLibrary.simpleMessage(
+      "Change to favorites",
+    ),
+    "chapter": MessageLookupByLibrary.simpleMessage("Chapter"),
+    "check_download_files_and_continue": MessageLookupByLibrary.simpleMessage(
+      "Check files and continue",
+    ),
+    "check_for_update": MessageLookupByLibrary.simpleMessage(
+      "Check for Update",
+    ),
+    "choose_favcat": MessageLookupByLibrary.simpleMessage(
+      "Choose Favorites Folder",
+    ),
+    "clear_cache": MessageLookupByLibrary.simpleMessage("Clear cache"),
+    "clear_filter": MessageLookupByLibrary.simpleMessage("Clear"),
+    "clear_search_history": MessageLookupByLibrary.simpleMessage(
+      "Clear search history",
+    ),
+    "clipboard_detection": MessageLookupByLibrary.simpleMessage(
+      "Clipboard detection",
+    ),
+    "clipboard_detection_desc": MessageLookupByLibrary.simpleMessage(
+      "Automatically detect clipboard gallery links",
+    ),
+    "collapse": MessageLookupByLibrary.simpleMessage("Collapse"),
+    "color_picker_primary": MessageLookupByLibrary.simpleMessage("Primary"),
+    "color_picker_wheel": MessageLookupByLibrary.simpleMessage("Wheel"),
+    "column_count": m0,
+    "column_range": m1,
+    "comment": MessageLookupByLibrary.simpleMessage("Comment"),
+    "comment_count": m2,
+    "commentator": MessageLookupByLibrary.simpleMessage("Commentator"),
+    "concurrent_galleries": MessageLookupByLibrary.simpleMessage(
+      "Max concurrent gallery downloads",
+    ),
+    "continue_reading_page": m3,
+    "copied_to_clipboard": MessageLookupByLibrary.simpleMessage(
+      "Copied to clipboard",
+    ),
+    "copy": MessageLookupByLibrary.simpleMessage("Copy"),
+    "copy_link": MessageLookupByLibrary.simpleMessage("Copy Link"),
+    "copy_title": MessageLookupByLibrary.simpleMessage("Copy Title"),
+    "current_site": m4,
+    "current_version": MessageLookupByLibrary.simpleMessage("Current Version"),
+    "custom_hosts": MessageLookupByLibrary.simpleMessage("Custom Hosts"),
+    "custom_width": MessageLookupByLibrary.simpleMessage("Custom Width"),
+    "dark": MessageLookupByLibrary.simpleMessage("Dark"),
+    "dark_mode_effect": MessageLookupByLibrary.simpleMessage(
+      "Dark mode effect",
+    ),
+    "date_or_offset": MessageLookupByLibrary.simpleMessage("Date or Offset"),
+    "default_avatar_style": MessageLookupByLibrary.simpleMessage(
+      "Default Avatar Style",
+    ),
+    "delete": MessageLookupByLibrary.simpleMessage("Delete"),
+    "delete_task": MessageLookupByLibrary.simpleMessage("Delete Task"),
+    "delete_task_and_content": MessageLookupByLibrary.simpleMessage(
+      "Delete task and content",
+    ),
+    "delete_task_only": MessageLookupByLibrary.simpleMessage(
+      "Delete task only",
+    ),
+    "detail_ambient_background": MessageLookupByLibrary.simpleMessage(
+      "Ambient Background in Gallery",
+    ),
+    "direct": MessageLookupByLibrary.simpleMessage("Direct"),
+    "disabled": MessageLookupByLibrary.simpleMessage("Disabled"),
+    "domain_fronting": MessageLookupByLibrary.simpleMessage("Domain fronting"),
+    "donate": MessageLookupByLibrary.simpleMessage("Donate"),
+    "done": MessageLookupByLibrary.simpleMessage("Done"),
+    "double_click_back": MessageLookupByLibrary.simpleMessage(
+      "Press again to exit",
+    ),
+    "double_page_model": MessageLookupByLibrary.simpleMessage(
+      "Double page model",
+    ),
+    "download": MessageLookupByLibrary.simpleMessage("Download"),
+    "download_files_unavailable": MessageLookupByLibrary.simpleMessage(
+      "Files temporarily unavailable",
+    ),
+    "download_location": MessageLookupByLibrary.simpleMessage(
+      "Download Location",
+    ),
+    "download_ori_image": MessageLookupByLibrary.simpleMessage(
+      "Download original image",
+    ),
+    "download_ori_image_summary": MessageLookupByLibrary.simpleMessage(
+      "it is dangerous! You may get 509 error",
+    ),
+    "downloaded": MessageLookupByLibrary.simpleMessage("Downloaded"),
+    "downloading": MessageLookupByLibrary.simpleMessage("Downloading"),
+    "edit": MessageLookupByLibrary.simpleMessage("Edit"),
+    "edit_block_rule": MessageLookupByLibrary.simpleMessage("Edit Block Rule"),
+    "edit_comment": MessageLookupByLibrary.simpleMessage("Edit comment"),
+    "eh": MessageLookupByLibrary.simpleMessage("E·H"),
+    "ehentai_my_tags": MessageLookupByLibrary.simpleMessage("My Tags"),
+    "ehentai_settings": MessageLookupByLibrary.simpleMessage(
+      "EHentai Settings",
+    ),
+    "enable": MessageLookupByLibrary.simpleMessage("Enable"),
+    "english_title": MessageLookupByLibrary.simpleMessage("English Title"),
+    "enter_date_or_offset_or_gid": MessageLookupByLibrary.simpleMessage(
+      "Enter date or offset or gid",
+    ),
+    "expand": MessageLookupByLibrary.simpleMessage("Expand"),
+    "experimental_feature": MessageLookupByLibrary.simpleMessage(
+      "Experimental feature",
+    ),
+    "export": MessageLookupByLibrary.simpleMessage("Export"),
+    "export_app_data": MessageLookupByLibrary.simpleMessage("Export App Data"),
+    "export_app_data_summary": MessageLookupByLibrary.simpleMessage(
+      "Export App Data To File",
+    ),
+    "favcat": MessageLookupByLibrary.simpleMessage("Favorites"),
+    "favorite_note_hint": MessageLookupByLibrary.simpleMessage(
+      "Note (optional)",
+    ),
+    "favorites_order": MessageLookupByLibrary.simpleMessage("Favorites Order"),
+    "favorites_order_Use_favorited": MessageLookupByLibrary.simpleMessage(
+      "Use Favorited",
+    ),
+    "favorites_order_Use_posted": MessageLookupByLibrary.simpleMessage(
+      "Use Posted",
+    ),
+    "file_size": MessageLookupByLibrary.simpleMessage("Size"),
+    "filter_by_uploader": MessageLookupByLibrary.simpleMessage(
+      "Filter by uploader",
+    ),
+    "filter_comments_by_score": MessageLookupByLibrary.simpleMessage(
+      "Filter Comments By Score",
+    ),
+    "filter_comments_by_score_summary": MessageLookupByLibrary.simpleMessage(
+      "Comments below/equal to this score will be hidden",
+    ),
+    "fixed_height_of_list_items": MessageLookupByLibrary.simpleMessage(
+      "Fixed height of list items",
+    ),
+    "follow_system": MessageLookupByLibrary.simpleMessage("Follow System"),
+    "full_title": MessageLookupByLibrary.simpleMessage("Full Title"),
+    "full_title_in_gallery": MessageLookupByLibrary.simpleMessage(
+      "Show Full Title",
+    ),
+    "full_title_in_gallery_subtitle": MessageLookupByLibrary.simpleMessage(
+      "Alternate title on its own line, in lists and gallery pages",
+    ),
+    "fullscreen": MessageLookupByLibrary.simpleMessage("Fullscreen"),
+    "galery_site": MessageLookupByLibrary.simpleMessage("Gallery Site"),
+    "gallery_comments": MessageLookupByLibrary.simpleMessage(
+      "Gallery Comments",
+    ),
+    "gallery_info": MessageLookupByLibrary.simpleMessage("Gallery info"),
+    "glass_effect": MessageLookupByLibrary.simpleMessage("Glass effect"),
+    "glass_material": MessageLookupByLibrary.simpleMessage("Glass material"),
+    "glass_material_frosted": MessageLookupByLibrary.simpleMessage(
+      "Frosted glass",
+    ),
+    "glass_material_frosted_detail": MessageLookupByLibrary.simpleMessage(
+      "Soft blur; better performance",
+    ),
+    "glass_material_liquid": MessageLookupByLibrary.simpleMessage(
+      "Liquid glass",
+    ),
+    "glass_material_liquid_detail": MessageLookupByLibrary.simpleMessage(
+      "Refraction and highlights; uses more power",
+    ),
+    "glass_system_bar_note": MessageLookupByLibrary.simpleMessage(
+      "Vertical tab bars drawn by the system, such as the side bar on the iPhone Duo outer display, always use Liquid Glass.",
+    ),
+    "global_setting": MessageLookupByLibrary.simpleMessage("Global Setting"),
+    "gray_black": MessageLookupByLibrary.simpleMessage("Graphite"),
+    "group": MessageLookupByLibrary.simpleMessage("Group"),
+    "groupName": MessageLookupByLibrary.simpleMessage("Group Name"),
+    "groupType": MessageLookupByLibrary.simpleMessage("Group Type"),
+    "group_management": MessageLookupByLibrary.simpleMessage("Manage Groups"),
+    "hide": MessageLookupByLibrary.simpleMessage("Hide"),
+    "hide_gallery_thumbnails": MessageLookupByLibrary.simpleMessage(
+      "Hide Gallery Thumbnails",
+    ),
+    "hide_thumbnails": MessageLookupByLibrary.simpleMessage("Hide Thumbnails"),
+    "hide_top_bar_on_scroll": MessageLookupByLibrary.simpleMessage(
+      "Hide top bar on scroll",
+    ),
+    "high_resolution_images_limited": MessageLookupByLibrary.simpleMessage(
+      "High Resolution Images Limited",
+    ),
+    "horizontal_thumbnails": MessageLookupByLibrary.simpleMessage(
+      "Horizontal Thumbnails",
+    ),
+    "host": MessageLookupByLibrary.simpleMessage("Host"),
+    "hours": MessageLookupByLibrary.simpleMessage("hours"),
+    "image_block": MessageLookupByLibrary.simpleMessage("Image Block"),
+    "image_download_type": MessageLookupByLibrary.simpleMessage(
+      "Download Type",
+    ),
+    "image_limits": MessageLookupByLibrary.simpleMessage("Image Limits"),
     "image_save_busy": MessageLookupByLibrary.simpleMessage(
       "An image is already being saved.",
     ),
@@ -125,776 +395,757 @@ class MessageLookup extends MessageLookupByLibrary {
     "image_save_write": MessageLookupByLibrary.simpleMessage(
       "Could not write the image to Photos. Please try again.",
     ),
+    "import_app_data": MessageLookupByLibrary.simpleMessage("Import App Data"),
+    "import_app_data_summary": MessageLookupByLibrary.simpleMessage(
+      "Import App Data From Backup File, need restart app",
+    ),
+    "import_export": MessageLookupByLibrary.simpleMessage("Import and export"),
+    "inner_display": MessageLookupByLibrary.simpleMessage("Inner Display"),
+    "input_empty": MessageLookupByLibrary.simpleMessage("Input empty"),
+    "input_error": MessageLookupByLibrary.simpleMessage("Input error"),
+    "instantly": MessageLookupByLibrary.simpleMessage("Instantly"),
+    "japanese_title": MessageLookupByLibrary.simpleMessage("Japanese Title"),
+    "japanese_title_in_gallery": MessageLookupByLibrary.simpleMessage(
+      "Japanese Title in Gallery",
+    ),
+    "japanese_title_in_gallery_summary": MessageLookupByLibrary.simpleMessage(
+      "Japanese title only applies to the gallery page",
+    ),
+    "jump_next": MessageLookupByLibrary.simpleMessage("Next"),
+    "jump_or_seek": MessageLookupByLibrary.simpleMessage("Jump or Seek"),
+    "jump_prev": MessageLookupByLibrary.simpleMessage("Prev"),
+    "jump_to_page": MessageLookupByLibrary.simpleMessage("Jump to Page"),
+    "landscape": MessageLookupByLibrary.simpleMessage("Landscape"),
+    "language": MessageLookupByLibrary.simpleMessage("Language"),
+    "last_favorites": MessageLookupByLibrary.simpleMessage(
+      "Last Favorites, long press to manually select",
+    ),
+    "latest_version": MessageLookupByLibrary.simpleMessage("Latest version"),
+    "layout": MessageLookupByLibrary.simpleMessage("Layout"),
+    "left_to_right": MessageLookupByLibrary.simpleMessage("Left to right"),
+    "license": MessageLookupByLibrary.simpleMessage("License"),
+    "light": MessageLookupByLibrary.simpleMessage("Ligth"),
+    "link_redirect": MessageLookupByLibrary.simpleMessage("Link redirect"),
+    "link_redirect_summary": MessageLookupByLibrary.simpleMessage(
+      "Redirecting gallery links to selected sites",
+    ),
+    "liquid_glass_description": MessageLookupByLibrary.simpleMessage(
+      "Use glass for navigation bars, tab bars, buttons and menus. Frosted glass uses less power and scrolls more smoothly.",
+    ),
+    "liquid_glass_inline": MessageLookupByLibrary.simpleMessage("Compact row"),
+    "liquid_glass_inline_detail": MessageLookupByLibrary.simpleMessage(
+      "Actions and categories share one row",
+    ),
+    "liquid_glass_top_layout": MessageLookupByLibrary.simpleMessage(
+      "Top category layout",
+    ),
+    "liquid_glass_two_row": MessageLookupByLibrary.simpleMessage(
+      "Two rows (default)",
+    ),
+    "liquid_glass_two_row_detail": MessageLookupByLibrary.simpleMessage(
+      "Actions and categories on separate rows",
+    ),
+    "list_load_more_fail": MessageLookupByLibrary.simpleMessage(
+      "Load failed, tap to retry",
+    ),
+    "list_mode": MessageLookupByLibrary.simpleMessage("List Mode"),
+    "listmode_grid": MessageLookupByLibrary.simpleMessage("Grid"),
+    "listmode_grid_tags": MessageLookupByLibrary.simpleMessage("Grid - Tags"),
+    "listmode_medium": MessageLookupByLibrary.simpleMessage("List - Medium"),
+    "listmode_small": MessageLookupByLibrary.simpleMessage("List - Small"),
+    "listmode_waterfall": MessageLookupByLibrary.simpleMessage("Waterfall"),
+    "listmode_waterfall_large": MessageLookupByLibrary.simpleMessage(
+      "WaterfallFlow - Large",
+    ),
+    "loading": MessageLookupByLibrary.simpleMessage("Loading"),
+    "local_favorite": MessageLookupByLibrary.simpleMessage("Local Favorites"),
+    "login": MessageLookupByLibrary.simpleMessage("Sign"),
+    "login_web": MessageLookupByLibrary.simpleMessage("Sign in on the Web"),
+    "max_history": MessageLookupByLibrary.simpleMessage("Maximum History"),
+    "min": MessageLookupByLibrary.simpleMessage("min"),
+    "model": m5,
+    "more_actions": MessageLookupByLibrary.simpleMessage("More"),
+    "more_thumbnails": MessageLookupByLibrary.simpleMessage("More Thumbnails"),
+    "multi_download": MessageLookupByLibrary.simpleMessage("Multi download"),
+    "mytags_on_website": MessageLookupByLibrary.simpleMessage(
+      "My Tags on Website",
+    ),
+    "native_http_client_adapter": MessageLookupByLibrary.simpleMessage(
+      "Native HTTP Client Adapter",
+    ),
+    "never": MessageLookupByLibrary.simpleMessage("Never"),
+    "newGroup": MessageLookupByLibrary.simpleMessage("New Group"),
+    "newText": MessageLookupByLibrary.simpleMessage("New Text"),
+    "new_comment": MessageLookupByLibrary.simpleMessage("New comment"),
+    "no": MessageLookupByLibrary.simpleMessage("No"),
+    "no_limit": MessageLookupByLibrary.simpleMessage("No Limit"),
+    "no_more_thumbnails": MessageLookupByLibrary.simpleMessage(
+      "No more Thumbnails",
+    ),
+    "notFav": MessageLookupByLibrary.simpleMessage("Not Favorited"),
+    "not_login": MessageLookupByLibrary.simpleMessage("Not Login"),
+    "off": MessageLookupByLibrary.simpleMessage("Off"),
+    "ok": MessageLookupByLibrary.simpleMessage("OK"),
+    "on": MessageLookupByLibrary.simpleMessage("On"),
+    "one_step_favorite": MessageLookupByLibrary.simpleMessage(
+      "One Step Favorite",
+    ),
+    "one_step_favorite_desc": MessageLookupByLibrary.simpleMessage(
+      "Quickly add gallery to favorite, short press to save to the last selected favorite, long press to display the favorite dialog.",
+    ),
+    "open_supported_links": MessageLookupByLibrary.simpleMessage(
+      "Open supported links",
+    ),
+    "open_supported_links_summary": MessageLookupByLibrary.simpleMessage(
+      "Starting with Android 12, apps can only be used as web link handling apps if they are approved. Otherwise it will be processed using the default browser. You can manually approve it here",
+    ),
+    "open_with_other_apps": MessageLookupByLibrary.simpleMessage(
+      "Open with other apps",
+    ),
+    "orientation_auto": MessageLookupByLibrary.simpleMessage("Auto"),
+    "orientation_landscapeLeft": MessageLookupByLibrary.simpleMessage(
+      "Landscape left",
+    ),
+    "orientation_landscapeRight": MessageLookupByLibrary.simpleMessage(
+      "Landscape right",
+    ),
+    "orientation_portraitUp": MessageLookupByLibrary.simpleMessage(
+      "Portrait up",
+    ),
+    "orientation_system": MessageLookupByLibrary.simpleMessage("Follow system"),
+    "original_image": MessageLookupByLibrary.simpleMessage("Original"),
+    "outer_display": MessageLookupByLibrary.simpleMessage("Outer Display"),
+    "p_Archiver": MessageLookupByLibrary.simpleMessage("Archiver"),
+    "p_Download": MessageLookupByLibrary.simpleMessage("Download"),
+    "p_Rate": MessageLookupByLibrary.simpleMessage("Rate"),
+    "p_Similar": MessageLookupByLibrary.simpleMessage("Similar"),
+    "p_Torrent": MessageLookupByLibrary.simpleMessage("Torrent"),
+    "page_count": m6,
+    "page_range": MessageLookupByLibrary.simpleMessage("Page range"),
+    "page_range_error": MessageLookupByLibrary.simpleMessage(
+      "Page range error",
+    ),
+    "page_view_type": MessageLookupByLibrary.simpleMessage("Page View Type"),
+    "passwd": MessageLookupByLibrary.simpleMessage("Password"),
+    "paused": MessageLookupByLibrary.simpleMessage("Paused"),
+    "phash_block_list": MessageLookupByLibrary.simpleMessage(
+      "Perceptual Hash Block List",
+    ),
+    "phash_check": MessageLookupByLibrary.simpleMessage(
+      "Perceptual Hash Check (Block similar images)",
+    ),
+    "pls_i_passwd": MessageLookupByLibrary.simpleMessage(
+      "Please enter your password",
+    ),
+    "pls_i_username": MessageLookupByLibrary.simpleMessage(
+      "Please enter user name",
+    ),
+    "port": MessageLookupByLibrary.simpleMessage("Port"),
+    "portrait": MessageLookupByLibrary.simpleMessage("Portrait"),
+    "preload_image": MessageLookupByLibrary.simpleMessage("Preload Image"),
+    "processing": MessageLookupByLibrary.simpleMessage("Processing"),
+    "proxy": MessageLookupByLibrary.simpleMessage("Proxy"),
+    "proxy_type": MessageLookupByLibrary.simpleMessage("Proxy Type"),
+    "pure_black": MessageLookupByLibrary.simpleMessage("Pure black"),
+    "quick_search": MessageLookupByLibrary.simpleMessage("Quick search"),
+    "ranking_period": MessageLookupByLibrary.simpleMessage("Ranking Period"),
+    "read": MessageLookupByLibrary.simpleMessage("Read"),
+    "read_from_clipboard": MessageLookupByLibrary.simpleMessage(
+      "Read from clipboard",
+    ),
+    "read_setting": MessageLookupByLibrary.simpleMessage("Read setting"),
+    "read_view_compatible_mode": MessageLookupByLibrary.simpleMessage(
+      "Compatible Mode",
+    ),
+    "reader_auto_read": MessageLookupByLibrary.simpleMessage("Auto Page Turn"),
+    "reader_auto_read_interval": MessageLookupByLibrary.simpleMessage(
+      "Page Interval",
+    ),
+    "reader_custom_interval": MessageLookupByLibrary.simpleMessage("Custom…"),
+    "reader_double_even_left": MessageLookupByLibrary.simpleMessage(
+      "Two Pages (Even on Left)",
+    ),
+    "reader_double_odd_left": MessageLookupByLibrary.simpleMessage(
+      "Two Pages (Odd on Left)",
+    ),
+    "reader_double_page": MessageLookupByLibrary.simpleMessage("Double"),
+    "reader_fill_footer": MessageLookupByLibrary.simpleMessage(
+      "Hides the status bar and system symbols while reading in that orientation, and lets images ignore the safe area",
+    ),
+    "reader_fill_landscape": MessageLookupByLibrary.simpleMessage(
+      "Fill screen in landscape",
+    ),
+    "reader_fill_portrait": MessageLookupByLibrary.simpleMessage(
+      "Fill screen in portrait",
+    ),
+    "reader_interval_seconds": m7,
+    "reader_next_page": MessageLookupByLibrary.simpleMessage("Next page"),
+    "reader_page_layout": MessageLookupByLibrary.simpleMessage("Page Layout"),
+    "reader_page_of": m8,
+    "reader_previous_page": MessageLookupByLibrary.simpleMessage(
+      "Previous page",
+    ),
+    "reader_single_page": MessageLookupByLibrary.simpleMessage("Single Page"),
+    "reader_surface_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+    "reader_surface_tabletop": MessageLookupByLibrary.simpleMessage("Tabletop"),
+    "reader_turn_page": MessageLookupByLibrary.simpleMessage("Turn page"),
+    "reader_vertical": MessageLookupByLibrary.simpleMessage("Vertical"),
+    "reading_direction": MessageLookupByLibrary.simpleMessage(
+      "Reading direction",
+    ),
+    "rebuild_tasks_data": MessageLookupByLibrary.simpleMessage(
+      "Rebuild tasks data",
+    ),
+    "redirect_thumb_link": MessageLookupByLibrary.simpleMessage(
+      "Redirect Thumb Link",
+    ),
+    "redirect_thumb_link_summary": MessageLookupByLibrary.simpleMessage(
+      "Redirect Thumb Link To ehgt.org",
+    ),
+    "redownload": MessageLookupByLibrary.simpleMessage("Redownload"),
+    "refresh_igneous": MessageLookupByLibrary.simpleMessage("Refresh Igneous"),
+    "regex": MessageLookupByLibrary.simpleMessage("Regex"),
+    "regex_format_error": MessageLookupByLibrary.simpleMessage(
+      "Regex format error",
+    ),
+    "reload": MessageLookupByLibrary.simpleMessage("Reload"),
+    "reload_image": MessageLookupByLibrary.simpleMessage("Reload image"),
+    "remove_all": MessageLookupByLibrary.simpleMessage("Remove all"),
+    "remove_from_favorites": MessageLookupByLibrary.simpleMessage(
+      "Remove from favorites",
+    ),
+    "reply_to_comment": MessageLookupByLibrary.simpleMessage("Reply"),
+    "resample_image": MessageLookupByLibrary.simpleMessage("Resample"),
+    "reset_cost": MessageLookupByLibrary.simpleMessage("Reset Cost"),
+    "restore_tasks_data": MessageLookupByLibrary.simpleMessage(
+      "Restore tasks data",
+    ),
+    "right_to_left": MessageLookupByLibrary.simpleMessage("Right to left"),
+    "s_Advanced_Options": MessageLookupByLibrary.simpleMessage(
+      "Advanced Options",
+    ),
+    "s_Between": MessageLookupByLibrary.simpleMessage("Between"),
+    "s_Disable_default_filters": MessageLookupByLibrary.simpleMessage(
+      "Disable default filters",
+    ),
+    "s_Minimum_Rating": MessageLookupByLibrary.simpleMessage("Minimum Rating"),
+    "s_Only_Show_Galleries_With_Torrents": MessageLookupByLibrary.simpleMessage(
+      "Only Show Galleries With Torrents",
+    ),
+    "s_Search_Downvoted_Tags": MessageLookupByLibrary.simpleMessage(
+      "Search Downvoted Tags",
+    ),
+    "s_Search_Fav_Name": MessageLookupByLibrary.simpleMessage("Search Name"),
+    "s_Search_Fav_Note": MessageLookupByLibrary.simpleMessage("Search Note"),
+    "s_Search_Fav_Tags": MessageLookupByLibrary.simpleMessage("Search Tags"),
+    "s_Search_Gallery_Description": MessageLookupByLibrary.simpleMessage(
+      "Search Gallery Description",
+    ),
+    "s_Search_Gallery_Name": MessageLookupByLibrary.simpleMessage(
+      "Search Gallery Name",
+    ),
+    "s_Search_Gallery_Tags": MessageLookupByLibrary.simpleMessage(
+      "Search Gallery Tags",
+    ),
+    "s_Search_Low_Power_Tags": MessageLookupByLibrary.simpleMessage(
+      "Search Low-Power Tags",
+    ),
+    "s_Search_Torrent_Filenames": MessageLookupByLibrary.simpleMessage(
+      "Search Torrent Filenames",
+    ),
+    "s_Show_Expunged_Galleries": MessageLookupByLibrary.simpleMessage(
+      "Show Expunged Galleries",
+    ),
+    "s_and": MessageLookupByLibrary.simpleMessage("and"),
+    "s_pages": MessageLookupByLibrary.simpleMessage("pages"),
+    "s_stars": m9,
+    "save": MessageLookupByLibrary.simpleMessage("Save"),
     "save_current_image": MessageLookupByLibrary.simpleMessage(
       "Save current image",
+    ),
+    "save_into_album": MessageLookupByLibrary.simpleMessage(
+      "Save into the album",
     ),
     "save_original_image": MessageLookupByLibrary.simpleMessage(
       "Save original image",
     ),
-        "about": MessageLookupByLibrary.simpleMessage("About"),
-        "add_quick_search":
-            MessageLookupByLibrary.simpleMessage("Add to search"),
-        "add_tag_placeholder": MessageLookupByLibrary.simpleMessage(
-            "Enter new tags, separated with comma"),
-        "add_tags": MessageLookupByLibrary.simpleMessage("Add tags"),
-        "add_to_favorites":
-            MessageLookupByLibrary.simpleMessage("Add to favorites"),
-        "add_to_phash_block_list": MessageLookupByLibrary.simpleMessage(
-            "Add to Perceptual Hash Block List"),
-        "advanced": MessageLookupByLibrary.simpleMessage("Advanced"),
-        "aggregate": MessageLookupByLibrary.simpleMessage("Aggregate"),
-        "aggregate_groups":
-            MessageLookupByLibrary.simpleMessage("Aggregate groups"),
-        "all_Favorites": MessageLookupByLibrary.simpleMessage("All Favorites"),
-        "all_comment": MessageLookupByLibrary.simpleMessage("All Comment"),
-        "all_thumbnails":
-            MessageLookupByLibrary.simpleMessage("All Thumbnails"),
-        "allow_media_scan":
-            MessageLookupByLibrary.simpleMessage("Allow media scan"),
-        "always": MessageLookupByLibrary.simpleMessage("Always"),
-        "app_title": MessageLookupByLibrary.simpleMessage("Eros-FE"),
-        "ask_me": MessageLookupByLibrary.simpleMessage("Ask for Me"),
-        "auth_biometricHint":
-            MessageLookupByLibrary.simpleMessage("Verify Identity"),
-        "auth_signInTitle":
-            MessageLookupByLibrary.simpleMessage("Authentication Required"),
-        "author": MessageLookupByLibrary.simpleMessage("Author"),
-        "autoLock": MessageLookupByLibrary.simpleMessage("Auto-lock"),
-        "auto_select_profile":
-            MessageLookupByLibrary.simpleMessage("Auto select profile"),
-        "automatic": MessageLookupByLibrary.simpleMessage("Automatic"),
-        "avatar": MessageLookupByLibrary.simpleMessage("Avatar"),
-        "back": MessageLookupByLibrary.simpleMessage("Back"),
-        "block_rule": MessageLookupByLibrary.simpleMessage("Block Rule"),
-        "block_rules": MessageLookupByLibrary.simpleMessage("Block Rules"),
-        "blockers": MessageLookupByLibrary.simpleMessage("Blockers"),
-        "blurring_cover_background": MessageLookupByLibrary.simpleMessage(
-            "Blurring of cover background"),
-        "cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
-        "change_to_favorites":
-            MessageLookupByLibrary.simpleMessage("Change to favorites"),
-        "chapter": MessageLookupByLibrary.simpleMessage("Chapter"),
-        "check_for_update":
-            MessageLookupByLibrary.simpleMessage("Check for Update"),
-        "clear_cache": MessageLookupByLibrary.simpleMessage("Clear cache"),
-        "clear_filter": MessageLookupByLibrary.simpleMessage("Clear"),
-        "clear_search_history":
-            MessageLookupByLibrary.simpleMessage("Clear search history"),
-        "clipboard_detection":
-            MessageLookupByLibrary.simpleMessage("Clipboard detection"),
-        "clipboard_detection_desc": MessageLookupByLibrary.simpleMessage(
-            "Automatically detect clipboard gallery links"),
-        "collapse": MessageLookupByLibrary.simpleMessage("Collapse"),
-        "color_picker_primary": MessageLookupByLibrary.simpleMessage("Primary"),
-        "color_picker_wheel": MessageLookupByLibrary.simpleMessage("Wheel"),
-        "comment": MessageLookupByLibrary.simpleMessage("Comment"),
-        "commentator": MessageLookupByLibrary.simpleMessage("Commentator"),
-        "concurrent_galleries": MessageLookupByLibrary.simpleMessage(
-            "Max concurrent gallery downloads"),
-        "copied_to_clipboard":
-            MessageLookupByLibrary.simpleMessage("Copied to clipboard"),
-        "copy": MessageLookupByLibrary.simpleMessage("Copy"),
-        "current_site": m0,
-        "current_version":
-            MessageLookupByLibrary.simpleMessage("Current Version"),
-        "custom_hosts": MessageLookupByLibrary.simpleMessage("Custom Hosts"),
-        "custom_width": MessageLookupByLibrary.simpleMessage("Custom Width"),
-        "dark": MessageLookupByLibrary.simpleMessage("Dark"),
-        "dark_mode_effect":
-            MessageLookupByLibrary.simpleMessage("Dark mode effect"),
-        "date_or_offset":
-            MessageLookupByLibrary.simpleMessage("Date or Offset"),
-        "default_avatar_style":
-            MessageLookupByLibrary.simpleMessage("Default Avatar Style"),
-        "delete": MessageLookupByLibrary.simpleMessage("Delete"),
-        "delete_task": MessageLookupByLibrary.simpleMessage("Delete Task"),
-        "delete_task_and_content":
-            MessageLookupByLibrary.simpleMessage("Delete task and content"),
-        "delete_task_only":
-            MessageLookupByLibrary.simpleMessage("Delete task only"),
-        "direct": MessageLookupByLibrary.simpleMessage("Direct"),
-        "disabled": MessageLookupByLibrary.simpleMessage("Disabled"),
-        "domain_fronting":
-            MessageLookupByLibrary.simpleMessage("Domain fronting"),
-        "donate": MessageLookupByLibrary.simpleMessage("Donate"),
-        "done": MessageLookupByLibrary.simpleMessage("Done"),
-        "double_click_back":
-            MessageLookupByLibrary.simpleMessage("Press again to exit"),
-        "double_page_model":
-            MessageLookupByLibrary.simpleMessage("Double page model"),
-        "download_files_unavailable": MessageLookupByLibrary.simpleMessage("Files temporarily unavailable"),
-    "check_download_files_and_continue": MessageLookupByLibrary.simpleMessage("Check files and continue"),
-    "download": MessageLookupByLibrary.simpleMessage("Download"),
-        "download_location":
-            MessageLookupByLibrary.simpleMessage("Download Location"),
-        "download_ori_image":
-            MessageLookupByLibrary.simpleMessage("Download original image"),
-        "download_ori_image_summary": MessageLookupByLibrary.simpleMessage(
-            "it is dangerous! You may get 509 error"),
-        "downloaded": MessageLookupByLibrary.simpleMessage("Downloaded"),
-        "downloading": MessageLookupByLibrary.simpleMessage("Downloading"),
-        "edit": MessageLookupByLibrary.simpleMessage("Edit"),
-        "edit_block_rule":
-            MessageLookupByLibrary.simpleMessage("Edit Block Rule"),
-        "edit_comment": MessageLookupByLibrary.simpleMessage("Edit comment"),
-        "eh": MessageLookupByLibrary.simpleMessage("E·H"),
-        "ehentai_my_tags": MessageLookupByLibrary.simpleMessage("My Tags"),
-        "ehentai_settings":
-            MessageLookupByLibrary.simpleMessage("EHentai Settings"),
-        "enable": MessageLookupByLibrary.simpleMessage("Enable"),
-        "enter_date_or_offset_or_gid":
-            MessageLookupByLibrary.simpleMessage("Enter date or offset or gid"),
-        "expand": MessageLookupByLibrary.simpleMessage("Expand"),
-        "experimental_feature":
-            MessageLookupByLibrary.simpleMessage("Experimental feature"),
-        "export": MessageLookupByLibrary.simpleMessage("Export"),
-        "export_app_data":
-            MessageLookupByLibrary.simpleMessage("Export App Data"),
-        "export_app_data_summary":
-            MessageLookupByLibrary.simpleMessage("Export App Data To File"),
-        "favcat": MessageLookupByLibrary.simpleMessage("Favorites"),
-        "favorites_order":
-            MessageLookupByLibrary.simpleMessage("Favorites Order"),
-        "favorites_order_Use_favorited":
-            MessageLookupByLibrary.simpleMessage("Use Favorited"),
-        "favorites_order_Use_posted":
-            MessageLookupByLibrary.simpleMessage("Use Posted"),
-        "filter_comments_by_score":
-            MessageLookupByLibrary.simpleMessage("Filter Comments By Score"),
-        "filter_comments_by_score_summary":
-            MessageLookupByLibrary.simpleMessage(
-                "Comments below/equal to this score will be hidden"),
-        "fixed_height_of_list_items":
-            MessageLookupByLibrary.simpleMessage("Fixed height of list items"),
-        "follow_system": MessageLookupByLibrary.simpleMessage("Follow System"),
-        "fullscreen": MessageLookupByLibrary.simpleMessage("Fullscreen"),
-        "galery_site": MessageLookupByLibrary.simpleMessage("Gallery Site"),
-        "gallery_comments":
-            MessageLookupByLibrary.simpleMessage("Gallery Comments"),
-        "global_setting":
-            MessageLookupByLibrary.simpleMessage("Global Setting"),
-        "gray_black": MessageLookupByLibrary.simpleMessage("Graphite"),
-        "group": MessageLookupByLibrary.simpleMessage("Group"),
-        "groupName": MessageLookupByLibrary.simpleMessage("Group Name"),
-        "groupType": MessageLookupByLibrary.simpleMessage("Group Type"),
-        "hide": MessageLookupByLibrary.simpleMessage("Hide"),
-        "hide_gallery_thumbnails":
-            MessageLookupByLibrary.simpleMessage("Hide Gallery Thumbnails"),
-        "hide_thumbnails":
-            MessageLookupByLibrary.simpleMessage("Hide Thumbnails"),
-        "hide_top_bar_on_scroll":
-            MessageLookupByLibrary.simpleMessage("Hide top bar on scroll"),
-        "high_resolution_images_limited": MessageLookupByLibrary.simpleMessage(
-            "High Resolution Images Limited"),
-        "horizontal_thumbnails":
-            MessageLookupByLibrary.simpleMessage("Horizontal Thumbnails"),
-        "host": MessageLookupByLibrary.simpleMessage("Host"),
-        "hours": MessageLookupByLibrary.simpleMessage("hours"),
-        "image_block": MessageLookupByLibrary.simpleMessage("Image Block"),
-        "image_download_type":
-            MessageLookupByLibrary.simpleMessage("Download Type"),
-        "image_limits": MessageLookupByLibrary.simpleMessage("Image Limits"),
-        "import_app_data":
-            MessageLookupByLibrary.simpleMessage("Import App Data"),
-        "import_app_data_summary": MessageLookupByLibrary.simpleMessage(
-            "Import App Data From Backup File, need restart app"),
-        "input_empty": MessageLookupByLibrary.simpleMessage("Input empty"),
-        "input_error": MessageLookupByLibrary.simpleMessage("Input error"),
-        "instantly": MessageLookupByLibrary.simpleMessage("Instantly"),
-        "japanese_title_in_gallery":
-            MessageLookupByLibrary.simpleMessage("Japanese Title in Gallery"),
-        "japanese_title_in_gallery_summary":
-            MessageLookupByLibrary.simpleMessage(
-                "Japanese title only applies to the gallery page"),
-        "full_title_in_gallery":
-            MessageLookupByLibrary.simpleMessage("Show Full Title"),
-        "full_title_in_gallery_subtitle":
-            MessageLookupByLibrary.simpleMessage("Alternate title on its own line, in lists and gallery pages"),
-        "jump_next": MessageLookupByLibrary.simpleMessage("Next"),
-        "jump_or_seek": MessageLookupByLibrary.simpleMessage("Jump or Seek"),
-        "jump_prev": MessageLookupByLibrary.simpleMessage("Prev"),
-        "jump_to_page": MessageLookupByLibrary.simpleMessage("Jump to Page"),
-        "landscape": MessageLookupByLibrary.simpleMessage("Landscape"),
-        "language": MessageLookupByLibrary.simpleMessage("Language"),
-        "last_favorites": MessageLookupByLibrary.simpleMessage(
-            "Last Favorites, long press to manually select"),
-        "latest_version":
-            MessageLookupByLibrary.simpleMessage("Latest version"),
-        "layout": MessageLookupByLibrary.simpleMessage("Layout"),
-        "left_to_right": MessageLookupByLibrary.simpleMessage("Left to right"),
-        "license": MessageLookupByLibrary.simpleMessage("License"),
-        "light": MessageLookupByLibrary.simpleMessage("Ligth"),
-        "link_redirect": MessageLookupByLibrary.simpleMessage("Link redirect"),
-        "link_redirect_summary": MessageLookupByLibrary.simpleMessage(
-            "Redirecting gallery links to selected sites"),
-        "list_load_more_fail":
-            MessageLookupByLibrary.simpleMessage("Load failed, tap to retry"),
-        "list_mode": MessageLookupByLibrary.simpleMessage("List Mode"),
-        "listmode_grid": MessageLookupByLibrary.simpleMessage("Grid"),
-    "listmode_grid_tags": MessageLookupByLibrary.simpleMessage("Grid - Tags"),
-        "listmode_medium":
-            MessageLookupByLibrary.simpleMessage("List - Medium"),
-        "listmode_small": MessageLookupByLibrary.simpleMessage("List - Small"),
-        "listmode_waterfall": MessageLookupByLibrary.simpleMessage("Waterfall"),
-        "listmode_waterfall_large":
-            MessageLookupByLibrary.simpleMessage("WaterfallFlow - Large"),
-        "loading": MessageLookupByLibrary.simpleMessage("Loading"),
-        "local_favorite":
-            MessageLookupByLibrary.simpleMessage("Local Favorites"),
-        "login": MessageLookupByLibrary.simpleMessage("Sign"),
-        "login_web": MessageLookupByLibrary.simpleMessage("Sign in on the Web"),
-        "max_history": MessageLookupByLibrary.simpleMessage("Maximum History"),
-        "min": MessageLookupByLibrary.simpleMessage("min"),
-        "model": m1,
-        "more_thumbnails":
-            MessageLookupByLibrary.simpleMessage("More Thumbnails"),
-        "multi_download":
-            MessageLookupByLibrary.simpleMessage("Multi download"),
-        "mytags_on_website":
-            MessageLookupByLibrary.simpleMessage("My Tags on Website"),
-        "native_http_client_adapter":
-            MessageLookupByLibrary.simpleMessage("Native HTTP Client Adapter"),
-        "never": MessageLookupByLibrary.simpleMessage("Never"),
-        "newGroup": MessageLookupByLibrary.simpleMessage("New Group"),
-        "newText": MessageLookupByLibrary.simpleMessage("New Text"),
-        "new_comment": MessageLookupByLibrary.simpleMessage("New comment"),
-        "no": MessageLookupByLibrary.simpleMessage("No"),
-        "no_limit": MessageLookupByLibrary.simpleMessage("No Limit"),
-        "no_more_thumbnails":
-            MessageLookupByLibrary.simpleMessage("No more Thumbnails"),
-        "notFav": MessageLookupByLibrary.simpleMessage("Not Favorited"),
-        "not_login": MessageLookupByLibrary.simpleMessage("Not Login"),
-        "off": MessageLookupByLibrary.simpleMessage("Off"),
-        "ok": MessageLookupByLibrary.simpleMessage("OK"),
-        "on": MessageLookupByLibrary.simpleMessage("On"),
-        "one_step_favorite":
-            MessageLookupByLibrary.simpleMessage("One Step Favorite"),
-        "one_step_favorite_desc": MessageLookupByLibrary.simpleMessage(
-            "Quickly add gallery to favorite, short press to save to the last selected favorite, long press to display the favorite dialog."),
-        "open_supported_links":
-            MessageLookupByLibrary.simpleMessage("Open supported links"),
-        "open_supported_links_summary": MessageLookupByLibrary.simpleMessage(
-            "Starting with Android 12, apps can only be used as web link handling apps if they are approved. Otherwise it will be processed using the default browser. You can manually approve it here"),
-        "open_with_other_apps":
-            MessageLookupByLibrary.simpleMessage("Open with other apps"),
-        "orientation_auto": MessageLookupByLibrary.simpleMessage("Auto"),
-        "orientation_landscapeLeft":
-            MessageLookupByLibrary.simpleMessage("Landscape left"),
-        "orientation_landscapeRight":
-            MessageLookupByLibrary.simpleMessage("Landscape right"),
-        "orientation_portraitUp":
-            MessageLookupByLibrary.simpleMessage("Portrait up"),
-        "orientation_system":
-            MessageLookupByLibrary.simpleMessage("Follow system"),
-        "original_image": MessageLookupByLibrary.simpleMessage("Original"),
-        "p_Archiver": MessageLookupByLibrary.simpleMessage("Archiver"),
-        "p_Download": MessageLookupByLibrary.simpleMessage("Download"),
-        "p_Rate": MessageLookupByLibrary.simpleMessage("Rate"),
-        "p_Similar": MessageLookupByLibrary.simpleMessage("Similar"),
-        "p_Torrent": MessageLookupByLibrary.simpleMessage("Torrent"),
-        "page_range": MessageLookupByLibrary.simpleMessage("Page range"),
-        "page_range_error":
-            MessageLookupByLibrary.simpleMessage("Page range error"),
-        "page_view_type":
-            MessageLookupByLibrary.simpleMessage("Page View Type"),
-        "passwd": MessageLookupByLibrary.simpleMessage("Password"),
-        "paused": MessageLookupByLibrary.simpleMessage("Paused"),
-        "phash_block_list":
-            MessageLookupByLibrary.simpleMessage("Perceptual Hash Block List"),
-        "phash_check": MessageLookupByLibrary.simpleMessage(
-            "Perceptual Hash Check (Block similar images)"),
-        "pls_i_passwd":
-            MessageLookupByLibrary.simpleMessage("Please enter your password"),
-        "pls_i_username":
-            MessageLookupByLibrary.simpleMessage("Please enter user name"),
-        "port": MessageLookupByLibrary.simpleMessage("Port"),
-        "preload_image": MessageLookupByLibrary.simpleMessage("Preload Image"),
-        "processing": MessageLookupByLibrary.simpleMessage("Processing"),
-        "proxy": MessageLookupByLibrary.simpleMessage("Proxy"),
-        "proxy_type": MessageLookupByLibrary.simpleMessage("Proxy Type"),
-        "pure_black": MessageLookupByLibrary.simpleMessage("Pure black"),
-        "quick_search": MessageLookupByLibrary.simpleMessage("Quick search"),
-        "read": MessageLookupByLibrary.simpleMessage("Read"),
-        "read_from_clipboard":
-            MessageLookupByLibrary.simpleMessage("Read from clipboard"),
-        "read_setting": MessageLookupByLibrary.simpleMessage("Read setting"),
-        "read_view_compatible_mode":
-            MessageLookupByLibrary.simpleMessage("Compatible Mode"),
-        "reading_direction":
-            MessageLookupByLibrary.simpleMessage("Reading direction"),
-        "rebuild_tasks_data":
-            MessageLookupByLibrary.simpleMessage("Rebuild tasks data"),
-        "redirect_thumb_link":
-            MessageLookupByLibrary.simpleMessage("Redirect Thumb Link"),
-        "redirect_thumb_link_summary": MessageLookupByLibrary.simpleMessage(
-            "Redirect Thumb Link To ehgt.org"),
-        "redownload": MessageLookupByLibrary.simpleMessage("Redownload"),
-        "refresh_igneous":
-            MessageLookupByLibrary.simpleMessage("Refresh Igneous"),
-        "regex": MessageLookupByLibrary.simpleMessage("Regex"),
-        "regex_format_error":
-            MessageLookupByLibrary.simpleMessage("Regex format error"),
-        "reload_image": MessageLookupByLibrary.simpleMessage("Reload image"),
-        "remove_from_favorites":
-            MessageLookupByLibrary.simpleMessage("Remove from favorites"),
-        "reply_to_comment": MessageLookupByLibrary.simpleMessage("Reply"),
-        "resample_image": MessageLookupByLibrary.simpleMessage("Resample"),
-        "reset_cost": MessageLookupByLibrary.simpleMessage("Reset Cost"),
-        "restore_tasks_data":
-            MessageLookupByLibrary.simpleMessage("Restore tasks data"),
-        "right_to_left": MessageLookupByLibrary.simpleMessage("Right to left"),
-        "s_Advanced_Options":
-            MessageLookupByLibrary.simpleMessage("Advanced Options"),
-        "s_Between": MessageLookupByLibrary.simpleMessage("Between"),
-        "s_Disable_default_filters":
-            MessageLookupByLibrary.simpleMessage("Disable default filters"),
-        "s_Minimum_Rating":
-            MessageLookupByLibrary.simpleMessage("Minimum Rating"),
-        "s_Only_Show_Galleries_With_Torrents":
-            MessageLookupByLibrary.simpleMessage(
-                "Only Show Galleries With Torrents"),
-        "s_Search_Downvoted_Tags":
-            MessageLookupByLibrary.simpleMessage("Search Downvoted Tags"),
-        "s_Search_Fav_Name":
-            MessageLookupByLibrary.simpleMessage("Search Name"),
-        "s_Search_Fav_Note":
-            MessageLookupByLibrary.simpleMessage("Search Note"),
-        "s_Search_Fav_Tags":
-            MessageLookupByLibrary.simpleMessage("Search Tags"),
-        "s_Search_Gallery_Description":
-            MessageLookupByLibrary.simpleMessage("Search Gallery Description"),
-        "s_Search_Gallery_Name":
-            MessageLookupByLibrary.simpleMessage("Search Gallery Name"),
-        "s_Search_Gallery_Tags":
-            MessageLookupByLibrary.simpleMessage("Search Gallery Tags"),
-        "s_Search_Low_Power_Tags":
-            MessageLookupByLibrary.simpleMessage("Search Low-Power Tags"),
-        "s_Search_Torrent_Filenames":
-            MessageLookupByLibrary.simpleMessage("Search Torrent Filenames"),
-        "s_Show_Expunged_Galleries":
-            MessageLookupByLibrary.simpleMessage("Show Expunged Galleries"),
-        "s_and": MessageLookupByLibrary.simpleMessage("and"),
-        "s_pages": MessageLookupByLibrary.simpleMessage("pages"),
-        "s_stars": m2,
-        "save": MessageLookupByLibrary.simpleMessage("Save"),
-        "save_into_album":
-            MessageLookupByLibrary.simpleMessage("Save into the album"),
-        "saved_successfully":
-            MessageLookupByLibrary.simpleMessage("Saved successfully"),
-        "screen_orientation":
-            MessageLookupByLibrary.simpleMessage("Screen orientation"),
-        "search": MessageLookupByLibrary.simpleMessage("Search"),
-        "searchTexts": MessageLookupByLibrary.simpleMessage("Search texts"),
-        "search_history":
-            MessageLookupByLibrary.simpleMessage("Search history"),
-        "search_type": MessageLookupByLibrary.simpleMessage("Search type"),
-        "second": MessageLookupByLibrary.simpleMessage("second"),
-        "security": MessageLookupByLibrary.simpleMessage("Security"),
-        "security_blurredInRecentTasks":
-            MessageLookupByLibrary.simpleMessage("Blurring in recent tasks"),
-        "setting_on_website":
-            MessageLookupByLibrary.simpleMessage("Setting on Website"),
-        "share": MessageLookupByLibrary.simpleMessage("Share"),
-        "share_image": MessageLookupByLibrary.simpleMessage("Share image"),
-        "show_comment_avatar":
-            MessageLookupByLibrary.simpleMessage("Show comment avatar"),
-        "show_comments": MessageLookupByLibrary.simpleMessage("Show Comments"),
-        "show_filter": MessageLookupByLibrary.simpleMessage("Show filter"),
-        "show_gallery_tags":
-            MessageLookupByLibrary.simpleMessage("Show Gallery Tags"),
-        "show_jpn_title":
-            MessageLookupByLibrary.simpleMessage("Show Japanese Title"),
-        "show_only_uploader_comment":
-            MessageLookupByLibrary.simpleMessage("Show Only Uploader Comment"),
-        "show_page_interval":
-            MessageLookupByLibrary.simpleMessage("Show page interval"),
-        "skip": MessageLookupByLibrary.simpleMessage("Skip"),
-        "slide_out_page":
-            MessageLookupByLibrary.simpleMessage("Slide Out Page"),
-        "sync_group": MessageLookupByLibrary.simpleMessage("Sync group"),
-        "sync_history": MessageLookupByLibrary.simpleMessage("Sync history"),
-        "sync_quick_search":
-            MessageLookupByLibrary.simpleMessage("Sync quick search"),
-        "sync_read_progress":
-            MessageLookupByLibrary.simpleMessage("Sync read progress"),
-        "system_proxy": MessageLookupByLibrary.simpleMessage("System Proxy"),
-        "system_share": MessageLookupByLibrary.simpleMessage("System share"),
-        "t_Clear_all_history":
-            MessageLookupByLibrary.simpleMessage("Clear All History"),
-        "tab_download": MessageLookupByLibrary.simpleMessage("Download"),
-        "tab_favorite": MessageLookupByLibrary.simpleMessage("Favorites"),
-        "tab_gallery": MessageLookupByLibrary.simpleMessage("Gallery"),
-        "tab_history": MessageLookupByLibrary.simpleMessage("History"),
-        "tab_popular": MessageLookupByLibrary.simpleMessage("Popular"),
-        "tab_setting": MessageLookupByLibrary.simpleMessage("Settings"),
-        "tab_sort":
-            MessageLookupByLibrary.simpleMessage("Long press and drag to sort"),
-        "tab_toplist": MessageLookupByLibrary.simpleMessage("Toplists"),
-        "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
-        "tabbar_setting":
-            MessageLookupByLibrary.simpleMessage("Tabbar setting"),
-        "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-        "tagNamespace": m3,
-        "tag_add_to_mytag":
-            MessageLookupByLibrary.simpleMessage("Add to Mytags"),
-        "tag_dialog_Default_color":
-            MessageLookupByLibrary.simpleMessage("Default Color"),
-        "tag_dialog_Hide": MessageLookupByLibrary.simpleMessage("Hide"),
-        "tag_dialog_TagColor": MessageLookupByLibrary.simpleMessage("Color"),
-        "tag_dialog_Watch": MessageLookupByLibrary.simpleMessage("Watch"),
-        "tag_dialog_tagWeight":
-            MessageLookupByLibrary.simpleMessage("Tag Weight"),
-        "tag_limit": MessageLookupByLibrary.simpleMessage("Tag Limit"),
-        "tag_vote_down": MessageLookupByLibrary.simpleMessage("Vote Down"),
-        "tag_vote_up": MessageLookupByLibrary.simpleMessage("Vote Up"),
-        "tag_withdraw_vote":
-            MessageLookupByLibrary.simpleMessage("Withdraw Vote"),
-        "tags": MessageLookupByLibrary.simpleMessage("Tags"),
-        "tap_to_turn_page_anima":
-            MessageLookupByLibrary.simpleMessage("Tap to turn page animations"),
-        "theme": MessageLookupByLibrary.simpleMessage("Theme"),
-        "thumbnails": MessageLookupByLibrary.simpleMessage("Thumbnails"),
-        "title": MessageLookupByLibrary.simpleMessage("Title"),
-        "tolist_alltime": MessageLookupByLibrary.simpleMessage("All-Time"),
-        "tolist_past_month": MessageLookupByLibrary.simpleMessage("Past Month"),
-        "tolist_past_year": MessageLookupByLibrary.simpleMessage("Past Year"),
-        "tolist_yesterday": MessageLookupByLibrary.simpleMessage("Yesterday"),
-        "top_to_bottom": MessageLookupByLibrary.simpleMessage("Top to bottom"),
-        "turn_page_anima":
-            MessageLookupByLibrary.simpleMessage("Turn page animations"),
-        "uc_Chinese": MessageLookupByLibrary.simpleMessage("Chinese"),
-        "uc_Dutch": MessageLookupByLibrary.simpleMessage("Dutch"),
-        "uc_English": MessageLookupByLibrary.simpleMessage("English"),
-        "uc_French": MessageLookupByLibrary.simpleMessage("French"),
-        "uc_German": MessageLookupByLibrary.simpleMessage("German"),
-        "uc_Hungarian": MessageLookupByLibrary.simpleMessage("Hungarian"),
-        "uc_Italian": MessageLookupByLibrary.simpleMessage("Italian"),
-        "uc_Japanese": MessageLookupByLibrary.simpleMessage("Japanese"),
-        "uc_Korean": MessageLookupByLibrary.simpleMessage("Korean"),
-        "uc_NA": MessageLookupByLibrary.simpleMessage("N/A"),
-        "uc_Original": MessageLookupByLibrary.simpleMessage("Original"),
-        "uc_Other": MessageLookupByLibrary.simpleMessage("Other"),
-        "uc_Polish": MessageLookupByLibrary.simpleMessage("Polish"),
-        "uc_Portuguese": MessageLookupByLibrary.simpleMessage("Portuguese"),
-        "uc_Rewrite": MessageLookupByLibrary.simpleMessage("Rewrite"),
-        "uc_Russian": MessageLookupByLibrary.simpleMessage("Russian"),
-        "uc_Spanish": MessageLookupByLibrary.simpleMessage("Spanish"),
-        "uc_Thai": MessageLookupByLibrary.simpleMessage("Thai"),
-        "uc_Translated": MessageLookupByLibrary.simpleMessage("Translated"),
-        "uc_Vietnamese": MessageLookupByLibrary.simpleMessage("Vietnamese"),
-        "uc_ar_0": MessageLookupByLibrary.simpleMessage(
-            "Manual Select, Manual Start (Default)"),
-        "uc_ar_1":
-            MessageLookupByLibrary.simpleMessage("Manual Select, Auto Start"),
-        "uc_ar_2": MessageLookupByLibrary.simpleMessage(
-            "Auto Select Original, Manual Start"),
-        "uc_ar_3": MessageLookupByLibrary.simpleMessage(
-            "Auto Select Original, Auto Start"),
-        "uc_ar_4": MessageLookupByLibrary.simpleMessage(
-            "Auto Select Resample, Manual Start"),
-        "uc_ar_5": MessageLookupByLibrary.simpleMessage(
-            "Auto Select Resample, Auto Start"),
-        "uc_archiver_desc": MessageLookupByLibrary.simpleMessage(
-            "The default behavior for the Archiver is to confirm the cost and selection for original or resampled archive, then present a link that can be clicked or copied elsewhere. You can change this behavior here."),
-        "uc_archiver_set":
-            MessageLookupByLibrary.simpleMessage("Archiver Settings"),
-        "uc_artist": MessageLookupByLibrary.simpleMessage("artist"),
-        "uc_auto": MessageLookupByLibrary.simpleMessage("Auto"),
-        "uc_character": MessageLookupByLibrary.simpleMessage("character"),
-        "uc_comments_show_votes":
-            MessageLookupByLibrary.simpleMessage("Show votes"),
-        "uc_comments_sort_order":
-            MessageLookupByLibrary.simpleMessage("Sort order"),
-        "uc_crt_profile": MessageLookupByLibrary.simpleMessage("Create New"),
-        "uc_cs_0":
-            MessageLookupByLibrary.simpleMessage("Oldest comments first"),
-        "uc_cs_1":
-            MessageLookupByLibrary.simpleMessage("Recent comments first"),
-        "uc_cs_2": MessageLookupByLibrary.simpleMessage("By highest score"),
-        "uc_del_profile":
-            MessageLookupByLibrary.simpleMessage("Delete Profile"),
-        "uc_dm_0": MessageLookupByLibrary.simpleMessage("Compact"),
-        "uc_dm_1": MessageLookupByLibrary.simpleMessage("Thumbnail"),
-        "uc_dm_2": MessageLookupByLibrary.simpleMessage("Extended"),
-        "uc_dm_3": MessageLookupByLibrary.simpleMessage("Minimal"),
-        "uc_dm_4": MessageLookupByLibrary.simpleMessage("Minimal+"),
-        "uc_exc_lang":
-            MessageLookupByLibrary.simpleMessage("Excluded Languages"),
-        "uc_exc_lang_desc": MessageLookupByLibrary.simpleMessage(
-            "If you wish to hide galleries in certain languages from the gallery list and searches, select them from the list abover.\nNote that matching galleries will never appear regardless of your search query."),
-        "uc_exc_up": MessageLookupByLibrary.simpleMessage("Excluded Uploaders"),
-        "uc_exc_up_desc": MessageLookupByLibrary.simpleMessage(
-            "If you wish to hide galleries from certain uploaders from the gallery list and searches, add them abover. Put one username per line.\nNote that galleries from these uploaders will never appear regardless of your search query."),
-        "uc_fav": MessageLookupByLibrary.simpleMessage("Favorites"),
-        "uc_fav_sort": MessageLookupByLibrary.simpleMessage("Default sort"),
-        "uc_fav_sort_desc": MessageLookupByLibrary.simpleMessage(
-            "You can also select your default sort order for galleries on your favorites page. Note that favorites added prior to the March 2016 revamp did not store a timestamp, and will use the gallery posted time regardless of this setting."),
-        "uc_female": MessageLookupByLibrary.simpleMessage("female"),
-        "uc_front_page": MessageLookupByLibrary.simpleMessage("Front Page"),
-        "uc_front_page_dis_mode":
-            MessageLookupByLibrary.simpleMessage("Front Page Display mode"),
-        "uc_fs_0":
-            MessageLookupByLibrary.simpleMessage("By last gallery update time"),
-        "uc_fs_1": MessageLookupByLibrary.simpleMessage("By favorited time"),
-        "uc_gallery_comments":
-            MessageLookupByLibrary.simpleMessage("Gallery Comments"),
-        "uc_group": MessageLookupByLibrary.simpleMessage("group"),
-        "uc_hath_local_host": MessageLookupByLibrary.simpleMessage(
-            "Hentai@Home Local Network Host"),
-        "uc_hath_local_host_desc": MessageLookupByLibrary.simpleMessage(
-            "This setting can be used if you have a H@H client running on your local network with the same public IP you browse the site with. Some routers are buggy and cannot route requests back to its own IP; this allows you to work around this problem.\nIf you are running the client on the same PC you browse from, use the loopback address (127.0.0.1:port). If the client is running on another computer on your network, use its local network IP. Some browser configurations prevent external web sites from accessing URLs with local network IPs, the site must then be whitelisted for this to work."),
-        "uc_img_cussize_desc": MessageLookupByLibrary.simpleMessage(
-            "While the site will automatically scale down images to fit your screen width, you can also manually restrict the maximum display size of an image. Like the automatic scaling, this does not resample the image, as the resizing is done browser-side. (0 = no limit)"),
-        "uc_img_horiz": MessageLookupByLibrary.simpleMessage("Horizontal"),
-        "uc_img_load_setting":
-            MessageLookupByLibrary.simpleMessage("Image Load Settings"),
-        "uc_img_size_setting":
-            MessageLookupByLibrary.simpleMessage("Image Size Settings"),
-        "uc_img_vert": MessageLookupByLibrary.simpleMessage("Vertical"),
-        "uc_ip_addr_port":
-            MessageLookupByLibrary.simpleMessage("IP Address:Port"),
-        "uc_language": MessageLookupByLibrary.simpleMessage("language"),
-        "uc_lt_0": MessageLookupByLibrary.simpleMessage(
-            "On mouse-over (pages load faster, but there may be a slight delay before a thumb appears)"),
-        "uc_lt_0_s": MessageLookupByLibrary.simpleMessage("On mouse-over"),
-        "uc_lt_1": MessageLookupByLibrary.simpleMessage(
-            "On page load (pages take longer to load, but there is no delay for loading a thumb after the page has loaded)"),
-        "uc_lt_1_s": MessageLookupByLibrary.simpleMessage("On page load"),
-        "uc_male": MessageLookupByLibrary.simpleMessage("male"),
-        "uc_mose_over_thumb":
-            MessageLookupByLibrary.simpleMessage("mouse-over thumbnails"),
-        "uc_mpv": MessageLookupByLibrary.simpleMessage("Multi-Page Viewer"),
-        "uc_mpv_always": MessageLookupByLibrary.simpleMessage("Always use"),
-        "uc_mpv_stype": MessageLookupByLibrary.simpleMessage("Display Style"),
-        "uc_mpv_thumb_pane":
-            MessageLookupByLibrary.simpleMessage("Thumbnail Pane"),
-        "uc_ms_0": MessageLookupByLibrary.simpleMessage(
-            "Align left;\n Only scale if image is larger than browser width"),
-        "uc_ms_1": MessageLookupByLibrary.simpleMessage(
-            "Align center;\n Only scale if image is larger than browser width"),
-        "uc_ms_2": MessageLookupByLibrary.simpleMessage(
-            "Align center;\n Always scale images to fit browser width"),
-        "uc_mt_0": MessageLookupByLibrary.simpleMessage("Show"),
-        "uc_mt_1": MessageLookupByLibrary.simpleMessage("Hide"),
-        "uc_name_display":
-            MessageLookupByLibrary.simpleMessage("Gallery Name Display"),
-        "uc_name_display_desc": MessageLookupByLibrary.simpleMessage(
-            "Many galleries have both an English/Romanized title and a title in Japanese script. Which gallery name would you like as default?"),
-        "uc_oi_0":
-            MessageLookupByLibrary.simpleMessage("Prefer resampled images"),
-        "uc_oi_1":
-            MessageLookupByLibrary.simpleMessage("Prefer original images"),
-        "uc_ori_image": MessageLookupByLibrary.simpleMessage("Original Images"),
-        "uc_ori_image_desc": MessageLookupByLibrary.simpleMessage(
-            "Use original images instead of the resampled versions? Resampled images will still be used if you select a horizonal resolution different than \"Auto\" above and the image in question is wider, or if the original image is larger than 10 MiB (or 4 MiB for galleries older than one year)."),
-        "uc_parody": MessageLookupByLibrary.simpleMessage("parody"),
-        "uc_pixels": MessageLookupByLibrary.simpleMessage("pixels"),
-        "uc_pn_0": MessageLookupByLibrary.simpleMessage("None"),
-        "uc_pn_1": MessageLookupByLibrary.simpleMessage("Page Number Only"),
-        "uc_pn_2": MessageLookupByLibrary.simpleMessage("Page Number + Name"),
-        "uc_profile": MessageLookupByLibrary.simpleMessage("Profile"),
-        "uc_qb_0": MessageLookupByLibrary.simpleMessage("Nope"),
-        "uc_qb_1": MessageLookupByLibrary.simpleMessage("Yup"),
-        "uc_rating": MessageLookupByLibrary.simpleMessage("Ratings Colors"),
-        "uc_rating_desc": MessageLookupByLibrary.simpleMessage(
-            "By default, galleries that you have rated will appear with red stars for ratings of 2 stars and below, green for ratings between 2.5 and 4 stars, and blue for ratings of 4.5 or 5 stars. You can customize this by entering your desired color combination below.\n Each letter represents one star. The default RRGGB means R(ed) for the first and second star, G(reen) for the third and fourth, and B(lue) for the fifth. You can also use (Y)ellow for the normal stars. Any five-letter R/G/B/Y combo works."),
-        "uc_reclass": MessageLookupByLibrary.simpleMessage("reclass"),
-        "uc_rename": MessageLookupByLibrary.simpleMessage("Rename"),
-        "uc_res_res":
-            MessageLookupByLibrary.simpleMessage("Resample Resolution"),
-        "uc_res_res_desc": MessageLookupByLibrary.simpleMessage(
-            "Images are normally resampled to 1280 pixels of horizontal resolution for online viewing. You can select one of the above alternative resolutions."),
-        "uc_sc_0":
-            MessageLookupByLibrary.simpleMessage("On score hover or click"),
-        "uc_sc_1": MessageLookupByLibrary.simpleMessage("Always"),
-        "uc_search_r_count":
-            MessageLookupByLibrary.simpleMessage("Search Result Count"),
-        "uc_search_r_count_desc": MessageLookupByLibrary.simpleMessage(
-            "How many results would you like per page for the index/search page and torrent search pages? (Hath Perk: Paging Enlargement Required)"),
-        "uc_selected": MessageLookupByLibrary.simpleMessage("Selected"),
-        "uc_set_as_def": MessageLookupByLibrary.simpleMessage("Set as Default"),
-        "uc_show_page_num":
-            MessageLookupByLibrary.simpleMessage("Thumbnail Labeling"),
-        "uc_tag": MessageLookupByLibrary.simpleMessage("Gallery Tags"),
-        "uc_tag_ft":
-            MessageLookupByLibrary.simpleMessage("Tag Filtering Threshold"),
-        "uc_tag_ft_desc": MessageLookupByLibrary.simpleMessage(
-            "You can soft filter tags by adding them to My Tags with a negative weight. If a gallery has tags that add up to weight abover this value, it is filtered from view. This threshold can be set between 0 and -9999."),
-        "uc_tag_namesp": MessageLookupByLibrary.simpleMessage("Tag Namespaces"),
-        "uc_tag_short_order":
-            MessageLookupByLibrary.simpleMessage("Gallery Tags Sort order"),
-        "uc_tag_wt":
-            MessageLookupByLibrary.simpleMessage("Tag Watching Threshold"),
-        "uc_tag_wt_desc": MessageLookupByLibrary.simpleMessage(
-            "Recently uploaded galleries will be included on the watched screen if it has at least one watched tag with positive weight, and the sum of weights on its watched tags add up to this value or higher. This threshold can be set between 0 and 9999."),
-        "uc_tb_0": MessageLookupByLibrary.simpleMessage("Alphabetical"),
-        "uc_tb_1": MessageLookupByLibrary.simpleMessage("By tag power"),
-        "uc_thor_hath": MessageLookupByLibrary.simpleMessage("Through the H@H"),
-        "uc_thumb_row": MessageLookupByLibrary.simpleMessage("Row"),
-        "uc_thumb_scaling":
-            MessageLookupByLibrary.simpleMessage("Thumbnail Scaling"),
-        "uc_thumb_scaling_desc": MessageLookupByLibrary.simpleMessage(
-            "Thumbnails on the thumbnail and extended gallery list views can be scaled to a custom value between 75% and 150%."),
-        "uc_thumb_setting":
-            MessageLookupByLibrary.simpleMessage("Thumbnail Settings"),
-        "uc_thumb_size": MessageLookupByLibrary.simpleMessage("Size"),
-        "uc_tl_0": MessageLookupByLibrary.simpleMessage("Default Title"),
-        "uc_tl_1": MessageLookupByLibrary.simpleMessage(
-            "Japanese Title (if available)"),
-        "uc_ts_0": MessageLookupByLibrary.simpleMessage("Auto"),
-        "uc_ts_1": MessageLookupByLibrary.simpleMessage("Normal"),
-        "uc_ts_2": MessageLookupByLibrary.simpleMessage("Small"),
-        "uc_uh_0":
-            MessageLookupByLibrary.simpleMessage("Any client (Recommended)"),
-        "uc_uh_0_s": MessageLookupByLibrary.simpleMessage("Any client"),
-        "uc_uh_1": MessageLookupByLibrary.simpleMessage(
-            "Default port clients only (Can be slower. Enable if behind firewall/proxy that blocks outgoing non-standard ports.)"),
-        "uc_uh_1_s":
-            MessageLookupByLibrary.simpleMessage("Default port clients only"),
-        "uc_uh_2": MessageLookupByLibrary.simpleMessage(
-            "No [Modern/HTTPS] (Donator only. You will not be able to browse as many pages. Recommended only if having severe problems.)"),
-        "uc_uh_2_s": MessageLookupByLibrary.simpleMessage("No [Modern/HTTPS]"),
-        "uc_uh_3": MessageLookupByLibrary.simpleMessage(
-            "No [Legacy/HTTP] (Donator only. May not work by default in modern browsers. Recommended for legacy/outdated browsers only.)"),
-        "uc_uh_3_s": MessageLookupByLibrary.simpleMessage("No [Legacy/HTTP]"),
-        "uc_viewport_or":
-            MessageLookupByLibrary.simpleMessage("Viewport Override"),
-        "uc_viewport_or_desc": MessageLookupByLibrary.simpleMessage(
-            "Allows you to override the virtual width of the site for mobile devices. This is normally determined automatically by your device based on its DPI. Sensible values at 100% thumbnail scale are between 640 and 1400."),
-        "uc_xt_desc": MessageLookupByLibrary.simpleMessage(
-            "If you want to exclude certain namespaces from a default tag search, you can check those abover. Note that this does not prevent galleries with tags in these namespaces from appearing, it just makes it so that when searching tags, it will forego those namespaces."),
-        "unlimited": MessageLookupByLibrary.simpleMessage("Unlimited"),
-        "update_to_version": m4,
-        "uploader": MessageLookupByLibrary.simpleMessage("Uploader"),
-        "user_login": MessageLookupByLibrary.simpleMessage("User Sign"),
-        "user_name": MessageLookupByLibrary.simpleMessage("Username"),
-        "version": MessageLookupByLibrary.simpleMessage("Version"),
-        "vibrate_feedback":
-            MessageLookupByLibrary.simpleMessage("Vibrate feedback"),
-        "volume_key_turn_page":
-            MessageLookupByLibrary.simpleMessage("Volume key to turn page"),
-        "vote_down_successfully":
-            MessageLookupByLibrary.simpleMessage("Vote down successfully"),
-        "vote_successfully":
-            MessageLookupByLibrary.simpleMessage("Vote successfully"),
-        "vote_up_successfully":
-            MessageLookupByLibrary.simpleMessage("Vote up successfully"),
-        "webdav_Account":
-            MessageLookupByLibrary.simpleMessage("WebDAV Account"),
-        "webdav_max_connections":
-            MessageLookupByLibrary.simpleMessage("WebDAV Max Connections"),
-        "welcome_text": MessageLookupByLibrary.simpleMessage("~oh~ oh~ oh~~~"),
-        "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("Fill screen in landscape"),
-        "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("Fill screen in portrait"),
-        "reader_fill_footer": MessageLookupByLibrary.simpleMessage("Hides the status bar and system symbols while reading in that orientation, and lets images ignore the safe area"),
-        "reader_page_layout": MessageLookupByLibrary.simpleMessage("Page Layout"),
-        "reader_surface_tabletop": MessageLookupByLibrary.simpleMessage("Tabletop"),
-        "reader_surface_standard": MessageLookupByLibrary.simpleMessage("Standard"),
-        "reader_single_page": MessageLookupByLibrary.simpleMessage("Single Page"),
-        "reader_double_odd_left": MessageLookupByLibrary.simpleMessage("Two Pages (Odd on Left)"),
-        "reader_double_even_left": MessageLookupByLibrary.simpleMessage("Two Pages (Even on Left)"),
-        "reader_auto_read": MessageLookupByLibrary.simpleMessage("Auto Page Turn"),
-        "reader_auto_read_interval": MessageLookupByLibrary.simpleMessage("Page Interval"),
-        "reader_interval_seconds": m5,
-        "reader_custom_interval": MessageLookupByLibrary.simpleMessage("Custom…"),
-        "full_title": MessageLookupByLibrary.simpleMessage("Full Title"),
-        "group_management": MessageLookupByLibrary.simpleMessage("Manage Groups"),
-        "choose_favcat": MessageLookupByLibrary.simpleMessage("Choose Favorites Folder"),
-        "back_to_top": MessageLookupByLibrary.simpleMessage("Back to Top"),
-        "ranking_period": MessageLookupByLibrary.simpleMessage("Ranking Period"),
-        "continue_reading_page": m6,
-        "see_all": MessageLookupByLibrary.simpleMessage("See All"),
-        "page_count": m7,
-        "comment_count": m8,
-        "more_actions": MessageLookupByLibrary.simpleMessage("More"),
-        "copy_link": MessageLookupByLibrary.simpleMessage("Copy Link"),
-        "file_size": MessageLookupByLibrary.simpleMessage("Size"),
-        "detail_ambient_background": MessageLookupByLibrary.simpleMessage("Ambient Background in Gallery"),
-        "english_title": MessageLookupByLibrary.simpleMessage("English Title"),
-        "japanese_title": MessageLookupByLibrary.simpleMessage("Japanese Title"),
-        "title_showing": MessageLookupByLibrary.simpleMessage("Showing"),
-        "show_english_title": MessageLookupByLibrary.simpleMessage("Show English Title"),
-        "show_japanese_title": MessageLookupByLibrary.simpleMessage("Show Japanese Title"),
-        "search_title": MessageLookupByLibrary.simpleMessage("Search Title"),
-        "copy_title": MessageLookupByLibrary.simpleMessage("Copy Title"),
-        "appearance_and_layout": MessageLookupByLibrary.simpleMessage("Appearance & Layout"),
-        "setting_site": MessageLookupByLibrary.simpleMessage("Site"),
-        "sidebar_library": MessageLookupByLibrary.simpleMessage("Library"),
-        "filter_by_uploader": MessageLookupByLibrary.simpleMessage("Filter by uploader"),
-        "reader_double_page": MessageLookupByLibrary.simpleMessage("Double"),
-        "reader_vertical": MessageLookupByLibrary.simpleMessage("Vertical"),
-        "reader_turn_page": MessageLookupByLibrary.simpleMessage("Turn page"),
-        "reader_previous_page": MessageLookupByLibrary.simpleMessage("Previous page"),
-        "reader_next_page": MessageLookupByLibrary.simpleMessage("Next page"),
-        "reader_page_of": m11,
-        "setting_group_browse": MessageLookupByLibrary.simpleMessage("Browsing"),
-        "setting_group_content": MessageLookupByLibrary.simpleMessage("Content"),
-        "setting_group_system": MessageLookupByLibrary.simpleMessage("System"),
-        "add": MessageLookupByLibrary.simpleMessage("Add"),
-        "auto_scroll": MessageLookupByLibrary.simpleMessage("Auto Scroll"),
-        "reload": MessageLookupByLibrary.simpleMessage("Reload"),
-        "card_style": MessageLookupByLibrary.simpleMessage("Card Style"),
-        "card_style_standard": MessageLookupByLibrary.simpleMessage("Standard"),
-        "card_style_immersive": MessageLookupByLibrary.simpleMessage("Immersive"),
-        "card_style_standard_detail": MessageLookupByLibrary.simpleMessage("Cover, title, details and tags"),
-        "card_style_immersive_detail": MessageLookupByLibrary.simpleMessage("Cover only, with the title and rating on it"),
-        "gallery_info": MessageLookupByLibrary.simpleMessage("Gallery info"),
-        "search_by_image": MessageLookupByLibrary.simpleMessage("Search by image"),
-        "remove_all": MessageLookupByLibrary.simpleMessage("Remove all"),
-        "import_export": MessageLookupByLibrary.simpleMessage("Import and export"),
-        "card_size": MessageLookupByLibrary.simpleMessage("Card Size"),
-        "card_size_small": MessageLookupByLibrary.simpleMessage("Small"),
-        "card_size_smaller": MessageLookupByLibrary.simpleMessage("Smaller"),
-        "card_size_standard": MessageLookupByLibrary.simpleMessage("Standard"),
-        "card_size_larger": MessageLookupByLibrary.simpleMessage("Larger"),
-        "card_size_large": MessageLookupByLibrary.simpleMessage("Large"),
-        "card_size_footer": MessageLookupByLibrary.simpleMessage("Columns are counted from the width of the pane the list is in, so they change when you switch displays, rotate or drag the divider. Standard matches the previous automatic columns."),
-        "outer_display": MessageLookupByLibrary.simpleMessage("Outer Display"),
-        "inner_display": MessageLookupByLibrary.simpleMessage("Inner Display"),
-        "portrait": MessageLookupByLibrary.simpleMessage("Portrait"),
-        "column_count": m9,
-        "column_range": m10,
-        "split_follows_divider": MessageLookupByLibrary.simpleMessage("Split, set by divider"),
-        "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Submit rating"),
-        "sp_rating_summary": sp1,
-        "sp_page_total": sp2,
-        "sp_first_page": MessageLookupByLibrary.simpleMessage("First"),
-        "sp_middle_page": MessageLookupByLibrary.simpleMessage("Middle"),
-        "sp_last_page": MessageLookupByLibrary.simpleMessage("Last"),
-        "sp_go": MessageLookupByLibrary.simpleMessage("Go"),
-        "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("Go to preview page"),
-        "sp_thumbs_per_page": sp8,
-        "sp_date": MessageLookupByLibrary.simpleMessage("Date"),
-        "sp_optional": MessageLookupByLibrary.simpleMessage("Optional"),
-        "sp_seek_hint": MessageLookupByLibrary.simpleMessage("Date 2024-05-01 · offset 3d 2w 1y · or a GID"),
-        "sp_show_date_picker": MessageLookupByLibrary.simpleMessage("Choose date"),
-        "sp_archiver_local": MessageLookupByLibrary.simpleMessage("Download to device"),
-        "sp_archiver_hath": MessageLookupByLibrary.simpleMessage("H@H remote download"),
-        "sp_archive_original": MessageLookupByLibrary.simpleMessage("Original archive"),
-        "sp_archive_resample": MessageLookupByLibrary.simpleMessage("Resample archive"),
-        "sp_original": MessageLookupByLibrary.simpleMessage("Original"),
-        "sp_free": MessageLookupByLibrary.simpleMessage("Free"),
-        "sp_archiver_loading": MessageLookupByLibrary.simpleMessage("Loading archive info"),
-        "sp_archiver_error": MessageLookupByLibrary.simpleMessage("Failed to load"),
-        "sp_retry": MessageLookupByLibrary.simpleMessage("Retry"),
-        "sp_clear": MessageLookupByLibrary.simpleMessage("Clear"),
-        "sp_translate": MessageLookupByLibrary.simpleMessage("Translate"),
-        "sp_all": MessageLookupByLibrary.simpleMessage("All"),
-        "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Recent"),
-        "sp_search_placeholder": MessageLookupByLibrary.simpleMessage("Search titles, tags or paste a link"),
-        "sp_search_for": sp27,
-        "sp_image_search": MessageLookupByLibrary.simpleMessage("Search by image"),
-        "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("Quick searches"),
-        "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("Add to quick searches"),
-        "sp_filter": MessageLookupByLibrary.simpleMessage("Filter"),
-        "sp_more": MessageLookupByLibrary.simpleMessage("More"),
-        "sp_hide_keyboard": MessageLookupByLibrary.simpleMessage("Hide keyboard"),
-        "sp_open_link": MessageLookupByLibrary.simpleMessage("Open gallery link"),
-        "sp_clear_text": MessageLookupByLibrary.simpleMessage("Clear text"),
-        "sp_refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
-        "sp_suggestions": MessageLookupByLibrary.simpleMessage("Suggestions"),
-        "sp_tags_added": sp38,
-        "sp_tags_example": MessageLookupByLibrary.simpleMessage("e.g. female:glasses, full color"),
-        "sp_add_tag": sp40,
-      };
+    "saved_successfully": MessageLookupByLibrary.simpleMessage(
+      "Saved successfully",
+    ),
+    "screen_orientation": MessageLookupByLibrary.simpleMessage(
+      "Screen orientation",
+    ),
+    "search": MessageLookupByLibrary.simpleMessage("Search"),
+    "searchTexts": MessageLookupByLibrary.simpleMessage("Search texts"),
+    "search_by_image": MessageLookupByLibrary.simpleMessage("Search by image"),
+    "search_history": MessageLookupByLibrary.simpleMessage("Search history"),
+    "search_title": MessageLookupByLibrary.simpleMessage("Search Title"),
+    "search_type": MessageLookupByLibrary.simpleMessage("Search type"),
+    "second": MessageLookupByLibrary.simpleMessage("second"),
+    "security": MessageLookupByLibrary.simpleMessage("Security"),
+    "security_blurredInRecentTasks": MessageLookupByLibrary.simpleMessage(
+      "Blurring in recent tasks",
+    ),
+    "see_all": MessageLookupByLibrary.simpleMessage("See All"),
+    "setting_group_browse": MessageLookupByLibrary.simpleMessage("Browsing"),
+    "setting_group_content": MessageLookupByLibrary.simpleMessage("Content"),
+    "setting_group_system": MessageLookupByLibrary.simpleMessage("System"),
+    "setting_on_website": MessageLookupByLibrary.simpleMessage(
+      "Setting on Website",
+    ),
+    "setting_site": MessageLookupByLibrary.simpleMessage("Site"),
+    "share": MessageLookupByLibrary.simpleMessage("Share"),
+    "share_image": MessageLookupByLibrary.simpleMessage("Share image"),
+    "show_comment_avatar": MessageLookupByLibrary.simpleMessage(
+      "Show comment avatar",
+    ),
+    "show_comments": MessageLookupByLibrary.simpleMessage("Show Comments"),
+    "show_english_title": MessageLookupByLibrary.simpleMessage(
+      "Show English Title",
+    ),
+    "show_filter": MessageLookupByLibrary.simpleMessage("Show filter"),
+    "show_gallery_tags": MessageLookupByLibrary.simpleMessage(
+      "Show Gallery Tags",
+    ),
+    "show_japanese_title": MessageLookupByLibrary.simpleMessage(
+      "Show Japanese Title",
+    ),
+    "show_jpn_title": MessageLookupByLibrary.simpleMessage(
+      "Show Japanese Title",
+    ),
+    "show_only_uploader_comment": MessageLookupByLibrary.simpleMessage(
+      "Show Only Uploader Comment",
+    ),
+    "show_page_interval": MessageLookupByLibrary.simpleMessage(
+      "Show page interval",
+    ),
+    "sidebar_library": MessageLookupByLibrary.simpleMessage("Library"),
+    "skip": MessageLookupByLibrary.simpleMessage("Skip"),
+    "slide_out_page": MessageLookupByLibrary.simpleMessage("Slide Out Page"),
+    "sp_add_quick_search": MessageLookupByLibrary.simpleMessage(
+      "Add to quick searches",
+    ),
+    "sp_add_tag": m10,
+    "sp_all": MessageLookupByLibrary.simpleMessage("All"),
+    "sp_all_favcats": MessageLookupByLibrary.simpleMessage("All favorites"),
+    "sp_archive_original": MessageLookupByLibrary.simpleMessage(
+      "Original archive",
+    ),
+    "sp_archive_resample": MessageLookupByLibrary.simpleMessage(
+      "Resample archive",
+    ),
+    "sp_archiver_error": MessageLookupByLibrary.simpleMessage("Failed to load"),
+    "sp_archiver_hath": MessageLookupByLibrary.simpleMessage(
+      "H@H remote download",
+    ),
+    "sp_archiver_loading": MessageLookupByLibrary.simpleMessage(
+      "Loading archive info",
+    ),
+    "sp_archiver_local": MessageLookupByLibrary.simpleMessage(
+      "Download to device",
+    ),
+    "sp_category": MessageLookupByLibrary.simpleMessage("Categories"),
+    "sp_change_image": MessageLookupByLibrary.simpleMessage("Change"),
+    "sp_clear": MessageLookupByLibrary.simpleMessage("Clear"),
+    "sp_clear_text": MessageLookupByLibrary.simpleMessage("Clear text"),
+    "sp_date": MessageLookupByLibrary.simpleMessage("Date"),
+    "sp_done": MessageLookupByLibrary.simpleMessage("Done"),
+    "sp_favcat": MessageLookupByLibrary.simpleMessage("Favorites"),
+    "sp_filter": MessageLookupByLibrary.simpleMessage("Filter"),
+    "sp_first_page": MessageLookupByLibrary.simpleMessage("First"),
+    "sp_free": MessageLookupByLibrary.simpleMessage("Free"),
+    "sp_go": MessageLookupByLibrary.simpleMessage("Go"),
+    "sp_hide_keyboard": MessageLookupByLibrary.simpleMessage("Hide keyboard"),
+    "sp_image_search": MessageLookupByLibrary.simpleMessage("Search by image"),
+    "sp_image_search_options": MessageLookupByLibrary.simpleMessage(
+      "Search options",
+    ),
+    "sp_include_expunged": MessageLookupByLibrary.simpleMessage(
+      "Include expunged",
+    ),
+    "sp_invert_selection": MessageLookupByLibrary.simpleMessage("Invert"),
+    "sp_last_page": MessageLookupByLibrary.simpleMessage("Last"),
+    "sp_middle_page": MessageLookupByLibrary.simpleMessage("Middle"),
+    "sp_more": MessageLookupByLibrary.simpleMessage("More"),
+    "sp_only_covers": MessageLookupByLibrary.simpleMessage("Covers only"),
+    "sp_open_link": MessageLookupByLibrary.simpleMessage("Open gallery link"),
+    "sp_optional": MessageLookupByLibrary.simpleMessage("Optional"),
+    "sp_original": MessageLookupByLibrary.simpleMessage("Original"),
+    "sp_page_first": MessageLookupByLibrary.simpleMessage("First"),
+    "sp_page_last": MessageLookupByLibrary.simpleMessage("Last"),
+    "sp_page_next": MessageLookupByLibrary.simpleMessage("Next"),
+    "sp_page_prev": MessageLookupByLibrary.simpleMessage("Prev"),
+    "sp_page_total": m11,
+    "sp_pick_image": MessageLookupByLibrary.simpleMessage(
+      "Tap to choose an image",
+    ),
+    "sp_quick_search_list": MessageLookupByLibrary.simpleMessage(
+      "Quick searches",
+    ),
+    "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Submit rating"),
+    "sp_rating_summary": m12,
+    "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Recent"),
+    "sp_refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
+    "sp_reset": MessageLookupByLibrary.simpleMessage("Reset"),
+    "sp_retry": MessageLookupByLibrary.simpleMessage("Retry"),
+    "sp_search_for": m13,
+    "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
+      "Search titles, tags or paste a link",
+    ),
+    "sp_seek_hint": MessageLookupByLibrary.simpleMessage(
+      "Date 2024-05-01 · offset 3d 2w 1y · or a GID",
+    ),
+    "sp_seek_newer": MessageLookupByLibrary.simpleMessage("Newer"),
+    "sp_seek_older": MessageLookupByLibrary.simpleMessage("Older"),
+    "sp_seek_section": MessageLookupByLibrary.simpleMessage(
+      "Seek by date or GID",
+    ),
+    "sp_select_all": MessageLookupByLibrary.simpleMessage("All"),
+    "sp_show_date_picker": MessageLookupByLibrary.simpleMessage("Choose date"),
+    "sp_similar_scan": MessageLookupByLibrary.simpleMessage("Similarity scan"),
+    "sp_start_search": MessageLookupByLibrary.simpleMessage("Search"),
+    "sp_suggestions": MessageLookupByLibrary.simpleMessage("Suggestions"),
+    "sp_tags_added": m14,
+    "sp_tags_example": MessageLookupByLibrary.simpleMessage(
+      "e.g. female:glasses, full color",
+    ),
+    "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage(
+      "Go to preview page",
+    ),
+    "sp_thumbs_per_page": m15,
+    "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("Done"),
+    "sp_torrent_download": MessageLookupByLibrary.simpleMessage(
+      "Download torrent",
+    ),
+    "sp_torrent_empty": MessageLookupByLibrary.simpleMessage(
+      "No torrents available",
+    ),
+    "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("Share magnet"),
+    "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("Peers"),
+    "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("Seeds"),
+    "sp_torrent_title": m16,
+    "sp_translate": MessageLookupByLibrary.simpleMessage("Translate"),
+    "split_follows_divider": MessageLookupByLibrary.simpleMessage(
+      "Split, set by divider",
+    ),
+    "sync_group": MessageLookupByLibrary.simpleMessage("Sync group"),
+    "sync_history": MessageLookupByLibrary.simpleMessage("Sync history"),
+    "sync_quick_search": MessageLookupByLibrary.simpleMessage(
+      "Sync quick search",
+    ),
+    "sync_read_progress": MessageLookupByLibrary.simpleMessage(
+      "Sync read progress",
+    ),
+    "system_proxy": MessageLookupByLibrary.simpleMessage("System Proxy"),
+    "system_share": MessageLookupByLibrary.simpleMessage("System share"),
+    "t_Clear_all_history": MessageLookupByLibrary.simpleMessage(
+      "Clear All History",
+    ),
+    "tab_download": MessageLookupByLibrary.simpleMessage("Download"),
+    "tab_favorite": MessageLookupByLibrary.simpleMessage("Favorites"),
+    "tab_gallery": MessageLookupByLibrary.simpleMessage("Gallery"),
+    "tab_history": MessageLookupByLibrary.simpleMessage("History"),
+    "tab_popular": MessageLookupByLibrary.simpleMessage("Popular"),
+    "tab_setting": MessageLookupByLibrary.simpleMessage("Settings"),
+    "tab_sort": MessageLookupByLibrary.simpleMessage(
+      "Long press and drag to sort",
+    ),
+    "tab_toplist": MessageLookupByLibrary.simpleMessage("Toplists"),
+    "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
+    "tabbar_setting": MessageLookupByLibrary.simpleMessage("Tabbar setting"),
+    "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
+    "tagNamespace": m17,
+    "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("Add to Mytags"),
+    "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
+      "Default Color",
+    ),
+    "tag_dialog_Hide": MessageLookupByLibrary.simpleMessage("Hide"),
+    "tag_dialog_TagColor": MessageLookupByLibrary.simpleMessage("Color"),
+    "tag_dialog_Watch": MessageLookupByLibrary.simpleMessage("Watch"),
+    "tag_dialog_tagWeight": MessageLookupByLibrary.simpleMessage("Tag Weight"),
+    "tag_limit": MessageLookupByLibrary.simpleMessage("Tag Limit"),
+    "tag_vote_down": MessageLookupByLibrary.simpleMessage("Vote Down"),
+    "tag_vote_up": MessageLookupByLibrary.simpleMessage("Vote Up"),
+    "tag_withdraw_vote": MessageLookupByLibrary.simpleMessage("Withdraw Vote"),
+    "tags": MessageLookupByLibrary.simpleMessage("Tags"),
+    "tap_to_turn_page_anima": MessageLookupByLibrary.simpleMessage(
+      "Tap to turn page animations",
+    ),
+    "theme": MessageLookupByLibrary.simpleMessage("Theme"),
+    "thumbnails": MessageLookupByLibrary.simpleMessage("Thumbnails"),
+    "title": MessageLookupByLibrary.simpleMessage("Title"),
+    "title_showing": MessageLookupByLibrary.simpleMessage("Showing"),
+    "tolist_alltime": MessageLookupByLibrary.simpleMessage("All-Time"),
+    "tolist_past_month": MessageLookupByLibrary.simpleMessage("Past Month"),
+    "tolist_past_year": MessageLookupByLibrary.simpleMessage("Past Year"),
+    "tolist_yesterday": MessageLookupByLibrary.simpleMessage("Yesterday"),
+    "top_to_bottom": MessageLookupByLibrary.simpleMessage("Top to bottom"),
+    "turn_page_anima": MessageLookupByLibrary.simpleMessage(
+      "Turn page animations",
+    ),
+    "uc_Chinese": MessageLookupByLibrary.simpleMessage("Chinese"),
+    "uc_Dutch": MessageLookupByLibrary.simpleMessage("Dutch"),
+    "uc_English": MessageLookupByLibrary.simpleMessage("English"),
+    "uc_French": MessageLookupByLibrary.simpleMessage("French"),
+    "uc_German": MessageLookupByLibrary.simpleMessage("German"),
+    "uc_Hungarian": MessageLookupByLibrary.simpleMessage("Hungarian"),
+    "uc_Italian": MessageLookupByLibrary.simpleMessage("Italian"),
+    "uc_Japanese": MessageLookupByLibrary.simpleMessage("Japanese"),
+    "uc_Korean": MessageLookupByLibrary.simpleMessage("Korean"),
+    "uc_NA": MessageLookupByLibrary.simpleMessage("N/A"),
+    "uc_Original": MessageLookupByLibrary.simpleMessage("Original"),
+    "uc_Other": MessageLookupByLibrary.simpleMessage("Other"),
+    "uc_Polish": MessageLookupByLibrary.simpleMessage("Polish"),
+    "uc_Portuguese": MessageLookupByLibrary.simpleMessage("Portuguese"),
+    "uc_Rewrite": MessageLookupByLibrary.simpleMessage("Rewrite"),
+    "uc_Russian": MessageLookupByLibrary.simpleMessage("Russian"),
+    "uc_Spanish": MessageLookupByLibrary.simpleMessage("Spanish"),
+    "uc_Thai": MessageLookupByLibrary.simpleMessage("Thai"),
+    "uc_Translated": MessageLookupByLibrary.simpleMessage("Translated"),
+    "uc_Vietnamese": MessageLookupByLibrary.simpleMessage("Vietnamese"),
+    "uc_ar_0": MessageLookupByLibrary.simpleMessage(
+      "Manual Select, Manual Start (Default)",
+    ),
+    "uc_ar_1": MessageLookupByLibrary.simpleMessage(
+      "Manual Select, Auto Start",
+    ),
+    "uc_ar_2": MessageLookupByLibrary.simpleMessage(
+      "Auto Select Original, Manual Start",
+    ),
+    "uc_ar_3": MessageLookupByLibrary.simpleMessage(
+      "Auto Select Original, Auto Start",
+    ),
+    "uc_ar_4": MessageLookupByLibrary.simpleMessage(
+      "Auto Select Resample, Manual Start",
+    ),
+    "uc_ar_5": MessageLookupByLibrary.simpleMessage(
+      "Auto Select Resample, Auto Start",
+    ),
+    "uc_archiver_desc": MessageLookupByLibrary.simpleMessage(
+      "The default behavior for the Archiver is to confirm the cost and selection for original or resampled archive, then present a link that can be clicked or copied elsewhere. You can change this behavior here.",
+    ),
+    "uc_archiver_set": MessageLookupByLibrary.simpleMessage(
+      "Archiver Settings",
+    ),
+    "uc_artist": MessageLookupByLibrary.simpleMessage("artist"),
+    "uc_auto": MessageLookupByLibrary.simpleMessage("Auto"),
+    "uc_character": MessageLookupByLibrary.simpleMessage("character"),
+    "uc_comments_show_votes": MessageLookupByLibrary.simpleMessage(
+      "Show votes",
+    ),
+    "uc_comments_sort_order": MessageLookupByLibrary.simpleMessage(
+      "Sort order",
+    ),
+    "uc_crt_profile": MessageLookupByLibrary.simpleMessage("Create New"),
+    "uc_cs_0": MessageLookupByLibrary.simpleMessage("Oldest comments first"),
+    "uc_cs_1": MessageLookupByLibrary.simpleMessage("Recent comments first"),
+    "uc_cs_2": MessageLookupByLibrary.simpleMessage("By highest score"),
+    "uc_del_profile": MessageLookupByLibrary.simpleMessage("Delete Profile"),
+    "uc_dm_0": MessageLookupByLibrary.simpleMessage("Compact"),
+    "uc_dm_1": MessageLookupByLibrary.simpleMessage("Thumbnail"),
+    "uc_dm_2": MessageLookupByLibrary.simpleMessage("Extended"),
+    "uc_dm_3": MessageLookupByLibrary.simpleMessage("Minimal"),
+    "uc_dm_4": MessageLookupByLibrary.simpleMessage("Minimal+"),
+    "uc_exc_lang": MessageLookupByLibrary.simpleMessage("Excluded Languages"),
+    "uc_exc_lang_desc": MessageLookupByLibrary.simpleMessage(
+      "If you wish to hide galleries in certain languages from the gallery list and searches, select them from the list abover.\nNote that matching galleries will never appear regardless of your search query.",
+    ),
+    "uc_exc_up": MessageLookupByLibrary.simpleMessage("Excluded Uploaders"),
+    "uc_exc_up_desc": MessageLookupByLibrary.simpleMessage(
+      "If you wish to hide galleries from certain uploaders from the gallery list and searches, add them abover. Put one username per line.\nNote that galleries from these uploaders will never appear regardless of your search query.",
+    ),
+    "uc_fav": MessageLookupByLibrary.simpleMessage("Favorites"),
+    "uc_fav_sort": MessageLookupByLibrary.simpleMessage("Default sort"),
+    "uc_fav_sort_desc": MessageLookupByLibrary.simpleMessage(
+      "You can also select your default sort order for galleries on your favorites page. Note that favorites added prior to the March 2016 revamp did not store a timestamp, and will use the gallery posted time regardless of this setting.",
+    ),
+    "uc_female": MessageLookupByLibrary.simpleMessage("female"),
+    "uc_front_page": MessageLookupByLibrary.simpleMessage("Front Page"),
+    "uc_front_page_dis_mode": MessageLookupByLibrary.simpleMessage(
+      "Front Page Display mode",
+    ),
+    "uc_fs_0": MessageLookupByLibrary.simpleMessage(
+      "By last gallery update time",
+    ),
+    "uc_fs_1": MessageLookupByLibrary.simpleMessage("By favorited time"),
+    "uc_gallery_comments": MessageLookupByLibrary.simpleMessage(
+      "Gallery Comments",
+    ),
+    "uc_group": MessageLookupByLibrary.simpleMessage("group"),
+    "uc_hath_local_host": MessageLookupByLibrary.simpleMessage(
+      "Hentai@Home Local Network Host",
+    ),
+    "uc_hath_local_host_desc": MessageLookupByLibrary.simpleMessage(
+      "This setting can be used if you have a H@H client running on your local network with the same public IP you browse the site with. Some routers are buggy and cannot route requests back to its own IP; this allows you to work around this problem.\nIf you are running the client on the same PC you browse from, use the loopback address (127.0.0.1:port). If the client is running on another computer on your network, use its local network IP. Some browser configurations prevent external web sites from accessing URLs with local network IPs, the site must then be whitelisted for this to work.",
+    ),
+    "uc_img_cussize_desc": MessageLookupByLibrary.simpleMessage(
+      "While the site will automatically scale down images to fit your screen width, you can also manually restrict the maximum display size of an image. Like the automatic scaling, this does not resample the image, as the resizing is done browser-side. (0 = no limit)",
+    ),
+    "uc_img_horiz": MessageLookupByLibrary.simpleMessage("Horizontal"),
+    "uc_img_load_setting": MessageLookupByLibrary.simpleMessage(
+      "Image Load Settings",
+    ),
+    "uc_img_size_setting": MessageLookupByLibrary.simpleMessage(
+      "Image Size Settings",
+    ),
+    "uc_img_vert": MessageLookupByLibrary.simpleMessage("Vertical"),
+    "uc_ip_addr_port": MessageLookupByLibrary.simpleMessage("IP Address:Port"),
+    "uc_language": MessageLookupByLibrary.simpleMessage("language"),
+    "uc_lt_0": MessageLookupByLibrary.simpleMessage(
+      "On mouse-over (pages load faster, but there may be a slight delay before a thumb appears)",
+    ),
+    "uc_lt_0_s": MessageLookupByLibrary.simpleMessage("On mouse-over"),
+    "uc_lt_1": MessageLookupByLibrary.simpleMessage(
+      "On page load (pages take longer to load, but there is no delay for loading a thumb after the page has loaded)",
+    ),
+    "uc_lt_1_s": MessageLookupByLibrary.simpleMessage("On page load"),
+    "uc_male": MessageLookupByLibrary.simpleMessage("male"),
+    "uc_mose_over_thumb": MessageLookupByLibrary.simpleMessage(
+      "mouse-over thumbnails",
+    ),
+    "uc_mpv": MessageLookupByLibrary.simpleMessage("Multi-Page Viewer"),
+    "uc_mpv_always": MessageLookupByLibrary.simpleMessage("Always use"),
+    "uc_mpv_stype": MessageLookupByLibrary.simpleMessage("Display Style"),
+    "uc_mpv_thumb_pane": MessageLookupByLibrary.simpleMessage("Thumbnail Pane"),
+    "uc_ms_0": MessageLookupByLibrary.simpleMessage(
+      "Align left;\n Only scale if image is larger than browser width",
+    ),
+    "uc_ms_1": MessageLookupByLibrary.simpleMessage(
+      "Align center;\n Only scale if image is larger than browser width",
+    ),
+    "uc_ms_2": MessageLookupByLibrary.simpleMessage(
+      "Align center;\n Always scale images to fit browser width",
+    ),
+    "uc_mt_0": MessageLookupByLibrary.simpleMessage("Show"),
+    "uc_mt_1": MessageLookupByLibrary.simpleMessage("Hide"),
+    "uc_name_display": MessageLookupByLibrary.simpleMessage(
+      "Gallery Name Display",
+    ),
+    "uc_name_display_desc": MessageLookupByLibrary.simpleMessage(
+      "Many galleries have both an English/Romanized title and a title in Japanese script. Which gallery name would you like as default?",
+    ),
+    "uc_oi_0": MessageLookupByLibrary.simpleMessage("Prefer resampled images"),
+    "uc_oi_1": MessageLookupByLibrary.simpleMessage("Prefer original images"),
+    "uc_ori_image": MessageLookupByLibrary.simpleMessage("Original Images"),
+    "uc_ori_image_desc": MessageLookupByLibrary.simpleMessage(
+      "Use original images instead of the resampled versions? Resampled images will still be used if you select a horizonal resolution different than \"Auto\" above and the image in question is wider, or if the original image is larger than 10 MiB (or 4 MiB for galleries older than one year).",
+    ),
+    "uc_parody": MessageLookupByLibrary.simpleMessage("parody"),
+    "uc_pixels": MessageLookupByLibrary.simpleMessage("pixels"),
+    "uc_pn_0": MessageLookupByLibrary.simpleMessage("None"),
+    "uc_pn_1": MessageLookupByLibrary.simpleMessage("Page Number Only"),
+    "uc_pn_2": MessageLookupByLibrary.simpleMessage("Page Number + Name"),
+    "uc_profile": MessageLookupByLibrary.simpleMessage("Profile"),
+    "uc_qb_0": MessageLookupByLibrary.simpleMessage("Nope"),
+    "uc_qb_1": MessageLookupByLibrary.simpleMessage("Yup"),
+    "uc_rating": MessageLookupByLibrary.simpleMessage("Ratings Colors"),
+    "uc_rating_desc": MessageLookupByLibrary.simpleMessage(
+      "By default, galleries that you have rated will appear with red stars for ratings of 2 stars and below, green for ratings between 2.5 and 4 stars, and blue for ratings of 4.5 or 5 stars. You can customize this by entering your desired color combination below.\n Each letter represents one star. The default RRGGB means R(ed) for the first and second star, G(reen) for the third and fourth, and B(lue) for the fifth. You can also use (Y)ellow for the normal stars. Any five-letter R/G/B/Y combo works.",
+    ),
+    "uc_reclass": MessageLookupByLibrary.simpleMessage("reclass"),
+    "uc_rename": MessageLookupByLibrary.simpleMessage("Rename"),
+    "uc_res_res": MessageLookupByLibrary.simpleMessage("Resample Resolution"),
+    "uc_res_res_desc": MessageLookupByLibrary.simpleMessage(
+      "Images are normally resampled to 1280 pixels of horizontal resolution for online viewing. You can select one of the above alternative resolutions.",
+    ),
+    "uc_sc_0": MessageLookupByLibrary.simpleMessage("On score hover or click"),
+    "uc_sc_1": MessageLookupByLibrary.simpleMessage("Always"),
+    "uc_search_r_count": MessageLookupByLibrary.simpleMessage(
+      "Search Result Count",
+    ),
+    "uc_search_r_count_desc": MessageLookupByLibrary.simpleMessage(
+      "How many results would you like per page for the index/search page and torrent search pages? (Hath Perk: Paging Enlargement Required)",
+    ),
+    "uc_selected": MessageLookupByLibrary.simpleMessage("Selected"),
+    "uc_set_as_def": MessageLookupByLibrary.simpleMessage("Set as Default"),
+    "uc_show_page_num": MessageLookupByLibrary.simpleMessage(
+      "Thumbnail Labeling",
+    ),
+    "uc_tag": MessageLookupByLibrary.simpleMessage("Gallery Tags"),
+    "uc_tag_ft": MessageLookupByLibrary.simpleMessage(
+      "Tag Filtering Threshold",
+    ),
+    "uc_tag_ft_desc": MessageLookupByLibrary.simpleMessage(
+      "You can soft filter tags by adding them to My Tags with a negative weight. If a gallery has tags that add up to weight abover this value, it is filtered from view. This threshold can be set between 0 and -9999.",
+    ),
+    "uc_tag_namesp": MessageLookupByLibrary.simpleMessage("Tag Namespaces"),
+    "uc_tag_short_order": MessageLookupByLibrary.simpleMessage(
+      "Gallery Tags Sort order",
+    ),
+    "uc_tag_wt": MessageLookupByLibrary.simpleMessage("Tag Watching Threshold"),
+    "uc_tag_wt_desc": MessageLookupByLibrary.simpleMessage(
+      "Recently uploaded galleries will be included on the watched screen if it has at least one watched tag with positive weight, and the sum of weights on its watched tags add up to this value or higher. This threshold can be set between 0 and 9999.",
+    ),
+    "uc_tb_0": MessageLookupByLibrary.simpleMessage("Alphabetical"),
+    "uc_tb_1": MessageLookupByLibrary.simpleMessage("By tag power"),
+    "uc_thor_hath": MessageLookupByLibrary.simpleMessage("Through the H@H"),
+    "uc_thumb_row": MessageLookupByLibrary.simpleMessage("Row"),
+    "uc_thumb_scaling": MessageLookupByLibrary.simpleMessage(
+      "Thumbnail Scaling",
+    ),
+    "uc_thumb_scaling_desc": MessageLookupByLibrary.simpleMessage(
+      "Thumbnails on the thumbnail and extended gallery list views can be scaled to a custom value between 75% and 150%.",
+    ),
+    "uc_thumb_setting": MessageLookupByLibrary.simpleMessage(
+      "Thumbnail Settings",
+    ),
+    "uc_thumb_size": MessageLookupByLibrary.simpleMessage("Size"),
+    "uc_tl_0": MessageLookupByLibrary.simpleMessage("Default Title"),
+    "uc_tl_1": MessageLookupByLibrary.simpleMessage(
+      "Japanese Title (if available)",
+    ),
+    "uc_ts_0": MessageLookupByLibrary.simpleMessage("Auto"),
+    "uc_ts_1": MessageLookupByLibrary.simpleMessage("Normal"),
+    "uc_ts_2": MessageLookupByLibrary.simpleMessage("Small"),
+    "uc_uh_0": MessageLookupByLibrary.simpleMessage("Any client (Recommended)"),
+    "uc_uh_0_s": MessageLookupByLibrary.simpleMessage("Any client"),
+    "uc_uh_1": MessageLookupByLibrary.simpleMessage(
+      "Default port clients only (Can be slower. Enable if behind firewall/proxy that blocks outgoing non-standard ports.)",
+    ),
+    "uc_uh_1_s": MessageLookupByLibrary.simpleMessage(
+      "Default port clients only",
+    ),
+    "uc_uh_2": MessageLookupByLibrary.simpleMessage(
+      "No [Modern/HTTPS] (Donator only. You will not be able to browse as many pages. Recommended only if having severe problems.)",
+    ),
+    "uc_uh_2_s": MessageLookupByLibrary.simpleMessage("No [Modern/HTTPS]"),
+    "uc_uh_3": MessageLookupByLibrary.simpleMessage(
+      "No [Legacy/HTTP] (Donator only. May not work by default in modern browsers. Recommended for legacy/outdated browsers only.)",
+    ),
+    "uc_uh_3_s": MessageLookupByLibrary.simpleMessage("No [Legacy/HTTP]"),
+    "uc_viewport_or": MessageLookupByLibrary.simpleMessage("Viewport Override"),
+    "uc_viewport_or_desc": MessageLookupByLibrary.simpleMessage(
+      "Allows you to override the virtual width of the site for mobile devices. This is normally determined automatically by your device based on its DPI. Sensible values at 100% thumbnail scale are between 640 and 1400.",
+    ),
+    "uc_xt_desc": MessageLookupByLibrary.simpleMessage(
+      "If you want to exclude certain namespaces from a default tag search, you can check those abover. Note that this does not prevent galleries with tags in these namespaces from appearing, it just makes it so that when searching tags, it will forego those namespaces.",
+    ),
+    "unlimited": MessageLookupByLibrary.simpleMessage("Unlimited"),
+    "update_to_version": m18,
+    "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
+    "uploader": MessageLookupByLibrary.simpleMessage("Uploader"),
+    "user_login": MessageLookupByLibrary.simpleMessage("User Sign"),
+    "user_name": MessageLookupByLibrary.simpleMessage("Username"),
+    "version": MessageLookupByLibrary.simpleMessage("Version"),
+    "vibrate_feedback": MessageLookupByLibrary.simpleMessage(
+      "Vibrate feedback",
+    ),
+    "volume_key_turn_page": MessageLookupByLibrary.simpleMessage(
+      "Volume key to turn page",
+    ),
+    "vote_down_successfully": MessageLookupByLibrary.simpleMessage(
+      "Vote down successfully",
+    ),
+    "vote_successfully": MessageLookupByLibrary.simpleMessage(
+      "Vote successfully",
+    ),
+    "vote_up_successfully": MessageLookupByLibrary.simpleMessage(
+      "Vote up successfully",
+    ),
+    "webdav_Account": MessageLookupByLibrary.simpleMessage("WebDAV Account"),
+    "webdav_max_connections": MessageLookupByLibrary.simpleMessage(
+      "WebDAV Max Connections",
+    ),
+    "welcome_text": MessageLookupByLibrary.simpleMessage("~oh~ oh~ oh~~~"),
+  };
 }

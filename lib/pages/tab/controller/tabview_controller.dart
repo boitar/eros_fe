@@ -153,6 +153,7 @@ abstract class TabViewController extends GetxController {
     nextPage = null;
     prevPage = null;
     maxPage = null;
+    pageTextEditController.clear();
   }
 
   // 首次请求
@@ -347,6 +348,7 @@ abstract class TabViewController extends GetxController {
     String? jump,
     String? seek,
     int? page,
+    bool markAfterJump = true,
   }) async {
     cancelToken = CancelToken();
 
@@ -374,7 +376,7 @@ abstract class TabViewController extends GetxController {
       change(_listItem, status: RxStatus.success());
       pageState = PageState.None;
       logger.d('loadFrom next $next, prev $prev');
-      afterJump = true;
+      afterJump = markAfterJump;
     } catch (err, stack) {
       logger.e('$err\n$stack');
       final errMsg = err is HttpException ? err.message : '$err';
@@ -479,20 +481,31 @@ abstract class TabViewController extends GetxController {
 
   Future<void> showJumpDialog(BuildContext context) async {
     logger.d('showJumpDialog');
-    if (nextPage > -1) {
+    if (nextPage > -1 || prevPage > -1) {
       final l10n = L10n.of(context);
       final max = maxPage ?? 1;
-      final page = await showPageJumpSheet(
+      final fallbackPage =
+          nextPage > -1 ? nextPage.clamp(1, max < 1 ? 1 : max) : max;
+      final current =
+          int.tryParse(pageTextEditController.text.trim()) ?? fallbackPage;
+      final result = await showPageJumpSheet(
         context,
         title: l10n.jump_to_page,
         subtitle: l10n.sp_page_total(max),
-        current: int.tryParse(pageTextEditController.text.trim()) ??
-            nextPage.clamp(1, max < 1 ? 1 : max),
+        current: current,
         max: max,
       );
-      if (page != null) {
-        pageTextEditController.text = '$page';
-        loadFrom(page: page - 1);
+      if (result != null) {
+        if (result.nav == JumpNavAction.first) {
+          pageTextEditController.clear();
+          await loadFrom(page: 0, markAfterJump: false);
+        } else {
+          pageTextEditController.text = '${result.page}';
+          await loadFrom(
+            page: result.page - 1,
+            markAfterJump: result.page > 1,
+          );
+        }
       }
       return;
     }
@@ -516,6 +529,15 @@ abstract class TabViewController extends GetxController {
     if (request == null) {
       return;
     }
+    if (request.nav != null) {
+      try {
+        await _navigateCursor(request.nav!);
+      } catch (e, stack) {
+        logger.e('jump nav error', error: e, stackTrace: stack);
+        showToast('$e');
+      }
+      return;
+    }
     jumpOrSeekTextEditController.text = request.text;
     gidTextEditController.text = request.gid;
     try {
@@ -528,6 +550,26 @@ abstract class TabViewController extends GetxController {
     } catch (e, stack) {
       logger.e('jump or seek error', error: e, stackTrace: stack);
       showToast('$e');
+    }
+  }
+
+  Future<void> _navigateCursor(JumpNavAction action) async {
+    switch (action) {
+      case JumpNavAction.first:
+        resetResultPage();
+        jumpOrSeekTextEditController.clear();
+        gidTextEditController.clear();
+        await loadFrom(markAfterJump: false);
+      case JumpNavAction.prev:
+        if (prevGid.isNotEmpty) {
+          await loadFrom(gid: prevGid, pageType: PageType.prev);
+        }
+      case JumpNavAction.next:
+        if (nextGid.isNotEmpty) {
+          await loadFrom(gid: nextGid, pageType: PageType.next);
+        }
+      case JumpNavAction.last:
+        await loadFrom(gid: '1', pageType: PageType.prev);
     }
   }
 

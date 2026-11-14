@@ -2,6 +2,7 @@ import 'package:blur/blur.dart';
 import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
@@ -13,6 +14,7 @@ import 'package:eros_fe/pages/filter/filter.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/view/gallery_base.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/tag_suggestions.dart';
@@ -52,6 +54,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   bool _nativeSearchRowMeasured = false;
   bool _searchRowMeasurePending = false;
   bool _nativeKeyboardVisible = false;
+  bool _nativeBarActive = true;
   bool _hasText = false;
 
   GlobalKey centerKey = GlobalKey();
@@ -59,10 +62,11 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   String _nativeSearchLayoutSignature(
     BuildContext context, {
     required bool keyboardVisible,
+    required bool nativeBar,
   }) {
     final media = MediaQuery.of(context);
     return '${media.size.width}|${media.textScaler}|${media.devicePixelRatio}|'
-        '${Localizations.localeOf(context)}|$keyboardVisible';
+        '${Localizations.localeOf(context)}|$keyboardVisible|$nativeBar';
   }
 
   void _scheduleNativeSearchRowMeasure() {
@@ -83,6 +87,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       final signature = _nativeSearchLayoutSignature(
         rowContext,
         keyboardVisible: _nativeKeyboardVisible,
+        nativeBar: _nativeBarActive,
       );
       if (_nativeSearchRowMeasured &&
           (height - _nativeSearchRowHeight).abs() < 0.5 &&
@@ -104,9 +109,6 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     final hasText = controller.searchTextController.text.trim().isNotEmpty;
     if (hasText != _hasText) {
       setState(() => _hasText = hasText);
-    }
-    if (!NativeNavigationScope.isEnabled(context)) {
-      return;
     }
     if (_nativeSearchRowMeasured) {
       setState(() => _nativeSearchRowMeasured = false);
@@ -188,35 +190,6 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     final native =
         NativeNavigationScope.isEnabled(context) &&
         !BrowsePaneScope.isSplit(context);
-    final Widget body = Column(
-      children: [
-        // if (GetPlatform.isAndroid || GetPlatform.isDesktop)
-        //   SafeArea(
-        //     bottom: false,
-        //     child: Container(
-        //       decoration: BoxDecoration(
-        //         border: _kDefaultNavBarBorder,
-        //         color: CupertinoTheme.of(context).barBackgroundColor,
-        //       ),
-        //       child:
-        //           const SearchTextFieldIn(iconOpacity: 1.0, multiline: true)
-        //               .paddingSymmetric(horizontal: 12, vertical: 4),
-        //     ),
-        //   ),
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 6, 14, 8),
-            child: SearchTextFieldIn(
-              key: _searchFieldKey,
-              iconOpacity: 1,
-              multiline: true,
-            ),
-          ),
-        ),
-        Expanded(child: _buildSearchResult(context)),
-      ],
-    );
 
     return KeyboardVisibilityBuilder(
       builder: (context, keyboardVisible) {
@@ -261,18 +234,11 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                     'split=${BrowsePaneScope.isSplit(context)};tag=$_tag;'
                     'draft=${controller.searchTextController.text}',
                 child: CupertinoPageScaffold(
-                  navigationBar: native
-                      ? null
-                      : getNavigationBar(
-                          context,
-                          keyboardVisible: softwareKeyboardVisible,
-                        ),
-                  child: native
-                      ? _buildNativeBody(
-                          context,
-                          keyboardVisible: softwareKeyboardVisible,
-                        )
-                      : body,
+                  child: _buildFloatingBody(
+                    context,
+                    nativeBar: native,
+                    keyboardVisible: softwareKeyboardVisible,
+                  ),
                 ),
               ),
             ),
@@ -282,19 +248,24 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     );
   }
 
-  Widget _buildNativeBody(
+  Widget _buildFloatingBody(
     BuildContext context, {
+    required bool nativeBar,
     required bool keyboardVisible,
   }) {
     _nativeKeyboardVisible = keyboardVisible;
+    _nativeBarActive = nativeBar;
     _scheduleNativeSearchRowMeasure();
     final safeTop = MediaQuery.viewPaddingOf(context).top;
     final contentTopGap = NativeTopTabHeader.contentGapFor(context);
     final layoutSignature = _nativeSearchLayoutSignature(
       context,
       keyboardVisible: keyboardVisible,
+      nativeBar: nativeBar,
     );
     return NativeSingleBarEdge(
+      enabled: true,
+      inset: safeTop,
       bars: _nativeSearchRowHeight,
       foreground: Positioned(
         top: safeTop,
@@ -308,14 +279,24 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
           },
           child: SizeChangedLayoutNotifier(
             key: _nativeSearchRowKey,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
-              child: SearchTextFieldIn(
-                key: _searchFieldKey,
-                iconOpacity: 1,
-                multiline: true,
-                keyboardVisible: keyboardVisible,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!nativeBar)
+                  _buildFloatingTopBar(
+                    context,
+                    keyboardVisible: keyboardVisible,
+                  ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(14, nativeBar ? 4 : 2, 14, 4),
+                  child: SearchTextFieldIn(
+                    key: _searchFieldKey,
+                    iconOpacity: 1,
+                    multiline: true,
+                    keyboardVisible: keyboardVisible,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -327,6 +308,42 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
             _nativeSearchRowMeasured &&
             _nativeSearchRowLayoutSignature == layoutSignature &&
             _nativeSearchRowHeight > 0,
+      ),
+    );
+  }
+
+  Widget _buildFloatingTopBar(
+    BuildContext context, {
+    required bool keyboardVisible,
+  }) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+    final backLabel = CupertinoLocalizations.of(context).backButtonLabel;
+    final palette = ehTheme.palette;
+    return Padding(
+      key: const ValueKey('search.floatingTopBar'),
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
+      child: SizedBox(
+        height: 44,
+        child: NavigationToolbar(
+          leading: canPop
+              ? EhButton(
+                  key: const ValueKey('search.splitBack'),
+                  icon: CupertinoIcons.chevron_back,
+                  style: EhButtonStyle.glass,
+                  size: 44,
+                  semanticLabel: backLabel,
+                  onPressed: () => Navigator.of(context).maybePop(),
+                )
+              : null,
+          middle: Text(
+            controller.placeholderText,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: CupertinoTheme.of(context).textTheme.navTitleTextStyle
+                .copyWith(color: palette.text1.resolveFrom(context)),
+          ),
+          trailing: _buildTrailing(context, keyboardVisible: keyboardVisible),
+        ),
       ),
     );
   }
@@ -523,7 +540,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
   /// tag匹配view
   Widget _getTagQryList() {
     return SliverPadding(
-      padding: EdgeInsets.only(top: NativeNavigationScope.isEnabled(context) ? 0 : 4),
+      padding: EdgeInsets.zero,
       sliver: SliverTagSuggestions(
         // Read inside the enclosing Obx so new completions rebuild the list.
         tags: controller.qryTags.toList(),
@@ -810,7 +827,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         id: 'jump',
         title: l10n.jump_or_seek,
         symbol: 'arrow.uturn.down.circle',
-        enabled: controller.next.isNotEmpty,
+        enabled: controller.next.isNotEmpty || controller.prev.isNotEmpty,
         onPressed: () => controller.showJumpDialog(context),
       ),
       NativeNavigationAction(
@@ -825,55 +842,106 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
 
   Widget _buildTrailing(BuildContext context, {bool keyboardVisible = false}) {
     final l10n = L10n.of(context);
-    final color = ehTheme.palette.text1.resolveFrom(context);
-    Widget icon(IconData data, String label, VoidCallback onPressed) =>
+    final palette = ehTheme.palette;
+    final color = palette.text1.resolveFrom(context);
+    final dividerColor = palette.hairline.resolveFrom(context);
+    final glassOff = GlassMode.of(context) == GlassMode.off;
+
+    Widget actionButton(
+      IconData data,
+      String label,
+      VoidCallback onPressed, {
+      Key? key,
+    }) =>
         CupertinoButton(
-          minimumSize: const Size(40, 40),
-          padding: EdgeInsets.zero,
+          key: key,
+          minimumSize: const Size(38, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
           onPressed: onPressed,
           child: Semantics(
             label: label,
             button: true,
             excludeSemantics: true,
             onTap: onPressed,
-            child: Icon(data, size: 22, color: color),
+            child: Icon(data, size: 20, color: color),
           ),
         );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (keyboardVisible)
-          icon(
-            CupertinoIcons.keyboard_chevron_compact_down,
-            l10n.sp_hide_keyboard,
-            controller.searchFocusNode.unfocus,
-          ),
-        icon(
-          CupertinoIcons.line_horizontal_3_decrease,
-          l10n.sp_filter,
-          showFilterSetting,
-        ),
-        Obx(() {
-          final actions = _moreActions(context);
-          return CupertinoMenuAnchor(
-            menuChildren: [
-              for (final action in actions)
-                CupertinoMenuItem(
-                  onPressed: action.enabled && action.onPressed != null
-                      ? () => action.onPressed!()
-                      : null,
-                  trailing: Icon(_menuIcon(action.id)),
-                  child: Text(action.title),
+
+    Widget hairline() => Container(
+          width: 0.5,
+          height: 18,
+          color: dividerColor,
+        );
+
+    return ConstrainedBox(
+      key: const ValueKey('search.trailingCapsule'),
+      constraints: const BoxConstraints(
+        minWidth: 44,
+        minHeight: 44,
+        maxHeight: 44,
+      ),
+      child: LiquidGlassSurface(
+        enabled: true,
+        useNativeGlass: false,
+        emphasizeFallbackEdge: true,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          decoration: glassOff
+              ? BoxDecoration(
+                  color: palette.bar.resolveFrom(context),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: dividerColor, width: 0.5),
+                )
+              : null,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (keyboardVisible) ...[
+                  actionButton(
+                    CupertinoIcons.keyboard_chevron_compact_down,
+                    l10n.sp_hide_keyboard,
+                    controller.searchFocusNode.unfocus,
+                    key: const ValueKey('search.hideKeyboard'),
+                  ),
+                  hairline(),
+                ],
+                actionButton(
+                  CupertinoIcons.line_horizontal_3_decrease,
+                  l10n.sp_filter,
+                  showFilterSetting,
+                  key: const ValueKey('search.filterAction'),
                 ),
-            ],
-            builder: (context, menu, _) => icon(
-              CupertinoIcons.ellipsis,
-              l10n.more_actions,
-              () => menu.isOpen ? menu.close() : menu.open(),
+                hairline(),
+                Obx(() {
+                  final actions = _moreActions(context);
+                  return CupertinoMenuAnchor(
+                    menuChildren: [
+                      for (final action in actions)
+                        CupertinoMenuItem(
+                          onPressed: action.enabled && action.onPressed != null
+                              ? () => action.onPressed!()
+                              : null,
+                          trailing: Icon(_menuIcon(action.id)),
+                          child: Text(action.title),
+                        ),
+                    ],
+                    builder: (context, menu, _) => actionButton(
+                      CupertinoIcons.ellipsis,
+                      l10n.more_actions,
+                      () => menu.isOpen ? menu.close() : menu.open(),
+                      key: const ValueKey('search.moreAction'),
+                    ),
+                  );
+                }),
+              ],
             ),
-          );
-        }),
-      ],
+          ),
+        ),
+      ),
     );
   }
 

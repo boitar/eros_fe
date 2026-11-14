@@ -293,8 +293,8 @@ class EhSheetHeader extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(
-                  width: 44,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 44),
                   child: Align(
                     alignment: AlignmentDirectional.centerEnd,
                     child: trailing ?? const SizedBox.shrink(),
