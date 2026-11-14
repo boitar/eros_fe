@@ -9,6 +9,7 @@ import 'package:eros_fe/pages/gallery/controller/torrent_controller.dart';
 import 'package:eros_fe/pages/gallery/view/archiver_dialog.dart';
 import 'package:eros_fe/pages/gallery/view/rate_dialog.dart';
 import 'package:eros_fe/pages/gallery/view/torrent_dialog.dart';
+import 'package:eros_fe/pages/tab/view/favorite_order_sheet.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/jump_sheets.dart';
 import 'package:flutter/cupertino.dart';
@@ -212,6 +213,7 @@ class OfflineSheetPreviewPage extends StatefulWidget {
 class _OfflineSheetPreviewPageState extends State<OfflineSheetPreviewPage> {
   _Backdrop _backdrop = _Backdrop.dark;
   String _last = '-';
+  FavoriteOrder _favOrder = FavoriteOrder.fav;
 
   void _report(Object? value) => setState(() => _last = '$value');
 
@@ -336,6 +338,16 @@ class _OfflineSheetPreviewPageState extends State<OfflineSheetPreviewPage> {
             ..start();
           await presentTorrentSheet(context, source);
           _report('torrent closed');
+        }
+      ),
+      (
+        'favoriteOrder',
+        () async {
+          final r = await presentFavoriteOrderSheet(context, current: _favOrder);
+          if (r != null && mounted) {
+            setState(() => _favOrder = r);
+          }
+          _report(r?.name);
         }
       ),
       (

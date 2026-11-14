@@ -1,9 +1,10 @@
 import Flutter
 import UIKit
 
-/// UIKit sheets for the secondary pages: rate, page jump, date/GID seek and
-/// archiver. Dart owns the data and the actions; UIKit owns presentation,
-/// input and validation, and reports `event` / `dismissed` back.
+/// UIKit sheets for the secondary pages: rate, page jump, date/GID seek,
+/// archiver, torrent and favorite order. Dart owns the data and the actions;
+/// UIKit owns presentation, input and validation, and reports `event` /
+/// `dismissed` back.
 final class ErosNativeSheetPlugin: NSObject, FlutterPlugin {
     private let channel: FlutterMethodChannel
     private var sheets: [Int: AnyObject] = [:]
@@ -77,6 +78,8 @@ final class ErosNativeSheetPlugin: NSObject, FlutterPlugin {
             sheet = ErosArchiverSheet(config: config, emit: emit, dismissed: dismissed)
         case "torrent":
             sheet = ErosTorrentSheet(config: config, emit: emit, dismissed: dismissed)
+        case "favoriteOrder":
+            sheet = ErosFavoriteOrderSheet(config: config, emit: emit, dismissed: dismissed)
         default:
             return false
         }
@@ -1463,6 +1466,89 @@ final class ErosTorrentSheet: ErosSheetController {
             button.tintColor = tint
         }
         button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40).isActive = true
+        return button
+    }
+}
+
+// MARK: - Favorite Order
+
+@available(iOS 26.0, *)
+final class ErosFavoriteOrderSheet: ErosSheetController {
+    override func buildContent() {
+        let items = config["items"] as? [[String: Any]] ?? []
+        let selectedId = string("selected")
+        content.addArrangedSubview(spacer(4))
+        let rows = items.map { item in
+            orderRow(item, selected: (item["id"] as? String ?? "") == selectedId)
+        }
+        content.addArrangedSubview(tray(rows, separatorInset: 58))
+    }
+
+    private func orderRow(_ item: [String: Any], selected: Bool) -> UIView {
+        let id = item["id"] as? String ?? ""
+        let titleText = item["title"] as? String ?? ""
+        var style = UIButton.Configuration.plain()
+        style.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14)
+        let button = UIButton(configuration: style, primaryAction: UIAction { [weak self] _ in
+            self?.finishWith("select", id)
+        })
+        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 56).isActive = true
+
+        let icon = UIImageView(image: UIImage(systemName: item["symbol"] as? String ?? "arrow.up.arrow.down"))
+        icon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+        icon.tintColor = selected
+            ? tint
+            : UIColor { traits in
+                traits.userInterfaceStyle == .dark
+                    ? UIColor(white: 1, alpha: 0.68)
+                    : UIColor(white: 0, alpha: 0.56)
+            }
+        icon.contentMode = .center
+        icon.backgroundColor = selected
+            ? tint.withAlphaComponent(0.14)
+            : UIColor { traits in
+                traits.userInterfaceStyle == .dark
+                    ? UIColor(white: 1, alpha: 0.08)
+                    : UIColor(white: 0, alpha: 0.05)
+            }
+        icon.layer.cornerRadius = 10
+        icon.layer.cornerCurve = .continuous
+        icon.widthAnchor.constraint(equalToConstant: 32).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 32).isActive = true
+
+        let title = UILabel()
+        title.text = titleText
+        title.font = UIFontMetrics(forTextStyle: .body).scaledFont(
+            for: .systemFont(ofSize: 15.5, weight: selected ? .semibold : .medium))
+        title.adjustsFontForContentSizeCategory = true
+        title.textColor = .label
+        title.numberOfLines = 0
+
+        var arranged: [UIView] = [icon, title]
+        if selected {
+            let check = UIImageView(image: UIImage(systemName: "checkmark.circle.fill"))
+            check.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+            check.tintColor = tint
+            check.contentMode = .scaleAspectFit
+            check.setContentHuggingPriority(.required, for: .horizontal)
+            check.setContentCompressionResistancePriority(.required, for: .horizontal)
+            arranged.append(check)
+        }
+
+        let row = UIStackView(arrangedSubviews: arranged)
+        row.spacing = 12
+        row.alignment = .center
+        row.isUserInteractionEnabled = false
+        row.translatesAutoresizingMaskIntoConstraints = false
+        button.addSubview(row)
+        NSLayoutConstraint.activate([
+            row.topAnchor.constraint(equalTo: button.topAnchor, constant: 12),
+            row.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: -12),
+            row.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 14),
+            row.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -14),
+        ])
+        button.accessibilityLabel = titleText
+        button.accessibilityTraits = selected ? [.button, .selected] : .button
         return button
     }
 }
