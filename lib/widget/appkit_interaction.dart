@@ -1,24 +1,85 @@
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-/// AppKit controls bypass Flutter's gesture arena. Keep their hit testing in
-/// sync with modal routes, including pop transitions and nested navigators.
+/// Native controls bypass Flutter's gesture arena and (for iOS UiKitViews)
+/// composite above the Flutter scene. Keep their hit testing and native surface
+/// usage in sync with modal routes, including pop transitions and nested
+/// navigators.
 abstract final class AppKitInteraction {
   static const channel = MethodChannel('eros/appkit-glass');
   static final Set<Object> _blockers = {};
+  static final Set<AppKitModalObserver> _observers = {};
+  static bool _revisionScheduled = false;
+
+  /// Increments whenever the set of active modal blockers changes so iOS
+  /// native platform views underneath a modal can yield to Flutter composition.
+  static final ValueNotifier<int> modalRevision = ValueNotifier<int>(0);
+
   static bool get blocked => _blockers.isNotEmpty;
 
-  static void setBlocked(Object owner, bool value) {
-    if (value && PlatformCapabilities.hostPlatform != TargetPlatform.macOS) {
+  static void _bumpRevision() {
+    if (SchedulerBinding.instance.schedulerPhase !=
+        SchedulerPhase.persistentCallbacks) {
+      modalRevision.value++;
       return;
     }
+    if (_revisionScheduled) {
+      return;
+    }
+    _revisionScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revisionScheduled = false;
+      modalRevision.value++;
+    });
+  }
+
+  /// Whether a modal or blocking overlay currently sits above [context]'s
+  /// route. Widgets inside the topmost blocking route itself remain uncovered.
+  static bool isCoveredByModal(BuildContext context) {
+    if (_blockers.any((owner) => owner is! AppKitModalObserver)) {
+      return true;
+    }
+    if (_observers.isEmpty) {
+      return false;
+    }
+    final route = ModalRoute.of(context);
+    for (final observer in _observers) {
+      if (observer._disposed || observer._blocking.isEmpty) {
+        continue;
+      }
+      if (observer.root) {
+        for (final blocking in observer._blocking) {
+          if (identical(blocking, route)) {
+            continue;
+          }
+          if (route == null ||
+              blocking.navigator != route.navigator ||
+              observer._isAbove(blocking, route)) {
+            return true;
+          }
+        }
+      } else if (route != null && observer._routes.contains(route)) {
+        for (final blocking in observer._blocking) {
+          if (!identical(blocking, route) &&
+              observer._isAbove(blocking, route)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  static void setBlocked(Object owner, bool value) {
     final before = blocked;
     if (value) {
       _blockers.add(owner);
     } else {
       _blockers.remove(owner);
     }
+    _bumpRevision();
     if (before == blocked ||
         PlatformCapabilities.hostPlatform != TargetPlatform.macOS) {
       return;
@@ -37,7 +98,9 @@ abstract final class AppKitInteraction {
 /// Owned by the State that owns its Navigator. Dispose even when a whole
 /// navigation tree disappears without emitting per-route removal callbacks.
 class AppKitModalObserver extends NavigatorObserver {
-  AppKitModalObserver({this.root = false});
+  AppKitModalObserver({this.root = false}) {
+    AppKitInteraction._observers.add(this);
+  }
   final bool root;
   final List<Route<dynamic>> _routes = [];
   final Set<Route<dynamic>> _blocking = {};
@@ -47,6 +110,17 @@ class AppKitModalObserver extends NavigatorObserver {
   bool _blocks(Route<dynamic> route) =>
       (route is ModalRoute && !route.opaque) ||
       (root && _routes.indexOf(route) > 0);
+
+  bool _isAbove(Route<dynamic> candidate, Route<dynamic> target) {
+    final targetIndex = _routes.indexOf(target);
+    if (targetIndex < 0) {
+      return false;
+    }
+    final candidateIndex = _routes.indexOf(candidate);
+    // A popped blocking route stays in _blocking until its dismiss animation
+    // settles, so it is no longer in _routes while still covering target.
+    return candidateIndex < 0 || candidateIndex > targetIndex;
+  }
 
   void _sync() =>
       AppKitInteraction.setBlocked(this, !_disposed && _blocking.isNotEmpty);
@@ -61,6 +135,7 @@ class AppKitModalObserver extends NavigatorObserver {
       return;
     }
     _disposed = true;
+    AppKitInteraction._observers.remove(this);
     for (final cleanup in _cleanup.values.toList()) {
       cleanup();
     }

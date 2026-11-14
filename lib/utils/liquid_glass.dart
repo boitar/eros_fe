@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:eros_fe/widget/appkit_glass.dart';
+import 'package:eros_fe/widget/appkit_interaction.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -276,10 +277,34 @@ class LiquidGlassSurface extends StatelessWidget {
   }
 
   Widget _buildLegacy(BuildContext context) {
-    final bool usesFlutterFallback = enabled &&
-        !(useNativeGlass && GlassMode.of(context) == GlassMode.native);
+    final bool candidateNative = enabled &&
+        useNativeGlass &&
+        PlatformCapabilities.uiKitGlass &&
+        GlassMode.of(context) == GlassMode.native;
+    if (!candidateNative) {
+      return _buildSurfaceForModalState(
+        context,
+        allowNative: false,
+      );
+    }
+    return ValueListenableBuilder<int>(
+      valueListenable: AppKitInteraction.modalRevision,
+      builder: (BuildContext context, int _, Widget? child) {
+        final allowNative = !AppKitInteraction.isCoveredByModal(context);
+        return _buildSurfaceForModalState(
+          context,
+          allowNative: allowNative,
+        );
+      },
+    );
+  }
+
+  Widget _buildSurfaceForModalState(
+    BuildContext context, {
+    required bool allowNative,
+  }) {
     final bool readsNativeTransparency =
-        usesFlutterFallback && PlatformCapabilities.uiKitGlass;
+        enabled && !allowNative && PlatformCapabilities.uiKitGlass;
     final Widget surface;
     if (readsNativeTransparency) {
       LiquidGlassAccessibilitySettings.watch();
@@ -290,10 +315,15 @@ class LiquidGlassSurface extends StatelessWidget {
                 _buildSurface(
           context,
           reduceTransparency: reduceTransparency ?? true,
+          allowNative: allowNative,
         ),
       );
     } else {
-      surface = _buildSurface(context, reduceTransparency: false);
+      surface = _buildSurface(
+        context,
+        reduceTransparency: false,
+        allowNative: allowNative,
+      );
     }
     final alpha = opacity.clamp(0.0, 1.0).toDouble();
     return alpha >= 1.0 ? surface : Opacity(opacity: alpha, child: surface);
@@ -302,6 +332,7 @@ class LiquidGlassSurface extends StatelessWidget {
   Widget _buildSurface(
     BuildContext context, {
     required bool reduceTransparency,
+    bool allowNative = true,
   }) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -324,6 +355,7 @@ class LiquidGlassSurface extends StatelessWidget {
         final Widget background;
         if (enabled &&
             useNativeGlass &&
+            allowNative &&
             PlatformCapabilities.uiKitGlass &&
             GlassMode.of(context) == GlassMode.native) {
           background = UiKitView(

@@ -6,6 +6,7 @@ import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/appkit_interaction.dart';
 import 'package:eros_fe/widget/desktop_pointer_effects.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
@@ -542,6 +543,41 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     List<LiquidGlassRailCategory> categories, {
     required double opacity,
   }) {
+    final wantsNative =
+        GlassMode.of(context).forComponent(flutterImplemented: true) ==
+            GlassMode.native;
+    if (!wantsNative || !PlatformCapabilities.uiKitGlass) {
+      return _buildCategorySurface(
+        context,
+        categories,
+        opacity: opacity,
+        useNative: wantsNative,
+      );
+    }
+    return ValueListenableBuilder<int>(
+      valueListenable: AppKitInteraction.modalRevision,
+      builder: (context, _, _) {
+        final covered = AppKitInteraction.isCoveredByModal(context);
+        if (covered && !_restoreOffset && (_fallbackOffset - _nativeOffset).abs() > 0.5) {
+          _fallbackOffset = _nativeOffset;
+          _restoreOffset = true;
+        }
+        return _buildCategorySurface(
+          context,
+          categories,
+          opacity: opacity,
+          useNative: !covered,
+        );
+      },
+    );
+  }
+
+  Widget _buildCategorySurface(
+    BuildContext context,
+    List<LiquidGlassRailCategory> categories, {
+    required double opacity,
+    required bool useNative,
+  }) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final layout = SegmentedRailLayout.compute(
@@ -559,8 +595,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                 child: SizedBox(width: surfaceWidth, child: child),
               )
             : child;
-        if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
-            GlassMode.native) {
+        if (useNative) {
           return fitSurface(
             NativeCategoryRail(
               categories: categories,

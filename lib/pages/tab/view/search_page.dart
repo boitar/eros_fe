@@ -14,6 +14,7 @@ import 'package:eros_fe/pages/filter/filter.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/view/gallery_base.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
+import 'package:eros_fe/pages/tab/view/search_more_sheet.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
@@ -204,6 +205,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               chrome: NativePageChrome(
                 title: controller.placeholderText,
                 navigationBarVisible: native,
+                ownBar: !native,
                 actions: [
                   if (softwareKeyboardVisible)
                     NativeNavigationAction(
@@ -916,27 +918,12 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                   key: const ValueKey('search.filterAction'),
                 ),
                 hairline(),
-                Obx(() {
-                  final actions = _moreActions(context);
-                  return CupertinoMenuAnchor(
-                    menuChildren: [
-                      for (final action in actions)
-                        CupertinoMenuItem(
-                          onPressed: action.enabled && action.onPressed != null
-                              ? () => action.onPressed!()
-                              : null,
-                          trailing: Icon(_menuIcon(action.id)),
-                          child: Text(action.title),
-                        ),
-                    ],
-                    builder: (context, menu, _) => actionButton(
-                      CupertinoIcons.ellipsis,
-                      l10n.more_actions,
-                      () => menu.isOpen ? menu.close() : menu.open(),
-                      key: const ValueKey('search.moreAction'),
-                    ),
-                  );
-                }),
+                actionButton(
+                  CupertinoIcons.ellipsis,
+                  l10n.more_actions,
+                  () => presentSearchMoreSheet(context, _moreActions(context)),
+                  key: const ValueKey('search.moreAction'),
+                ),
               ],
             ),
           ),
@@ -944,14 +931,6 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       ),
     );
   }
-
-  static IconData _menuIcon(String id) => switch (id) {
-        'imageSearch' => CupertinoIcons.photo_on_rectangle,
-        'quickSearchList' => CupertinoIcons.list_bullet,
-        'addQuickSearch' => CupertinoIcons.plus_circle,
-        'jump' => CupertinoIcons.arrow_uturn_down_circle,
-        _ => CupertinoIcons.arrow_up_to_line,
-      };
 }
 
 class SearchTextFieldIn extends StatelessWidget {

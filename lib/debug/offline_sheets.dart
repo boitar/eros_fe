@@ -10,6 +10,7 @@ import 'package:eros_fe/pages/gallery/view/archiver_dialog.dart';
 import 'package:eros_fe/pages/gallery/view/rate_dialog.dart';
 import 'package:eros_fe/pages/gallery/view/torrent_dialog.dart';
 import 'package:eros_fe/pages/tab/view/favorite_order_sheet.dart';
+import 'package:eros_fe/pages/tab/view/search_more_sheet.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/jump_sheets.dart';
 import 'package:flutter/cupertino.dart';
@@ -348,6 +349,47 @@ class _OfflineSheetPreviewPageState extends State<OfflineSheetPreviewPage> {
             setState(() => _favOrder = r);
           }
           _report(r?.name);
+        }
+      ),
+      (
+        'searchMore',
+        () async {
+          final l10n = L10n.of(context);
+          await presentSearchMoreSheet(context, [
+            NativeNavigationAction(
+              id: 'imageSearch',
+              title: l10n.sp_image_search,
+              symbol: 'photo.on.rectangle',
+              onPressed: () => _report('searchMore:imageSearch'),
+            ),
+            NativeNavigationAction(
+              id: 'quickSearchList',
+              title: l10n.sp_quick_search_list,
+              symbol: 'list.bullet',
+              onPressed: () => _report('searchMore:quickSearchList'),
+            ),
+            NativeNavigationAction(
+              id: 'addQuickSearch',
+              title: l10n.sp_add_quick_search,
+              symbol: 'plus.circle',
+              enabled: false,
+              onPressed: () => _report('searchMore:addQuickSearch'),
+            ),
+            NativeNavigationAction(
+              id: 'jump',
+              title: l10n.jump_or_seek,
+              symbol: 'arrow.uturn.down.circle',
+              enabled: false,
+              onPressed: () => _report('searchMore:jump'),
+            ),
+            NativeNavigationAction(
+              id: 'top',
+              title: l10n.back_to_top,
+              symbol: 'arrow.up.to.line',
+              enabled: false,
+              onPressed: () => _report('searchMore:top'),
+            ),
+          ]);
         }
       ),
       (

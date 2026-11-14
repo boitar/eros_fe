@@ -1,4 +1,5 @@
 import 'package:eros_fe/adaptive/browse_layout.dart';
+import 'package:eros_fe/adaptive/native_sheet.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/common/controller/quicksearch_controller.dart';
 import 'package:eros_fe/common/controller/tag_controller.dart';
@@ -12,6 +13,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/view/search_page.dart';
+import 'package:eros_fe/widget/eh_sheet.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
@@ -89,11 +91,13 @@ void main() {
     Get.put<SearchPageController>(_Search(), tag: 'split-search');
     KeyboardVisibilityTesting.setVisibilityForTesting(false);
     NativeNavigationBridge.enabled.value = true;
+    NativeSheet.debugAvailable = false;
   });
 
   tearDown(() {
     KeyboardVisibilityTesting.setVisibilityForTesting(false);
     NativeNavigationBridge.enabled.value = false;
+    NativeSheet.debugAvailable = null;
     Get.reset();
   });
 
@@ -164,6 +168,12 @@ void main() {
     await tester.pumpAndSettle();
 
     // Floating bar + 44pt back button + trailing capsule present, clearing left viewPadding.
+    final navPage = tester.widget<NativeNavigationPage>(
+      find.byType(NativeNavigationPage),
+    );
+    expect(navPage.chrome.navigationBarVisible, isFalse);
+    expect(navPage.chrome.ownBar, isTrue);
+
     expect(find.byKey(const ValueKey('search.floatingTopBar')), findsOneWidget);
     final backFinder = find.byKey(const ValueKey('search.splitBack'));
     expect(backFinder, findsOneWidget);
@@ -214,5 +224,24 @@ void main() {
         0.5,
       ),
     );
+
+    // Tapping moreAction presents the modern EhSheet instead of CupertinoMenuAnchor.
+    await tester.tap(find.byKey(const ValueKey('search.moreAction')));
+    await tester.pumpAndSettle();
+    expect(find.byType(CupertinoMenuAnchor), findsNothing);
+    expect(find.byType(EhSheetHeader), findsOneWidget);
+    expect(find.byType(EhSheetGroup), findsOneWidget);
+    expect(
+      find.byKey(const Key('search.moreOption.imageSearch')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('search.moreOption.quickSearchList')),
+      findsOneWidget,
+    );
+    // Disabled action when search query is empty does not dismiss the sheet.
+    await tester.tap(find.byKey(const Key('search.moreOption.addQuickSearch')));
+    await tester.pumpAndSettle();
+    expect(find.byType(EhSheetHeader), findsOneWidget);
   });
 }

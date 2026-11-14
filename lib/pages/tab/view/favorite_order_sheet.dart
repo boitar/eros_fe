@@ -1,9 +1,6 @@
 import 'package:eros_fe/adaptive/native_sheet.dart';
-import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/const.dart';
-import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/generated/l10n.dart';
-import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/eh_sheet.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -103,7 +100,7 @@ class _FavoriteOrderSheet extends StatelessWidget {
               dividerIndent: 58,
               children: [
                 for (final (order, label, icon, _) in options)
-                  _FavoriteOrderRow(
+                  EhSheetOptionRow(
                     key: Key('favoriteOrder.option.${order.name}'),
                     label: label,
                     icon: icon,
@@ -113,84 +110,6 @@ class _FavoriteOrderSheet extends StatelessWidget {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FavoriteOrderRow extends StatelessWidget {
-  const _FavoriteOrderRow({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onPressed,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = ehTheme.palette;
-    final accent = EhPalette.accent.resolveFrom(context);
-    final base = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-          letterSpacing: 0,
-        );
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      excludeSemantics: true,
-      onTap: onPressed,
-      child: EhPressable(
-        onPressed: onPressed,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 56),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? EhPalette.accentSoft.resolveFrom(context)
-                        : palette.fill.resolveFrom(context),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 17,
-                    color: selected ? accent : palette.text2.resolveFrom(context),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: base.copyWith(
-                      fontSize: 15.5,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                      color: palette.text1.resolveFrom(context),
-                    ),
-                  ),
-                ),
-                if (selected) ...[
-                  const SizedBox(width: 8),
-                  Icon(
-                    CupertinoIcons.checkmark_circle_fill,
-                    size: 20,
-                    color: accent,
-                  ),
-                ],
-              ],
-            ),
-          ),
         ),
       ),
     );

@@ -78,8 +78,8 @@ final class ErosNativeSheetPlugin: NSObject, FlutterPlugin {
             sheet = ErosArchiverSheet(config: config, emit: emit, dismissed: dismissed)
         case "torrent":
             sheet = ErosTorrentSheet(config: config, emit: emit, dismissed: dismissed)
-        case "favoriteOrder":
-            sheet = ErosFavoriteOrderSheet(config: config, emit: emit, dismissed: dismissed)
+        case "favoriteOrder", "actionList":
+            sheet = ErosActionListSheet(config: config, emit: emit, dismissed: dismissed)
         default:
             return false
         }
@@ -1470,31 +1470,44 @@ final class ErosTorrentSheet: ErosSheetController {
     }
 }
 
-// MARK: - Favorite Order
+// MARK: - Action & Option List
 
 @available(iOS 26.0, *)
-final class ErosFavoriteOrderSheet: ErosSheetController {
+final class ErosActionListSheet: ErosSheetController {
     override func buildContent() {
         let items = config["items"] as? [[String: Any]] ?? []
         let selectedId = string("selected")
+        let showChevrons = bool("showChevrons")
         content.addArrangedSubview(spacer(4))
         let rows = items.map { item in
-            orderRow(item, selected: (item["id"] as? String ?? "") == selectedId)
+            let id = item["id"] as? String ?? ""
+            return optionRow(
+                item,
+                selected: !selectedId.isEmpty && id == selectedId,
+                showChevron: showChevrons
+            )
         }
         content.addArrangedSubview(tray(rows, separatorInset: 58))
     }
 
-    private func orderRow(_ item: [String: Any], selected: Bool) -> UIView {
+    private func optionRow(
+        _ item: [String: Any],
+        selected: Bool,
+        showChevron: Bool
+    ) -> UIView {
         let id = item["id"] as? String ?? ""
         let titleText = item["title"] as? String ?? ""
+        let enabled = item["enabled"] as? Bool ?? true
         var style = UIButton.Configuration.plain()
         style.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14)
         let button = UIButton(configuration: style, primaryAction: UIAction { [weak self] _ in
+            guard enabled else { return }
             self?.finishWith("select", id)
         })
+        button.isEnabled = enabled
         button.heightAnchor.constraint(greaterThanOrEqualToConstant: 56).isActive = true
 
-        let icon = UIImageView(image: UIImage(systemName: item["symbol"] as? String ?? "arrow.up.arrow.down"))
+        let icon = UIImageView(image: UIImage(systemName: item["symbol"] as? String ?? "ellipsis"))
         icon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
         icon.tintColor = selected
             ? tint
@@ -1533,11 +1546,20 @@ final class ErosFavoriteOrderSheet: ErosSheetController {
             check.setContentHuggingPriority(.required, for: .horizontal)
             check.setContentCompressionResistancePriority(.required, for: .horizontal)
             arranged.append(check)
+        } else if showChevron && enabled {
+            let chevron = UIImageView(image: UIImage(systemName: "chevron.forward"))
+            chevron.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+            chevron.tintColor = .tertiaryLabel
+            chevron.contentMode = .scaleAspectFit
+            chevron.setContentHuggingPriority(.required, for: .horizontal)
+            chevron.setContentCompressionResistancePriority(.required, for: .horizontal)
+            arranged.append(chevron)
         }
 
         let row = UIStackView(arrangedSubviews: arranged)
         row.spacing = 12
         row.alignment = .center
+        row.alpha = enabled ? 1.0 : 0.38
         row.isUserInteractionEnabled = false
         row.translatesAutoresizingMaskIntoConstraints = false
         button.addSubview(row)
@@ -1548,7 +1570,14 @@ final class ErosFavoriteOrderSheet: ErosSheetController {
             row.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -14),
         ])
         button.accessibilityLabel = titleText
-        button.accessibilityTraits = selected ? [.button, .selected] : .button
+        var traits: UIAccessibilityTraits = .button
+        if selected {
+            traits.insert(.selected)
+        }
+        if !enabled {
+            traits.insert(.notEnabled)
+        }
+        button.accessibilityTraits = traits
         return button
     }
 }

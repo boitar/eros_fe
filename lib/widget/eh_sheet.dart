@@ -387,3 +387,99 @@ class EhSheetSectionLabel extends StatelessWidget {
     );
   }
 }
+
+/// Option or action row inside an [EhSheetGroup], matching the native action list.
+class EhSheetOptionRow extends StatelessWidget {
+  const EhSheetOptionRow({
+    super.key,
+    required this.label,
+    required this.icon,
+    this.selected = false,
+    this.enabled = true,
+    this.showChevron = false,
+    this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final bool enabled;
+  final bool showChevron;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ehTheme.palette;
+    final accent = EhPalette.accent.resolveFrom(context);
+    final base = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+          letterSpacing: 0,
+        );
+    final interactive = enabled && onPressed != null;
+    final content = Opacity(
+      opacity: enabled ? 1 : .38,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 56),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? EhPalette.accentSoft.resolveFrom(context)
+                      : palette.fill.resolveFrom(context),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 17,
+                  color: selected ? accent : palette.text2.resolveFrom(context),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: base.copyWith(
+                    fontSize: 15.5,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: palette.text1.resolveFrom(context),
+                  ),
+                ),
+              ),
+              if (selected) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  CupertinoIcons.checkmark_circle_fill,
+                  size: 20,
+                  color: accent,
+                ),
+              ] else if (showChevron && enabled) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  CupertinoIcons.chevron_forward,
+                  size: 14,
+                  color: palette.text3.resolveFrom(context),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      onTap: interactive ? onPressed : null,
+      child: EhPressable(
+        onPressed: interactive ? onPressed : null,
+        child: content,
+      ),
+    );
+  }
+}
