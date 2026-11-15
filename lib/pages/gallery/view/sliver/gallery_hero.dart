@@ -1157,7 +1157,12 @@ class GalleryDetailColumns {
         }
       }
     }
-    if (width >= wideWidth) {
+    final usableWidth = environment != null &&
+            environment.hasDuoVerticalBar &&
+            (width - environment.size.width).abs() < 1
+        ? environment.contentRect.width
+        : width;
+    if (usableWidth >= wideWidth) {
       return const GalleryDetailColumns(leading: sideWidth, gap: 0);
     }
     return null;

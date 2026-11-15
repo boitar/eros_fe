@@ -274,8 +274,10 @@ class _GalleryPageState extends State<GalleryPage> {
                   height: NativeTopTabHeader.contentGapFor(context),
                 ),
               ),
-            EhCupertinoSliverRefreshControl(
-              onRefresh: _controller.handOnRefresh,
+            GallerySliverSafeArea(
+              child: EhCupertinoSliverRefreshControl(
+                onRefresh: _controller.handOnRefresh,
+              ),
             ),
             GalleryHeadTile(
               controller: _controller,
@@ -461,7 +463,11 @@ class _GalleryPageState extends State<GalleryPage> {
               height: NativeTopTabHeader.contentGapFor(context),
             ),
           ),
-          EhCupertinoSliverRefreshControl(onRefresh: _controller.handOnRefresh),
+          GallerySliverSafeArea(
+            child: EhCupertinoSliverRefreshControl(
+              onRefresh: _controller.handOnRefresh,
+            ),
+          ),
           GalleryBody(controller: _controller),
         ],
       ),
