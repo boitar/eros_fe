@@ -4,7 +4,10 @@ import Flutter
 final class ErosLiquidGlassPlugin {
     private static var accessibilityPlugins: [ErosAccessibilitySettingsPlugin] = []
     static func register(with registrar: FlutterPluginRegistrar) {
-        registrar.register(LiquidGlassViewFactory(), withId: LiquidGlassViewFactory.viewType)
+        registrar.register(
+            LiquidGlassViewFactory(messenger: registrar.messenger()),
+            withId: LiquidGlassViewFactory.viewType
+        )
         // Native tab selection owns its touch sequence. Flutter's default
         // asynchronous gesture blocking can leave UIKit's continuous
         // selection recognizer in a stale state after a tap or reselection.

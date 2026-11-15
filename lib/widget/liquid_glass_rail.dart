@@ -546,29 +546,11 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     final wantsNative =
         GlassMode.of(context).forComponent(flutterImplemented: true) ==
             GlassMode.native;
-    if (!wantsNative || !PlatformCapabilities.uiKitGlass) {
-      return _buildCategorySurface(
-        context,
-        categories,
-        opacity: opacity,
-        useNative: wantsNative,
-      );
-    }
-    return ValueListenableBuilder<int>(
-      valueListenable: AppKitInteraction.modalRevision,
-      builder: (context, _, _) {
-        final covered = AppKitInteraction.isCoveredByModal(context);
-        if (covered && !_restoreOffset && (_fallbackOffset - _nativeOffset).abs() > 0.5) {
-          _fallbackOffset = _nativeOffset;
-          _restoreOffset = true;
-        }
-        return _buildCategorySurface(
-          context,
-          categories,
-          opacity: opacity,
-          useNative: !covered,
-        );
-      },
+    return _buildCategorySurface(
+      context,
+      categories,
+      opacity: opacity,
+      useNative: wantsNative,
     );
   }
 
@@ -610,6 +592,19 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
               initialOffset: _nativeOffset,
               onOffset: (value) => _nativeOffset = value,
               segmentWidths: widths,
+              modalFallbackBuilder: (context) {
+                if (!_scroll.hasClients ||
+                    (_scroll.offset - _nativeOffset).abs() > 0.5) {
+                  _fallbackOffset = _nativeOffset;
+                  _restoreOffset = true;
+                }
+                return _buildCategorySurface(
+                  context,
+                  categories,
+                  opacity: opacity,
+                  useNative: false,
+                );
+              },
             ),
           );
         }
@@ -669,10 +664,10 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                   key: const ValueKey<String>(
                     'liquid-glass-category-selection-indicator',
                   ),
-                  left: left + 4,
-                  top: 4,
-                  width: width - 8,
-                  height: height - 8,
+                  left: left + 3,
+                  top: 3,
+                  width: math.max(0.0, width - 6),
+                  height: math.max(0.0, height - 6),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: CupertinoDynamicColor.resolve(
@@ -1405,6 +1400,7 @@ class NativeCategoryRail extends StatefulWidget {
     this.pageController,
     this.segmentWidths,
     this.height,
+    this.modalFallbackBuilder,
   });
 
   final List<LiquidGlassRailCategory> categories;
@@ -1425,6 +1421,10 @@ class NativeCategoryRail extends StatefulWidget {
   /// Height of the glass track; defaults to the rail layout's row height.
   final double? height;
 
+  /// Optional translucent Flutter fallback rendered underneath while a modal
+  /// covers this route and held until UIKit commits unhide on dismissal.
+  final WidgetBuilder? modalFallbackBuilder;
+
   @override
   State<NativeCategoryRail> createState() => _NativeCategoryRailState();
 }
@@ -1433,12 +1433,81 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
   MethodChannel? _channel;
   String? _lastParameters;
   bool _scheduled = false;
+  bool _covered = false;
+  bool _showUnderlay = false;
+  bool _modalInitialized = false;
+  int _hiddenSyncSeq = 0;
   final _RailScrubTicker _scrubTicker = _RailScrubTicker();
 
   @override
   void initState() {
     super.initState();
     widget.pageController?.addListener(_progress);
+    AppKitInteraction.modalRevision.addListener(_onModalRevisionChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final covered = _shouldHideForModal(context);
+    if (!_modalInitialized) {
+      _modalInitialized = true;
+      _covered = covered;
+      _showUnderlay = covered;
+      return;
+    }
+    _updateCovered(covered);
+  }
+
+  bool _shouldHideForModal(BuildContext context) {
+    if (widget.modalFallbackBuilder == null ||
+        !PlatformCapabilities.uiKitGlass ||
+        GlassMode.of(context) == GlassMode.off ||
+        GlassMode.of(context).forComponent(flutterImplemented: true) ==
+            GlassMode.flutter) {
+      return false;
+    }
+    return AppKitInteraction.isCoveredByModal(context);
+  }
+
+  void _onModalRevisionChanged() {
+    if (!mounted) {
+      return;
+    }
+    _updateCovered(_shouldHideForModal(context));
+  }
+
+  void _updateCovered(bool covered) {
+    if (covered == _covered) {
+      return;
+    }
+    _covered = covered;
+    final seq = ++_hiddenSyncSeq;
+    if (covered) {
+      setState(() {
+        _showUnderlay = true;
+      });
+      unawaited(_syncHidden(true, seq));
+    } else {
+      unawaited(_syncHidden(false, seq));
+    }
+  }
+
+  Future<void> _syncHidden(bool hidden, int seq) async {
+    final channel = _channel;
+    if (channel != null) {
+      try {
+        await channel.invokeMethod<void>('setHidden', hidden);
+      } on MissingPluginException {
+        // Tests without a platform view messenger ignore plugin calls.
+      }
+    }
+    if (!mounted || seq != _hiddenSyncSeq || hidden || _covered || !_showUnderlay) {
+      return;
+    }
+    setState(() {
+      _showUnderlay = false;
+    });
   }
 
   void _progress() {
@@ -1486,6 +1555,7 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
     'fontSize': widget.fontSize,
     'opacity': widget.opacity,
     'interactive': widget.interactive,
+    'hidden': _covered,
     if (widget.segmentWidths != null) 'segmentWidths': widget.segmentWidths!,
   };
 
@@ -1521,6 +1591,11 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
       }
     });
     channel.invokeMethod<void>('update', _parameters);
+    if (_covered) {
+      unawaited(_syncHidden(true, _hiddenSyncSeq));
+    } else if (_showUnderlay) {
+      unawaited(_syncHidden(false, _hiddenSyncSeq));
+    }
   }
 
   @override
@@ -1530,14 +1605,19 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
       oldWidget.pageController?.removeListener(_progress);
       widget.pageController?.addListener(_progress);
     }
-    if (_lastParameters != jsonEncode(_parameters)) {
+    if (oldWidget.modalFallbackBuilder != widget.modalFallbackBuilder) {
+      _updateCovered(_shouldHideForModal(context));
+    }
+    final encoded = jsonEncode(_parameters);
+    if (_lastParameters != encoded) {
       _channel?.invokeMethod<void>('update', _parameters);
-      _lastParameters = jsonEncode(_parameters);
+      _lastParameters = encoded;
     }
   }
 
   @override
   void dispose() {
+    AppKitInteraction.modalRevision.removeListener(_onModalRevisionChanged);
     widget.pageController?.removeListener(_progress);
     _channel?.setMethodCallHandler(null);
     _channel = null;
@@ -1571,22 +1651,44 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
         ],
       );
     }
+    final nativeRail = UiKitView(
+      viewType: 'eros/liquid-glass-categories',
+      creationParams: _parameters,
+      creationParamsCodec: const StandardMessageCodec(),
+      onPlatformViewCreated: _created,
+      // Claim horizontal category drags without taking vertical list scrolls.
+      gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{
+        Factory<HorizontalDragGestureRecognizer>(
+          HorizontalDragGestureRecognizer.new,
+        ),
+      },
+    );
+    final fallbackBuilder = widget.modalFallbackBuilder;
+    final Widget child = fallbackBuilder == null
+        ? nativeRail
+        : Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              if (_showUnderlay)
+                KeyedSubtree(
+                  key: const ValueKey<String>(
+                    'native-category-rail-modal-underlay',
+                  ),
+                  child: fallbackBuilder(context),
+                )
+              else
+                const SizedBox.shrink(),
+              IgnorePointer(
+                ignoring: _covered,
+                child: nativeRail,
+              ),
+            ],
+          );
     return SizedBox(
       height:
           widget.height ??
           widget.layout.categoryHeight(MediaQuery.textScalerOf(context)),
-      child: UiKitView(
-        viewType: 'eros/liquid-glass-categories',
-        creationParams: _parameters,
-        creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: _created,
-        // Claim horizontal category drags without taking vertical list scrolls.
-        gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{
-          Factory<HorizontalDragGestureRecognizer>(
-            HorizontalDragGestureRecognizer.new,
-          ),
-        },
-      ),
+      child: child,
     );
   }
 }

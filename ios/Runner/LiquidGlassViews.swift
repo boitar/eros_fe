@@ -252,6 +252,12 @@ private final class LiquidGlassPopupPlatformView: NSObject, FlutterPlatformView 
 final class LiquidGlassViewFactory: NSObject,
     FlutterPlatformViewFactory {
     static let viewType = "eros/liquid-glass"
+    private let messenger: FlutterBinaryMessenger
+
+    init(messenger: FlutterBinaryMessenger) {
+        self.messenger = messenger
+        super.init()
+    }
 
     func create(
         withFrame frame: CGRect,
@@ -261,7 +267,8 @@ final class LiquidGlassViewFactory: NSObject,
         LiquidGlassPlatformView(
             frame: frame,
             viewIdentifier: viewId,
-            arguments: args
+            arguments: args,
+            messenger: messenger
         )
     }
 
@@ -272,9 +279,15 @@ final class LiquidGlassViewFactory: NSObject,
 
 private final class LiquidGlassPlatformView: NSObject, FlutterPlatformView {
     private var appearanceObserver: NSObjectProtocol?
+    private let channel: FlutterMethodChannel
     private let platformView: UIView
 
-    init(frame: CGRect, viewIdentifier: Int64, arguments: Any?) {
+    init(
+        frame: CGRect,
+        viewIdentifier: Int64,
+        arguments: Any?,
+        messenger: FlutterBinaryMessenger
+    ) {
         let arguments = arguments as? [String: Any]
         let cornerRadius = (arguments?["cornerRadius"] as? NSNumber)
             .map { CGFloat(truncating: $0) } ?? 0
@@ -284,9 +297,17 @@ private final class LiquidGlassPlatformView: NSObject, FlutterPlatformView {
         let styleName = arguments?["style"] as? String ?? "regular"
         let containerSpacing = (arguments?["containerSpacing"] as? NSNumber)
             .map { CGFloat(truncating: $0) } ?? 0
+        let initiallyHidden = (arguments?["hidden"] as? NSNumber)?.boolValue ?? false
+
+        channel = FlutterMethodChannel(
+            name: "eros/liquid-glass/\(viewIdentifier)",
+            binaryMessenger: messenger
+        )
 
         let container = UIView(frame: frame)
         container.backgroundColor = .clear
+        container.isHidden = initiallyHidden
+        container.accessibilityElementsHidden = initiallyHidden
 
         let effectView: UIVisualEffectView
         let usesSystemLiquidGlass: Bool
@@ -354,9 +375,24 @@ private final class LiquidGlassPlatformView: NSObject, FlutterPlatformView {
                 : .clear
         }
         super.init()
+        channel.setMethodCallHandler { [weak self] call, result in
+            guard let self else { result(nil); return }
+            if call.method == "setHidden",
+               let hidden = (call.arguments as? NSNumber)?.boolValue {
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                self.platformView.isHidden = hidden
+                self.platformView.accessibilityElementsHidden = hidden
+                CATransaction.commit()
+                result(nil)
+            } else {
+                result(FlutterMethodNotImplemented)
+            }
+        }
     }
 
     deinit {
+        channel.setMethodCallHandler(nil)
         if let appearanceObserver {
             NotificationCenter.default.removeObserver(appearanceObserver)
         }
@@ -484,6 +520,7 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
     private var ids: [String] = []
     private var layoutName = ""
     private var needsReveal = true
+    private var isViewHidden = false
     private var restoredOffset = false
     private var initialOffset: CGFloat = 0
     private var pageProgress: CGFloat?
@@ -550,6 +587,10 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
                 self.pageProgress = CGFloat(progress.doubleValue)
                 self.updateProgress()
                 result(nil)
+            } else if call.method == "setHidden",
+                      let hidden = (call.arguments as? NSNumber)?.boolValue {
+                self.setViewHidden(hidden)
+                result(nil)
             } else {
                 result(FlutterMethodNotImplemented)
             }
@@ -566,7 +607,19 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
 
     func view() -> UIView { root }
 
+    private func setViewHidden(_ hidden: Bool) {
+        isViewHidden = hidden
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        root.isHidden = hidden
+        root.accessibilityElementsHidden = hidden
+        CATransaction.commit()
+    }
+
     private func apply(_ arguments: [String: Any]) {
+        if let hidden = (arguments["hidden"] as? NSNumber)?.boolValue {
+            setViewHidden(hidden)
+        }
         let nextTitles = arguments["titles"] as? [String] ?? titles
         let nextIds = arguments["ids"] as? [String] ?? ids
         let rebuild = nextTitles != titles || nextIds != ids

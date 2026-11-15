@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
-import 'package:eros_fe/widget/appkit_interaction.dart';
 import 'package:eros_fe/widget/desktop_pointer_effects.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
@@ -264,22 +263,9 @@ class _SegmentedRailState extends State<SegmentedRail> {
     final wantsNative =
         GlassMode.of(context).forComponent(flutterImplemented: true) ==
             GlassMode.native;
-    if (!wantsNative || !PlatformCapabilities.uiKitGlass) {
-      return wantsNative
-          ? _nativeTrack(context, layout, trackHeight)
-          : _fallbackTrack(context, layout, trackHeight);
-    }
-    return ValueListenableBuilder<int>(
-      valueListenable: AppKitInteraction.modalRevision,
-      builder: (context, _, _) {
-        final covered = AppKitInteraction.isCoveredByModal(context);
-        if (covered) {
-          _pendingOffset ??= _nativeOffset;
-          return _fallbackTrack(context, layout, trackHeight);
-        }
-        return _nativeTrack(context, layout, trackHeight);
-      },
-    );
+    return wantsNative
+        ? _nativeTrack(context, layout, trackHeight)
+        : _fallbackTrack(context, layout, trackHeight);
   }
 
   Widget _nativeTrack(
@@ -301,6 +287,12 @@ class _SegmentedRailState extends State<SegmentedRail> {
       pageController: widget.pageController,
       segmentWidths: layout.widths,
       height: trackHeight,
+      modalFallbackBuilder: (context) {
+        if (!_scroll.hasClients) {
+          _pendingOffset ??= _nativeOffset;
+        }
+        return _fallbackTrack(context, layout, trackHeight);
+      },
     );
   }
 

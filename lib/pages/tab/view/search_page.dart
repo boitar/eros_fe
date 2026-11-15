@@ -6,16 +6,18 @@ import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
+import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
-import 'package:eros_fe/index.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
+import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/filter/filter.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/view/gallery_base.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/pages/tab/view/search_more_sheet.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/desktop_pointer_effects.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/tag_suggestions.dart';
@@ -314,6 +316,10 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     );
   }
 
+  bool get _followSystemTransparency =>
+      !Get.isRegistered<EhSettingService>() ||
+      Get.find<EhSettingService>().liquidGlassMaterial;
+
   Widget _buildFloatingTopBar(
     BuildContext context, {
     required bool keyboardVisible,
@@ -321,6 +327,8 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final backLabel = CupertinoLocalizations.of(context).backButtonLabel;
     final palette = ehTheme.palette;
+    final glassOff = GlassMode.of(context) == GlassMode.off;
+    final followSystemTransparency = _followSystemTransparency;
     return Padding(
       key: const ValueKey('search.floatingTopBar'),
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
@@ -328,14 +336,47 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         height: 44,
         child: NavigationToolbar(
           leading: canPop
-              ? EhButton(
-                  key: const ValueKey('search.splitBack'),
-                  icon: CupertinoIcons.chevron_back,
-                  style: EhButtonStyle.glass,
-                  size: 44,
-                  semanticLabel: backLabel,
-                  onPressed: () => Navigator.of(context).maybePop(),
-                )
+              ? (glassOff
+                  ? EhButton(
+                      key: const ValueKey('search.splitBack'),
+                      icon: CupertinoIcons.chevron_back,
+                      style: EhButtonStyle.glass,
+                      size: 44,
+                      semanticLabel: backLabel,
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    )
+                  : SizedBox.square(
+                      key: const ValueKey('search.splitBack'),
+                      dimension: 44,
+                      child: LiquidGlassSurface(
+                        enabled: true,
+                        borderRadius: BorderRadius.circular(22),
+                        style: LiquidGlassStyle.regular,
+                        interactive: false,
+                        followSystemTransparency: followSystemTransparency,
+                        child: Semantics(
+                          button: true,
+                          label: backLabel,
+                          child: NavigationHover(
+                            borderRadius: BorderRadius.circular(22),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                liquidGlassFeedback(vibrateUtil.light);
+                                Navigator.of(context).maybePop();
+                              },
+                              child: Center(
+                                child: Icon(
+                                  CupertinoIcons.chevron_back,
+                                  size: 22,
+                                  color: palette.text1.resolveFrom(context),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ))
               : null,
           middle: Text(
             controller.placeholderText,
@@ -883,8 +924,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         maxHeight: 44,
       ),
       child: LiquidGlassSurface(
-        enabled: true,
-        useNativeGlass: false,
+        enabled: !glassOff,
+        style: LiquidGlassStyle.regular,
+        followSystemTransparency: _followSystemTransparency,
         emphasizeFallbackEdge: true,
         borderRadius: BorderRadius.circular(22),
         child: Container(

@@ -1,6 +1,7 @@
 import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/native_sheet.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/quicksearch_controller.dart';
 import 'package:eros_fe/common/controller/tag_controller.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
@@ -13,6 +14,8 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/view/search_page.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/eh_sheet.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
@@ -41,6 +44,19 @@ class _Layout extends LayoutServices {
 }
 
 class _Settings extends EhSettingService {
+  _Settings({this.glassEnabled = false});
+
+  final bool glassEnabled;
+
+  @override
+  bool get liquidGlass => glassEnabled;
+
+  @override
+  bool get liquidGlassMaterial => true;
+
+  @override
+  GlassMaterial get glassMaterial => GlassMaterial.liquid;
+
   @override
   void onInit() {}
 }
@@ -243,5 +259,111 @@ void main() {
     await tester.tap(find.byKey(const Key('search.moreOption.addQuickSearch')));
     await tester.pumpAndSettle();
     expect(find.byType(EhSheetHeader), findsOneWidget);
+  });
+
+  testWidgets(
+      'Duo split top buttons render native Liquid Glass on iOS and fall back when glass is off',
+      (tester) async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
+
+    Future<void> pumpSplitSearch({required bool glassEnabled}) async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await Get.delete<EhSettingService>(force: true);
+      Get.put<EhSettingService>(_Settings(glassEnabled: glassEnabled));
+      if (!Get.isRegistered<SearchPageController>(tag: 'split-search')) {
+        Get.put<SearchPageController>(_Search(), tag: 'split-search');
+      }
+      const size = Size(600, 800);
+      const duoViewPadding = EdgeInsets.only(left: 80, top: 20, right: 16, bottom: 20);
+      await tester.pumpWidget(
+        GetCupertinoApp(
+          key: UniqueKey(),
+          navigatorKey: GlobalKey<NavigatorState>(),
+          locale: const Locale('zh', 'CN'),
+          supportedLocales: L10n.delegate.supportedLocales,
+          localizationsDelegates: const [
+            L10n.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          home: GlassPreference(
+            enabled: glassEnabled,
+            child: Builder(
+              builder: (context) => CupertinoPageScaffold(
+                child: Center(
+                  child: CupertinoButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute<void>(
+                          builder: (_) => GlassPreference(
+                            enabled: glassEnabled,
+                            child: MediaQuery(
+                              data: const MediaQueryData(
+                                size: size,
+                                padding: duoViewPadding,
+                                viewPadding: duoViewPadding,
+                              ),
+                              child: NativeNavigationScope(
+                                child: const ControllerTagScope(
+                                  snapshot: ControllerTagSnapshot(
+                                    searchTag: 'split-search',
+                                  ),
+                                  child: BrowsePaneScope(
+                                    split: true,
+                                    child: GallerySearchPage(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('push glass search'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('push glass search'));
+      await tester.pumpAndSettle();
+    }
+
+    await pumpSplitSearch(glassEnabled: true);
+    final backFinder = find.byKey(const ValueKey('search.splitBack'));
+    final capsuleFinder = find.byKey(const ValueKey('search.trailingCapsule'));
+    expect(
+      find.descendant(
+        of: backFinder,
+        matching: find.byWidgetPredicate(
+          (w) => w is UiKitView && w.viewType == LiquidGlassPlatform.viewType,
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: capsuleFinder,
+        matching: find.byWidgetPredicate(
+          (w) => w is UiKitView && w.viewType == LiquidGlassPlatform.viewType,
+        ),
+      ),
+      findsOneWidget,
+    );
+
+    await pumpSplitSearch(glassEnabled: false);
+    expect(tester.widget<EhButton>(backFinder).style, EhButtonStyle.glass);
+    expect(
+      find.descendant(of: backFinder, matching: find.byType(UiKitView)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: capsuleFinder, matching: find.byType(UiKitView)),
+      findsNothing,
+    );
   });
 }

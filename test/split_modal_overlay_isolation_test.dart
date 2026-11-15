@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -7,6 +9,7 @@ import 'package:eros_fe/widget/appkit_interaction.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -44,8 +47,55 @@ void main() {
   });
 
   testWidgets(
-      'root modal suppresses underlying UiKitView category rail and glass buttons in nested split panes',
+      'root modal hides underlying UiKitViews synchronously without destroying them and waits for setHidden(false) before removing fallback underlay',
       (tester) async {
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final categoryHiddenCalls = <bool>[];
+    final glassHiddenCalls = <bool>[];
+    final createdChannels = <String>[];
+    final unhideCompleters = <Completer<void>>[];
+    var holdUnhide = false;
+
+    messenger.setMockMethodCallHandler(SystemChannels.platform_views, (
+      call,
+    ) async {
+      if (call.method == 'create') {
+        final args = call.arguments as Map<dynamic, dynamic>;
+        final id = args['id'] as int;
+        final viewType = args['viewType'] as String;
+        final channelName = viewType == 'eros/liquid-glass-categories'
+            ? 'eros/liquid-glass-categories/$id'
+            : 'eros/liquid-glass/$id';
+        createdChannels.add(channelName);
+        messenger.setMockMethodCallHandler(MethodChannel(channelName), (
+          viewCall,
+        ) async {
+          if (viewCall.method == 'setHidden') {
+            final hidden = viewCall.arguments as bool;
+            if (viewType == 'eros/liquid-glass-categories') {
+              categoryHiddenCalls.add(hidden);
+            } else {
+              glassHiddenCalls.add(hidden);
+            }
+            if (!hidden && holdUnhide) {
+              final completer = Completer<void>();
+              unhideCompleters.add(completer);
+              await completer.future;
+            }
+          }
+          return null;
+        });
+      }
+      return null;
+    });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform_views, null);
+      for (final channelName in createdChannels) {
+        messenger.setMockMethodCallHandler(MethodChannel(channelName), null);
+      }
+    });
+
     final rootModals = AppKitModalObserver(root: true);
     final primaryModals = AppKitModalObserver();
     addTearDown(() {
@@ -131,30 +181,90 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Baseline: category rail & menu glass use UiKitViews on iOS.
-    expect(find.byType(UiKitView), findsWidgets);
-    expect(find.byType(NativeCategoryRail), findsOneWidget);
+    // Baseline: category rail & menu glass keep live UiKitViews on iOS.
+    final categoryViewFinder = find.byWidgetPredicate(
+      (w) => w is UiKitView && w.viewType == 'eros/liquid-glass-categories',
+    );
+    final glassViewFinder = find.byWidgetPredicate(
+      (w) => w is UiKitView && w.viewType == LiquidGlassPlatform.viewType,
+    );
+    expect(categoryViewFinder, findsOneWidget);
+    expect(glassViewFinder, findsOneWidget);
+    final baselineCategoryElement = tester.element(categoryViewFinder);
+    final baselineGlassElement = tester.element(glassViewFinder);
+    expect(
+      find.byKey(const ValueKey<String>('native-category-rail-modal-underlay')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('liquid-glass-modal-underlay')),
+      findsNothing,
+    );
 
-    // Open root dialog from detail pane -> background category rail & buttons
-    // yield to Flutter composition so nothing pierces above the modal scrim.
+    // Open root dialog from detail pane -> native views stay mounted in-place,
+    // hide via setHidden(true), and Flutter underlays appear below the scrim.
     await tester.tap(find.text('open fav'));
     await tester.pumpAndSettle();
 
     expect(find.text('添加收藏夹'), findsOneWidget);
     expect(find.text('topmost'), findsOneWidget);
-    expect(find.byType(NativeCategoryRail), findsNothing);
+    expect(categoryHiddenCalls, <bool>[true]);
+    expect(glassHiddenCalls, <bool>[true]);
     expect(
-      tester
-          .widgetList<UiKitView>(find.byType(UiKitView))
-          .where((v) =>
-              v.viewType == 'eros/liquid-glass-categories' ||
-              v.viewType == LiquidGlassPlatform.viewType),
-      isEmpty,
+      find.byKey(const ValueKey<String>('native-category-rail-modal-underlay')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('liquid-glass-modal-underlay')),
+      findsOneWidget,
+    );
+    expect(
+      identical(tester.element(categoryViewFinder), baselineCategoryElement),
+      isTrue,
+    );
+    expect(
+      identical(tester.element(glassViewFinder), baselineGlassElement),
+      isTrue,
     );
 
-    // Dismissing restores native category rail and glass buttons.
+    // Dismissing calls setHidden(false) without recreating UiKitViews and holds
+    // the underlays until Swift acknowledges unhide.
+    holdUnhide = true;
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
-    expect(find.byType(NativeCategoryRail), findsOneWidget);
+
+    expect(categoryHiddenCalls, <bool>[true, false]);
+    expect(glassHiddenCalls, <bool>[true, false]);
+    expect(unhideCompleters, hasLength(2));
+    expect(
+      find.byKey(const ValueKey<String>('native-category-rail-modal-underlay')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('liquid-glass-modal-underlay')),
+      findsOneWidget,
+    );
+
+    for (final completer in unhideCompleters) {
+      completer.complete();
+    }
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('native-category-rail-modal-underlay')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('liquid-glass-modal-underlay')),
+      findsNothing,
+    );
+    expect(
+      identical(tester.element(categoryViewFinder), baselineCategoryElement),
+      isTrue,
+    );
+    expect(
+      identical(tester.element(glassViewFinder), baselineGlassElement),
+      isTrue,
+    );
   });
 }
