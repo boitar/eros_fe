@@ -47,15 +47,27 @@ void main() {
   });
 
   testWidgets(
-      'root modal hides underlying UiKitViews synchronously without destroying them and waits for setHidden(false) before removing fallback underlay',
+      'root modal unmounts UiKitViews cleanly, preserves cacheId across restore, waits for update before removing underlay, and releases cache on dispose',
       (tester) async {
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    final categoryHiddenCalls = <bool>[];
-    final glassHiddenCalls = <bool>[];
+    final categoryCacheIds = <Object?>[];
+    final glassCacheIds = <Object?>[];
+    final released = <String>[];
     final createdChannels = <String>[];
-    final unhideCompleters = <Completer<void>>[];
-    var holdUnhide = false;
+    final updateCompleters = <Completer<void>>[];
+    var holdCategoryUpdate = false;
+
+    messenger.setMockMethodCallHandler(
+      const MethodChannel('eros/liquid-glass-cache'),
+      (call) async {
+        if (call.method == 'release' && call.arguments is Map) {
+          final args = call.arguments as Map<dynamic, dynamic>;
+          released.add('${args['kind']}:${args['cacheId']}');
+        }
+        return null;
+      },
+    );
 
     messenger.setMockMethodCallHandler(SystemChannels.platform_views, (
       call,
@@ -64,6 +76,14 @@ void main() {
         final args = call.arguments as Map<dynamic, dynamic>;
         final id = args['id'] as int;
         final viewType = args['viewType'] as String;
+        final params = const StandardMessageCodec().decodeMessage(
+          ByteData.sublistView(args['params'] as Uint8List),
+        ) as Map<dynamic, dynamic>;
+        if (viewType == 'eros/liquid-glass-categories') {
+          categoryCacheIds.add(params['cacheId']);
+        } else {
+          glassCacheIds.add(params['cacheId']);
+        }
         final channelName = viewType == 'eros/liquid-glass-categories'
             ? 'eros/liquid-glass-categories/$id'
             : 'eros/liquid-glass/$id';
@@ -71,18 +91,10 @@ void main() {
         messenger.setMockMethodCallHandler(MethodChannel(channelName), (
           viewCall,
         ) async {
-          if (viewCall.method == 'setHidden') {
-            final hidden = viewCall.arguments as bool;
-            if (viewType == 'eros/liquid-glass-categories') {
-              categoryHiddenCalls.add(hidden);
-            } else {
-              glassHiddenCalls.add(hidden);
-            }
-            if (!hidden && holdUnhide) {
-              final completer = Completer<void>();
-              unhideCompleters.add(completer);
-              await completer.future;
-            }
+          if (viewCall.method == 'update' && holdCategoryUpdate) {
+            final completer = Completer<void>();
+            updateCompleters.add(completer);
+            await completer.future;
           }
           return null;
         });
@@ -90,6 +102,10 @@ void main() {
       return null;
     });
     addTearDown(() {
+      messenger.setMockMethodCallHandler(
+        const MethodChannel('eros/liquid-glass-cache'),
+        null,
+      );
       messenger.setMockMethodCallHandler(SystemChannels.platform_views, null);
       for (final channelName in createdChannels) {
         messenger.setMockMethodCallHandler(MethodChannel(channelName), null);
@@ -190,8 +206,12 @@ void main() {
     );
     expect(categoryViewFinder, findsOneWidget);
     expect(glassViewFinder, findsOneWidget);
-    final baselineCategoryElement = tester.element(categoryViewFinder);
-    final baselineGlassElement = tester.element(glassViewFinder);
+    expect(categoryCacheIds, hasLength(1));
+    expect(glassCacheIds, hasLength(1));
+    final initialCategoryCacheId = categoryCacheIds.single;
+    final initialGlassCacheId = glassCacheIds.single;
+    expect(initialCategoryCacheId, isA<int>());
+    expect(initialGlassCacheId, isA<int>());
     expect(
       find.byKey(const ValueKey<String>('native-category-rail-modal-underlay')),
       findsNothing,
@@ -201,15 +221,16 @@ void main() {
       findsNothing,
     );
 
-    // Open root dialog from detail pane -> native views stay mounted in-place,
-    // hide via setHidden(true), and Flutter underlays appear below the scrim.
+    // Open root dialog from detail pane -> native UiKitViews leave the
+    // LayerTree so overlapping BackdropFilter popups never slice, while
+    // Flutter underlays remain visible.
     await tester.tap(find.text('open fav'));
     await tester.pumpAndSettle();
 
     expect(find.text('添加收藏夹'), findsOneWidget);
     expect(find.text('topmost'), findsOneWidget);
-    expect(categoryHiddenCalls, <bool>[true]);
-    expect(glassHiddenCalls, <bool>[true]);
+    expect(categoryViewFinder, findsNothing);
+    expect(glassViewFinder, findsNothing);
     expect(
       find.byKey(const ValueKey<String>('native-category-rail-modal-underlay')),
       findsOneWidget,
@@ -218,34 +239,31 @@ void main() {
       find.byKey(const ValueKey<String>('liquid-glass-modal-underlay')),
       findsOneWidget,
     );
-    expect(
-      identical(tester.element(categoryViewFinder), baselineCategoryElement),
-      isTrue,
-    );
-    expect(
-      identical(tester.element(glassViewFinder), baselineGlassElement),
-      isTrue,
-    );
 
-    // Dismissing calls setHidden(false) without recreating UiKitViews and holds
-    // the underlays until Swift acknowledges unhide.
-    holdUnhide = true;
+    // Dismissing remounts UiKitViews with the same cacheId and keeps the
+    // category underlay mounted until update + post-frame commit finish.
+    holdCategoryUpdate = true;
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
 
-    expect(categoryHiddenCalls, <bool>[true, false]);
-    expect(glassHiddenCalls, <bool>[true, false]);
-    expect(unhideCompleters, hasLength(2));
+    expect(categoryViewFinder, findsOneWidget);
+    expect(glassViewFinder, findsOneWidget);
+    expect(
+      categoryCacheIds,
+      <Object?>[initialCategoryCacheId, initialCategoryCacheId],
+    );
+    expect(glassCacheIds, <Object?>[initialGlassCacheId, initialGlassCacheId]);
+    expect(updateCompleters, hasLength(1));
     expect(
       find.byKey(const ValueKey<String>('native-category-rail-modal-underlay')),
       findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey<String>('liquid-glass-modal-underlay')),
-      findsOneWidget,
+      findsNothing,
     );
 
-    for (final completer in unhideCompleters) {
+    for (final completer in updateCompleters) {
       completer.complete();
     }
     await tester.pumpAndSettle();
@@ -258,13 +276,14 @@ void main() {
       find.byKey(const ValueKey<String>('liquid-glass-modal-underlay')),
       findsNothing,
     );
+
+    await tester.pumpWidget(const SizedBox.shrink());
     expect(
-      identical(tester.element(categoryViewFinder), baselineCategoryElement),
-      isTrue,
-    );
-    expect(
-      identical(tester.element(glassViewFinder), baselineGlassElement),
-      isTrue,
+      released,
+      containsAll(<String>[
+        'category:$initialCategoryCacheId',
+        'glass:$initialGlassCacheId',
+      ]),
     );
   });
 }

@@ -190,9 +190,11 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final hasVerticalBar =
+        AdaptiveEnvironment.maybeOf(context)?.hasVerticalBar ?? false;
     final native =
         NativeNavigationScope.isEnabled(context) &&
-        !BrowsePaneScope.isSplit(context);
+        (!BrowsePaneScope.isSplit(context) || hasVerticalBar);
 
     return KeyboardVisibilityBuilder(
       builder: (context, keyboardVisible) {

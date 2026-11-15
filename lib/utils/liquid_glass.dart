@@ -10,6 +10,7 @@ import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart' as glass;
 
@@ -351,6 +352,7 @@ class LiquidGlassSurface extends StatelessWidget {
         } else if (enabled) {
           background = _buildLiquidGlassFallback(
             context,
+            borderRadius: borderRadius,
             style: style,
             emphasizeFallbackEdge: emphasizeFallbackEdge,
             reduceTransparency: reduceTransparency,
@@ -390,6 +392,7 @@ class LiquidGlassSurface extends StatelessWidget {
 
 Widget _buildLiquidGlassFallback(
   BuildContext context, {
+  BorderRadius? borderRadius,
   required LiquidGlassStyle style,
   required bool emphasizeFallbackEdge,
   required bool reduceTransparency,
@@ -424,6 +427,7 @@ Widget _buildLiquidGlassFallback(
       DecoratedBox(
         decoration: BoxDecoration(
           color: fallbackBackground.withValues(alpha: fillAlpha),
+          borderRadius: borderRadius,
           border: Border.all(
             color: separator.withValues(alpha: borderAlpha),
             width: emphasizeFallbackEdge ? 0.8 : 1.0,
@@ -445,6 +449,7 @@ Widget _buildLiquidGlassFallback(
         IgnorePointer(
           child: DecoratedBox(
             decoration: BoxDecoration(
+              borderRadius: borderRadius,
               border: Border.all(
                 color: highlight.withValues(
                   alpha: isDark ? 0.16 : 0.52,
@@ -467,10 +472,10 @@ Widget _buildLiquidGlassFallback(
         );
 }
 
-/// Keeps the underlying `UiKitView` permanently mounted so modal dismissal never
-/// destroys and cold-starts `UIGlassEffect` again. Instead, the native container
-/// hides synchronously via `'setHidden'` while the Flutter glass underlay holds
-/// the visual appearance until UIKit commits its unhide.
+/// Unmounts the `UiKitView` while covered by a modal so Flutter's iOS
+/// `PlatformViewLayer` compositor never slices overlapping `BackdropFilter`
+/// dialogs, while reusing the cached native `UIView` instance and holding a
+/// Flutter glass underlay until the restored frame commits cleanly.
 class _NativeLiquidGlassBackground extends StatefulWidget {
   const _NativeLiquidGlassBackground({
     required this.cornerRadius,
@@ -495,7 +500,11 @@ class _NativeLiquidGlassBackground extends StatefulWidget {
 
 class _NativeLiquidGlassBackgroundState
     extends State<_NativeLiquidGlassBackground> {
-  MethodChannel? _channel;
+  static const MethodChannel _cacheChannel =
+      MethodChannel('eros/liquid-glass-cache');
+  static int _nextCacheId = 1;
+
+  late final int _cacheId = _nextCacheId++;
   bool _covered = false;
   bool _showUnderlay = false;
   bool _initialized = false;
@@ -526,6 +535,14 @@ class _NativeLiquidGlassBackgroundState
   @override
   void dispose() {
     AppKitInteraction.modalRevision.removeListener(_onModalRevisionChanged);
+    unawaited(
+      _cacheChannel
+          .invokeMethod<void>('release', <String, Object>{
+            'kind': 'glass',
+            'cacheId': _cacheId,
+          })
+          .catchError((Object _) {}),
+    );
     super.dispose();
   }
 
@@ -540,64 +557,63 @@ class _NativeLiquidGlassBackgroundState
     if (covered == _covered) {
       return;
     }
-    _covered = covered;
     final seq = ++_syncSeq;
+    _covered = covered;
     if (covered) {
       LiquidGlassAccessibilitySettings.watch();
       setState(() {
         _showUnderlay = true;
       });
-      unawaited(_syncHidden(true, seq));
     } else {
-      unawaited(_syncHidden(false, seq));
+      // Mount the native view while keeping the Flutter underlay rendered
+      // until the restored platform view commits its first frame.
+      setState(() {});
+      // Also guard against rare cases where a parent was off-screen when
+      // uncovered: `_onPlatformViewCreated` will advance `seq` dismissal once
+      // created.
+      if (seq != _syncSeq) {
+        return;
+      }
     }
   }
 
   void _onPlatformViewCreated(int id) {
-    _channel = MethodChannel('eros/liquid-glass/$id');
-    if (_covered) {
-      unawaited(_syncHidden(true, _syncSeq));
-    } else if (_showUnderlay) {
-      unawaited(_syncHidden(false, _syncSeq));
-    }
-  }
-
-  Future<void> _syncHidden(bool hidden, int seq) async {
-    final channel = _channel;
-    if (channel != null) {
-      try {
-        await channel.invokeMethod<void>('setHidden', hidden);
-      } on MissingPluginException {
-        // Tests without a platform view messenger ignore plugin calls.
-      }
-    }
-    if (!mounted || seq != _syncSeq || hidden || _covered || !_showUnderlay) {
+    if (_covered || !_showUnderlay) {
       return;
     }
-    setState(() {
-      _showUnderlay = false;
+    final seq = _syncSeq;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || seq != _syncSeq || _covered || !_showUnderlay) {
+        return;
+      }
+      setState(() {
+        _showUnderlay = false;
+      });
     });
+    SchedulerBinding.instance.ensureVisualUpdate();
   }
 
   @override
   Widget build(BuildContext context) {
-    final nativeView = UiKitView(
-      key: ValueKey<String>(
-        '${widget.style.name}:${widget.followSystemTransparency}:${widget.interactive}:${widget.containerSpacing}',
-      ),
-      viewType: LiquidGlassPlatform.viewType,
-      creationParams: <String, dynamic>{
-        'cornerRadius': widget.cornerRadius,
-        'style': widget.style.name,
-        'interactive': widget.interactive,
-        'followSystemTransparency': widget.followSystemTransparency,
-        'containerSpacing': widget.containerSpacing,
-        'hidden': _covered,
-      },
-      creationParamsCodec: const StandardMessageCodec(),
-      hitTestBehavior: PlatformViewHitTestBehavior.transparent,
-      onPlatformViewCreated: _onPlatformViewCreated,
-    );
+    final Widget? nativeView = _covered
+        ? null
+        : UiKitView(
+            key: ValueKey<String>(
+              '${widget.style.name}:${widget.followSystemTransparency}:${widget.interactive}:${widget.containerSpacing}',
+            ),
+            viewType: LiquidGlassPlatform.viewType,
+            creationParams: <String, dynamic>{
+              'cornerRadius': widget.cornerRadius,
+              'style': widget.style.name,
+              'interactive': widget.interactive,
+              'followSystemTransparency': widget.followSystemTransparency,
+              'containerSpacing': widget.containerSpacing,
+              'cacheId': _cacheId,
+            },
+            creationParamsCodec: const StandardMessageCodec(),
+            hitTestBehavior: PlatformViewHitTestBehavior.transparent,
+            onPlatformViewCreated: _onPlatformViewCreated,
+          );
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
@@ -614,6 +630,7 @@ class _NativeLiquidGlassBackgroundState
               ) =>
                   _buildLiquidGlassFallback(
                 context,
+                borderRadius: BorderRadius.circular(widget.cornerRadius),
                 style: widget.style,
                 emphasizeFallbackEdge: widget.emphasizeFallbackEdge,
                 reduceTransparency: reduceTransparency ?? false,
@@ -622,7 +639,7 @@ class _NativeLiquidGlassBackgroundState
           )
         else
           const SizedBox.shrink(),
-        nativeView,
+        if (nativeView != null) nativeView,
       ],
     );
   }

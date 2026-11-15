@@ -3,6 +3,7 @@ import Flutter
 
 final class ErosLiquidGlassPlugin {
     private static var accessibilityPlugins: [ErosAccessibilitySettingsPlugin] = []
+    private static var cacheChannel: FlutterMethodChannel?
     static func register(with registrar: FlutterPluginRegistrar) {
         registrar.register(
             LiquidGlassViewFactory(messenger: registrar.messenger()),
@@ -20,6 +21,26 @@ final class ErosLiquidGlassPlugin {
         )
         registrar.register(LiquidGlassCategoryViewFactory(messenger: registrar.messenger()), withId: LiquidGlassCategoryViewFactory.viewType)
         registrar.register(LiquidGlassPopupViewFactory(messenger: registrar.messenger()), withId: LiquidGlassPopupViewFactory.viewType)
+        let cacheChannel = FlutterMethodChannel(
+            name: "eros/liquid-glass-cache",
+            binaryMessenger: registrar.messenger()
+        )
+        self.cacheChannel = cacheChannel
+        cacheChannel.setMethodCallHandler { call, result in
+            guard call.method == "release",
+                  let args = call.arguments as? [String: Any],
+                  let kind = args["kind"] as? String,
+                  let cacheId = (args["cacheId"] as? NSNumber)?.int64Value else {
+                result(nil)
+                return
+            }
+            if kind == "glass" {
+                LiquidGlassViewFactory.releaseCache(cacheId)
+            } else if kind == "category" {
+                LiquidGlassCategoryViewFactory.releaseCache(cacheId)
+            }
+            result(nil)
+        }
         accessibilityPlugins.append(ErosAccessibilitySettingsPlugin(messenger: registrar.messenger()))
     }
 }

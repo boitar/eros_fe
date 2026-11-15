@@ -366,4 +366,65 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets(
+      'iPhone Duo vertical-bar split moves Search filter & more actions to native toolbar and hides inline top bar',
+      (tester) async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
+    await Get.delete<EhSettingService>(force: true);
+    Get.put<EhSettingService>(_Settings(glassEnabled: true));
+    const size = Size(600, 800);
+    const duoViewPadding = EdgeInsets.only(left: 16, top: 20, right: 80, bottom: 20);
+    await tester.pumpWidget(
+      GetCupertinoApp(
+        navigatorKey: GlobalKey<NavigatorState>(),
+        locale: const Locale('zh', 'CN'),
+        supportedLocales: L10n.delegate.supportedLocales,
+        localizationsDelegates: const [
+          L10n.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        home: AdaptiveEnvironmentScope(
+          snapshot: const AdaptiveEnvironmentSnapshot(
+            size: size,
+            safeArea: duoViewPadding,
+            viewPadding: duoViewPadding,
+            systemBarEdge: 'right',
+          ),
+          child: MediaQuery(
+            data: const MediaQueryData(
+              size: size,
+              padding: duoViewPadding,
+              viewPadding: duoViewPadding,
+            ),
+            child: NativeNavigationScope(
+              child: const ControllerTagScope(
+                snapshot: ControllerTagSnapshot(searchTag: 'split-search'),
+                child: BrowsePaneScope(
+                  split: true,
+                  child: GallerySearchPage(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('search.splitBack')), findsNothing);
+    expect(find.byKey(const ValueKey('search.trailingCapsule')), findsNothing);
+    final navPage = tester.widget<NativeNavigationPage>(
+      find.byType(NativeNavigationPage),
+    );
+    expect(navPage.chrome.navigationBarVisible, isTrue);
+    expect(navPage.chrome.ownBar, isFalse);
+    expect(
+      navPage.chrome.actions.map((a) => a.id).toList(),
+      <String>['filter', 'search.more'],
+    );
+  });
 }
