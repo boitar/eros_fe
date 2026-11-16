@@ -168,10 +168,18 @@ class AdaptiveEnvironmentSnapshot {
           (rect.right - (size.width - insets.right)).clamp(0.0, rect.width),
           (rect.bottom - (size.height - insets.bottom)).clamp(0.0, rect.height),
         );
+    final localSafeArea = localInsets(safeArea);
+    final localSystemBarEdge = switch (systemBarEdge) {
+      'left' when localSafeArea.left > 0 => 'left',
+      'right' when localSafeArea.right > 0 => 'right',
+      'top' when localSafeArea.top > 0 => 'top',
+      'bottom' when localSafeArea.bottom > 0 => 'bottom',
+      _ => null,
+    };
     return AdaptiveEnvironmentSnapshot(
       size: rect.size,
       windowSize: unpartitionedSize,
-      safeArea: localInsets(safeArea),
+      safeArea: localSafeArea,
       viewPadding: localInsets(viewPadding),
       viewInsets: localInsets(viewInsets),
       windowSafeArea:
@@ -186,7 +194,10 @@ class AdaptiveEnvironmentSnapshot {
                 active: region.active,
               ))
           .toList(growable: false),
-      systemBarEdge: systemBarEdge,
+      // A pane that does not contain the host's unsafe edge must not inherit
+      // the system-bar placement. Otherwise a primary split pane can move its
+      // own navigation actions into the detail pane's vertical toolbar.
+      systemBarEdge: localSystemBarEdge,
       duoVerticalBar: duoVerticalBar,
       layoutVersion: layoutVersion,
       nativeSupported: nativeSupported,

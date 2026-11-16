@@ -92,6 +92,24 @@ void main() {
           const Rect.fromLTWH(316, 20, 20, 20));
     });
 
+    test('assigns a vertical system bar only to the pane that contains it', () {
+      const snapshot = AdaptiveEnvironmentSnapshot(
+        size: Size(1024, 720),
+        safeArea: EdgeInsets.only(right: 92),
+        systemBarEdge: 'right',
+        duoVerticalBar: true,
+      );
+
+      final primary = snapshot.inRect(const Rect.fromLTWH(0, 0, 466, 720));
+      final detail = snapshot.inRect(const Rect.fromLTWH(467, 0, 557, 720));
+
+      expect(primary.systemBarEdge, isNull);
+      expect(primary.hasDuoVerticalBar, isFalse);
+      expect(detail.systemBarEdge, 'right');
+      expect(detail.hasDuoVerticalBar, isTrue);
+      expect(detail.safeArea.right, 92);
+    });
+
     test('pane projections retain the current unpartitioned window size', () {
       const window = AdaptiveEnvironmentSnapshot(size: Size(820, 1180));
       final pane = window.inRect(const Rect.fromLTWH(0, 0, 400, 1180));

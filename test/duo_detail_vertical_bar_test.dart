@@ -28,6 +28,7 @@ void main() {
     const primaryKey = ValueKey<String>('primary-pane');
     late MediaQueryData detailMedia;
     late AdaptiveEnvironmentSnapshot detailEnv;
+    late AdaptiveEnvironmentSnapshot primaryEnv;
 
     await tester.pumpWidget(
       CupertinoApp(
@@ -36,9 +37,14 @@ void main() {
           split: true,
           sideProportion: 0.5,
           detailActive: true,
-          primary: const ColoredBox(
-            key: primaryKey,
-            color: CupertinoColors.systemGrey6,
+          primary: Builder(
+            builder: (context) {
+              primaryEnv = AdaptiveEnvironment.of(context);
+              return const ColoredBox(
+                key: primaryKey,
+                color: CupertinoColors.systemGrey6,
+              );
+            },
           ),
           detail: Builder(
             builder: (context) {
@@ -70,6 +76,10 @@ void main() {
     expect(primaryRect.left, 0);
     expect(primaryRect.right,
         closeTo(AdaptiveBrowseLayout.primaryPaneWidth(932, 0.5), 0.01));
+
+    // The right-side bar belongs only to the detail pane. The primary pane
+    // must not route its own actions into that toolbar.
+    expect(primaryEnv.hasDuoVerticalBar, isFalse);
 
     // Detail background extends seamlessly to window right edge (under vertical bar).
     expect(bgRect.left, closeTo(primaryRect.right + 1, 0.01));
