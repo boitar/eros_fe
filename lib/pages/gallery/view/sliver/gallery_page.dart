@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:eros_fe/adaptive/browse_layout.dart';
+import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
+import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -47,6 +49,12 @@ class GalleryPage extends StatefulWidget {
 
 class _GalleryPageState extends State<GalleryPage> {
   static const double _floatingHeaderHeight = 56;
+  static const Key _nativeHeroContentKey = ValueKey<String>(
+    'nativeGalleryDetail.contentStart',
+  );
+  static const Key _nativeSecondaryContentStartKey = ValueKey<String>(
+    'nativeGalleryDetail.secondaryContentStart',
+  );
 
   late final GalleryPageController _controller;
   late final String _tag;
@@ -164,7 +172,11 @@ class _GalleryPageState extends State<GalleryPage> {
 
   /// The backdrop runs under the bar, through the cover, and has faded to
   /// the canvas by the time the title starts.
-  Widget _backdrop(double topInset, ValueListenable<double> offset) {
+  Widget _backdrop(
+    double topInset,
+    ValueListenable<double> offset, {
+    double? contentGap,
+  }) {
     return GetBuilder<GalleryPageController>(
       tag: _tag,
       id: GetIds.PAGE_VIEW_HEADER,
@@ -181,7 +193,11 @@ class _GalleryPageState extends State<GalleryPage> {
               provider?.imgUrl ??
               '',
           category: provider?.category,
-          height: topInset + 8 + cover.height + 48,
+          height:
+              topInset +
+              (contentGap ?? GalleryHero.defaultTopPadding) +
+              cover.height +
+              48,
           scrollOffset: offset,
           coverWidth: cover.width,
         );
@@ -229,6 +245,7 @@ class _GalleryPageState extends State<GalleryPage> {
       _scrollOffset,
       _refreshable(
         CustomScrollView(
+          key: const ValueKey<String>('nativeGalleryDetail.primaryScroll'),
           cacheExtent: 1000,
           controller: GetPlatform.isDesktop
               ? _controller.scrollController
@@ -246,14 +263,27 @@ class _GalleryPageState extends State<GalleryPage> {
               // scroll insets. Consume the live top inset once, including after
               // the Duo bar moves from the side to the top.
               SliverToBoxAdapter(
-                child: SizedBox(height: MediaQuery.paddingOf(context).top),
+                child: SizedBox(height: MediaQuery.viewPaddingOf(context).top),
               )
             else
               GalleryNavigationBar(controller: _controller),
-            EhCupertinoSliverRefreshControl(
-              onRefresh: _controller.handOnRefresh,
+            if (native)
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  key: _nativeSecondaryContentStartKey,
+                  height: NativeTopTabHeader.contentGapFor(context),
+                ),
+              ),
+            GallerySliverSafeArea(
+              child: EhCupertinoSliverRefreshControl(
+                onRefresh: _controller.handOnRefresh,
+              ),
             ),
-            GalleryHeadTile(controller: _controller),
+            GalleryHeadTile(
+              controller: _controller,
+              heroKey: native ? _nativeHeroContentKey : null,
+              heroTopPadding: native ? 0 : null,
+            ),
             GalleryBody(controller: _controller),
             if (dock)
               SliverToBoxAdapter(
@@ -265,13 +295,19 @@ class _GalleryPageState extends State<GalleryPage> {
         ),
       ),
     );
-    return Stack(
+    final content = Stack(
       children: [
         Positioned(
           top: 0,
           left: 0,
           right: 0,
-          child: _backdrop(topInset, _scrollOffset),
+          child: _backdrop(
+            topInset,
+            _scrollOffset,
+            contentGap: native
+                ? NativeTopTabHeader.contentGapFor(context)
+                : null,
+          ),
         ),
         Positioned.fill(child: body),
         if (_floatingGlass(context))
@@ -340,6 +376,13 @@ class _GalleryPageState extends State<GalleryPage> {
         ],
       ],
     );
+    return NativeSingleBarEdge(
+      surfaceColor: CupertinoDynamicColor.resolve(
+        ehTheme.palette.canvas,
+        context,
+      ),
+      child: content,
+    );
   }
 
   /// The header sits in a fixed column with its own backdrop; tags,
@@ -356,7 +399,12 @@ class _GalleryPageState extends State<GalleryPage> {
         return _controller.obx(
           (state) => state == null
               ? const SizedBox.shrink()
-              : GalleryHero(initGalleryProvider: state, tabTag: tabTag),
+              : GalleryHero(
+                  key: _nativeHeroContentKey,
+                  initGalleryProvider: state,
+                  tabTag: tabTag,
+                  topPadding: 0,
+                ),
           onLoading: const SizedBox.shrink(),
           onError: (_) => const SizedBox.shrink(),
         );
@@ -364,7 +412,12 @@ class _GalleryPageState extends State<GalleryPage> {
       final provider = pageState.galleryProvider;
       return provider == null
           ? const SizedBox.shrink()
-          : GalleryHero(initGalleryProvider: provider, tabTag: tabTag);
+          : GalleryHero(
+              key: _nativeHeroContentKey,
+              initGalleryProvider: provider,
+              tabTag: tabTag,
+              topPadding: 0,
+            );
     }
 
     final side = Stack(
@@ -373,16 +426,21 @@ class _GalleryPageState extends State<GalleryPage> {
           top: 0,
           left: 0,
           right: 0,
-          child: _backdrop(topInset, _sideOffset),
+          child: _backdrop(
+            topInset,
+            _sideOffset,
+            contentGap: NativeTopTabHeader.contentGapFor(context),
+          ),
         ),
         Positioned.fill(
           child: _trackScroll(
             _sideOffset,
             SingleChildScrollView(
+              key: const ValueKey<String>('nativeGalleryDetail.heroScroll'),
               // The content column owns the primary scroll controller.
               primary: false,
               padding: EdgeInsets.only(
-                top: topInset,
+                top: topInset + NativeTopTabHeader.contentGapFor(context),
                 bottom: MediaQuery.paddingOf(context).bottom + 16,
               ),
               child: hero(),
@@ -394,11 +452,22 @@ class _GalleryPageState extends State<GalleryPage> {
 
     final content = _refreshable(
       CustomScrollView(
+        key: const ValueKey<String>('nativeGalleryDetail.primaryScroll'),
         cacheExtent: 1000,
         controller: GetPlatform.isDesktop ? _controller.scrollController : null,
         slivers: [
           SliverToBoxAdapter(child: SizedBox(height: topInset)),
-          EhCupertinoSliverRefreshControl(onRefresh: _controller.handOnRefresh),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              key: _nativeSecondaryContentStartKey,
+              height: NativeTopTabHeader.contentGapFor(context),
+            ),
+          ),
+          GallerySliverSafeArea(
+            child: EhCupertinoSliverRefreshControl(
+              onRefresh: _controller.handOnRefresh,
+            ),
+          ),
           GalleryBody(controller: _controller),
         ],
       ),
@@ -407,7 +476,16 @@ class _GalleryPageState extends State<GalleryPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(width: columns.leading, child: side),
+        SizedBox(
+          width: columns.leading,
+          child: NativeSingleBarEdge(
+            surfaceColor: CupertinoDynamicColor.resolve(
+              ehTheme.palette.canvas,
+              context,
+            ),
+            child: side,
+          ),
+        ),
         if (columns.gap > 0)
           SizedBox(width: columns.gap)
         else
@@ -415,7 +493,15 @@ class _GalleryPageState extends State<GalleryPage> {
             width: 0.5,
             color: CupertinoDynamicColor.resolve(EhPalette.separator, context),
           ),
-        Expanded(child: content),
+        Expanded(
+          child: NativeSingleBarEdge(
+            surfaceColor: CupertinoDynamicColor.resolve(
+              ehTheme.palette.canvas,
+              context,
+            ),
+            child: content,
+          ),
+        ),
       ],
     );
   }
@@ -424,7 +510,9 @@ class _GalleryPageState extends State<GalleryPage> {
   Widget build(BuildContext context) {
     final native = NativeNavigationScope.isEnabled(context);
     final topInset =
-        MediaQuery.paddingOf(context).top +
+        (native
+            ? MediaQuery.viewPaddingOf(context).top
+            : MediaQuery.paddingOf(context).top) +
         (native
             ? 0
             : _floatingGlass(context)
@@ -697,9 +785,16 @@ class GalleryNavigationBar extends StatelessWidget {
 }
 
 class GalleryHeadTile extends StatelessWidget {
-  const GalleryHeadTile({Key? key, required this.controller}) : super(key: key);
+  const GalleryHeadTile({
+    Key? key,
+    required this.controller,
+    this.heroKey,
+    this.heroTopPadding,
+  }) : super(key: key);
 
   final GalleryPageController controller;
+  final Key? heroKey;
+  final double? heroTopPadding;
 
   GalleryPageState get pageState => controller.gState;
 
@@ -712,8 +807,12 @@ class GalleryHeadTile extends StatelessWidget {
         if (pageState.fromUrl)
           GallerySliverSafeArea(
             child: GalleryObxSliver(
-              (state) =>
-                  GalleryHeroSliver(initGalleryProvider: state, tabTag: tabTag),
+              (state) => GalleryHeroSliver(
+                initGalleryProvider: state,
+                tabTag: tabTag,
+                heroKey: heroKey,
+                topPadding: heroTopPadding ?? 8,
+              ),
               pageController: controller,
             ),
           )
@@ -722,6 +821,8 @@ class GalleryHeadTile extends StatelessWidget {
             child: GalleryHeroSliver(
               initGalleryProvider: provider,
               tabTag: tabTag,
+              heroKey: heroKey,
+              topPadding: heroTopPadding ?? 8,
             ),
           ),
       ],
@@ -1027,8 +1128,10 @@ class GalleryFloatingNavigation extends StatelessWidget {
       child: child,
     );
     // Glass chrome stays monochrome over the cover; the accent is for content.
-    final iconColor =
-        CupertinoDynamicColor.resolve(ehTheme.palette.text1, context);
+    final iconColor = CupertinoDynamicColor.resolve(
+      ehTheme.palette.text1,
+      context,
+    );
     Widget button(IconData icon, String label, VoidCallback? action) =>
         CupertinoButton(
           padding: EdgeInsets.zero,

@@ -175,9 +175,11 @@ class GalleryItemController extends GetxController {
         return;
       }
       setFavTitleAndFavcat(favTitle: value.favTitle, favcat: value.favId);
+      await vibrateUtil.success();
       showToast('successfully add');
     } catch (e) {
       showToast(favoriteMutationMessage(e));
+      await vibrateUtil.error();
     }
   }
 
@@ -191,9 +193,11 @@ class GalleryItemController extends GetxController {
           galleryProvider.gid!, galleryProvider.token!);
     } catch (e) {
       showToast(favoriteMutationMessage(e));
+      await vibrateUtil.error();
       return false;
     }
     setFavTitleAndFavcat(favTitle: '', favcat: '');
+    await vibrateUtil.success();
     showToast('successfully deleted');
     return true;
   }
@@ -210,10 +214,12 @@ class GalleryItemController extends GetxController {
       if (value != null) {
         setFavTitleAndFavcat(favTitle: '', favcat: '');
         setFavTitleAndFavcat(favTitle: value.favTitle, favcat: value.favId);
+        await vibrateUtil.success();
         showToast('successfully changed');
       }
     } catch (e) {
       showToast(favoriteMutationMessage(e));
+      await vibrateUtil.error();
     }
   }
 

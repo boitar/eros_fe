@@ -252,6 +252,16 @@ private final class LiquidGlassPopupPlatformView: NSObject, FlutterPlatformView 
 final class LiquidGlassViewFactory: NSObject,
     FlutterPlatformViewFactory {
     static let viewType = "eros/liquid-glass"
+    private let messenger: FlutterBinaryMessenger
+
+    static func releaseCache(_ cacheId: Int64) {
+        LiquidGlassPlatformView.releaseCache(cacheId)
+    }
+
+    init(messenger: FlutterBinaryMessenger) {
+        self.messenger = messenger
+        super.init()
+    }
 
     func create(
         withFrame frame: CGRect,
@@ -261,7 +271,8 @@ final class LiquidGlassViewFactory: NSObject,
         LiquidGlassPlatformView(
             frame: frame,
             viewIdentifier: viewId,
-            arguments: args
+            arguments: args,
+            messenger: messenger
         )
     }
 
@@ -270,22 +281,21 @@ final class LiquidGlassViewFactory: NSObject,
     }
 }
 
-private final class LiquidGlassPlatformView: NSObject, FlutterPlatformView {
+private final class CachedGlassContent {
+    let signature: String
+    let contentView: UIView
     private var appearanceObserver: NSObjectProtocol?
-    private let platformView: UIView
 
-    init(frame: CGRect, viewIdentifier: Int64, arguments: Any?) {
-        let arguments = arguments as? [String: Any]
-        let cornerRadius = (arguments?["cornerRadius"] as? NSNumber)
-            .map { CGFloat(truncating: $0) } ?? 0
-        let isInteractive = (arguments?["interactive"] as? NSNumber)?.boolValue ?? true
-        let followSystemLiquidGlassAppearance =
-            (arguments?["followSystemTransparency"] as? NSNumber)?.boolValue ?? true
-        let styleName = arguments?["style"] as? String ?? "regular"
-        let containerSpacing = (arguments?["containerSpacing"] as? NSNumber)
-            .map { CGFloat(truncating: $0) } ?? 0
-
-        let container = UIView(frame: frame)
+    init(
+        signature: String,
+        cornerRadius: CGFloat,
+        styleName: String,
+        isInteractive: Bool,
+        followSystemLiquidGlassAppearance: Bool,
+        containerSpacing: CGFloat
+    ) {
+        self.signature = signature
+        let container = UIView()
         container.backgroundColor = .clear
 
         let effectView: UIVisualEffectView
@@ -338,8 +348,8 @@ private final class LiquidGlassPlatformView: NSObject, FlutterPlatformView {
         effectView.layer.masksToBounds = cornerRadius > 0
         effectView.isUserInteractionEnabled = false
         container.addSubview(effectView)
+        contentView = container
 
-        platformView = container
         appearanceObserver = NotificationCenter.default.addObserver(
             forName: UIAccessibility.reduceTransparencyStatusDidChangeNotification,
             object: nil,
@@ -353,12 +363,104 @@ private final class LiquidGlassPlatformView: NSObject, FlutterPlatformView {
                 ? .secondarySystemBackground
                 : .clear
         }
-        super.init()
     }
 
     deinit {
         if let appearanceObserver {
             NotificationCenter.default.removeObserver(appearanceObserver)
+        }
+    }
+}
+
+private final class LiquidGlassPlatformView: NSObject, FlutterPlatformView {
+    private static var cached: [Int64: CachedGlassContent] = [:]
+
+    static func releaseCache(_ cacheId: Int64) {
+        cached.removeValue(forKey: cacheId)
+    }
+
+    private let channel: FlutterMethodChannel
+    private let platformView: UIView
+    private let content: CachedGlassContent
+
+    init(
+        frame: CGRect,
+        viewIdentifier: Int64,
+        arguments: Any?,
+        messenger: FlutterBinaryMessenger
+    ) {
+        let arguments = arguments as? [String: Any]
+        let cornerRadius = (arguments?["cornerRadius"] as? NSNumber)
+            .map { CGFloat(truncating: $0) } ?? 0
+        let isInteractive = (arguments?["interactive"] as? NSNumber)?.boolValue ?? true
+        let followSystemLiquidGlassAppearance =
+            (arguments?["followSystemTransparency"] as? NSNumber)?.boolValue ?? true
+        let styleName = arguments?["style"] as? String ?? "regular"
+        let containerSpacing = (arguments?["containerSpacing"] as? NSNumber)
+            .map { CGFloat(truncating: $0) } ?? 0
+        let initiallyHidden = (arguments?["hidden"] as? NSNumber)?.boolValue ?? false
+        let cacheId = (arguments?["cacheId"] as? NSNumber)?.int64Value
+        let signature = "\(styleName):\(isInteractive):\(followSystemLiquidGlassAppearance):\(containerSpacing):\(cornerRadius)"
+
+        channel = FlutterMethodChannel(
+            name: "eros/liquid-glass/\(viewIdentifier)",
+            binaryMessenger: messenger
+        )
+
+        let host = UIView(frame: frame)
+        host.backgroundColor = .clear
+        host.isHidden = initiallyHidden
+        host.accessibilityElementsHidden = initiallyHidden
+
+        let resolved: CachedGlassContent
+        if let cacheId, let existing = Self.cached[cacheId], existing.signature == signature {
+            resolved = existing
+        } else {
+            let fresh = CachedGlassContent(
+                signature: signature,
+                cornerRadius: cornerRadius,
+                styleName: styleName,
+                isInteractive: isInteractive,
+                followSystemLiquidGlassAppearance: followSystemLiquidGlassAppearance,
+                containerSpacing: containerSpacing
+            )
+            if let cacheId {
+                Self.cached[cacheId] = fresh
+            }
+            resolved = fresh
+        }
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        resolved.contentView.removeFromSuperview()
+        resolved.contentView.frame = host.bounds
+        resolved.contentView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        host.addSubview(resolved.contentView)
+        CATransaction.commit()
+
+        content = resolved
+        platformView = host
+        super.init()
+        channel.setMethodCallHandler { [weak self] call, result in
+            guard let self else { result(nil); return }
+            if call.method == "setHidden",
+               let hidden = (call.arguments as? NSNumber)?.boolValue {
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                self.platformView.isHidden = hidden
+                self.platformView.accessibilityElementsHidden = hidden
+                CATransaction.commit()
+                result(nil)
+            } else {
+                result(FlutterMethodNotImplemented)
+            }
+        }
+    }
+
+    deinit {
+        channel.setMethodCallHandler(nil)
+        if content.contentView.superview === platformView {
+            content.contentView.removeFromSuperview()
         }
     }
 
@@ -446,6 +548,10 @@ final class LiquidGlassCategoryViewFactory: NSObject, FlutterPlatformViewFactory
     static let viewType = "eros/liquid-glass-categories"
     private let messenger: FlutterBinaryMessenger
 
+    static func releaseCache(_ cacheId: Int64) {
+        LiquidGlassCategoryCore.releaseCache(cacheId)
+    }
+
     init(messenger: FlutterBinaryMessenger) {
         self.messenger = messenger
         super.init()
@@ -472,8 +578,71 @@ private final class ErosCategoryScrollView: UIScrollView {
     override func touchesShouldCancel(in view: UIView) -> Bool { true }
 }
 
-private final class LiquidGlassCategoryPlatformView: NSObject,
-    FlutterPlatformView, UIGestureRecognizerDelegate, UIScrollViewDelegate {
+private final class LiquidGlassCategoryPlatformView: NSObject, FlutterPlatformView {
+    private let hostView: UIView
+    private let core: LiquidGlassCategoryCore
+    private let channel: FlutterMethodChannel
+    private let viewId: Int64
+
+    init(frame: CGRect, viewId: Int64, arguments: Any?, messenger: FlutterBinaryMessenger) {
+        self.viewId = viewId
+        hostView = UIView(frame: frame)
+        hostView.backgroundColor = .clear
+        channel = FlutterMethodChannel(name: "eros/liquid-glass-categories/\(viewId)",
+                                       binaryMessenger: messenger)
+        let args = arguments as? [String: Any] ?? [:]
+        let cacheId = (args["cacheId"] as? NSNumber)?.int64Value
+        core = LiquidGlassCategoryCore.acquire(cacheId: cacheId)
+        super.init()
+        core.attach(to: hostView, channel: channel, viewId: viewId, arguments: args)
+        channel.setMethodCallHandler { [weak self] call, result in
+            guard let self, self.core.activeViewId == self.viewId else {
+                result(nil)
+                return
+            }
+            if call.method == "update", let arguments = call.arguments as? [String: Any] {
+                self.core.apply(arguments, animateSelection: true)
+                result(nil)
+            } else if call.method == "progress", let progress = call.arguments as? NSNumber {
+                self.core.setProgress(CGFloat(progress.doubleValue))
+                result(nil)
+            } else if call.method == "setHidden",
+                      let hidden = (call.arguments as? NSNumber)?.boolValue {
+                self.core.setViewHidden(hidden)
+                result(nil)
+            } else {
+                result(FlutterMethodNotImplemented)
+            }
+        }
+    }
+
+    deinit {
+        channel.setMethodCallHandler(nil)
+        core.detach(from: hostView, viewId: viewId)
+    }
+
+    func view() -> UIView { hostView }
+}
+
+private final class LiquidGlassCategoryCore: NSObject,
+    UIGestureRecognizerDelegate, UIScrollViewDelegate {
+    private static var cached: [Int64: LiquidGlassCategoryCore] = [:]
+
+    static func acquire(cacheId: Int64?) -> LiquidGlassCategoryCore {
+        if let cacheId, let existing = cached[cacheId] {
+            return existing
+        }
+        let fresh = LiquidGlassCategoryCore()
+        if let cacheId {
+            cached[cacheId] = fresh
+        }
+        return fresh
+    }
+
+    static func releaseCache(_ cacheId: Int64) {
+        cached.removeValue(forKey: cacheId)
+    }
+
     private let root: ErosLiquidGlassRootView
     private let shell = ErosPassthroughGlassView()
     /// The selection at rest: a plain pill in the track.
@@ -484,10 +653,12 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
     private var ids: [String] = []
     private var layoutName = ""
     private var needsReveal = true
+    private var isViewHidden = false
     private var restoredOffset = false
     private var initialOffset: CGFloat = 0
     private var pageProgress: CGFloat?
-    private let channel: FlutterMethodChannel
+    private weak var activeChannel: FlutterMethodChannel?
+    private(set) var activeViewId: Int64 = -1
     private var buttons: [UIButton] = []
     private var titles: [String] = []
     private var longPressEnabled: [Bool] = []
@@ -513,10 +684,8 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
     private let edgeFade = CAGradientLayer()
     private let edgeFadeWidth: CGFloat = 32
 
-    init(frame: CGRect, viewId: Int64, arguments: Any?, messenger: FlutterBinaryMessenger) {
-        root = ErosLiquidGlassRootView(frame: frame)
-        channel = FlutterMethodChannel(name: "eros/liquid-glass-categories/\(viewId)",
-                                       binaryMessenger: messenger)
+    override init() {
+        root = ErosLiquidGlassRootView(frame: .zero)
         super.init()
         root.backgroundColor = .clear
         root.isAccessibilityElement = false
@@ -541,32 +710,56 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         lens.alpha = 0
         controls.addSubview(lens)
         root.onLayout = { [weak self] in self?.layout() }
-        channel.setMethodCallHandler { [weak self] call, result in
-            guard let self else { result(nil); return }
-            if call.method == "update", let arguments = call.arguments as? [String: Any] {
-                self.apply(arguments)
-                result(nil)
-            } else if call.method == "progress", let progress = call.arguments as? NSNumber {
-                self.pageProgress = CGFloat(progress.doubleValue)
-                self.updateProgress()
-                result(nil)
-            } else {
-                result(FlutterMethodNotImplemented)
-            }
-        }
         NotificationCenter.default.addObserver(self, selector: #selector(updateEffects),
             name: UIAccessibility.reduceTransparencyStatusDidChangeNotification, object: nil)
-        apply(arguments as? [String: Any] ?? [:])
     }
 
     deinit {
-        channel.setMethodCallHandler(nil)
         NotificationCenter.default.removeObserver(self)
     }
 
-    func view() -> UIView { root }
+    func attach(to hostView: UIView, channel: FlutterMethodChannel,
+                viewId: Int64, arguments: [String: Any]) {
+        activeViewId = viewId
+        activeChannel = channel
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        root.removeFromSuperview()
+        root.frame = hostView.bounds
+        root.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        hostView.addSubview(root)
+        CATransaction.commit()
+        apply(arguments, animateSelection: false)
+    }
 
-    private func apply(_ arguments: [String: Any]) {
+    func detach(from hostView: UIView, viewId: Int64) {
+        if activeViewId == viewId {
+            activeChannel = nil
+            activeViewId = -1
+        }
+        if root.superview === hostView {
+            root.removeFromSuperview()
+        }
+    }
+
+    func setProgress(_ value: CGFloat) {
+        pageProgress = value
+        updateProgress()
+    }
+
+    func setViewHidden(_ hidden: Bool) {
+        isViewHidden = hidden
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        root.isHidden = hidden
+        root.accessibilityElementsHidden = hidden
+        CATransaction.commit()
+    }
+
+    func apply(_ arguments: [String: Any], animateSelection: Bool) {
+        if let hidden = (arguments["hidden"] as? NSNumber)?.boolValue {
+            setViewHidden(hidden)
+        }
         let nextTitles = arguments["titles"] as? [String] ?? titles
         let nextIds = arguments["ids"] as? [String] ?? ids
         let rebuild = nextTitles != titles || nextIds != ids
@@ -603,7 +796,7 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         }
         let selectionChanged = nextIndex != selectedIndex
         if selectionChanged || rebuild { needsReveal = true }
-        if selectionChanged && !rebuild { revealAnimated = true }
+        if selectionChanged && !rebuild && animateSelection { revealAnimated = true }
         selectedIndex = nextIndex
         if rebuild {
             buttons.forEach { $0.removeFromSuperview() }
@@ -631,6 +824,13 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         }
         guard selectionChanged else {
             updateLabels()
+            layout()
+            return
+        }
+        if !animateSelection {
+            previewIndex = selectedIndex
+            updateLabels()
+            revealAnimated = false
             layout()
             return
         }
@@ -801,7 +1001,7 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         updateEdgeFade()
-        channel.invokeMethod("offset", arguments: Double(scrollView.contentOffset.x))
+        activeChannel?.invokeMethod("offset", arguments: Double(scrollView.contentOffset.x))
     }
 
     private func selectionFrame(_ index: Int) -> CGRect {
@@ -887,13 +1087,13 @@ private final class LiquidGlassCategoryPlatformView: NSObject,
         commitDeadline = CACurrentMediaTime() + 0.6
         showSelection(index, animated: true)
         reveal(index, animated: true)
-        channel.invokeMethod("select", arguments: ids[index])
+        activeChannel?.invokeMethod("select", arguments: ids[index])
     }
 
     @objc private func held(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began, let button = gesture.view as? UIButton,
               longPressEnabled.indices.contains(button.tag), longPressEnabled[button.tag] else { return }
-        channel.invokeMethod("longPress", arguments: ids[button.tag])
+        activeChannel?.invokeMethod("longPress", arguments: ids[button.tag])
     }
 
     func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {

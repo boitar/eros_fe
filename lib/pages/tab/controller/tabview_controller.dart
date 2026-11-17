@@ -3,26 +3,17 @@ import 'package:dio/dio.dart';
 import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/controller/tag_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
-import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/app_dio/pdio.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/fetch_list.dart';
-import 'package:eros_fe/utils/app_cupertino_localizations_delegate.dart';
-import 'package:eros_fe/widget/liquid_glass_popup.dart';
+import 'package:eros_fe/widget/jump_sheets.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../comm.dart';
 import 'enum.dart';
-
-const CupertinoDynamicColor _kClearButtonColor =
-    CupertinoDynamicColor.withBrightness(
-  color: Color(0xFF636366),
-  darkColor: Color(0xFFAEAEB2),
-);
 
 abstract class TabViewController extends GetxController {
   final galleryAnchor = GalleryAnchorController();
@@ -162,6 +153,7 @@ abstract class TabViewController extends GetxController {
     nextPage = null;
     prevPage = null;
     maxPage = null;
+    pageTextEditController.clear();
   }
 
   // 首次请求
@@ -356,6 +348,7 @@ abstract class TabViewController extends GetxController {
     String? jump,
     String? seek,
     int? page,
+    bool markAfterJump = true,
   }) async {
     cancelToken = CancelToken();
 
@@ -383,7 +376,7 @@ abstract class TabViewController extends GetxController {
       change(_listItem, status: RxStatus.success());
       pageState = PageState.None;
       logger.d('loadFrom next $next, prev $prev');
-      afterJump = true;
+      afterJump = markAfterJump;
     } catch (err, stack) {
       logger.e('$err\n$stack');
       final errMsg = err is HttpException ? err.message : '$err';
@@ -488,323 +481,101 @@ abstract class TabViewController extends GetxController {
 
   Future<void> showJumpDialog(BuildContext context) async {
     logger.d('showJumpDialog');
-    return showCupertinoDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return nextPage > -1
-            ? buildPageDialog(context)
-            : buildTimeDialog(context);
-      },
-    );
-  }
+    if (nextPage > -1 || prevPage > -1) {
+      final l10n = L10n.of(context);
+      final max = maxPage ?? 1;
+      final fallbackPage =
+          nextPage > -1 ? nextPage.clamp(1, max < 1 ? 1 : max) : max;
+      final current =
+          int.tryParse(pageTextEditController.text.trim()) ?? fallbackPage;
+      final result = await showPageJumpSheet(
+        context,
+        title: l10n.jump_to_page,
+        subtitle: l10n.sp_page_total(max),
+        current: current,
+        max: max,
+      );
+      if (result != null) {
+        if (result.nav == JumpNavAction.first) {
+          pageTextEditController.clear();
+          await loadFrom(page: 0, markAfterJump: false);
+        } else {
+          pageTextEditController.text = '${result.page}';
+          await loadFrom(
+            page: result.page - 1,
+            markAfterJump: result.page > 1,
+          );
+        }
+      }
+      return;
+    }
 
-  Widget buildPageDialog(BuildContext context) {
-    return EhAlertDialog(
-      title: Text(L10n.of(context).jump_to_page),
-      content: Container(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text('${L10n.of(context).page_range} 1 - ${maxPage ?? 0}'),
-            ),
-            CupertinoTextField(
-              decoration: BoxDecoration(
-                color: ehTheme.textFieldBackgroundColor,
-                borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-              ),
-              clearButtonMode: OverlayVisibilityMode.editing,
-              controller: pageTextEditController,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              onEditingComplete: () {
-                // 点击键盘完成
-                _jumpToPage(context);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-      actions: <Widget>[
-        CupertinoDialogAction(
-          child: Text(L10n.of(context).cancel),
-          onPressed: () async {
-            Get.back();
-          },
-        ),
-        CupertinoDialogAction(
-          child: Text(L10n.of(context).ok),
-          onPressed: () async {
-            // 画廊跳转
-            try {
-              await _jumpToPage(context);
-            } catch (e, stack) {
-              logger.e('jump to page error', error: e, stackTrace: stack);
-              showToast(e.toString());
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget buildTimeDialog(BuildContext context) {
-    bool editingDate = false;
-    bool editingGid = false;
     if (jumpOrSeekTextEditController.text.isEmpty) {
       jumpOrSeekTextEditController.text =
           lastJump ?? DateFormat('yyyy-MM-dd').format(DateTime.now());
     }
-
-    return EhAlertDialog(
-      title: Text(L10n.of(context).jump_or_seek),
-      content: Container(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(L10n.of(context).enter_date_or_offset_or_gid),
-            ),
-            StatefulBuilder(builder: (context, setState) {
-              return CupertinoTextField(
-                decoration: BoxDecoration(
-                  color: ehTheme.textFieldBackgroundColor,
-                  borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                ),
-                clearButtonMode: OverlayVisibilityMode.editing,
-                placeholder: L10n.of(context).date_or_offset,
-                controller: jumpOrSeekTextEditController,
-                autofocus: false,
-                suffix: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (editingDate)
-                      GestureDetector(
-                        onTap: () {
-                          jumpOrSeekTextEditController.clear();
-                          setState(() {
-                            editingDate = false;
-                          });
-                        },
-                        child: FaIcon(
-                          FontAwesomeIcons.circleXmark,
-                          size: 20.0,
-                          color: CupertinoDynamicColor.resolve(
-                              _kClearButtonColor, Get.context!),
-                        ).paddingSymmetric(horizontal: 6),
-                      ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          showDatePicker = !showDatePicker;
-                        });
-                      },
-                      child: FaIcon(
-                        FontAwesomeIcons.calendar,
-                        size: 20.0,
-                        color: showDatePicker
-                            ? null
-                            : CupertinoDynamicColor.resolve(
-                                _kClearButtonColor, Get.context!),
-                      ).paddingSymmetric(horizontal: 6),
-                    ),
-                  ],
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    editingDate = value.isNotEmpty;
-                  });
-                },
-                // keyboardType: TextInputType.number,
-                onEditingComplete: () {
-                  // 点击键盘完成
-                  FocusScope.of(context).requestFocus(gidNode);
-                },
-              );
-            }),
-            Obx(() {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.only(top: 8.0),
-                height: showDatePicker ? 120 : 0,
-                child: Localizations.override(
-                  context: context,
-                  delegates: const [
-                    AppGlobalCupertinoLocalizationsDelegate(),
-                  ],
-                  child: LayoutBuilder(builder: (context, constraints) {
-                    if (constraints.maxHeight < 40) {
-                      return Container();
-                    }
-                    return CupertinoDatePicker(
-                      // yyyy-MM-dd
-                      mode: CupertinoDatePickerMode.date,
-                      // DateTime from lastSeek
-                      initialDateTime: lastSeek != null
-                          ? DateTime.tryParse(lastSeek!) ?? DateTime.now()
-                          : DateTime.now(),
-                      dateOrder: DatePickerDateOrder.ymd,
-                      minimumYear: 2007,
-                      minimumDate: DateTime(2007, 3, 20),
-                      maximumYear: DateTime.now().year,
-                      maximumDate:
-                          DateTime.now().add(const Duration(minutes: 1)),
-                      onDateTimeChanged: (value) {
-                        jumpOrSeekTextEditController.text =
-                            DateFormat('yyyy-MM-dd').format(value);
-                      },
-                    );
-                  }),
-                ),
-              );
-            }),
-            const SizedBox(height: 8),
-            StatefulBuilder(builder: (context, setState) {
-              return CupertinoTextField(
-                decoration: BoxDecoration(
-                  color: ehTheme.textFieldBackgroundColor,
-                  borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                ),
-                clearButtonMode: OverlayVisibilityMode.editing,
-                focusNode: gidNode,
-                placeholder: 'GID',
-                controller: gidTextEditController,
-                // keyboardType: TextInputType.number,
-                suffix: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (editingGid)
-                      GestureDetector(
-                        onTap: () {
-                          gidTextEditController.clear();
-                          setState(() {
-                            editingGid = false;
-                          });
-                        },
-                        child: FaIcon(
-                          FontAwesomeIcons.circleXmark,
-                          size: 20.0,
-                          color: CupertinoDynamicColor.resolve(
-                              _kClearButtonColor, Get.context!),
-                        ).paddingSymmetric(horizontal: 6),
-                      ),
-                  ],
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    editingGid = value.isNotEmpty;
-                  });
-                },
-                onEditingComplete: () {
-                  // 点击键盘完成
-                  _jumpToPageWithGidOrTime(
-                    pageType: PageType.next,
-                  );
-                },
-              );
-            }),
-            const SizedBox(height: 8),
-            Container(
-              height: 40,
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  if (prevGid.isNotEmpty)
-                    Expanded(
-                      child: Row(
-                        children: [
-                          FaIcon(
-                            FontAwesomeIcons.circleArrowLeft,
-                            size: 16,
-                            color: CupertinoDynamicColor.resolve(
-                                CupertinoColors.secondaryLabel, context),
-                          ).paddingSymmetric(horizontal: 8),
-                          Expanded(
-                              child: Text(
-                            prevGid.replaceFirst('-', '-\n'),
-                            textAlign: TextAlign.left,
-                          )),
-                        ],
-                      ),
-                    ),
-                  if (nextGid.isNotEmpty)
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                              child: Text(
-                            nextGid.replaceFirst('-', '-\n'),
-                            textAlign: TextAlign.right,
-                          )),
-                          FaIcon(
-                            FontAwesomeIcons.circleArrowRight,
-                            size: 16,
-                            color: CupertinoDynamicColor.resolve(
-                                CupertinoColors.secondaryLabel, context),
-                          ).paddingSymmetric(horizontal: 8),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: <Widget>[
-        CupertinoDialogAction(
-          child: const FaIcon(
-            FontAwesomeIcons.circleArrowLeft,
-          ),
-          onPressed: () async {
-            try {
-              await _jumpToPageWithGidOrTime(pageType: PageType.prev);
-            } catch (e, stack) {
-              logger.e('jump to Prev error', error: e, stackTrace: stack);
-              showToast('$e');
-            }
-          },
-        ),
-        CupertinoDialogAction(
-          child: const FaIcon(
-            FontAwesomeIcons.circleArrowRight,
-          ),
-          onPressed: () async {
-            // 画廊跳转
-            logger.t('jump to Next');
-            try {
-              await _jumpToPageWithGidOrTime(
-                pageType: PageType.next,
-              );
-            } catch (e, stack) {
-              logger.e('jump to Next error', error: e, stackTrace: stack);
-              showToast(e.toString());
-            }
-          },
-        ),
-      ],
+    final request = await showSeekSheet(
+      context,
+      text: jumpOrSeekTextEditController.text,
+      gid: gidTextEditController.text,
+      pickerVisible: showDatePicker,
+      pickerDate: lastSeek != null
+          ? DateTime.tryParse(lastSeek!) ?? DateTime.now()
+          : DateTime.now(),
+      prevGid: prevGid,
+      nextGid: nextGid,
+      onPickerVisibleChanged: (value) => showDatePicker = value,
     );
-  }
-
-  Future<void> _jumpToPage(BuildContext context) async {
-    final String toPage = pageTextEditController.text.trim();
-    if (toPage.isEmpty) {
+    if (request == null) {
       return;
     }
-    final int page = (int.tryParse(toPage) ?? 1) - 1;
-    if (page < 0 || page > (maxPage ?? 0)) {
-      showToast(L10n.of(context).page_range_error);
+    if (request.nav != null) {
+      try {
+        await _navigateCursor(request.nav!);
+      } catch (e, stack) {
+        logger.e('jump nav error', error: e, stackTrace: stack);
+        showToast('$e');
+      }
+      return;
     }
-    loadFrom(
-      page: page,
-    );
-    Get.back();
+    jumpOrSeekTextEditController.text = request.text;
+    gidTextEditController.text = request.gid;
+    try {
+      await _jumpToPageWithGidOrTime(
+        pageType: request.direction == SeekDirection.prev
+            ? PageType.prev
+            : PageType.next,
+        closeDialog: false,
+      );
+    } catch (e, stack) {
+      logger.e('jump or seek error', error: e, stackTrace: stack);
+      showToast('$e');
+    }
+  }
+
+  Future<void> _navigateCursor(JumpNavAction action) async {
+    switch (action) {
+      case JumpNavAction.first:
+        resetResultPage();
+        jumpOrSeekTextEditController.clear();
+        gidTextEditController.clear();
+        await loadFrom(markAfterJump: false);
+      case JumpNavAction.prev:
+        if (prevGid.isNotEmpty) {
+          await loadFrom(gid: prevGid, pageType: PageType.prev);
+        }
+      case JumpNavAction.next:
+        if (nextGid.isNotEmpty) {
+          await loadFrom(gid: nextGid, pageType: PageType.next);
+        }
+      case JumpNavAction.last:
+        await loadFrom(gid: '1', pageType: PageType.prev);
+    }
   }
 
   Future<void> _jumpToPageWithGidOrTime({
     PageType? pageType,
+    bool closeDialog = true,
   }) async {
     final String jumpOrSeek = jumpOrSeekTextEditController.text.trim();
     final String _gid = gidTextEditController.text.trim();
@@ -852,7 +623,9 @@ abstract class TabViewController extends GetxController {
       gid: toGid,
       pageType: pageType,
     );
-    Get.back();
+    if (closeDialog) {
+      Get.back();
+    }
     lastSeek = seek;
     lastJump = jump;
     jumpOrSeekTextEditController.clear();

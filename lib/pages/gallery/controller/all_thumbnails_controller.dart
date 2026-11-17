@@ -4,7 +4,7 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/gallery/view/const.dart';
-import 'package:eros_fe/widget/liquid_glass_popup.dart';
+import 'package:eros_fe/widget/jump_sheets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
@@ -222,73 +222,32 @@ class AllThumbnailsPageController extends GetxController
   bool get canShowJumpDialog =>
       _pageState.filecount > _pageState.firstPageImage.length;
 
-  // 显示跳页Dialog
-  Future showJumpDialog(BuildContext context) async {
-    return await showCupertinoDialog(
-        barrierDismissible: true,
-        context: context,
-        builder: (context) {
-          return JumpDialog(pageController: _pageController);
-        });
-  }
-}
-
-// 跳页Dialog
-class JumpDialog extends StatefulWidget {
-  const JumpDialog({Key? key, required this.pageController}) : super(key: key);
-  final GalleryPageController pageController;
-
-  @override
-  _JumpDialogState createState() => _JumpDialogState();
-}
-
-class _JumpDialogState extends State<JumpDialog> {
-  double _value = 0.0;
-  int toPage = 1;
-  int get maxpage =>
-      (widget.pageController.gState.filecount ~/
-          widget.pageController.gState.firstPageImage.length) +
-      1;
-
-  @override
-  void initState() {
-    super.initState();
-    _value = 1.0;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return EhAlertDialog(
-      title: Text('跳到 $toPage'),
-      content: Row(
-        children: [
-          const Text('1'),
-          Expanded(
-            child: CupertinoSlider(
-              value: _value,
-              divisions: maxpage - 1,
-              min: 1.0,
-              max: maxpage / 1.0,
-              onChanged: (double value) {
-                _value = value;
-                if (_value ~/ 1 != toPage) {
-                  toPage = _value ~/ 1;
-                  setState(() {});
-                }
-              },
-            ),
-          ),
-          Text('$maxpage'),
-        ],
-      ),
-      actions: [
-        CupertinoDialogAction(
-          child: Text(L10n.of(context).ok),
-          onPressed: () {
-            Get.back(result: toPage);
-          },
-        )
-      ],
+  // 显示跳页面板
+  Future<int?> showJumpDialog(BuildContext context) async {
+    final perPage = _pageState.firstPageImage.length;
+    final maxPage = perPage <= 0
+        ? 1
+        : ((_pageState.filecount + perPage - 1) ~/ perPage).clamp(1, 1 << 20);
+    final current = currPage.clamp(1, maxPage);
+    final l10n = L10n.of(context);
+    final result = await showPageJumpSheet(
+      context,
+      title: l10n.sp_thumbs_jump,
+      subtitle: l10n.sp_thumbs_per_page(maxPage, perPage),
+      current: current,
+      max: maxPage,
+      // Dragging the slider is the main gesture here; tap the number to type.
+      autofocus: false,
     );
+    return switch (result) {
+      null => null,
+      PageJumpTarget(:final page) => page,
+      PageJumpNav(:final action) => switch (action) {
+          JumpNavAction.first => 1,
+          JumpNavAction.prev => (current - 1).clamp(1, maxPage),
+          JumpNavAction.next => (current + 1).clamp(1, maxPage),
+          JumpNavAction.last => maxPage,
+        },
+    };
   }
 }

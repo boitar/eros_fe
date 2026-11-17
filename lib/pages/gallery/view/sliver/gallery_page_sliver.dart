@@ -456,10 +456,12 @@ class GallerySliverSafeArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final duoBar =
+        AdaptiveEnvironment.maybeOf(context)?.hasDuoVerticalBar ?? false;
     return SliverSafeArea(
       top: false,
       bottom: false,
-      left: !isLayoutLarge,
+      left: !isLayoutLarge || duoBar,
       sliver: child,
     );
   }

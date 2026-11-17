@@ -79,17 +79,23 @@ class GalleryHeroSliver extends StatelessWidget {
     super.key,
     required this.initGalleryProvider,
     this.tabTag,
+    this.heroKey,
+    this.topPadding = 8,
   });
 
   final GalleryProvider initGalleryProvider;
   final Object? tabTag;
+  final Key? heroKey;
+  final double topPadding;
 
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
       child: GalleryHero(
+        key: heroKey,
         initGalleryProvider: initGalleryProvider,
         tabTag: tabTag,
+        topPadding: topPadding,
       ),
     );
   }
@@ -101,10 +107,14 @@ class GalleryHero extends StatelessWidget {
     super.key,
     required this.initGalleryProvider,
     this.tabTag,
+    this.topPadding = defaultTopPadding,
   });
+
+  static const double defaultTopPadding = 8;
 
   final GalleryProvider initGalleryProvider;
   final Object? tabTag;
+  final double topPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +123,7 @@ class GalleryHero extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: kHeroMaxWidth),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          padding: EdgeInsets.fromLTRB(20, topPadding, 20, 12),
           child: GetBuilder<GalleryPageController>(
             assignId: true,
             id: GetIds.PAGE_VIEW_HEADER,
@@ -952,7 +962,7 @@ class _DataCell extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     fontFeatures: const <FontFeature>[
-                      FontFeature.tabularFigures()
+                      FontFeature.tabularFigures(),
                     ],
                     color: CupertinoDynamicColor.resolve(
                         ehTheme.palette.text1, context),
@@ -1030,8 +1040,10 @@ class GalleryAmbientBackdrop extends StatelessWidget {
         final sigma = privacy ? 60.0 : 40.0;
         art = RepaintBoundary(
           child: ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(
-                sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.clamp),
+            // Let the renderer choose the layer blur's edge sampling. Forcing
+            // clamp makes Impeller reuse the clipped input edge while this
+            // page slides in, then switch colours when it reaches the pane edge.
+            imageFilter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
             child: ColorFiltered(
               colorFilter: ColorFilter.matrix(saturation(privacy ? 0.6 : 1.15)),
               child: EhNetworkImage(
@@ -1147,7 +1159,12 @@ class GalleryDetailColumns {
         }
       }
     }
-    if (width >= wideWidth) {
+    final usableWidth = environment != null &&
+            environment.hasDuoVerticalBar &&
+            (width - environment.size.width).abs() < 1
+        ? environment.contentRect.width
+        : width;
+    if (usableWidth >= wideWidth) {
       return const GalleryDetailColumns(leading: sideWidth, gap: 0);
     }
     return null;

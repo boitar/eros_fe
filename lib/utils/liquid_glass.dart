@@ -5,10 +5,12 @@ import 'dart:ui' as ui;
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:eros_fe/widget/appkit_glass.dart';
+import 'package:eros_fe/widget/appkit_interaction.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart' as glass;
 
@@ -276,12 +278,18 @@ class LiquidGlassSurface extends StatelessWidget {
   }
 
   Widget _buildLegacy(BuildContext context) {
-    final bool usesFlutterFallback = enabled &&
-        !(useNativeGlass && GlassMode.of(context) == GlassMode.native);
-    final bool readsNativeTransparency =
-        usesFlutterFallback && PlatformCapabilities.uiKitGlass;
+    final bool candidateNative = enabled &&
+        useNativeGlass &&
+        PlatformCapabilities.uiKitGlass &&
+        GlassMode.of(context) == GlassMode.native;
     final Widget surface;
-    if (readsNativeTransparency) {
+    if (candidateNative) {
+      surface = _buildSurface(
+        context,
+        reduceTransparency: false,
+        allowNative: true,
+      );
+    } else if (enabled && PlatformCapabilities.uiKitGlass) {
       LiquidGlassAccessibilitySettings.watch();
       surface = ValueListenableBuilder<bool?>(
         valueListenable: LiquidGlassAccessibilitySettings.reduceTransparency,
@@ -290,10 +298,15 @@ class LiquidGlassSurface extends StatelessWidget {
                 _buildSurface(
           context,
           reduceTransparency: reduceTransparency ?? true,
+          allowNative: false,
         ),
       );
     } else {
-      surface = _buildSurface(context, reduceTransparency: false);
+      surface = _buildSurface(
+        context,
+        reduceTransparency: false,
+        allowNative: false,
+      );
     }
     final alpha = opacity.clamp(0.0, 1.0).toDouble();
     return alpha >= 1.0 ? surface : Opacity(opacity: alpha, child: surface);
@@ -302,6 +315,7 @@ class LiquidGlassSurface extends StatelessWidget {
   Widget _buildSurface(
     BuildContext context, {
     required bool reduceTransparency,
+    bool allowNative = true,
   }) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -324,96 +338,25 @@ class LiquidGlassSurface extends StatelessWidget {
         final Widget background;
         if (enabled &&
             useNativeGlass &&
+            allowNative &&
             PlatformCapabilities.uiKitGlass &&
             GlassMode.of(context) == GlassMode.native) {
-          background = UiKitView(
-            key: ValueKey<String>(
-              '${style.name}:$followSystemTransparency:$interactive:$containerSpacing',
-            ),
-            viewType: LiquidGlassPlatform.viewType,
-            creationParams: <String, dynamic>{
-              'cornerRadius': borderRadius.topLeft.x,
-              'style': style.name,
-              'interactive': interactive,
-              'followSystemTransparency': followSystemTransparency,
-              'containerSpacing': containerSpacing,
-            },
-            creationParamsCodec: const StandardMessageCodec(),
-            hitTestBehavior: PlatformViewHitTestBehavior.transparent,
+          background = _NativeLiquidGlassBackground(
+            cornerRadius: borderRadius.topLeft.x,
+            style: style,
+            interactive: interactive,
+            followSystemTransparency: followSystemTransparency,
+            containerSpacing: containerSpacing,
+            emphasizeFallbackEdge: emphasizeFallbackEdge,
           );
         } else if (enabled) {
-          final bool isClear = style == LiquidGlassStyle.clear;
-          final bool isDark =
-              CupertinoTheme.brightnessOf(context) == Brightness.dark;
-          final Color fallbackBackground = CupertinoDynamicColor.resolve(
-            isClear
-                ? CupertinoColors.systemBackground
-                : CupertinoColors.secondarySystemBackground,
+          background = _buildLiquidGlassFallback(
             context,
+            borderRadius: borderRadius,
+            style: style,
+            emphasizeFallbackEdge: emphasizeFallbackEdge,
+            reduceTransparency: reduceTransparency,
           );
-          final Color separator = CupertinoDynamicColor.resolve(
-            CupertinoColors.separator,
-            context,
-          );
-          final Color highlight = CupertinoDynamicColor.resolve(
-            CupertinoColors.systemBackground,
-            context,
-          );
-          final double fillAlpha = reduceTransparency
-              ? 1.0
-              : (isClear
-                  ? 0.26
-                  : (emphasizeFallbackEdge ? (isDark ? 0.72 : 0.64) : 0.68));
-          final double borderAlpha = isClear
-              ? 0.14
-              : (emphasizeFallbackEdge ? (isDark ? 0.34 : 0.28) : 0.22);
-          final Widget fallbackDecoration = Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: fallbackBackground.withValues(alpha: fillAlpha),
-                  border: Border.all(
-                    color: separator.withValues(alpha: borderAlpha),
-                    width: emphasizeFallbackEdge ? 0.8 : 1.0,
-                  ),
-                  boxShadow: emphasizeFallbackEdge && !reduceTransparency
-                      ? <BoxShadow>[
-                          BoxShadow(
-                            color: CupertinoColors.black.withValues(
-                              alpha: isDark ? 0.28 : 0.08,
-                            ),
-                            blurRadius: 8.0,
-                            offset: const Offset(0.0, 2.0),
-                          ),
-                        ]
-                      : null,
-                ),
-              ),
-              if (emphasizeFallbackEdge)
-                IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: highlight.withValues(
-                          alpha: isDark ? 0.16 : 0.52,
-                        ),
-                        width: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          );
-          background = reduceTransparency
-              ? fallbackDecoration
-              : BackdropFilter(
-                  filter: ui.ImageFilter.blur(
-                    sigmaX: isClear ? 12.0 : 18.0,
-                    sigmaY: isClear ? 12.0 : 18.0,
-                  ),
-                  child: fallbackDecoration,
-                );
         } else {
           background = const SizedBox.expand();
         }
@@ -443,6 +386,261 @@ class LiquidGlassSurface extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+Widget _buildLiquidGlassFallback(
+  BuildContext context, {
+  BorderRadius? borderRadius,
+  required LiquidGlassStyle style,
+  required bool emphasizeFallbackEdge,
+  required bool reduceTransparency,
+}) {
+  final bool isClear = style == LiquidGlassStyle.clear;
+  final bool isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+  final Color fallbackBackground = CupertinoDynamicColor.resolve(
+    isClear
+        ? CupertinoColors.systemBackground
+        : CupertinoColors.secondarySystemBackground,
+    context,
+  );
+  final Color separator = CupertinoDynamicColor.resolve(
+    CupertinoColors.separator,
+    context,
+  );
+  final Color highlight = CupertinoDynamicColor.resolve(
+    CupertinoColors.systemBackground,
+    context,
+  );
+  final double fillAlpha = reduceTransparency
+      ? 1.0
+      : (isClear
+          ? 0.26
+          : (emphasizeFallbackEdge ? (isDark ? 0.72 : 0.64) : 0.68));
+  final double borderAlpha = isClear
+      ? 0.14
+      : (emphasizeFallbackEdge ? (isDark ? 0.34 : 0.28) : 0.22);
+  final Widget fallbackDecoration = Stack(
+    fit: StackFit.expand,
+    children: <Widget>[
+      DecoratedBox(
+        decoration: BoxDecoration(
+          color: fallbackBackground.withValues(alpha: fillAlpha),
+          borderRadius: borderRadius,
+          border: Border.all(
+            color: separator.withValues(alpha: borderAlpha),
+            width: emphasizeFallbackEdge ? 0.8 : 1.0,
+          ),
+          boxShadow: emphasizeFallbackEdge && !reduceTransparency
+              ? <BoxShadow>[
+                  BoxShadow(
+                    color: CupertinoColors.black.withValues(
+                      alpha: isDark ? 0.28 : 0.08,
+                    ),
+                    blurRadius: 8.0,
+                    offset: const Offset(0.0, 2.0),
+                  ),
+                ]
+              : null,
+        ),
+      ),
+      if (emphasizeFallbackEdge)
+        IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              border: Border.all(
+                color: highlight.withValues(
+                  alpha: isDark ? 0.16 : 0.52,
+                ),
+                width: 0.5,
+              ),
+            ),
+          ),
+        ),
+    ],
+  );
+  return reduceTransparency
+      ? fallbackDecoration
+      : BackdropFilter(
+          filter: ui.ImageFilter.blur(
+            sigmaX: isClear ? 12.0 : 18.0,
+            sigmaY: isClear ? 12.0 : 18.0,
+          ),
+          child: fallbackDecoration,
+        );
+}
+
+/// Unmounts the `UiKitView` while covered by a modal so Flutter's iOS
+/// `PlatformViewLayer` compositor never slices overlapping `BackdropFilter`
+/// dialogs, while reusing the cached native `UIView` instance and holding a
+/// Flutter glass underlay until the restored frame commits cleanly.
+class _NativeLiquidGlassBackground extends StatefulWidget {
+  const _NativeLiquidGlassBackground({
+    required this.cornerRadius,
+    required this.style,
+    required this.interactive,
+    required this.followSystemTransparency,
+    required this.containerSpacing,
+    required this.emphasizeFallbackEdge,
+  });
+
+  final double cornerRadius;
+  final LiquidGlassStyle style;
+  final bool interactive;
+  final bool followSystemTransparency;
+  final double containerSpacing;
+  final bool emphasizeFallbackEdge;
+
+  @override
+  State<_NativeLiquidGlassBackground> createState() =>
+      _NativeLiquidGlassBackgroundState();
+}
+
+class _NativeLiquidGlassBackgroundState
+    extends State<_NativeLiquidGlassBackground> {
+  static const MethodChannel _cacheChannel =
+      MethodChannel('eros/liquid-glass-cache');
+  static int _nextCacheId = 1;
+
+  late final int _cacheId = _nextCacheId++;
+  bool _covered = false;
+  bool _showUnderlay = false;
+  bool _initialized = false;
+  int _syncSeq = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    AppKitInteraction.modalRevision.addListener(_onModalRevisionChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final covered = AppKitInteraction.isCoveredByModal(context);
+    if (!_initialized) {
+      _initialized = true;
+      _covered = covered;
+      _showUnderlay = covered;
+      if (covered) {
+        LiquidGlassAccessibilitySettings.watch();
+      }
+      return;
+    }
+    _updateCovered(covered);
+  }
+
+  @override
+  void dispose() {
+    AppKitInteraction.modalRevision.removeListener(_onModalRevisionChanged);
+    unawaited(
+      _cacheChannel
+          .invokeMethod<void>('release', <String, Object>{
+            'kind': 'glass',
+            'cacheId': _cacheId,
+          })
+          .catchError((Object _) {}),
+    );
+    super.dispose();
+  }
+
+  void _onModalRevisionChanged() {
+    if (!mounted) {
+      return;
+    }
+    _updateCovered(AppKitInteraction.isCoveredByModal(context));
+  }
+
+  void _updateCovered(bool covered) {
+    if (covered == _covered) {
+      return;
+    }
+    final seq = ++_syncSeq;
+    _covered = covered;
+    if (covered) {
+      LiquidGlassAccessibilitySettings.watch();
+      setState(() {
+        _showUnderlay = true;
+      });
+    } else {
+      // Mount the native view while keeping the Flutter underlay rendered
+      // until the restored platform view commits its first frame.
+      setState(() {});
+      // Also guard against rare cases where a parent was off-screen when
+      // uncovered: `_onPlatformViewCreated` will advance `seq` dismissal once
+      // created.
+      if (seq != _syncSeq) {
+        return;
+      }
+    }
+  }
+
+  void _onPlatformViewCreated(int id) {
+    if (_covered || !_showUnderlay) {
+      return;
+    }
+    final seq = _syncSeq;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || seq != _syncSeq || _covered || !_showUnderlay) {
+        return;
+      }
+      setState(() {
+        _showUnderlay = false;
+      });
+    });
+    SchedulerBinding.instance.ensureVisualUpdate();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget? nativeView = _covered
+        ? null
+        : UiKitView(
+            key: ValueKey<String>(
+              '${widget.style.name}:${widget.followSystemTransparency}:${widget.interactive}:${widget.containerSpacing}',
+            ),
+            viewType: LiquidGlassPlatform.viewType,
+            creationParams: <String, dynamic>{
+              'cornerRadius': widget.cornerRadius,
+              'style': widget.style.name,
+              'interactive': widget.interactive,
+              'followSystemTransparency': widget.followSystemTransparency,
+              'containerSpacing': widget.containerSpacing,
+              'cacheId': _cacheId,
+            },
+            creationParamsCodec: const StandardMessageCodec(),
+            hitTestBehavior: PlatformViewHitTestBehavior.transparent,
+            onPlatformViewCreated: _onPlatformViewCreated,
+          );
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        if (_showUnderlay)
+          KeyedSubtree(
+            key: const ValueKey<String>('liquid-glass-modal-underlay'),
+            child: ValueListenableBuilder<bool?>(
+              valueListenable:
+                  LiquidGlassAccessibilitySettings.reduceTransparency,
+              builder: (
+                BuildContext context,
+                bool? reduceTransparency,
+                Widget? child,
+              ) =>
+                  _buildLiquidGlassFallback(
+                context,
+                borderRadius: BorderRadius.circular(widget.cornerRadius),
+                style: widget.style,
+                emphasizeFallbackEdge: widget.emphasizeFallbackEdge,
+                reduceTransparency: reduceTransparency ?? false,
+              ),
+            ),
+          )
+        else
+          const SizedBox.shrink(),
+        if (nativeView != null) nativeView,
+      ],
     );
   }
 }

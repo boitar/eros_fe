@@ -14,6 +14,7 @@ import 'package:eros_fe/pages/image_view/controller/view_controller.dart';
 import 'package:eros_fe/pages/image_view/view/view_page.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/controller/toplist_controller.dart';
+import 'package:eros_fe/pages/tab/view/favorite_order_sheet.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/storage.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
@@ -1131,50 +1132,10 @@ class EhSettingService extends ProfileService {
 
   /// 收藏排序 dialog
   Future<FavoriteOrder?> showFavOrder(BuildContext context) async {
-    List<Widget> _getOrderList(BuildContext context) {
-      final Map<FavoriteOrder, String> _orderMap = <FavoriteOrder, String>{
-        FavoriteOrder.posted: L10n.of(context).favorites_order_Use_posted,
-        FavoriteOrder.fav: L10n.of(context).favorites_order_Use_favorited,
-      };
-
-      return List<Widget>.from(_orderMap.keys.map((FavoriteOrder element) {
-        return CupertinoActionSheetAction(
-            onPressed: () {
-              Get.back(result: element);
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                if (element == favoriteOrder.value)
-                  const SizedBox(
-                    width: 40,
-                    child: FaIcon(FontAwesomeIcons.circleCheck),
-                  ),
-                Text(_orderMap[element] ?? ''),
-                if (element == favoriteOrder.value)
-                  const SizedBox(
-                    width: 40,
-                  ),
-              ],
-            ));
-      }).toList());
-    }
-
-    final FavoriteOrder? _result = await showCupertinoModalPopup<FavoriteOrder>(
-        context: context,
-        builder: (BuildContext context) {
-          return EhActionSheet(
-            title: Text(L10n.of(context).favorites_order),
-            cancelButton: CupertinoActionSheetAction(
-                onPressed: () {
-                  Get.back();
-                },
-                child: Text(L10n.of(context).cancel)),
-            actions: <Widget>[
-              ..._getOrderList(context),
-            ],
-          );
-        });
+    final FavoriteOrder? _result = await presentFavoriteOrderSheet(
+      context,
+      current: favoriteOrder.value,
+    );
 
     if (_result != null) {
       logger.t('to ${EnumToString.convertToString(_result)}');

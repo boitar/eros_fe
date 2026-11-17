@@ -83,6 +83,7 @@ class AdaptiveEnvironmentSnapshot {
     this.verticalSizeClass = 0,
     this.reservedRegions = const <AdaptiveRegion>[],
     this.systemBarEdge,
+    this.duoVerticalBar = false,
     this.layoutVersion = 0,
     this.nativeSupported = false,
   });
@@ -108,6 +109,10 @@ class AdaptiveEnvironmentSnapshot {
   /// Where the system bars sit: `left` or `right` for the vertical bar,
   /// otherwise `top`, `bottom` or empty.
   final String? systemBarEdge;
+
+  /// True only on a foldable iPhone Duo whose native vertical bar sits on an
+  /// edge, so non-Duo iPhones, iPads, Android and desktop remain unaffected.
+  final bool duoVerticalBar;
   final int layoutVersion;
   final bool nativeSupported;
 
@@ -148,6 +153,7 @@ class AdaptiveEnvironmentSnapshot {
       verticalSizeClass: verticalSizeClass,
       reservedRegions: _regionsForSize(size ?? this.size),
       systemBarEdge: systemBarEdge,
+      duoVerticalBar: duoVerticalBar,
       layoutVersion: layoutVersion,
       nativeSupported: nativeSupported,
     );
@@ -162,10 +168,18 @@ class AdaptiveEnvironmentSnapshot {
           (rect.right - (size.width - insets.right)).clamp(0.0, rect.width),
           (rect.bottom - (size.height - insets.bottom)).clamp(0.0, rect.height),
         );
+    final localSafeArea = localInsets(safeArea);
+    final localSystemBarEdge = switch (systemBarEdge) {
+      'left' when localSafeArea.left > 0 => 'left',
+      'right' when localSafeArea.right > 0 => 'right',
+      'top' when localSafeArea.top > 0 => 'top',
+      'bottom' when localSafeArea.bottom > 0 => 'bottom',
+      _ => null,
+    };
     return AdaptiveEnvironmentSnapshot(
       size: rect.size,
       windowSize: unpartitionedSize,
-      safeArea: localInsets(safeArea),
+      safeArea: localSafeArea,
       viewPadding: localInsets(viewPadding),
       viewInsets: localInsets(viewInsets),
       windowSafeArea:
@@ -180,7 +194,11 @@ class AdaptiveEnvironmentSnapshot {
                 active: region.active,
               ))
           .toList(growable: false),
-      systemBarEdge: systemBarEdge,
+      // A pane that does not contain the host's unsafe edge must not inherit
+      // the system-bar placement. Otherwise a primary split pane can move its
+      // own navigation actions into the detail pane's vertical toolbar.
+      systemBarEdge: localSystemBarEdge,
+      duoVerticalBar: duoVerticalBar,
       layoutVersion: layoutVersion,
       nativeSupported: nativeSupported,
     );
@@ -247,6 +265,9 @@ class AdaptiveEnvironmentSnapshot {
   /// The bars stand along a side of the display instead of across its top.
   bool get hasVerticalBar =>
       systemBarEdge == 'left' || systemBarEdge == 'right';
+
+  /// True only when running on iPhone Duo with an active side vertical bar.
+  bool get hasDuoVerticalBar => duoVerticalBar && hasVerticalBar;
 
   /// Safe area that ignores app bars appearing and disappearing. Content laid
   /// out against it stays put while a reader toggles its native bars.
@@ -411,6 +432,7 @@ class AdaptiveEnvironmentSnapshot {
         'horizontalSizeClass': horizontalSizeClass,
         'verticalSizeClass': verticalSizeClass,
         'systemBarEdge': systemBarEdge ?? '',
+        'duoVerticalBar': duoVerticalBar,
         'layoutVersion': layoutVersion,
         'nativeSupported': nativeSupported,
         'reservedRegions':
@@ -455,6 +477,7 @@ class AdaptiveEnvironmentSnapshot {
               .toList(growable: false)
           : const <AdaptiveRegion>[],
       systemBarEdge: map['systemBarEdge']?.toString(),
+      duoVerticalBar: map['duoVerticalBar'] == true,
       layoutVersion: (map['layoutVersion'] as num?)?.toInt() ?? 0,
       nativeSupported: map['nativeSupported'] == true,
     );

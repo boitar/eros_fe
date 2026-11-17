@@ -6,6 +6,7 @@ import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/vibrate.dart';
+import 'package:eros_fe/widget/appkit_interaction.dart';
 import 'package:eros_fe/widget/desktop_pointer_effects.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:eros_fe/widget/segmented_rail.dart';
@@ -542,6 +543,23 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     List<LiquidGlassRailCategory> categories, {
     required double opacity,
   }) {
+    final wantsNative =
+        GlassMode.of(context).forComponent(flutterImplemented: true) ==
+            GlassMode.native;
+    return _buildCategorySurface(
+      context,
+      categories,
+      opacity: opacity,
+      useNative: wantsNative,
+    );
+  }
+
+  Widget _buildCategorySurface(
+    BuildContext context,
+    List<LiquidGlassRailCategory> categories, {
+    required double opacity,
+    required bool useNative,
+  }) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final layout = SegmentedRailLayout.compute(
@@ -559,8 +577,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                 child: SizedBox(width: surfaceWidth, child: child),
               )
             : child;
-        if (GlassMode.of(context).forComponent(flutterImplemented: true) ==
-            GlassMode.native) {
+        if (useNative) {
           return fitSurface(
             NativeCategoryRail(
               categories: categories,
@@ -575,6 +592,19 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
               initialOffset: _nativeOffset,
               onOffset: (value) => _nativeOffset = value,
               segmentWidths: widths,
+              modalFallbackBuilder: (context) {
+                if (!_scroll.hasClients ||
+                    (_scroll.offset - _nativeOffset).abs() > 0.5) {
+                  _fallbackOffset = _nativeOffset;
+                  _restoreOffset = true;
+                }
+                return _buildCategorySurface(
+                  context,
+                  categories,
+                  opacity: opacity,
+                  useNative: false,
+                );
+              },
             ),
           );
         }
@@ -634,10 +664,10 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                   key: const ValueKey<String>(
                     'liquid-glass-category-selection-indicator',
                   ),
-                  left: left + 4,
-                  top: 4,
-                  width: width - 8,
-                  height: height - 8,
+                  left: left + 3,
+                  top: 3,
+                  width: math.max(0.0, width - 6),
+                  height: math.max(0.0, height - 6),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: CupertinoDynamicColor.resolve(
@@ -1370,6 +1400,7 @@ class NativeCategoryRail extends StatefulWidget {
     this.pageController,
     this.segmentWidths,
     this.height,
+    this.modalFallbackBuilder,
   });
 
   final List<LiquidGlassRailCategory> categories;
@@ -1390,20 +1421,104 @@ class NativeCategoryRail extends StatefulWidget {
   /// Height of the glass track; defaults to the rail layout's row height.
   final double? height;
 
+  /// Optional translucent Flutter fallback rendered underneath while a modal
+  /// covers this route and held until UIKit commits unhide on dismissal.
+  final WidgetBuilder? modalFallbackBuilder;
+
   @override
   State<NativeCategoryRail> createState() => _NativeCategoryRailState();
 }
 
 class _NativeCategoryRailState extends State<NativeCategoryRail> {
+  static const MethodChannel _cacheChannel =
+      MethodChannel('eros/liquid-glass-cache');
+  static int _nextCacheId = 1;
+
+  late final int _cacheId = _nextCacheId++;
   MethodChannel? _channel;
   String? _lastParameters;
   bool _scheduled = false;
+  bool _covered = false;
+  bool _showUnderlay = false;
+  bool _modalInitialized = false;
+  int _hiddenSyncSeq = 0;
   final _RailScrubTicker _scrubTicker = _RailScrubTicker();
 
   @override
   void initState() {
     super.initState();
     widget.pageController?.addListener(_progress);
+    AppKitInteraction.modalRevision.addListener(_onModalRevisionChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final covered = _shouldHideForModal(context);
+    if (!_modalInitialized) {
+      _modalInitialized = true;
+      _covered = covered;
+      _showUnderlay = covered;
+      return;
+    }
+    _updateCovered(covered);
+  }
+
+  bool _shouldHideForModal(BuildContext context) {
+    if (widget.modalFallbackBuilder == null ||
+        !PlatformCapabilities.uiKitGlass ||
+        GlassMode.of(context) == GlassMode.off ||
+        GlassMode.of(context).forComponent(flutterImplemented: true) ==
+            GlassMode.flutter) {
+      return false;
+    }
+    return AppKitInteraction.isCoveredByModal(context);
+  }
+
+  void _onModalRevisionChanged() {
+    if (!mounted) {
+      return;
+    }
+    _updateCovered(_shouldHideForModal(context));
+  }
+
+  void _updateCovered(bool covered) {
+    if (covered == _covered) {
+      return;
+    }
+    ++_hiddenSyncSeq;
+    _covered = covered;
+    if (covered) {
+      _channel?.setMethodCallHandler(null);
+      _channel = null;
+      setState(() {
+        _showUnderlay = true;
+      });
+    } else {
+      // Remount the native rail while keeping the Flutter underlay rendered
+      // until the restored platform view commits its first frame.
+      setState(() {});
+    }
+  }
+
+  Future<void> _completeRestore(int seq, MethodChannel channel) async {
+    try {
+      await channel.invokeMethod<void>('update', _parameters);
+    } on MissingPluginException {
+      // Tests without a platform view messenger ignore plugin calls.
+    }
+    if (!mounted || seq != _hiddenSyncSeq || _covered || !_showUnderlay) {
+      return;
+    }
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || seq != _hiddenSyncSeq || _covered || !_showUnderlay) {
+        return;
+      }
+      setState(() {
+        _showUnderlay = false;
+      });
+    });
+    SchedulerBinding.instance.ensureVisualUpdate();
   }
 
   void _progress() {
@@ -1451,6 +1566,7 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
     'fontSize': widget.fontSize,
     'opacity': widget.opacity,
     'interactive': widget.interactive,
+    'cacheId': _cacheId,
     if (widget.segmentWidths != null) 'segmentWidths': widget.segmentWidths!,
   };
 
@@ -1485,7 +1601,14 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
           break;
       }
     });
-    channel.invokeMethod<void>('update', _parameters);
+    _lastParameters = jsonEncode(_parameters);
+    if (!_covered && _showUnderlay) {
+      unawaited(_completeRestore(_hiddenSyncSeq, channel));
+    } else {
+      unawaited(
+        channel.invokeMethod<void>('update', _parameters).catchError((Object _) {}),
+      );
+    }
   }
 
   @override
@@ -1495,17 +1618,30 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
       oldWidget.pageController?.removeListener(_progress);
       widget.pageController?.addListener(_progress);
     }
-    if (_lastParameters != jsonEncode(_parameters)) {
+    if (oldWidget.modalFallbackBuilder != widget.modalFallbackBuilder) {
+      _updateCovered(_shouldHideForModal(context));
+    }
+    final encoded = jsonEncode(_parameters);
+    if (_lastParameters != encoded) {
       _channel?.invokeMethod<void>('update', _parameters);
-      _lastParameters = jsonEncode(_parameters);
+      _lastParameters = encoded;
     }
   }
 
   @override
   void dispose() {
+    AppKitInteraction.modalRevision.removeListener(_onModalRevisionChanged);
     widget.pageController?.removeListener(_progress);
     _channel?.setMethodCallHandler(null);
     _channel = null;
+    unawaited(
+      _cacheChannel
+          .invokeMethod<void>('release', <String, Object>{
+            'kind': 'category',
+            'cacheId': _cacheId,
+          })
+          .catchError((Object _) {}),
+    );
     super.dispose();
   }
 
@@ -1536,22 +1672,43 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
         ],
       );
     }
+    final Widget? nativeRail = _covered
+        ? null
+        : UiKitView(
+            viewType: 'eros/liquid-glass-categories',
+            creationParams: _parameters,
+            creationParamsCodec: const StandardMessageCodec(),
+            onPlatformViewCreated: _created,
+            // Claim horizontal category drags without taking vertical list scrolls.
+            gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{
+              Factory<HorizontalDragGestureRecognizer>(
+                HorizontalDragGestureRecognizer.new,
+              ),
+            },
+          );
+    final fallbackBuilder = widget.modalFallbackBuilder;
+    final Widget child = fallbackBuilder == null
+        ? (nativeRail ?? const SizedBox.shrink())
+        : Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              if (_showUnderlay)
+                KeyedSubtree(
+                  key: const ValueKey<String>(
+                    'native-category-rail-modal-underlay',
+                  ),
+                  child: fallbackBuilder(context),
+                )
+              else
+                const SizedBox.shrink(),
+              if (nativeRail != null) nativeRail,
+            ],
+          );
     return SizedBox(
       height:
           widget.height ??
           widget.layout.categoryHeight(MediaQuery.textScalerOf(context)),
-      child: UiKitView(
-        viewType: 'eros/liquid-glass-categories',
-        creationParams: _parameters,
-        creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: _created,
-        // Claim horizontal category drags without taking vertical list scrolls.
-        gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{
-          Factory<HorizontalDragGestureRecognizer>(
-            HorizontalDragGestureRecognizer.new,
-          ),
-        },
-      ),
+      child: child,
     );
   }
 }

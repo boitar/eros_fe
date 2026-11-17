@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
@@ -21,6 +22,9 @@ class EhUserTagsPage extends StatefulWidget {
 class _EhUserTagsPageState extends State<EhUserTagsPage> {
   EhMyTagsController get controller => Get.find();
   final textEditingController = TextEditingController();
+  final GlobalKey _nativeSearchRowKey = GlobalKey();
+  double _nativeSearchRowHeight = 0;
+  bool _searchRowMeasurePending = false;
 
   @override
   void initState() {
@@ -64,10 +68,53 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
     controller.searchNewTags.clear();
   }
 
+  void _scheduleNativeSearchRowMeasure() {
+    if (_searchRowMeasurePending) {
+      return;
+    }
+    _searchRowMeasurePending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _searchRowMeasurePending = false;
+      if (!mounted) {
+        return;
+      }
+      final height = _nativeSearchRowKey.currentContext?.size?.height;
+      if (height == null || (height - _nativeSearchRowHeight).abs() < 0.5) {
+        return;
+      }
+      setState(() => _nativeSearchRowHeight = height);
+    });
+  }
+
+  Widget _nativeSearchRow() =>
+      NotificationListener<SizeChangedLayoutNotification>(
+        onNotification: (_) {
+          _scheduleNativeSearchRowMeasure();
+          return false;
+        },
+        child: SizeChangedLayoutNotifier(
+          key: _nativeSearchRowKey,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: CupertinoSearchTextField(
+              autofocus: true,
+              controller: textEditingController,
+              placeholder: 'Search tags',
+              onChanged: (value) => controller.inputSearchText = value,
+            ),
+          ),
+        ),
+      );
+
   /// With the native bar the search field sits under it, as in system apps.
   Widget _nativePage(BuildContext context, Widget body) {
     return Obx(() {
       final searching = controller.isSearchUserTags;
+      if (searching) {
+        _scheduleNativeSearchRowMeasure();
+      }
+      final safeTop = MediaQuery.viewPaddingOf(context).top;
+      final rowHeight = searching ? _nativeSearchRowHeight : 0.0;
       return NativeNavigationPage(
         chrome: NativePageChrome(
           title: controller.curTagSet?.name ?? '',
@@ -103,30 +150,37 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
                 ],
         ),
         child: CupertinoPageScaffold(
-          child: Column(
-            children: [
-              if (searching)
-                SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: CupertinoSearchTextField(
-                      autofocus: true,
-                      controller: textEditingController,
-                      placeholder: 'Search tags',
-                      onChanged: (value) => controller.inputSearchText = value,
+          child: NativeSingleBarEdge(
+            bars: rowHeight,
+            foreground: searching
+                ? Positioned(
+                    top: safeTop,
+                    left: 0,
+                    right: 0,
+                    child: _nativeSearchRow(),
+                  )
+                : null,
+            child: Column(
+              children: [
+                if (searching)
+                  SizedBox(
+                    height:
+                        safeTop + rowHeight,
+                  ),
+                Expanded(
+                  key: const ValueKey('userTags.list'),
+                  child: Offstage(
+                    key: const ValueKey('userTags.searchResultsVisibility'),
+                    offstage: searching && rowHeight == 0,
+                    child: MediaQuery.removePadding(
+                      context: context,
+                      removeTop: searching,
+                      child: body,
                     ),
                   ),
                 ),
-              Expanded(
-                key: const ValueKey('userTags.list'),
-                child: MediaQuery.removePadding(
-                  context: context,
-                  removeTop: searching,
-                  child: body,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -511,39 +565,38 @@ class _ListViewEhMyTagsState extends State<ListViewEhMyTags> {
           top: false,
           bottom: false,
           sliver: FutureBuilder<EhMytags?>(
-              future: future,
-              initialData: controller.ehMyTags,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const SliverFillRemaining(
-                    child: CupertinoActivityIndicator(
-                      radius: 16,
-                    ),
+            future: future,
+            initialData: controller.ehMyTags,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const SliverFillRemaining(
+                  child: CupertinoActivityIndicator(radius: 16),
+                );
+              } else {
+                return Obx(() {
+                  final usertags = controller.usertags;
+                  if (usertags.isEmpty) {
+                    return const SliverToBoxAdapter();
+                  }
+                  return SliverCupertinoListSection.insetGrouped(
+                    additionalDividerMargin: 50,
+                    itemBuilder: (context, index) {
+                      final usertag = usertags[index];
+                      return _buildUserTagItem(
+                        usertag,
+                        usertag.title,
+                        isTagTranslat: controller.isTagTranslat,
+                        deleteUserTag: (title) =>
+                            controller.deleteUserTag(title),
+                        showLine: index < usertags.length - 1,
+                      );
+                    },
+                    itemCount: usertags.length,
                   );
-                } else {
-                  return Obx(() {
-                    final usertags = controller.usertags;
-                    if (usertags.isEmpty) {
-                      return const SliverToBoxAdapter();
-                    }
-                    return SliverCupertinoListSection.insetGrouped(
-                      additionalDividerMargin: 50,
-                      itemBuilder: (context, index) {
-                        final usertag = usertags[index];
-                        return _buildUserTagItem(
-                          usertag,
-                          usertag.title,
-                          isTagTranslat: controller.isTagTranslat,
-                          deleteUserTag: (title) =>
-                              controller.deleteUserTag(title),
-                          showLine: index < usertags.length - 1,
-                        );
-                      },
-                      itemCount: usertags.length,
-                    );
-                  });
-                }
-              }),
+                });
+              }
+            },
+          ),
         ),
         // Obx(() {
         //   if (controller.isSearchUserTags) {

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 
 import 'adaptive_environment.dart';
+import 'platform_capabilities.dart';
 
 /// Describes the actual presentation, including the user's split preference.
 class BrowsePaneScope extends InheritedWidget {
@@ -62,19 +63,39 @@ class AdaptiveBrowseLayout extends StatelessWidget {
     Rect primaryRect = available;
     Rect detailRect = available;
     Rect separator = Rect.zero;
+    final extendDetailUnderVerticalBar =
+        PlatformCapabilities.hostPlatform == TargetPlatform.iOS &&
+            environment.hasDuoVerticalBar;
+    final extendDetailRight =
+        extendDetailUnderVerticalBar && environment.systemBarEdge == 'right';
+    final extendDetailLeft = extendDetailUnderVerticalBar &&
+        environment.systemBarEdge == 'left' &&
+        !split;
     if (split) {
       if (environment.isBookFolded && panes.length == 2) {
         primaryRect = Rect.fromLTRB(
             panes.first.left, 0, panes.first.right, bounds.bottom);
-        detailRect =
-            Rect.fromLTRB(panes.last.left, 0, panes.last.right, bounds.bottom);
+        detailRect = Rect.fromLTRB(
+            panes.last.left,
+            0,
+            extendDetailRight ? bounds.right : panes.last.right,
+            bounds.bottom);
       } else {
         final width = primaryPaneWidth(available.width, sideProportion);
         primaryRect = Rect.fromLTWH(available.left, 0, width, available.height);
         detailRect = Rect.fromLTRB(
-            primaryRect.right + 1, 0, available.right, bounds.bottom);
+            primaryRect.right + 1,
+            0,
+            extendDetailRight ? bounds.right : available.right,
+            bounds.bottom);
         separator = Rect.fromLTWH(primaryRect.right, 0, 1, bounds.height);
       }
+    } else if (extendDetailRight || extendDetailLeft) {
+      detailRect = Rect.fromLTRB(
+          extendDetailLeft ? bounds.left : available.left,
+          0,
+          extendDetailRight ? bounds.right : available.right,
+          bounds.bottom);
     }
 
     Widget pane(Widget child, Rect rect, bool visible) => BrowsePaneScope(

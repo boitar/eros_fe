@@ -195,6 +195,7 @@ final class ErosAdaptiveEnvironmentPlugin: NSObject, FlutterPlugin,
                 "reservedRegionsSupported": false,
                 "hingeSupported": false,
                 "systemBarEdge": "",
+                "duoVerticalBar": false,
                 "layoutVersion": 0,
                 "nativeSupported": true,
             ]
@@ -219,28 +220,38 @@ final class ErosAdaptiveEnvironmentPlugin: NSObject, FlutterPlugin,
         }
         let traits = view.traitCollection
         let edge: String
+        let usesDuoVerticalBar: Bool
         if #available(iOS 27.1, *) {
             // Insets alone can't tell the vertical bar from a notch.
             let rtl = traits.layoutDirection == .rightToLeft
+            let isPhone = UIDevice.current.userInterfaceIdiom == .phone
             switch traits.verticalBarEdge {
             case .leading:
                 edge = rtl ? "right" : "left"
+                usesDuoVerticalBar = isPhone
             case .trailing:
                 edge = rtl ? "left" : "right"
+                usesDuoVerticalBar = isPhone
             default:
                 edge = safe.top > safe.bottom ? "top"
                     : safe.bottom > safe.top ? "bottom" : ""
+                usesDuoVerticalBar = false
             }
         } else if safe.right > safe.left {
             edge = "right"
+            usesDuoVerticalBar = false
         } else if safe.left > safe.right {
             edge = "left"
+            usesDuoVerticalBar = false
         } else if safe.top > safe.bottom {
             edge = "top"
+            usesDuoVerticalBar = false
         } else if safe.bottom > safe.top {
             edge = "bottom"
+            usesDuoVerticalBar = false
         } else {
             edge = ""
+            usesDuoVerticalBar = false
         }
 
         var reservedRegions: [[String: Any]] = []
@@ -267,6 +278,7 @@ final class ErosAdaptiveEnvironmentPlugin: NSObject, FlutterPlugin,
             "reservedRegionsSupported": reservedRegionsSupported,
             "hingeSupported": hingeInteraction != nil,
             "systemBarEdge": edge,
+            "duoVerticalBar": usesDuoVerticalBar,
             "layoutVersion": layoutVersion,
             "nativeSupported": true,
             "hinge": hingeState as Any? ?? NSNull(),

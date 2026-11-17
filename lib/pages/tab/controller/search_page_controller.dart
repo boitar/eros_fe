@@ -336,6 +336,11 @@ class SearchPageController extends DefaultTabViewController {
     if (text == null) {
       return;
     }
+    applyQuickSearch('$text');
+  }
+
+  /// Puts a saved quick search into the field, ready to edit or submit.
+  void applyQuickSearch(String text) {
     searchTextController.value = TextEditingValue(
       text: '$text ',
       selection: TextSelection.fromPosition(

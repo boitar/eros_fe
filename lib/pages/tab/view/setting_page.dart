@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -34,148 +35,162 @@ class SettingTab extends GetView<SettingViewController> {
     final EhSettingService ehSettingService = Get.find();
     final bool nativeBar = NativeNavigationScope.isEnabled(context);
 
-    return _DesktopSettingPanes(child: Obx(() {
-      final bool safeMode = ehSettingService.isSafeMode.value;
-      final bool glassBar = !nativeBar && SettingGlassBar.isActive;
-      final bool titleInContent = nativeBar || glassBar;
-      return NativeNavigationPage(
-        tabId: EHRoutes.setting,
-        chrome: NativePageChrome(
-          title: title,
-          titleVisible: controller.titleInBar.value,
-        ),
-        child: CupertinoPageScaffold(
-          navigationBar: glassBar
-              ? SettingGlassBar(
-                  title: title,
-                  titleVisible: controller.titleInBar.value,
-                  edgeVisible: controller.contentUnderBar.value,
-                )
-              : null,
-          child: CanvasGrain(
-              child: NotificationListener<ScrollUpdateNotification>(
-            onNotification: (notification) {
-              if (notification.depth == 0) {
-                controller.titleInBar.value =
-                    notification.metrics.pixels > _kLargeTitleExtent;
-                controller.contentUnderBar.value =
-                    notification.metrics.pixels > 0;
-              }
-              return false;
-            },
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: <Widget>[
-                if (titleInContent)
-                  SliverSafeArea(
-                    bottom: false,
-                    sliver: SliverToBoxAdapter(
-                      // Android fades the large title out as the bar's own
-                      // title appears, so no blurred copy lingers under it.
-                      child: _androidGroups
-                          ? AnimatedOpacity(
-                              key: const ValueKey<String>(
-                                  'setting-large-title-fade'),
-                              opacity: controller.titleInBar.value ? 0 : 1,
-                              duration: const Duration(milliseconds: 180),
-                              child: SettingLargeTitle(title),
-                            )
-                          : SettingLargeTitle(title),
-                    ),
+    return _DesktopSettingPanes(
+      child: Obx(() {
+        final bool safeMode = ehSettingService.isSafeMode.value;
+        final bool glassBar = !nativeBar && SettingGlassBar.isActive;
+        final bool titleInContent = nativeBar || glassBar;
+        return NativeNavigationPage(
+          tabId: EHRoutes.setting,
+          chrome: NativePageChrome(
+            title: title,
+            titleVisible: controller.titleInBar.value,
+          ),
+          child: CupertinoPageScaffold(
+            navigationBar: glassBar
+                ? SettingGlassBar(
+                    title: title,
+                    titleVisible: controller.titleInBar.value,
+                    edgeVisible: controller.contentUnderBar.value,
                   )
-                else
-                  CupertinoSliverNavigationBar(
-                    heroTag: 'setting',
-                    largeTitle: Text(title),
-                  ),
-                SliverSafeArea(
-                  top: false,
-                  sliver: MultiSliver(children: <Widget>[
-                    if (!safeMode && _androidGroups)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 12),
-                          child: AndroidSettingGroup(
-                            children: <Widget>[_ProfileRow()],
+                : null,
+            child: CanvasGrain(
+              child: NotificationListener<ScrollUpdateNotification>(
+                onNotification: (notification) {
+                  if (notification.depth == 0) {
+                    controller.titleInBar.value =
+                        notification.metrics.pixels > _kLargeTitleExtent;
+                    controller.contentUnderBar.value =
+                        notification.metrics.pixels > 0;
+                  }
+                  return false;
+                },
+                child: NativeSingleBarEdge(
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: <Widget>[
+                      if (titleInContent)
+                        SliverSafeArea(
+                          bottom: false,
+                          sliver: SliverToBoxAdapter(
+                            // Android fades the large title out as the bar's own
+                            // title appears, so no blurred copy lingers under it.
+                            child: _androidGroups
+                                ? AnimatedOpacity(
+                                    key: const ValueKey<String>(
+                                      'setting-large-title-fade',
+                                    ),
+                                    opacity: controller.titleInBar.value
+                                        ? 0
+                                        : 1,
+                                    duration: const Duration(milliseconds: 180),
+                                    child: SettingLargeTitle(title),
+                                  )
+                                : SettingLargeTitle(title),
                           ),
+                        )
+                      else
+                        CupertinoSliverNavigationBar(
+                          heroTag: 'setting',
+                          largeTitle: Text(title),
                         ),
-                      )
-                    else if (!safeMode)
-                      SliverCupertinoListSection.listInsetGrouped(
-                        children: const <Widget>[_ProfileRow()],
+                      SliverSafeArea(
+                        top: false,
+                        sliver: MultiSliver(
+                          children: <Widget>[
+                            if (!safeMode && _androidGroups)
+                              const SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 12),
+                                  child: AndroidSettingGroup(
+                                    children: <Widget>[_ProfileRow()],
+                                  ),
+                                ),
+                              )
+                            else if (!safeMode)
+                              SliverCupertinoListSection.listInsetGrouped(
+                                children: const <Widget>[_ProfileRow()],
+                              ),
+                            _section(
+                              header: l10n.setting_group_browse,
+                              rows: <Widget>[
+                                _SettingLink(
+                                  icon: CupertinoIcons.square_grid_2x2,
+                                  title: l10n.appearance_and_layout,
+                                  route: EHRoutes.layoutSetting,
+                                  value: () => listModeLabels(
+                                    context,
+                                  )[ehSettingService.listMode.value],
+                                ),
+                                _SettingLink(
+                                  icon: CupertinoIcons.book,
+                                  title: l10n.read,
+                                  route: EHRoutes.readSetting,
+                                  value: () => readingDirectionLabels(
+                                    context,
+                                  )[ehSettingService.viewMode.value],
+                                ),
+                                _SettingLink(
+                                  icon: CupertinoIcons.search,
+                                  title: l10n.search,
+                                  route: EHRoutes.searchSetting,
+                                ),
+                              ],
+                            ),
+                            _section(
+                              header: l10n.setting_group_content,
+                              rows: <Widget>[
+                                _SettingLink(
+                                  icon: CupertinoIcons.globe,
+                                  title: l10n.setting_site,
+                                  route: EHRoutes.ehSetting,
+                                  value: () => ehSettingService.isSiteEx.value
+                                      ? 'ExHentai'
+                                      : 'E-Hentai',
+                                ),
+                                _SettingLink(
+                                  icon: CupertinoIcons.arrow_down_to_line,
+                                  title: l10n.download,
+                                  route: EHRoutes.downloadSetting,
+                                ),
+                              ],
+                            ),
+                            _section(
+                              header: l10n.setting_group_system,
+                              rows: <Widget>[
+                                _SettingLink(
+                                  icon: CupertinoIcons.shield,
+                                  title: l10n.security,
+                                  route: EHRoutes.securitySetting,
+                                ),
+                                _SettingLink(
+                                  icon: CupertinoIcons.slider_horizontal_3,
+                                  title: l10n.advanced,
+                                  route: EHRoutes.advancedSetting,
+                                ),
+                                _SettingLink(
+                                  icon: CupertinoIcons.info_circle,
+                                  title: l10n.about,
+                                  route: EHRoutes.about,
+                                  staticValue: Global.packageInfo.version,
+                                ),
+                              ],
+                            ),
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 24),
+                            ),
+                          ],
+                        ),
                       ),
-                    _section(
-                      header: l10n.setting_group_browse,
-                      rows: <Widget>[
-                        _SettingLink(
-                          icon: CupertinoIcons.square_grid_2x2,
-                          title: l10n.appearance_and_layout,
-                          route: EHRoutes.layoutSetting,
-                          value: () => listModeLabels(
-                              context)[ehSettingService.listMode.value],
-                        ),
-                        _SettingLink(
-                          icon: CupertinoIcons.book,
-                          title: l10n.read,
-                          route: EHRoutes.readSetting,
-                          value: () => readingDirectionLabels(
-                              context)[ehSettingService.viewMode.value],
-                        ),
-                        _SettingLink(
-                          icon: CupertinoIcons.search,
-                          title: l10n.search,
-                          route: EHRoutes.searchSetting,
-                        ),
-                      ],
-                    ),
-                    _section(
-                      header: l10n.setting_group_content,
-                      rows: <Widget>[
-                        _SettingLink(
-                          icon: CupertinoIcons.globe,
-                          title: l10n.setting_site,
-                          route: EHRoutes.ehSetting,
-                          value: () => ehSettingService.isSiteEx.value
-                              ? 'ExHentai'
-                              : 'E-Hentai',
-                        ),
-                        _SettingLink(
-                          icon: CupertinoIcons.arrow_down_to_line,
-                          title: l10n.download,
-                          route: EHRoutes.downloadSetting,
-                        ),
-                      ],
-                    ),
-                    _section(
-                      header: l10n.setting_group_system,
-                      rows: <Widget>[
-                        _SettingLink(
-                          icon: CupertinoIcons.shield,
-                          title: l10n.security,
-                          route: EHRoutes.securitySetting,
-                        ),
-                        _SettingLink(
-                          icon: CupertinoIcons.slider_horizontal_3,
-                          title: l10n.advanced,
-                          route: EHRoutes.advancedSetting,
-                        ),
-                        _SettingLink(
-                          icon: CupertinoIcons.info_circle,
-                          title: l10n.about,
-                          route: EHRoutes.about,
-                          staticValue: Global.packageInfo.version,
-                        ),
-                      ],
-                    ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  ]),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          )),
-        ),
-      );
-    }));
+          ),
+        );
+      }),
+    );
   }
 
   Widget _section({required String header, required List<Widget> rows}) {

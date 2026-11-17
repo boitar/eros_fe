@@ -242,31 +242,7 @@ class _SegmentedRailState extends State<SegmentedRail> {
                     child: SizedBox(
                       width: layout.trackWidth,
                       height: trackHeight,
-                      child: (GlassMode.of(context)
-                                  .forComponent(flutterImplemented: true) ==
-                              GlassMode.native)
-                          ? NativeCategoryRail(
-                              categories: widget.items,
-                              selectedIndex: widget.selectedIndex,
-                              followSystemTransparency:
-                                  widget.followSystemTransparency,
-                              brightness: CupertinoTheme.brightnessOf(context),
-                              fontSize:
-                                  MediaQuery.textScalerOf(context).scale(15),
-                              layout: LiquidGlassTopBarLayout.inline,
-                              initialOffset: _nativeOffset,
-                              onOffset: (value) {
-                                _nativeOffset = value;
-                                widget.onOffset?.call(value);
-                              },
-                              opacity: 1,
-                              interactive:
-                                  widget.interactive && widget.opacity >= 0.5,
-                              pageController: widget.pageController,
-                              segmentWidths: layout.widths,
-                              height: trackHeight,
-                            )
-                          : _fallbackTrack(context, layout, trackHeight),
+                      child: _buildTrack(context, layout, trackHeight),
                     ),
                   );
                 }),
@@ -279,6 +255,44 @@ class _SegmentedRailState extends State<SegmentedRail> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTrack(
+      BuildContext context, SegmentedRailLayout layout, double trackHeight) {
+    final wantsNative =
+        GlassMode.of(context).forComponent(flutterImplemented: true) ==
+            GlassMode.native;
+    return wantsNative
+        ? _nativeTrack(context, layout, trackHeight)
+        : _fallbackTrack(context, layout, trackHeight);
+  }
+
+  Widget _nativeTrack(
+      BuildContext context, SegmentedRailLayout layout, double trackHeight) {
+    return NativeCategoryRail(
+      categories: widget.items,
+      selectedIndex: widget.selectedIndex,
+      followSystemTransparency: widget.followSystemTransparency,
+      brightness: CupertinoTheme.brightnessOf(context),
+      fontSize: MediaQuery.textScalerOf(context).scale(15),
+      layout: LiquidGlassTopBarLayout.inline,
+      initialOffset: _nativeOffset,
+      onOffset: (value) {
+        _nativeOffset = value;
+        widget.onOffset?.call(value);
+      },
+      opacity: 1,
+      interactive: widget.interactive && widget.opacity >= 0.5,
+      pageController: widget.pageController,
+      segmentWidths: layout.widths,
+      height: trackHeight,
+      modalFallbackBuilder: (context) {
+        if (!_scroll.hasClients) {
+          _pendingOffset ??= _nativeOffset;
+        }
+        return _fallbackTrack(context, layout, trackHeight);
+      },
     );
   }
 

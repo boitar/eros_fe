@@ -66,7 +66,7 @@ class ArchiverController extends GetxController
     required String dltype,
     required String dlcheck,
   }) async {
-    Get.back();
+    // The archiver sheet closes itself before calling this.
     try {
       final String _url = await postArchiverLocalDownload(
         _archiverLink,
