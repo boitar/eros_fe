@@ -1040,8 +1040,10 @@ class GalleryAmbientBackdrop extends StatelessWidget {
         final sigma = privacy ? 60.0 : 40.0;
         art = RepaintBoundary(
           child: ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(
-                sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.clamp),
+            // Let the renderer choose the layer blur's edge sampling. Forcing
+            // clamp makes Impeller reuse the clipped input edge while this
+            // page slides in, then switch colours when it reaches the pane edge.
+            imageFilter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
             child: ColorFiltered(
               colorFilter: ColorFilter.matrix(saturation(privacy ? 0.6 : 1.15)),
               child: EhNetworkImage(
