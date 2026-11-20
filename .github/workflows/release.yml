@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'master'
-      - 'devin/1795190666-fix-fork-ci'
     tags:
       - v*
       - '!v*ios'
@@ -52,6 +51,8 @@ jobs:
     env:
       GIT_CRYPT_KEY: ${{ secrets.ENCODED_GIT_CRYPT }}
       ENCODED_KEYSTORE: ${{ secrets.ENCODED_KEYSTORE }}
+    outputs:
+      publish_release: ${{ steps.release_policy.outputs.enabled }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,6 +69,11 @@ jobs:
 
       - name: show version
         run: echo ${{ env.app_version }}
+
+      - name: Release publishing policy
+        id: release_policy
+        shell: bash
+        run: echo "enabled=${{ env.GIT_CRYPT_KEY != '' && env.ENCODED_KEYSTORE != '' }}" >> "$GITHUB_OUTPUT"
 
 #      - name: Cache Pods (build macos)
 #        uses: actions/cache@v3
@@ -334,7 +340,7 @@ jobs:
           if-no-files-found: error
 
   Publish_releases:
-    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta') && !contains(github.ref, 'alpha') && !contains(github.ref, 'rc')
+    if: needs.Build_and_upload.outputs.publish_release == 'true' && startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta') && !contains(github.ref, 'alpha') && !contains(github.ref, 'rc')
     name: Publish releases
     needs: Build_and_upload
     runs-on: ubuntu-latest
