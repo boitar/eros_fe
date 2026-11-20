@@ -13,6 +13,7 @@ import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/route/first_observer.dart';
 import 'package:eros_fe/route/second_observer.dart';
+import 'package:eros_fe/utils/tag_search.dart';
 import 'package:get/get.dart';
 
 import '../pages/image_view/controller/view_controller.dart';
@@ -24,18 +25,7 @@ class NavigatorUtil {
     bool replace = false,
     AdvanceSearch? advanceSearch,
   }) async {
-    String _search = simpleSearch;
-    if (simpleSearch.contains(':') &&
-        EHConst.translateTagType.keys.contains(
-          simpleSearch.split(':')[0].trim(),
-        )) {
-      final List<String> searArr = simpleSearch.split(':');
-      String _end = '';
-      if (searArr[0] != 'uploader') {
-        _end = '\$';
-      }
-      _search = '${searArr[0]}:"${searArr[1]}$_end"';
-    }
+    final String _search = formatSimpleSearch(simpleSearch);
 
     final tags = Get.find<ControllerTagService>();
     final tag = tags.pushSearchPageCtrl(searchText: _search);
