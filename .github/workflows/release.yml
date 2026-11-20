@@ -44,7 +44,7 @@ jobs:
             artifact_name: release-mac
             artifact_path: build/macos/Eros-FE*.zip
           - target: windows
-            os: windows-latest
+            os: windows-2022
             artifact_name: release-windows
             artifact_path: build/windows/Eros-FE*.zip
 
@@ -318,6 +318,7 @@ jobs:
         if: matrix.target == 'windows'
         run: |
           flutter build windows --release --no-pub
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $DestDir = "build\windows\${{ env.PACKAGE_NAME }}"
           $SrcDir = "build\windows\x64\runner\Release"
           New-Item -Path $DestDir -ItemType Directory
