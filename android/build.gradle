@@ -32,6 +32,9 @@ subprojects {
                 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
                     kotlinOptions {
                         jvmTarget = javaVersion.toString()
+                        if (languageVersion == "1.6") {
+                            languageVersion = "1.8"
+                        }
                     }
                 }
             }
