@@ -430,8 +430,8 @@ class _Byline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final query = parts.artist.isNotEmpty
-        ? 'artist:"${parts.artist}"'
-        : 'group:"${parts.circle}"';
+        ? 'artist:${parts.artist}'
+        : 'group:${parts.circle}';
     return CupertinoButton(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       minimumSize: Size.zero,
