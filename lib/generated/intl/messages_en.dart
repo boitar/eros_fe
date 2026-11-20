@@ -244,6 +244,59 @@ class MessageLookup extends MessageLookupByLibrary {
     "delete_task_only": MessageLookupByLibrary.simpleMessage(
       "Delete task only",
     ),
+    "desktop_all_history": MessageLookupByLibrary.simpleMessage(
+      "View all history",
+    ),
+    "desktop_clear_history_detail": MessageLookupByLibrary.simpleMessage(
+      "Clears browsing history and recently read works on this device. Reading progress and downloads are kept.",
+    ),
+    "desktop_current_group": MessageLookupByLibrary.simpleMessage(
+      "Current group",
+    ),
+    "desktop_display_mode": MessageLookupByLibrary.simpleMessage(
+      "Display mode",
+    ),
+    "desktop_follow_global": MessageLookupByLibrary.simpleMessage(
+      "Follow global",
+    ),
+    "desktop_global_mode": MessageLookupByLibrary.simpleMessage(
+      "Global display mode",
+    ),
+    "desktop_global_mode_hint": MessageLookupByLibrary.simpleMessage(
+      "Also affects lists that follow global settings",
+    ),
+    "desktop_hide_sidebar": MessageLookupByLibrary.simpleMessage(
+      "Hide sidebar",
+    ),
+    "desktop_mode_sync_failed": MessageLookupByLibrary.simpleMessage(
+      "Display mode saved locally. Sync failed; check your connection.",
+    ),
+    "desktop_no_groups": MessageLookupByLibrary.simpleMessage("No groups"),
+    "desktop_read_unavailable": MessageLookupByLibrary.simpleMessage(
+      "Unable to open this work. Check its source and try again.",
+    ),
+    "desktop_recent_empty": MessageLookupByLibrary.simpleMessage(
+      "Recently read works appear here after you start reading.",
+    ),
+    "desktop_recent_reading": MessageLookupByLibrary.simpleMessage(
+      "Recently read",
+    ),
+    "desktop_refresh": MessageLookupByLibrary.simpleMessage(
+      "Refresh current list",
+    ),
+    "desktop_refreshing": MessageLookupByLibrary.simpleMessage(
+      "Refreshing current list",
+    ),
+    "desktop_resize_panes": MessageLookupByLibrary.simpleMessage(
+      "Adjust gallery and detail widths",
+    ),
+    "desktop_show_sidebar": MessageLookupByLibrary.simpleMessage(
+      "Show sidebar",
+    ),
+    "desktop_untitled": MessageLookupByLibrary.simpleMessage("Untitled work"),
+    "desktop_view_details": MessageLookupByLibrary.simpleMessage(
+      "View details",
+    ),
     "detail_ambient_background": MessageLookupByLibrary.simpleMessage(
       "Ambient Background in Gallery",
     ),

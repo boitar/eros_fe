@@ -34,6 +34,7 @@ class ViewRepository {
     this.files,
     this.asyncArchives,
     this.galleryControllerTag,
+    this.sourcePath,
     required this.gid,
   });
 
@@ -41,6 +42,7 @@ class ViewRepository {
   final List<String>? files;
   final String gid;
   final String? galleryControllerTag;
+  final String? sourcePath;
   final LoadFrom loadType;
   final List<AsyncArchiveFile>? asyncArchives;
 }
@@ -77,14 +79,8 @@ class _ViewPageState extends State<ViewPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     Widget body = const ViewKeyboardListener(
       child: CupertinoTheme(
-        data: CupertinoThemeData(
-          brightness: Brightness.dark,
-        ),
-        child: ImagePlugins(
-          child: ImageGestureDetector(
-            child: ImageView(),
-          ),
-        ),
+        data: CupertinoThemeData(brightness: Brightness.dark),
+        child: ImagePlugins(child: ImageGestureDetector(child: ImageView())),
       ),
     );
     if (offlineAcceptanceEnabled &&
@@ -104,7 +100,8 @@ class _ViewPageState extends State<ViewPage> with TickerProviderStateMixin {
                   return Semantics(
                     container: true,
                     identifier: 'offline-duo-reader-probe',
-                    label: 'index=${vState.currentItemIndex};'
+                    label:
+                        'index=${vState.currentItemIndex};'
                         'count=${vState.fileCount};page=${vState.pageIndex};'
                         'column=${vState.columnMode.name};'
                         'preference=${vState.ehSettingService.readerColumnPreference.name};'
@@ -131,11 +128,15 @@ class _ViewPageState extends State<ViewPage> with TickerProviderStateMixin {
               child: ValueListenableBuilder<Iterable<ItemPosition>>(
                 valueListenable: controller.itemPositionsListener.itemPositions,
                 builder: (_, positions, __) {
-                  final visible = positions
-                      .where((item) =>
-                          item.itemLeadingEdge < 1 && item.itemTrailingEdge > 0)
-                      .toList()
-                    ..sort((a, b) => a.index.compareTo(b.index));
+                  final visible =
+                      positions
+                          .where(
+                            (item) =>
+                                item.itemLeadingEdge < 1 &&
+                                item.itemTrailingEdge > 0,
+                          )
+                          .toList()
+                        ..sort((a, b) => a.index.compareTo(b.index));
                   return Semantics(
                     container: true,
                     identifier: 'offline-duo-scroll-probe',
@@ -299,10 +300,7 @@ PhotoViewScaleState listViewScaleStateCycle(PhotoViewScaleState actual) {
 }
 
 class DoublePageView extends StatefulWidget {
-  const DoublePageView({
-    super.key,
-    required this.pageIndex,
-  });
+  const DoublePageView({super.key, required this.pageIndex});
 
   final int pageIndex;
 
@@ -346,7 +344,8 @@ class _DoublePageViewState extends State<DoublePageView> {
 
   @override
   Widget build(BuildContext context) {
-    final environment = AdaptiveEnvironment.maybeOf(context) ??
+    final environment =
+        AdaptiveEnvironment.maybeOf(context) ??
         AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
     final book = environment.isBookFolded;
     final images = vState.pagination.imagesForPage(widget.pageIndex);
@@ -356,7 +355,8 @@ class _DoublePageViewState extends State<DoublePageView> {
       pages: [
         for (final index in images)
           ReaderSpreadPage(
-            slot: (index +
+            slot:
+                (index +
                     (vState.columnMode == ViewColumnMode.evenLeft ? 1 : 0)) %
                 2,
             aspectRatio: _aspectRatio(index + 1),
@@ -380,10 +380,7 @@ class _DoublePageViewState extends State<DoublePageView> {
 
 ///  显示顶栏 底栏 slider等
 class ImagePlugins extends GetView<ViewExtController> {
-  const ImagePlugins({
-    super.key,
-    required this.child,
-  });
+  const ImagePlugins({super.key, required this.child});
 
   final Widget child;
 
@@ -407,31 +404,34 @@ class ImagePlugins extends GetView<ViewExtController> {
     return GetBuilder<ViewExtController>(
       id: idViewBar,
       builder: (logic) {
-        final environment = AdaptiveEnvironment.maybeOf(context) ??
+        final environment =
+            AdaptiveEnvironment.maybeOf(context) ??
             AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
         final showInline = environment.isWide;
         final glassChrome = !nativeChrome && usesGlassReaderChrome(context);
         final bottomHeight = nativeChrome
             ? ReaderDock.heightFor(thumbnails: vState.showThumbList)
             : glassChrome
-                ? ReaderGlassBottomBar.heightFor(
-                    thumbnails: vState.showThumbList,
-                    wide: showInline,
-                  )
-                : (showInline ? 0 : kBottomBarHeight) +
-                    kSliderBarHeight +
-                    (vState.showThumbList ? kThumbListViewHeight : 0);
+            ? ReaderGlassBottomBar.heightFor(
+                thumbnails: vState.showThumbList,
+                wide: showInline,
+              )
+            : (showInline ? 0 : kBottomBarHeight) +
+                  kSliderBarHeight +
+                  (vState.showThumbList ? kThumbListViewHeight : 0);
         vState.bottomBarHeight = bottomHeight;
         return Obx(() {
-          final fillScreen =
-              vState.ehSettingService.readerFillsScreen(environment.size);
+          final fillScreen = vState.ehSettingService.readerFillsScreen(
+            environment.size,
+          );
           return _ReaderSystemUiSync(
             fillScreen: fillScreen,
             onChanged: controller.syncFullscreen,
             child: ReaderSurfaceLayout(
               environment: environment,
               preference: vState.surfacePreference,
-              singlePage: vState.ehSettingService.readerColumnPreference ==
+              singlePage:
+                  vState.ehSettingService.readerColumnPreference ==
                   ReaderColumnPreference.single,
               showBars: vState.showBar,
               fillScreen: fillScreen,
@@ -442,13 +442,13 @@ class ImagePlugins extends GetView<ViewExtController> {
               topBar: nativeChrome
                   ? const SizedBox.shrink()
                   : glassChrome
-                      ? const ReaderGlassTopBar()
-                      : const ViewTopBar(),
+                  ? const ReaderGlassTopBar()
+                  : const ViewTopBar(),
               bottomBar: nativeChrome
                   ? const ReaderDock()
                   : glassChrome
-                      ? const ReaderGlassBottomBar()
-                      : const ViewBottomBar(),
+                  ? const ReaderGlassBottomBar()
+                  : const ViewBottomBar(),
               content: child,
             ),
           );
@@ -493,10 +493,7 @@ class _ReaderSystemUiSyncState extends State<_ReaderSystemUiSync> {
 
 /// 控制触摸手势事件
 class ImageGestureDetector extends GetView<ViewExtController> {
-  const ImageGestureDetector({
-    super.key,
-    required this.child,
-  });
+  const ImageGestureDetector({super.key, required this.child});
   final Widget child;
 
   static const lrRatio = 1 / 3;

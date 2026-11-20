@@ -332,7 +332,8 @@ private final class MacOSWindowChromePlugin: NSObject, FlutterPlugin {
     super.init()
     for name in [NSWindow.didResizeNotification, NSWindow.didMoveNotification,
                  NSWindow.didEnterFullScreenNotification, NSWindow.didExitFullScreenNotification,
-                 NSWindow.didBecomeKeyNotification] {
+                 NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification,
+                 NSWindow.didChangeScreenNotification, NSWindow.didChangeBackingPropertiesNotification] {
       observers.append(NotificationCenter.default.addObserver(forName:name,object:nil,queue:.main) { [weak self] note in
         guard let self, let window = note.object as? NSWindow, window === self.host?.window else { return }
         self.publishGeometryIfChanged()
@@ -349,11 +350,28 @@ private final class MacOSWindowChromePlugin: NSObject, FlutterPlugin {
       let current = geometry()
       lastGeometry = current
       result(current)
+    } else if call.method == "browseMenu", let labels = call.arguments as? [String: String] {
+      if let main = NSApp.mainMenu {
+        let identifier = NSUserInterfaceItemIdentifier("eros-browse-menu")
+        let item = main.items.first(where: { $0.identifier == identifier }) ?? NSMenuItem()
+        item.identifier = identifier
+        item.title = labels["title"] ?? "Browse"
+        let menu = NSMenu(title: item.title)
+        let manage = NSMenuItem(title: labels["manage"] ?? "Manage Groups", action: #selector(manageGroups), keyEquivalent: "")
+        manage.target = self
+        menu.addItem(manage)
+        item.submenu = menu
+        if item.menu == nil { main.insertItem(item, at: min(2, main.items.count)) }
+      }
+      result(nil)
     } else if call.method == "toggleFullScreen" {
       // The reader's F key: the system fullscreen space, as the green button.
       host?.window?.toggleFullScreen(nil)
       result(nil)
     } else { result(FlutterMethodNotImplemented) }
+  }
+  @objc private func manageGroups() {
+    channel.invokeMethod("manageGroups", arguments: nil)
   }
   // The app does not independently toggle standardWindowButton.isHidden or
   // change titlebar style at runtime. System fullscreen hiding is covered by
@@ -369,13 +387,16 @@ private final class MacOSWindowChromePlugin: NSObject, FlutterPlugin {
     guard let host, let window = host.window else { return ["buttons":[]] }
     let fullscreen = window.styleMask.contains(.fullScreen)
     var buttons: [[String:Any]] = []
-    if !fullscreen {
-      for kind in [NSWindow.ButtonType.closeButton,.miniaturizeButton,.zoomButton] {
+    for kind in [NSWindow.ButtonType.closeButton,.miniaturizeButton,.zoomButton] {
         guard let button = window.standardWindowButton(kind), !button.isHiddenOrHasHiddenAncestor else { continue }
         let frame = button.convert(button.bounds,to:host)
         buttons.append(["x":frame.minX,"y":host.isFlipped ? frame.minY : host.bounds.height-frame.maxY,"width":frame.width,"height":frame.height])
-      }
     }
-    return ["fullscreen":fullscreen,"buttons":buttons]
+    // Safe-area insets include camera housing in fullscreen on supported hosts.
+    // Standard controls remain native; their union is window-local logical pt.
+    // Windowed safeAreaInsets includes the titlebar even with a transparent
+    // custom frame. Only screen hardware reserves space across all panes.
+    let safeTop = fullscreen ? min(host.safeAreaInsets.top, window.screen?.safeAreaInsets.top ?? 0) : 0
+    return ["fullscreen":fullscreen,"buttons":buttons,"safeTop":safeTop,"keyWindow":window.isKeyWindow]
   }
 }

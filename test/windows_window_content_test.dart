@@ -1,9 +1,15 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 // ignore: depend_on_referenced_packages
 import 'package:bitsdojo_window_platform_interface/bitsdojo_window_platform_interface.dart';
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/desktop.dart';
+import 'package:eros_fe/widget/desktop_browse_style.dart';
+import 'package:eros_fe/widget/desktop_sidebar.dart';
+import 'package:eros_fe/widget/detail_window_backdrop.dart';
 import 'package:eros_fe/widget/windows_window_content.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,6 +48,132 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Windows titlebar canvas follows light and dark themes', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.windows;
+    final oldPlatform = BitsdojoWindowPlatform.instance;
+    BitsdojoWindowPlatform.instance = _WindowPlatform();
+    addTearDown(() => BitsdojoWindowPlatform.instance = oldPlatform);
+
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      final canvas = brightness == Brightness.light
+          ? const Color(0xFFF2F3F6)
+          : const Color(0xFF0E0F12);
+      await tester.pumpWidget(
+        CupertinoApp(
+          theme: CupertinoThemeData(
+            brightness: brightness,
+            scaffoldBackgroundColor: canvas,
+          ),
+          builder: (context, child) => Desktop(child: child!),
+          home: const CupertinoPageScaffold(child: Text('page')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ColoredBox>(
+              find.byKey(const ValueKey('windows-window-canvas')),
+            )
+            .color,
+        canvas,
+      );
+      expect(
+        tester.widget<WindowButton>(find.byType(WindowButton).first).colors,
+        same(brightness == Brightness.dark ? darkButtonColors : buttonColors),
+      );
+    }
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    debugDefaultTargetPlatformOverride = null;
+    PlatformCapabilities.debugHostPlatformOverride = null;
+  });
+
+  testWidgets('Windows light browse canvas matches the toolbar tone', (
+    tester,
+  ) async {
+    for (final (platform, emphasis) in [
+      (TargetPlatform.windows, 0.0),
+      (TargetPlatform.macOS, .10),
+    ]) {
+      PlatformCapabilities.debugHostPlatformOverride = platform;
+      await tester.pumpWidget(
+        CupertinoApp(
+          key: ValueKey(platform),
+          theme: const CupertinoThemeData(brightness: Brightness.light),
+          home: Builder(
+            builder: (context) => ColoredBox(
+              key: const ValueKey('browse-canvas'),
+              color: DesktopBrowseStyle.canvas(context),
+            ),
+          ),
+        ),
+      );
+      final color = tester
+          .widget<ColoredBox>(find.byKey(const ValueKey('browse-canvas')))
+          .color;
+      expect(
+        color.toARGB32(),
+        Color.alphaBlend(
+          const Color(0xFF14161A).withValues(alpha: emphasis),
+          const Color(0xFFF2F3F6),
+        ).toARGB32(),
+        reason: '$platform browse canvas tone',
+      );
+    }
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('desktop canvases stay flat behind their toolbars', (
+    tester,
+  ) async {
+    for (final platform in [TargetPlatform.windows, TargetPlatform.macOS]) {
+      PlatformCapabilities.debugHostPlatformOverride = platform;
+      await tester.pumpWidget(
+        const CupertinoApp(home: CanvasGrain(child: SizedBox.expand())),
+      );
+      final grain = find.descendant(
+        of: find.byType(CanvasGrain),
+        matching: find.byType(CustomPaint),
+      );
+      expect(grain, findsOneWidget);
+      expect(tester.widget<CustomPaint>(grain).painter, isNull);
+    }
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('Windows detail backdrop remains visible behind titlebar', (
+    tester,
+  ) async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.windows;
+    final oldPlatform = BitsdojoWindowPlatform.instance;
+    BitsdojoWindowPlatform.instance = _WindowPlatform();
+    addTearDown(() {
+      BitsdojoWindowPlatform.instance = oldPlatform;
+      DetailWindowBackdrop.active.value = false;
+    });
+    const cover = Color(0xFF235B89);
+    await tester.pumpWidget(
+      CupertinoApp(
+        builder: (_, child) => Desktop(child: child!),
+        home: const ColoredBox(
+          key: ValueKey('detail-route-canvas'),
+          color: cover,
+          child: SizedBox.expand(),
+        ),
+      ),
+    );
+    await tester.pump();
+    final detailCanvas = find.byKey(const ValueKey('detail-route-canvas'));
+    expect(tester.getTopLeft(detailCanvas).dy, 32);
+    DetailWindowBackdrop.active.value = true;
+    await tester.pump();
+    expect(tester.getTopLeft(detailCanvas).dy, 0);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('Windows content and navigator overlays stay below titlebar', (
@@ -125,6 +257,24 @@ void main() {
     tester.view.resetPhysicalSize();
     tester.view.resetDevicePixelRatio();
     debugDefaultTargetPlatformOverride = null;
+  });
+
+  test('desktop sidebar activates at the shipped Windows window width', () {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.windows;
+    for (final (width, expected) in [
+      (799.0, false),
+      (800.0, true),
+      (899.0, true),
+      (900.0, true),
+    ]) {
+      expect(
+        usesDesktopSidebar(
+          environment: AdaptiveEnvironmentSnapshot(size: Size(width, 600)),
+        ),
+        expected,
+        reason: 'Windows window width $width',
+      );
+    }
   });
 }
 

@@ -17,6 +17,8 @@ import 'package:eros_fe/pages/tab/view/top_bar_layout_reset.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/android_solid_top_bar.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
+import 'package:eros_fe/widget/desktop_gallery_toolbar.dart';
+import 'package:eros_fe/widget/desktop_browse_style.dart';
 import 'package:eros_fe/widget/desktop_sidebar.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
@@ -113,10 +115,21 @@ class _CustomTabbarListState extends State<CustomTabbarList>
       return null;
     }
     final index = controller.index.clamp(0, profiles.length - 1).toInt();
-    return visual ? liquidGlassCardScreenTop(_firstCardKeyFor(profiles[index].uuid)) : liquidGlassScreenTop(_firstCardKeyFor(profiles[index].uuid));
+    return visual
+        ? liquidGlassCardScreenTop(_firstCardKeyFor(profiles[index].uuid))
+        : liquidGlassScreenTop(_firstCardKeyFor(profiles[index].uuid));
   }
 
   Future<void> _scrollToInitialContentAnchor() async {
+    if (PlatformCapabilities.isDesktop) {
+      for (final position
+          in _nestedScrollKey.currentState?.innerPositions ??
+              const <ScrollPosition>[]) {
+        position.jumpTo(0);
+      }
+      if (_headerScrollController.hasClients) _headerScrollController.jumpTo(0);
+      return;
+    }
     if (_useLiquidGlass) {
       await _topState.resetToInitialAnchor();
       return;
@@ -204,7 +217,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
 
   Widget _buildPage(BuildContext context) {
     return Obx(() {
-      final liquidGlass = _useLiquidGlass;
+      final liquidGlass = _useLiquidGlass && !PlatformCapabilities.isDesktop;
       final hideTopBarOnScroll = _ehSettingService.hideTopBarOnScroll;
 
       final Widget scrollView = buildNestedScrollView(
@@ -215,6 +228,8 @@ class _CustomTabbarListState extends State<CustomTabbarList>
 
       if (!liquidGlass) {
         return CupertinoPageScaffold(
+          backgroundColor: DesktopSidebarScope.maybeOf(context)?.desktop == true
+              ? DesktopBrowseStyle.canvas(context) : null,
           child: CanvasGrain(
             child: offlineGroupSelection(
               uuid: controller.currProfileUuid,
@@ -251,7 +266,10 @@ class _CustomTabbarListState extends State<CustomTabbarList>
     final topInset = mediaQuery.viewPadding.top;
     final native = NativeNavigationScope.isEnabled(context);
     final topTabbarHeight = topTabbarHeightFor(context);
-    final headerMaxHeight = native
+    final desktop = PlatformCapabilities.isDesktop;
+    final headerMaxHeight = desktop
+        ? DesktopBrowseStyle.toolbarHeight
+        : native
         ? topInset + topTabbarHeight
         : liquidGlass
         ? layout.safeTop +
@@ -270,7 +288,9 @@ class _CustomTabbarListState extends State<CustomTabbarList>
       );
     }
     final nativeCollapsible = native && hideTopBarOnScroll;
-    _headerScrollController.headerExtent = native
+    _headerScrollController.headerExtent = desktop
+        ? 0
+        : native
         ? nativeCollapsible
               ? topTabbarHeight
               : 0
@@ -303,7 +323,9 @@ class _CustomTabbarListState extends State<CustomTabbarList>
               floating: !liquidGlass,
               pinned: true,
               delegate: FooSliverPersistentHeaderDelegate(
-                builder: (context, offset, _) => native
+                builder: (context, offset, _) => desktop
+                    ? const SizedBox.expand()
+                    : native
                     ? NativeTopTabHeader(
                         topInset: topInset,
                         railHeight: topTabbarHeight,
@@ -322,7 +344,9 @@ class _CustomTabbarListState extends State<CustomTabbarList>
                           liquidGlass: false,
                         ),
                       ),
-                minHeight: native
+                minHeight: desktop
+                    ? headerMaxHeight
+                    : native
                     ? NativeTopTabHeader.minExtentFor(
                         topInset: topInset,
                         railHeight: topTabbarHeight,
@@ -343,6 +367,40 @@ class _CustomTabbarListState extends State<CustomTabbarList>
       },
       body: buildSubPages(liquidGlass, hideTopBarOnScroll),
     );
+    if (desktop) {
+      final canvas = DesktopSidebarScope.maybeOf(context)?.desktop == true
+          ? DesktopBrowseStyle.canvas(context) : CupertinoTheme.of(context).scaffoldBackgroundColor;
+      return ScrollEdgeProgressListener(
+        controller: _nativeEdgeProgress,
+        activePage: controller.currProfileUuid,
+        child: Stack(fit: StackFit.expand, children: [
+          scrollView,
+          Positioned(
+            left: 0, right: 0, top: 0,
+            child: Column(children: [
+              ColoredBox(
+                color: canvas,
+                child: SizedBox(height: headerMaxHeight, child: DesktopGalleryToolbar(controller: controller)),
+              ),
+              IgnorePointer(child: ValueListenableBuilder<double>(
+                valueListenable: _nativeEdgeProgress,
+                builder: (_, progress, _) => SizedBox(
+                  height: 16,
+                  child: DecoratedBox(
+                    key: const ValueKey('desktop-gallery-scroll-edge'),
+                    decoration: BoxDecoration(gradient: LinearGradient(
+                      begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                      colors: [canvas.withValues(alpha: progress), canvas.withValues(alpha: 0)],
+                    )),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              )),
+            ]),
+          ),
+        ]),
+      );
+    }
     if (!liquidGlass) {
       return ScrollEdgeProgressListener(
         controller: _nativeEdgeProgress,
@@ -461,6 +519,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
                           key: ValueKey(e.uuid),
                           controller: _nativeEdgeProgress,
                           enabled:
+                              PlatformCapabilities.isDesktop ||
                               liquidGlass ||
                               NativeNavigationScope.isEnabled(context),
                           page: e.uuid,
@@ -993,44 +1052,6 @@ class CustomTabBar extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // 刷新按钮
-                        if (GetPlatform.isDesktop)
-                          Builder(
-                            builder: (context) {
-                              bool isRefresh = false;
-                              return StatefulBuilder(
-                                builder: (context, setState) {
-                                  return CupertinoButton(
-                                    minSize: 40,
-                                    padding: const EdgeInsets.all(0),
-                                    child: isRefresh
-                                        ? const CupertinoActivityIndicator(
-                                            radius: 10,
-                                          )
-                                        : Semantics(
-                                            label: '刷新',
-                                            child: const FaIcon(
-                                              FontAwesomeIcons.rotateRight,
-                                              size: 20,
-                                            ),
-                                          ),
-                                    onPressed: () async {
-                                      setState(() {
-                                        isRefresh = true;
-                                      });
-                                      try {
-                                        await controller.reloadData();
-                                      } finally {
-                                        setState(() {
-                                          isRefresh = false;
-                                        });
-                                      }
-                                    },
-                                  );
-                                },
-                              );
-                            },
-                          ),
                         offlineGroupControl(
                           'manage',
                           CupertinoButton(

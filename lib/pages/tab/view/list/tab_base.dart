@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -36,50 +37,48 @@ SliverPadding buildDebugSimple(
   return SliverPadding(
     padding: const EdgeInsets.all(EHConst.gridCrossAxisSpacing),
     sliver: SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (BuildContext context, int index) {
-          if (galleryProviders.length - 1 < index) {
-            return const SizedBox.shrink();
-          }
+      delegate: SliverChildBuilderDelegate((BuildContext context, int index) {
+        if (galleryProviders.length - 1 < index) {
+          return const SizedBox.shrink();
+        }
 
-          if (index == galleryProviders.length - 1 &&
-              (next?.isNotEmpty ?? false)) {
-            // 加载完成最后一项的回调
-            lastComplete?.call();
-          }
+        if (index == galleryProviders.length - 1 &&
+            (next?.isNotEmpty ?? false)) {
+          // 加载完成最后一项的回调
+          lastComplete?.call();
+        }
 
-          final GalleryProvider _provider = galleryProviders[index];
-          Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
-          Get.lazyReplace(
-              () => GalleryItemController(
-                  galleryProvider: Get.find(tag: _provider.gid)),
-              tag: _provider.gid,
-              fenix: true);
+        final GalleryProvider _provider = galleryProviders[index];
+        Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
+        Get.lazyReplace(
+          () => GalleryItemController(
+            galleryProvider: Get.find(tag: _provider.gid),
+          ),
+          tag: _provider.gid,
+          fenix: true,
+        );
 
-          final item = GalleryItemDebugSimple(
-            key:
-                index == lastTopItemIndex ? centerKey : ValueKey(_provider.gid),
-            galleryProvider: _provider,
-            tabTag: tabTag,
-          );
-          return _withFirstCardKey(item, index, firstCardKey);
+        final item = GalleryItemDebugSimple(
+          key: index == lastTopItemIndex ? centerKey : ValueKey(_provider.gid),
+          galleryProvider: _provider,
+          tabTag: tabTag,
+        );
+        return _withFirstCardKey(item, index, firstCardKey);
 
-          // return FrameSeparateWidget(
-          //   index: index,
-          //   placeHolder: Container(
-          //     width: 60,
-          //   ),
-          //   child: GalleryItemDebugSimple(
-          //     key: index == lastTopitemIndex
-          //         ? centerKey
-          //         : ValueKey(_provider.gid),
-          //     galleryProvider: _provider,
-          //     tabTag: tabTag,
-          //   ),
-          // );
-        },
-        childCount: galleryProviders.length,
-      ),
+        // return FrameSeparateWidget(
+        //   index: index,
+        //   placeHolder: Container(
+        //     width: 60,
+        //   ),
+        //   child: GalleryItemDebugSimple(
+        //     key: index == lastTopitemIndex
+        //         ? centerKey
+        //         : ValueKey(_provider.gid),
+        //     galleryProvider: _provider,
+        //     tabTag: tabTag,
+        //   ),
+        // );
+      }, childCount: galleryProviders.length),
     ),
   );
 }
@@ -93,7 +92,8 @@ Widget _listItemWidget(
   switch (listMode) {
     case ListModeEnum.list:
       return GalleryItemWidget(
-        key: centerKey ??
+        key:
+            centerKey ??
             ValueKey('${_provider.gid}_${_provider.ratingFallBack}'),
         galleryProvider: _provider,
         tabTag: tabTag,
@@ -128,15 +128,20 @@ Widget _buildDelSliverAnimatedListItem(
 }) {
   return FadeTransition(
     opacity: _animation.drive(
-        CurveTween(curve: const Interval(0.0, 1.0, curve: Curves.easeOut))),
+      CurveTween(curve: const Interval(0.0, 1.0, curve: Curves.easeOut)),
+    ),
     child: SizeTransition(
       sizeFactor: _animation.drive(
-          CurveTween(curve: const Interval(0.0, 1.0, curve: Curves.easeOut))),
+        CurveTween(curve: const Interval(0.0, 1.0, curve: Curves.easeOut)),
+      ),
       child: SlideTransition(
         position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-            .animate(CurvedAnimation(
+            .animate(
+              CurvedAnimation(
                 parent: _animation,
-                curve: const Interval(0.4, 1.0, curve: Curves.easeOut))),
+                curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
+              ),
+            ),
         child: child,
       ),
     ),
@@ -198,49 +203,51 @@ Widget buildAnimatedGallerySliverListView(
     initialItemCount: galleryProviders.length,
     itemBuilder:
         (BuildContext context, int index, Animation<double> animation) {
-      if (galleryProviders.length - 1 < index) {
-        return const SizedBox.shrink();
-      }
+          if (galleryProviders.length - 1 < index) {
+            return const SizedBox.shrink();
+          }
 
-      if (index == galleryProviders.length - 1 && (next?.isNotEmpty ?? false)) {
-        // 加载完成最后一项的回调
-        lastComplete?.call();
-      }
+          if (index == galleryProviders.length - 1 &&
+              (next?.isNotEmpty ?? false)) {
+            // 加载完成最后一项的回调
+            lastComplete?.call();
+          }
 
-      final GalleryProvider _itemInfo = galleryProviders[index];
-      Get.lazyReplace(() => _itemInfo, tag: _itemInfo.gid, fenix: true);
-      Get.lazyReplace(
-        () => GalleryItemController(
-            galleryProvider: Get.find(tag: _itemInfo.gid)),
-        tag: _itemInfo.gid,
-        fenix: true,
-      );
+          final GalleryProvider _itemInfo = galleryProviders[index];
+          Get.lazyReplace(() => _itemInfo, tag: _itemInfo.gid, fenix: true);
+          Get.lazyReplace(
+            () => GalleryItemController(
+              galleryProvider: Get.find(tag: _itemInfo.gid),
+            ),
+            tag: _itemInfo.gid,
+            fenix: true,
+          );
 
-      final itemWidget = buildGallerySliverListItem(
-        _itemInfo,
-        index,
-        animation,
-        tabTag: tabTag,
-        centerKey: centerKey,
-        oriFirstIndex: lastTopitemIndex,
-        listMode: ListModeEnum.list,
-      );
+          final itemWidget = buildGallerySliverListItem(
+            _itemInfo,
+            index,
+            animation,
+            tabTag: tabTag,
+            centerKey: centerKey,
+            oriFirstIndex: lastTopitemIndex,
+            listMode: ListModeEnum.list,
+          );
 
-      // if (index < 2) {
-      //   return const GalleryItemPlaceHolder();
-      // }
+          // if (index < 2) {
+          //   return const GalleryItemPlaceHolder();
+          // }
 
-      if (tabTag == EHRoutes.history) {
-        return itemWidget;
-      } else {
-        // return itemWidget;
-        return FrameSeparateWidget(
-          index: index,
-          placeHolder: const GalleryItemPlaceHolder(),
-          child: itemWidget,
-        );
-      }
-    },
+          if (tabTag == EHRoutes.history) {
+            return itemWidget;
+          } else {
+            // return itemWidget;
+            return FrameSeparateWidget(
+              index: index,
+              placeHolder: const GalleryItemPlaceHolder(),
+              child: itemWidget,
+            );
+          }
+        },
   );
 }
 
@@ -260,35 +267,38 @@ Widget buildAnimatedGallerySliverListSimpleView(
     initialItemCount: galleryProviders.length,
     itemBuilder:
         (BuildContext context, int index, Animation<double> animation) {
-      if (galleryProviders.length - 1 < index) {
-        return const SizedBox.shrink();
-      }
+          if (galleryProviders.length - 1 < index) {
+            return const SizedBox.shrink();
+          }
 
-      if (index == galleryProviders.length - 1 && (next?.isNotEmpty ?? false)) {
-        // 加载完成最后一项的回调
-        lastComplete?.call();
-      }
+          if (index == galleryProviders.length - 1 &&
+              (next?.isNotEmpty ?? false)) {
+            // 加载完成最后一项的回调
+            lastComplete?.call();
+          }
 
-      final GalleryProvider _provider = galleryProviders[index];
-      Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
-      Get.lazyReplace(
-          () => GalleryItemController(
-              galleryProvider: Get.find(tag: _provider.gid)),
-          tag: _provider.gid,
-          fenix: true);
-      return FrameSeparateWidget(
-        placeHolder: const GalleryItemSimplePlaceHolder(),
-        child: buildGallerySliverListItem(
-          _provider,
-          index,
-          animation,
-          tabTag: tabTag,
-          centerKey: centerKey,
-          oriFirstIndex: lastTopitemIndex,
-          listMode: ListModeEnum.simpleList,
-        ),
-      );
-    },
+          final GalleryProvider _provider = galleryProviders[index];
+          Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
+          Get.lazyReplace(
+            () => GalleryItemController(
+              galleryProvider: Get.find(tag: _provider.gid),
+            ),
+            tag: _provider.gid,
+            fenix: true,
+          );
+          return FrameSeparateWidget(
+            placeHolder: const GalleryItemSimplePlaceHolder(),
+            child: buildGallerySliverListItem(
+              _provider,
+              index,
+              animation,
+              tabTag: tabTag,
+              centerKey: centerKey,
+              oriFirstIndex: lastTopitemIndex,
+              listMode: ListModeEnum.simpleList,
+            ),
+          );
+        },
   );
 }
 
@@ -305,57 +315,62 @@ Widget buildGallerySliverListSimpleView(
 }) {
   logger.t('buildGallerySliverListSimpleView');
 
-  return Builder(builder: (context) {
-    final restoration = GalleryAnchorScope.maybeOf(context)?.restoration;
-    return FlutterSliverList(
-      delegate: FlutterListViewDelegate(
-        (context, index) {
-          if (galleryProviders.length - 1 < index) {
-            return const SizedBox.shrink();
-          }
+  return Builder(
+    builder: (context) {
+      final restoration = GalleryAnchorScope.maybeOf(context)?.restoration;
+      return FlutterSliverList(
+        delegate: FlutterListViewDelegate(
+          (context, index) {
+            if (galleryProviders.length - 1 < index) {
+              return const SizedBox.shrink();
+            }
 
-          if (index == galleryProviders.length - 1 &&
-              (next?.isNotEmpty ?? false)) {
-            // 加载完成最后一项的回调
-            SchedulerBinding.instance
-                .addPostFrameCallback((_) => lastComplete?.call());
-          }
+            if (index == galleryProviders.length - 1 &&
+                (next?.isNotEmpty ?? false)) {
+              // 加载完成最后一项的回调
+              SchedulerBinding.instance.addPostFrameCallback(
+                (_) => lastComplete?.call(),
+              );
+            }
 
-          final GalleryProvider _provider = galleryProviders[index];
-          Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
-          Get.lazyReplace(
-            () => GalleryItemController(
-                galleryProvider: Get.find(tag: _provider.gid)),
-            tag: _provider.gid,
-            fenix: true,
-          );
-
-          return GalleryAnchorItem(
-            id: _provider.gid ?? '$index',
-            index: index,
-            child: _withFirstCardKey(
-              FrameSeparateWidget(
-                index: index,
-                placeHolder: const GalleryItemSimplePlaceHolder(),
-                child: GalleryItemSimpleWidget(
-                  galleryProvider: _provider,
-                  tabTag: tabTag,
-                ),
+            final GalleryProvider _provider = galleryProviders[index];
+            Get.lazyReplace(() => _provider, tag: _provider.gid, fenix: true);
+            Get.lazyReplace(
+              () => GalleryItemController(
+                galleryProvider: Get.find(tag: _provider.gid),
               ),
-              index,
-              firstCardKey,
-            ),
-          );
-        },
-        onItemKey: (index) => galleryProviders[index].gid ?? '',
-        childCount: galleryProviders.length,
-        keepPosition: keepPosition,
-        initIndex: restoration?.anchor.index ?? 0,
-        initOffset: 0,
-        forceToExecuteInitIndex: restoration?.generation,
-      ),
-    );
-  });
+              tag: _provider.gid,
+              fenix: true,
+            );
+
+            return GalleryAnchorItem(
+              mode: ListModeEnum.simpleList,
+              id: _provider.gid ?? '$index',
+              index: index,
+              child: _withFirstCardKey(
+                FrameSeparateWidget(
+                  index: index,
+                  placeHolder: const GalleryItemSimplePlaceHolder(),
+                  child: GalleryItemSimpleWidget(
+                    galleryProvider: _provider,
+                    tabTag: tabTag,
+                  ),
+                ),
+                index,
+                firstCardKey,
+              ),
+            );
+          },
+          onItemKey: (index) => galleryProviders[index].gid ?? '',
+          childCount: galleryProviders.length,
+          keepPosition: keepPosition,
+          initIndex: restoration?.anchor.index ?? 0,
+          initOffset: 0,
+          forceToExecuteInitIndex: restoration?.generation,
+        ),
+      );
+    },
+  );
 }
 
 Widget getGallerySliverList(
@@ -401,7 +416,9 @@ Widget getGallerySliverList(
       final adaptive = AdaptiveEnvironment.maybeOf(context);
       // A portrait expanded window gets the existing tagged grid without
       // changing the user's single-column preference on compact or split panes.
-      final mod = adaptive?.isExpandedGrid == true &&
+      final mod =
+          !PlatformCapabilities.isDesktop &&
+              adaptive?.isExpandedGrid == true &&
               configuredMode == ListModeEnum.list
           ? ListModeEnum.gridTags
           : configuredMode;
@@ -478,9 +495,7 @@ Widget getGallerySliverList(
               lastTopItemIndex: lastTopItemIndex,
             );
           case ListModeEnum.global:
-            return const SliverFillRemaining(
-              child: SizedBox(),
-            );
+            return const SliverFillRemaining(child: SizedBox());
         }
       }
 
@@ -501,7 +516,8 @@ Widget getGallerySliverList(
               sliver: content,
             )
           : content;
-      if (mod != ListModeEnum.list &&
+      if (!PlatformCapabilities.isDesktop &&
+          mod != ListModeEnum.list &&
           mod != ListModeEnum.simpleList &&
           mod != ListModeEnum.grid &&
           mod != ListModeEnum.gridTags) {
@@ -535,7 +551,7 @@ class SearchRepository {
 
 class EndIndicator extends StatelessWidget {
   const EndIndicator({Key? key, required this.pageState, this.loadDataMore})
-      : super(key: key);
+    : super(key: key);
 
   final PageState pageState;
   final VoidCallback? loadDataMore;
@@ -545,42 +561,40 @@ class EndIndicator extends StatelessWidget {
     return SliverToBoxAdapter(
       // key: centerKey,
       child: Container(
-              alignment: Alignment.center,
-              padding: EdgeInsets.only(
-                  top: 50, bottom: 100.0 + context.mediaQueryPadding.bottom),
-              child: () {
-                switch (pageState) {
-                  case PageState.None:
-                    return Container();
-                  case PageState.LoadingMore:
-                    return const CupertinoActivityIndicator(
-                      radius: 14,
-                    );
-                  case PageState.LoadingException:
-                  case PageState.LoadingError:
-                    return GestureDetector(
-                      onTap: loadDataMore,
-                      child: Column(
-                        children: <Widget>[
-                          const Icon(
-                            Icons.error,
-                            size: 40,
-                            color: CupertinoColors.systemRed,
-                          ),
-                          Text(
-                            L10n.of(Get.context!).list_load_more_fail,
-                            style: const TextStyle(
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  default:
-                    return Container();
-                }
-              }())
-          .autoCompressKeyboard(context),
+        alignment: Alignment.center,
+        padding: EdgeInsets.only(
+          top: 50,
+          bottom: 100.0 + context.mediaQueryPadding.bottom,
+        ),
+        child: () {
+          switch (pageState) {
+            case PageState.None:
+              return Container();
+            case PageState.LoadingMore:
+              return const CupertinoActivityIndicator(radius: 14);
+            case PageState.LoadingException:
+            case PageState.LoadingError:
+              return GestureDetector(
+                onTap: loadDataMore,
+                child: Column(
+                  children: <Widget>[
+                    const Icon(
+                      Icons.error,
+                      size: 40,
+                      color: CupertinoColors.systemRed,
+                    ),
+                    Text(
+                      L10n.of(Get.context!).list_load_more_fail,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            default:
+              return Container();
+          }
+        }(),
+      ).autoCompressKeyboard(context),
     );
   }
 }

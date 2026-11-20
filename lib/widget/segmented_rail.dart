@@ -21,15 +21,36 @@ class SegmentedRailLayout {
     double available, {
     bool compact = false,
   }) {
-    if (labelWidths.isEmpty || available <= 0) {
+    if (labelWidths.isEmpty) {
       return SegmentedRailLayout._(
-          const <double>[], math.max(0, available), false);
+        const <double>[],
+        available.isFinite ? math.max(0, available) : 0,
+        false,
+      );
     }
     final natural = <double>[
       for (final width in labelWidths) width + labelPadding * 2,
     ];
     final count = natural.length;
     final widest = natural.reduce(math.max);
+    if (!available.isFinite) {
+      if (available == double.infinity && compact) {
+        final segment = math.max(widest, compactMaxSegment);
+        return SegmentedRailLayout._(
+          List<double>.filled(count, segment),
+          segment * count,
+          false,
+        );
+      }
+      return SegmentedRailLayout._(
+        natural,
+        natural.fold<double>(0, (sum, width) => sum + width),
+        false,
+      );
+    }
+    if (available <= 0) {
+      return const SegmentedRailLayout._(<double>[], 0, false);
+    }
     if (compact) {
       final segment =
           math.max(widest, math.min(compactMaxSegment, available / count));

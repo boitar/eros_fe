@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/route_cover.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'tabbar/custom_tabbar_page.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
@@ -11,9 +13,15 @@ import 'package:eros_fe/route/eh_observer.dart';
 import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/pages/gallery/controller/taginfo_controller.dart';
 import 'package:eros_fe/widget/appkit_interaction.dart';
+import 'package:eros_fe/common/service/desktop_ui_preferences.dart';
+import 'package:eros_fe/widget/desktop_browse_style.dart';
+import 'package:eros_fe/widget/desktop_sidebar.dart';
+import 'package:eros_fe/widget/desktop_split_handle.dart';
+import 'package:eros_fe/widget/desktop_leading_header.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
+
 import 'home_page_small.dart';
 
 const kMinWidth = 320.0;
@@ -49,7 +57,9 @@ class _TabHomeLargeState extends State<TabHomeLarge> {
     final root = widget.primaryRoot;
     if (root == null) {
       return TabHomeSmall(
-          split: widget.split, destinationBuilder: widget.destinationBuilder);
+        split: widget.split,
+        destinationBuilder: widget.destinationBuilder,
+      );
     }
     return AdaptiveTabNavigator(
       stack: _navigation.select(EHRoutes.gallery),
@@ -125,7 +135,9 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
         initialRoute: EHRoutes.empty,
         onGenerateInitialRoutes: (_, __) {
           final root = _generateRoute(
-              const RouteSettings(name: EHRoutes.empty), _stack.detailObserver);
+            const RouteSettings(name: EHRoutes.empty),
+            _stack.detailObserver,
+          );
           _detailCover.parent = _stack.detailObserver.coverOf(root);
           return [root];
         },
@@ -160,19 +172,24 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
   }
 
   Route<dynamic> _primaryRootRoute() => GetPageRoute(
-        settings: const RouteSettings(name: EHRoutes.home),
-        page: () => CoveredPage(
-            observer: _stack.primaryObserver, child: widget.primaryRoot),
-        showCupertinoParallax: false,
-      );
+    settings: const RouteSettings(name: EHRoutes.home),
+    page: () => CoveredPage(
+      observer: _stack.primaryObserver,
+      child: widget.primaryRoot,
+    ),
+    showCupertinoParallax: false,
+  );
 
   Route<dynamic> _generateRoute(
-      RouteSettings settings, EhNavigatorObserver observer) {
+    RouteSettings settings,
+    EhNavigatorObserver observer,
+  ) {
     final tags = Get.isRegistered<ControllerTagService>()
         ? Get.find<ControllerTagService>().snapshotFor(_stack.id)
         : const ControllerTagSnapshot();
-    final route =
-        AppPages.routes.firstWhereOrNull((e) => e.name == settings.name);
+    final route = AppPages.routes.firstWhereOrNull(
+      (e) => e.name == settings.name,
+    );
     if (route == null) return AppPages.onGenerateRoute(settings)!;
     // GetX runs pages for 300 ms and eases them before the Cupertino
     // transition eases them again, so a page lands almost at once. Slides
@@ -186,9 +203,12 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
         child: ControllerTagScope(snapshot: tags, child: route.page()),
       ),
       binding: settings.name == EHRoutes.addTag
-          ? BindingsBuilder(() => Get.lazyPut(
-              () => TagInfoController(galleryTag: tags.galleryTag),
-              tag: tags.galleryTag))
+          ? BindingsBuilder(
+              () => Get.lazyPut(
+                () => TagInfoController(galleryTag: tags.galleryTag),
+                tag: tags.galleryTag,
+              ),
+            )
           : route.binding,
       bindings: route.bindings,
       transition: route.transition,
@@ -203,41 +223,85 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
 
   @override
   Widget build(BuildContext context) {
-    final environment = AdaptiveEnvironment.maybeOf(context) ??
+    final environment =
+        AdaptiveEnvironment.maybeOf(context) ??
         AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
-    return Obx(() {
-      final proportion = _layout.sideProportion;
-      return AnimatedBuilder(
-        animation: Listenable.merge(
-            [_stack.primaryObserver.revision, _stack.detailObserver.revision]),
-        builder: (context, _) {
-          final split = widget.split && environment.isSplit;
-          _layout.updateNavigationSplit(split);
-          final moving = !split && _detailMoving;
-          // A page opened in the list column puts the list back on top while
-          // the detail page still sits where it covered the list; it covers
-          // nothing once it no longer shows.
-          final cover =
-              split || !(_stack.detailOnTop || moving) ? null : _detailCover;
-          return TabNavigationScope(
-            stack: _stack,
-            child: AdaptiveBrowseLayout(
-              environment: environment,
-              split: split,
-              sideProportion: proportion,
-              detailActive: _stack.detailOnTop,
-              detailMoving: moving,
-              primary: RouteCoverClip(
-                cover: cover,
-                child: CoveredInsets(cover: cover, child: _primary),
+    return ListenableBuilder(
+      listenable: DesktopUiPreferences.instance,
+      builder: (context, _) => Obx(() {
+        final proportion = _layout.sideProportion;
+        return AnimatedBuilder(
+          animation: Listenable.merge([
+            _stack.primaryObserver.revision,
+            _stack.detailObserver.revision,
+          ]),
+          builder: (context, _) {
+            final scope = DesktopSidebarScope.maybeOf(context);
+            final desktop = scope?.desktop ?? false;
+            final prefs = DesktopUiPreferences.instance;
+            final split =
+                widget.split &&
+                (desktop
+                    ? DesktopBrowseStyle.canSplit(environment.contentRect.width)
+                    : environment.isSplit);
+            final oldWidth = AdaptiveBrowseLayout.primaryPaneWidth(
+              environment.contentRect.width,
+              prefs.legacyProportion ?? proportion,
+            );
+            final desktopRatio =
+                prefs.splitRatio ??
+                (prefs.legacyProportion == null
+                    ? DesktopBrowseStyle.defaultRatio
+                    : oldWidth / (environment.contentRect.width - 16));
+            _layout.updateNavigationSplit(split);
+            final moving = !split && _detailMoving;
+            // A page opened in the list column puts the list back on top while
+            // the detail page still sits where it covered the list; it covers
+            // nothing once it no longer shows.
+            final cover = split || !(_stack.detailOnTop || moving)
+                ? null
+                : _detailCover;
+            return TabNavigationScope(
+              stack: _stack,
+              child: AdaptiveBrowseLayout(
+                environment: environment,
+                split: split,
+                sideProportion: desktop ? desktopRatio : proportion,
+                desktop: desktop,
+                detailActive: _stack.detailOnTop,
+                detailMoving: moving,
+                primary: DesktopLeadingHeader(
+                  enabled: desktop && !(scope?.visible ?? false) &&
+                      !(PlatformCapabilities.hostPlatform == TargetPlatform.macOS &&
+                          widget.primaryRoot is CustomTabbarList &&
+                          _stack.primaryObserver.history.length <= 1),
+                  onShowSidebar: scope?.onShow,
+                  child: RouteCoverClip(
+                    cover: cover,
+                    child: CoveredInsets(cover: cover, child: _primary),
+                  ),
+                ),
+                detail: DesktopLeadingHeader(
+                  enabled: desktop && !split && !(scope?.visible ?? false),
+                  onShowSidebar: scope?.onShow,
+                  child: _detail,
+                ),
+                divider: desktop
+                    ? DesktopSplitHandle(
+                        availableWidth: environment.contentRect.width,
+                        listWidth: DesktopBrowseStyle.listWidth(
+                          environment.contentRect.width,
+                          desktopRatio,
+                        ),
+                        preferences: prefs,
+                      )
+                    : const SideControllerbar(child: SizedBox(width: 28)),
               ),
-              detail: _detail,
-              divider: const SideControllerbar(child: SizedBox(width: 28)),
-            ),
-          );
-        },
-      );
-    });
+            );
+          },
+        );
+      }),
+    );
   }
 
   @override
@@ -267,13 +331,16 @@ class _SideControllerbarState extends State<SideControllerbar> {
   Widget _normalBar({bool dragging = false}) {
     return AnimatedContainer(
       decoration: BoxDecoration(
-        color:
-            CupertinoDynamicColor.resolve(CupertinoColors.systemGrey, context)
-                .withOpacity(0.7),
+        color: CupertinoDynamicColor.resolve(
+          CupertinoColors.systemGrey,
+          context,
+        ).withOpacity(0.7),
         borderRadius: BorderRadius.circular(dragging ? 5.0 : 1.5),
       ),
       margin: EdgeInsets.only(
-          left: dragging ? 5.0 : 2.0, right: dragging ? 5.0 : 20.0),
+        left: dragging ? 5.0 : 2.0,
+        right: dragging ? 5.0 : 20.0,
+      ),
       height: dragging ? 80 : 55,
       width: dragging ? 10 : 3,
       duration: const Duration(milliseconds: 200),
@@ -310,8 +377,10 @@ class _SideControllerbarState extends State<SideControllerbar> {
             });
           },
           onPanUpdate: (details) {
-            final available =
-                max(1.0, MediaQuery.sizeOf(context).width - 2 * kMinWidth);
+            final available = max(
+              1.0,
+              MediaQuery.sizeOf(context).width - 2 * kMinWidth,
+            );
             final proportion =
                 layoutServices.sideProportion + details.delta.dx / available;
 

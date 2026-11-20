@@ -107,16 +107,19 @@ abstract final class DesktopGalleryActions {
     return null;
   }
 
-  static Future<void> read(GalleryProvider provider) async {
+  static Future<bool> read(GalleryProvider provider, {int? index}) async {
     final page = await _openLoaded(provider);
-    if (page == null) {
-      return;
-    }
+    if (page == null) return false;
+    final count =
+        int.tryParse(page.gState.galleryProvider?.filecount ?? '') ?? 0;
     await NavigatorUtil.goGalleryViewPage(
-      page.gState.lastIndex,
+      count > 0
+          ? (index ?? page.gState.lastIndex).clamp(0, count - 1)
+          : (index ?? page.gState.lastIndex),
       page.gState.gid,
       galleryTag: page.controllerTag,
     );
+    return true;
   }
 
   static Future<void> download(
@@ -207,6 +210,7 @@ class DesktopMenuEntry {
     this.shortcut,
     this.destructive = false,
     this.dividerBefore = false,
+    this.selected = false,
   });
 
   final String label;
@@ -215,6 +219,7 @@ class DesktopMenuEntry {
   final String? shortcut;
   final bool destructive;
   final bool dividerBefore;
+  final bool selected;
 }
 
 /// The context menu entries for the gallery card [item].
@@ -296,7 +301,10 @@ Future<void> showDesktopGalleryMenu(
   BuildContext context, {
   required Offset position,
   required List<DesktopMenuEntry> entries,
+  String? title,
+  String? subtitle,
 }) async {
+  final previousFocus = FocusManager.instance.primaryFocus;
   // The root navigator may sit below a window title bar: lay the menu out in
   // its overlay's coordinates, not the window's.
   final overlay = Navigator.of(
@@ -315,13 +323,18 @@ Future<void> showDesktopGalleryMenu(
     transitionDuration: const Duration(milliseconds: 110),
     pageBuilder: (context, _, _) => _DesktopMenuLayout(
       position: local,
-      child: DesktopGalleryMenu(entries: entries),
+      child: DesktopGalleryMenu(
+        entries: entries,
+        title: title,
+        subtitle: subtitle,
+      ),
     ),
     transitionBuilder: (context, animation, _, child) => FadeTransition(
       opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
       child: child,
     ),
   );
+  if (previousFocus?.context != null) previousFocus!.requestFocus();
   picked?.onSelected();
 }
 
@@ -370,19 +383,90 @@ class _MenuPosition extends SingleChildLayoutDelegate {
 }
 
 /// The menu panel: glass when popups use glass, otherwise a raised surface.
-class DesktopGalleryMenu extends StatelessWidget {
-  const DesktopGalleryMenu({super.key, required this.entries});
+class DesktopGalleryMenu extends StatefulWidget {
+  const DesktopGalleryMenu({
+    super.key,
+    required this.entries,
+    this.title,
+    this.subtitle,
+  });
 
   final List<DesktopMenuEntry> entries;
-  static const double width = 260;
+  final String? title, subtitle;
+  static const double width = 280;
+
+  @override
+  State<DesktopGalleryMenu> createState() => _DesktopGalleryMenuState();
+}
+
+class _DesktopGalleryMenuState extends State<DesktopGalleryMenu> {
+  late final nodes = [
+    for (final entry in widget.entries) FocusNode(debugLabel: entry.label),
+  ];
+
+  @override
+  void dispose() {
+    for (final node in nodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  KeyEventResult _key(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent)
+      return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.escape) {
+      Navigator.of(context).pop();
+      return KeyEventResult.handled;
+    }
+    if (nodes.isEmpty) return KeyEventResult.ignored;
+    final current = nodes.indexWhere((n) => n.hasFocus);
+    int? next;
+    if (key == LogicalKeyboardKey.arrowDown)
+      next = (current + 1) % nodes.length;
+    if (key == LogicalKeyboardKey.arrowUp)
+      next = (current - 1 + nodes.length) % nodes.length;
+    if (key == LogicalKeyboardKey.home) next = 0;
+    if (key == LogicalKeyboardKey.end) next = nodes.length - 1;
+    if (next == null) return KeyEventResult.ignored;
+    nodes[next].requestFocus();
+    Scrollable.ensureVisible(nodes[next].context!, alignment: .5);
+    return KeyEventResult.handled;
+  }
 
   @override
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
     final glass = liquidGlassPopupsEnabled;
     final radius = BorderRadius.circular(glass ? 14 : 10);
-    final rows = <Widget>[];
-    for (final entry in entries) {
+    final rows = <Widget>[
+      if (widget.title != null)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+          child: Text(
+            widget.title!,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: palette.text2.resolveFrom(context),
+            ),
+          ),
+        ),
+      if (widget.subtitle != null)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+          child: Text(
+            widget.subtitle!,
+            style: TextStyle(
+              fontSize: 12,
+              color: palette.text2.resolveFrom(context),
+            ),
+          ),
+        ),
+    ];
+    for (var index = 0; index < widget.entries.length; index++) {
+      final entry = widget.entries[index];
       if (entry.dividerBefore && rows.isNotEmpty) {
         rows.add(
           Container(
@@ -392,11 +476,24 @@ class DesktopGalleryMenu extends StatelessWidget {
           ),
         );
       }
-      rows.add(_MenuRow(entry: entry, glass: glass));
+      rows.add(
+        _MenuRow(
+          entry: entry,
+          glass: glass,
+          focusNode: nodes[index],
+          autofocus: index == 0,
+        ),
+      );
     }
     final content = Padding(
       padding: const EdgeInsets.all(5),
-      child: Column(mainAxisSize: MainAxisSize.min, children: rows),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: rows,
+        ),
+      ),
     );
     // The popup glass keeps a denser fill than bars do, so the rows stay
     // readable over the cards behind the menu.
@@ -433,13 +530,24 @@ class DesktopGalleryMenu extends StatelessWidget {
       key: const ValueKey<String>('desktop-gallery-menu'),
       scopesRoute: true,
       explicitChildNodes: true,
-      child: SizedBox(width: width, child: panel),
+      child: Focus(
+        onKeyEvent: _key,
+        child: SizedBox(width: DesktopGalleryMenu.width, child: panel),
+      ),
     );
   }
 }
 
 class _MenuRow extends StatefulWidget {
-  const _MenuRow({required this.entry, required this.glass});
+  const _MenuRow({
+    required this.entry,
+    required this.glass,
+    required this.focusNode,
+    required this.autofocus,
+  });
+
+  final FocusNode focusNode;
+  final bool autofocus;
 
   final DesktopMenuEntry entry;
   final bool glass;
@@ -450,6 +558,7 @@ class _MenuRow extends StatefulWidget {
 
 class _MenuRowState extends State<_MenuRow> {
   bool _hovered = false;
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
@@ -462,53 +571,80 @@ class _MenuRowState extends State<_MenuRow> {
     return Semantics(
       button: true,
       label: entry.label,
+      selected: entry.selected,
       excludeSemantics: true,
       onTap: () => Navigator.of(context).pop(entry),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: GestureDetector(
-          key: ValueKey<String>('desktop-menu-${entry.label}'),
-          behavior: HitTestBehavior.opaque,
-          onTap: () => Navigator.of(context).pop(entry),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: ShapeDecoration(
-              color: _hovered
-                  ? (dark ? const Color(0x1FFFFFFF) : const Color(0x1214161C))
-                  : const Color(0x00000000),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(widget.glass ? 9 : 6),
+      child: FocusableActionDetector(
+        focusNode: widget.focusNode,
+        autofocus: widget.autofocus,
+        onShowFocusHighlight: (value) => setState(() => _focused = value),
+        shortcuts: const {
+          SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+          SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+        },
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              Navigator.of(context).pop(entry);
+              return null;
+            },
+          ),
+        },
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: GestureDetector(
+            key: ValueKey<String>('desktop-menu-${entry.label}'),
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.of(context).pop(entry),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: ShapeDecoration(
+                color: _hovered || _focused
+                    ? (dark ? const Color(0x1FFFFFFF) : const Color(0x1214161C))
+                    : const Color(0x00000000),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(widget.glass ? 9 : 6),
+                ),
               ),
-            ),
-            child: Row(
-              children: <Widget>[
-                Icon(
-                  entry.icon,
-                  size: 16,
-                  color: entry.destructive
-                      ? foreground
-                      : palette.text2.resolveFrom(context),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    entry.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: foreground),
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                    entry.icon,
+                    size: 16,
+                    color: entry.destructive
+                        ? foreground
+                        : palette.text2.resolveFrom(context),
                   ),
-                ),
-                if (entry.shortcut != null) ...<Widget>[
-                  const SizedBox(width: 12),
-                  _ShortcutLabel(
-                    entry.shortcut!,
-                    color: palette.text2.resolveFrom(context),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      entry.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 13, color: foreground),
+                    ),
                   ),
+                  if (entry.shortcut != null) ...<Widget>[
+                    const SizedBox(width: 12),
+                    _ShortcutLabel(
+                      entry.shortcut!,
+                      color: palette.text2.resolveFrom(context),
+                    ),
+                  ],
+                  if (entry.selected)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 10),
+                      child: Icon(
+                        CupertinoIcons.check_mark,
+                        size: 14,
+                        color: foreground,
+                      ),
+                    ),
                 ],
-              ],
+              ),
             ),
           ),
         ),

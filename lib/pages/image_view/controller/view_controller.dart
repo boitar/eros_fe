@@ -82,7 +82,7 @@ const int _speedInv = 10;
 /// 支持在线以及本地（已下载）阅读的组件
 class ViewExtController extends GetxController {
   ViewExtController({ViewExtState? state, ViewRepository? repository})
-      : vState = state ?? ViewExtState(repository: repository);
+    : vState = state ?? ViewExtState(repository: repository);
 
   /// 状态
   final ViewExtState vState;
@@ -295,17 +295,19 @@ class ViewExtController extends GetxController {
 
       GalleryPara.instance
           .ehPrecacheImages(
-        imageMap: vState.imageMap,
-        itemSer: vState.currentItemIndex,
-        max: _ehSettingService.preloadImage.value,
-        showKey: vState.pageState?.galleryProvider?.showKey,
-      )
+            imageMap: vState.imageMap,
+            itemSer: vState.currentItemIndex,
+            max: _ehSettingService.preloadImage.value,
+            showKey: vState.pageState?.galleryProvider?.showKey,
+          )
           .listen((GalleryImage? event) {
-        if (event != null) {
-          _galleryPageController?.uptImageBySer(
-              ser: event.ser, imageCallback: (image) => event);
-        }
-      });
+            if (event != null) {
+              _galleryPageController?.uptImageBySer(
+                ser: event.ser,
+                imageCallback: (image) => event,
+              );
+            }
+          });
     }
 
     logger.t('旋转设置');
@@ -313,8 +315,9 @@ class ViewExtController extends GetxController {
     // logger.d(' $_orientation');
     if (orientation != ReadOrientation.system &&
         orientation != ReadOrientation.auto) {
-      OrientationHelper.setPreferredOrientations(
-          [orientationMap[orientation] ?? DeviceOrientation.portraitUp]);
+      OrientationHelper.setPreferredOrientations([
+        orientationMap[orientation] ?? DeviceOrientation.portraitUp,
+      ]);
     }
 
     // vState.sliderValue = vState.currentItemIndex / 1.0;
@@ -328,12 +331,14 @@ class ViewExtController extends GetxController {
   void onClose() {
     _continuousPositionTimer?.cancel();
     if (_itemPositionsChanged != null) {
-      itemPositionsListener.itemPositions
-          .removeListener(_itemPositionsChanged!);
+      itemPositionsListener.itemPositions.removeListener(
+        _itemPositionsChanged!,
+      );
     }
     if (_thumbPositionsChanged != null) {
-      thumbPositionsListener.itemPositions
-          .removeListener(_thumbPositionsChanged!);
+      thumbPositionsListener.itemPositions.removeListener(
+        _thumbPositionsChanged!,
+      );
     }
     cancelAutoRead();
     autoNextTimer?.cancel();
@@ -379,8 +384,9 @@ class ViewExtController extends GetxController {
 
   void addVolumeKeydownListen() {
     if (_ehSettingService.volumnTurnPage) {
-      _volumeKeyDownSubscription =
-          FlutterAndroidVolumeKeydown.stream.listen((event) {
+      _volumeKeyDownSubscription = FlutterAndroidVolumeKeydown.stream.listen((
+        event,
+      ) {
         if (event == HardwareButton.volume_down) {
           // logger.d('Volume down received');
           toNext();
@@ -434,8 +440,10 @@ class ViewExtController extends GetxController {
       keepPage: false,
       viewportFraction: vState.showPageInterval ? 1.1 : 1.0,
     );
-    preloadPageController =
-        PreloadPageController(initialPage: vState.pageIndex, keepPage: false);
+    preloadPageController = PreloadPageController(
+      initialPage: vState.pageIndex,
+      keepPage: false,
+    );
     extendedPageController = ExtendedPageController(
       initialPage: vState.pageIndex,
       keepPage: false,
@@ -450,8 +458,11 @@ class ViewExtController extends GetxController {
 
   /// Re-evaluate only automatic reader layout after a live window resize.
   /// Explicit single/paired choices are untouched.
-  void updateViewport(Size size,
-      {bool? canUseDoublePage, bool bookFolded = false}) {
+  void updateViewport(
+    Size size, {
+    bool? canUseDoublePage,
+    bool bookFolded = false,
+  }) {
     if (isClosed || size.isEmpty || !size.isFinite) {
       return;
     }
@@ -506,17 +517,19 @@ class ViewExtController extends GetxController {
       // logger.t('页码切换时的回调 预载图片');
       GalleryPara.instance
           .ehPrecacheImages(
-        imageMap: _galleryPageStat?.imageMap,
-        itemSer: vState.currentItemIndex,
-        max: _ehSettingService.preloadImage.value,
-        showKey: vState.pageState?.galleryProvider?.showKey,
-      )
+            imageMap: _galleryPageStat?.imageMap,
+            itemSer: vState.currentItemIndex,
+            max: _ehSettingService.preloadImage.value,
+            showKey: vState.pageState?.galleryProvider?.showKey,
+          )
           .listen((GalleryImage? event) {
-        if (event != null) {
-          _galleryPageController?.uptImageBySer(
-              ser: event.ser, imageCallback: (val) => event);
-        }
-      });
+            if (event != null) {
+              _galleryPageController?.uptImageBySer(
+                ser: event.ser,
+                imageCallback: (val) => event,
+              );
+            }
+          });
     }
 
     // if (vState.currentItemIndex >= vState.fileCount - 1) {
@@ -536,7 +549,8 @@ class ViewExtController extends GetxController {
 
   void _setPageSliderValue({bool updateSlider = false}) {
     logger.t(
-        '>>> _setPageSliderValue currentItemIndex ${vState.currentItemIndex}');
+      '>>> _setPageSliderValue currentItemIndex ${vState.currentItemIndex}',
+    );
     if (vState.currentItemIndex >= vState.fileCount - 1) {
       vState.sliderValue = (vState.fileCount - 1).toDouble();
     } else if (vState.currentItemIndex < 0) {
@@ -589,7 +603,9 @@ class ViewExtController extends GetxController {
     if (tImage == null) {
       logger.d('fetchThumb ser:$itemSer 所在页尚未获取， 开始获取');
       _mapFetchGalleryPriviewPage.putIfAbsent(
-          itemSer, () => _galleryPageController?.loadImagesForSer(itemSer));
+        itemSer,
+        () => _galleryPageController?.loadImagesForSer(itemSer),
+      );
 
       // 直接获取需要的ser所在页
       await _mapFetchGalleryPriviewPage[itemSer];
@@ -611,11 +627,13 @@ class ViewExtController extends GetxController {
 
     if (reloadDB) {
       vState.imageTasks = await isarHelper.findImageTaskAllByGidIsolate(
-          int.tryParse(_galleryPageStat?.gid ?? '') ?? 0);
+        int.tryParse(_galleryPageStat?.gid ?? '') ?? 0,
+      );
     }
 
-    final imageTask = vState.imageTasks
-        .firstWhereOrNull((imageTask) => imageTask.ser == itemSer);
+    final imageTask = vState.imageTasks.firstWhereOrNull(
+      (imageTask) => imageTask.ser == itemSer,
+    );
 
     if (imageTask != null &&
         imageTask.filePath != null &&
@@ -660,15 +678,19 @@ class ViewExtController extends GetxController {
     logger.t('fetchImage ser:$itemSer');
 
     // 首先检查下载记录中是否有记录
-    vState.dirPath ??=
-        await _getTaskDirPath(int.tryParse(_galleryPageStat?.gid ?? '') ?? 0);
+    vState.dirPath ??= await _getTaskDirPath(
+      int.tryParse(_galleryPageStat?.gid ?? '') ?? 0,
+    );
 
     late GalleryImage? image;
 
     // 检查是否已下载
     image = await _getImageFromImageTasks(itemSer, vState.dirPath);
-    image ??=
-        await _getImageFromImageTasks(itemSer, vState.dirPath, reloadDB: true);
+    image ??= await _getImageFromImageTasks(
+      itemSer,
+      vState.dirPath,
+      reloadDB: true,
+    );
     if (image != null) {
       logger.d('fetchImage ser:$itemSer 从下载记录中获取');
       return image;
@@ -704,17 +726,19 @@ class ViewExtController extends GetxController {
 
       GalleryPara.instance
           .ehPrecacheImages(
-        imageMap: _galleryPageStat?.imageMap,
-        itemSer: itemSer,
-        max: _ehSettingService.preloadImage.value,
-        showKey: vState.pageState?.galleryProvider?.showKey,
-      )
+            imageMap: _galleryPageStat?.imageMap,
+            itemSer: itemSer,
+            max: _ehSettingService.preloadImage.value,
+            showKey: vState.pageState?.galleryProvider?.showKey,
+          )
           .listen((GalleryImage? event) {
-        if (event != null) {
-          _galleryPageController?.uptImageBySer(
-              ser: event.ser, imageCallback: (val) => val = event);
-        }
-      });
+            if (event != null) {
+              _galleryPageController?.uptImageBySer(
+                ser: event.ser,
+                imageCallback: (val) => val = event,
+              );
+            }
+          });
 
       if (!needShowKey) {
         // ehPrecacheImages() then fetchAndParserImageInfo()
@@ -739,10 +763,12 @@ class ViewExtController extends GetxController {
       // archiver任务
       final task = archiverTaskMap.values
           .sorted((t1, t2) => (t1.type ?? '').compareTo(t2.type ?? ''))
-          .where((element) =>
-              element.gid == _galleryPageStat?.gid &&
-              element.status ==
-                  downloadStatusToInt(DownloadTaskStatus.complete))
+          .where(
+            (element) =>
+                element.gid == _galleryPageStat?.gid &&
+                element.status ==
+                    downloadStatusToInt(DownloadTaskStatus.complete),
+          )
           .toList()
           .firstOrNull;
 
@@ -752,7 +778,8 @@ class ViewExtController extends GetxController {
 
       late final String? filePath;
       if (task.savedDir?.isContentUri ?? false) {
-        final uri = task.safUri ??
+        final uri =
+            task.safUri ??
             '${task.savedDir}%2F${Uri.encodeComponent(task.fileName ?? '')}';
         final result = await safCacheSingle(Uri.parse(uri));
         filePath = result.cachePath;
@@ -777,11 +804,16 @@ class ViewExtController extends GetxController {
       return null;
     }
 
-    final file =
-        await getArchiveFile(vState.gid, asyncArchive.files[itemSer - 1]);
+    final file = await getArchiveFile(
+      vState.gid,
+      asyncArchive.files[itemSer - 1],
+    );
 
     return GalleryImage(
-        ser: itemSer, gid: _galleryPageStat?.gid, tempPath: file.path);
+      ser: itemSer,
+      gid: _galleryPageStat?.gid,
+      tempPath: file.path,
+    );
   }
 
   /// 重载图片数据，重构部件
@@ -809,10 +841,7 @@ class ViewExtController extends GetxController {
     );
 
     // 换源重载
-    imageFutureMap[itemSer] = fetchImage(
-      itemSer,
-      changeSource: changeSource,
-    );
+    imageFutureMap[itemSer] = fetchImage(itemSer, changeSource: changeSource);
 
     // update();
     update(['$idImageListView$itemSer', idImagePageView]);
@@ -820,7 +849,9 @@ class ViewExtController extends GetxController {
 
   void setScale100(ImageInfo imageInfo, Size size) {
     final sizeImage = Size(
-        imageInfo.image.width.toDouble(), imageInfo.image.height.toDouble());
+      imageInfo.image.width.toDouble(),
+      imageInfo.image.height.toDouble(),
+    );
 
     final double _scalesS100 = scale100(size: size, imageSize: sizeImage);
 
@@ -892,7 +923,7 @@ class ViewExtController extends GetxController {
   bool get _wantsFullscreen {
     final size =
         WidgetsBinding.instance.platformDispatcher.implicitView?.physicalSize ??
-            Size.zero;
+        Size.zero;
     return _ehSettingService.viewFullscreen ||
         _ehSettingService.readerFillsScreen(size);
   }
@@ -902,9 +933,7 @@ class ViewExtController extends GetxController {
       return;
     }
     if (_wantsFullscreen) {
-      SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.immersiveSticky,
-      );
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     } else {
       unsetFullscreen();
     }
@@ -919,9 +948,7 @@ class ViewExtController extends GetxController {
   }
 
   Future<void> unsetFullscreen() async {
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.edgeToEdge,
-    );
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   void changePage(
@@ -940,7 +967,10 @@ class ViewExtController extends GetxController {
       }
       if (animated) {
         itemScrollController.scrollTo(
-            index: target, duration: duration, curve: Curves.ease);
+          index: target,
+          duration: duration,
+          curve: Curves.ease,
+        );
       } else {
         itemScrollController.jumpTo(index: target);
       }
@@ -948,17 +978,21 @@ class ViewExtController extends GetxController {
     }
 
     final paired = vState.columnMode != ViewColumnMode.single;
-    final usesPreload = paired && vState.bookFolded ||
+    final usesPreload =
+        paired && vState.bookFolded ||
         (paired
             ? pageViewType == PageViewType.preloadPageView ||
-                pageViewType == PageViewType.extendedImageGesturePageView
+                  pageViewType == PageViewType.extendedImageGesturePageView
             : pageViewType == PageViewType.preloadPageView ||
-                pageViewType == PageViewType.preloadPhotoView);
+                  pageViewType == PageViewType.preloadPhotoView);
     if (usesPreload) {
       if (!preloadPageController.hasClients) return;
       if (animated) {
-        preloadPageController.animateToPage(target,
-            duration: duration, curve: Curves.ease);
+        preloadPageController.animateToPage(
+          target,
+          duration: duration,
+          curve: Curves.ease,
+        );
       } else {
         preloadPageController.jumpToPage(target);
       }
@@ -966,16 +1000,22 @@ class ViewExtController extends GetxController {
         pageViewType == PageViewType.extendedImageGesturePageView) {
       if (!extendedPageController.hasClients) return;
       if (animated) {
-        extendedPageController.animateToPage(target,
-            duration: duration, curve: Curves.ease);
+        extendedPageController.animateToPage(
+          target,
+          duration: duration,
+          curve: Curves.ease,
+        );
       } else {
         extendedPageController.jumpToPage(target);
       }
     } else {
       if (!pageController.hasClients) return;
       if (animated) {
-        pageController.animateToPage(target,
-            duration: duration, curve: Curves.ease);
+        pageController.animateToPage(
+          target,
+          duration: duration,
+          curve: Curves.ease,
+        );
       } else {
         pageController.jumpToPage(target);
       }
@@ -1192,8 +1232,9 @@ class ViewExtController extends GetxController {
     BuildContext context, {
     bool setInv = true,
   }) async {
-    final initIndex = EHConst.invList
-        .indexWhere((int element) => element == _ehSettingService.turnPageInv);
+    final initIndex = EHConst.invList.indexWhere(
+      (int element) => element == _ehSettingService.turnPageInv,
+    );
     final int? inv = setInv
         ? await _showAutoReadInvPicker(
             context,
@@ -1219,29 +1260,37 @@ class ViewExtController extends GetxController {
   }
 
   Future<void> pickAutoReadInterval(BuildContext context) async {
-    final initIndex = EHConst.invList
-        .indexWhere((int element) => element == _ehSettingService.turnPageInv);
-    final inv = await _showAutoReadInvPicker(context, EHConst.invList,
-        initIndex: initIndex < 0 ? null : initIndex);
+    final initIndex = EHConst.invList.indexWhere(
+      (int element) => element == _ehSettingService.turnPageInv,
+    );
+    final inv = await _showAutoReadInvPicker(
+      context,
+      EHConst.invList,
+      initIndex: initIndex < 0 ? null : initIndex,
+    );
     if (inv != null) {
       startAutoReadWithInterval(inv);
     }
   }
 
-  Future<int?> _showAutoReadInvPicker(BuildContext context, List<int> invList,
-      {int? initIndex}) async {
+  Future<int?> _showAutoReadInvPicker(
+    BuildContext context,
+    List<int> invList, {
+    int? initIndex,
+  }) async {
     int selIndex = initIndex ?? 0;
 
     final scrollController = FixedExtentScrollController(initialItem: selIndex);
 
-    final List<Widget> favPickerList =
-        List<Widget>.from(invList.map((int e) => Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text('${e / 1000}'),
-              ],
-            ))).toList();
+    final List<Widget> favPickerList = List<Widget>.from(
+      invList.map(
+        (int e) => Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [Text('${e / 1000}')],
+        ),
+      ),
+    ).toList();
 
     return showCupertinoDialog<int>(
       context: context,
@@ -1306,6 +1355,7 @@ class ViewExtController extends GetxController {
 
   Future<void> onLoadCompleted(int ser) async {
     vState.loadCompleMap[ser] = true;
+    vState.recordPresentedPage();
     await Future.delayed(const Duration(milliseconds: 100));
 
     if (vState.autoRead && !(autoNextTimer?.isActive ?? false)) {
@@ -1328,16 +1378,22 @@ class ViewExtController extends GetxController {
       // item whose trailing edge in visible in the viewport.
       min = visible
           .where((ItemPosition position) => position.itemTrailingEdge > 0)
-          .reduce((ItemPosition min, ItemPosition position) =>
-              position.itemTrailingEdge < min.itemTrailingEdge ? position : min)
+          .reduce(
+            (ItemPosition min, ItemPosition position) =>
+                position.itemTrailingEdge < min.itemTrailingEdge
+                ? position
+                : min,
+          )
           .index;
       // Determine the last visible item by finding the item with the
       // greatest leading edge that is less than 1.  i.e. the last
       // item whose leading edge in visible in the viewport.
       max = visible
           .where((ItemPosition position) => position.itemLeadingEdge < 1)
-          .reduce((ItemPosition max, ItemPosition position) =>
-              position.itemLeadingEdge > max.itemLeadingEdge ? position : max)
+          .reduce(
+            (ItemPosition max, ItemPosition position) =>
+                position.itemLeadingEdge > max.itemLeadingEdge ? position : max,
+          )
           .index;
 
       vState.tempIndex = (min + max) ~/ 2;
@@ -1378,13 +1434,19 @@ class ViewExtController extends GetxController {
     if (visible.isNotEmpty) {
       min = visible
           .where((ItemPosition position) => position.itemTrailingEdge > 0)
-          .reduce((ItemPosition min, ItemPosition position) =>
-              position.itemTrailingEdge < min.itemTrailingEdge ? position : min)
+          .reduce(
+            (ItemPosition min, ItemPosition position) =>
+                position.itemTrailingEdge < min.itemTrailingEdge
+                ? position
+                : min,
+          )
           .index;
       max = visible
           .where((ItemPosition position) => position.itemLeadingEdge < 1)
-          .reduce((ItemPosition max, ItemPosition position) =>
-              position.itemLeadingEdge > max.itemLeadingEdge ? position : max)
+          .reduce(
+            (ItemPosition max, ItemPosition position) =>
+                position.itemLeadingEdge > max.itemLeadingEdge ? position : max,
+          )
           .index;
 
       final centIndex = (min + max) ~/ 2;
@@ -1396,8 +1458,9 @@ class ViewExtController extends GetxController {
     }
   }
 
-  final thrThumbScrollTo =
-      Throttling(duration: const Duration(milliseconds: 200));
+  final thrThumbScrollTo = Throttling(
+    duration: const Duration(milliseconds: 200),
+  );
 
   void thumbScrollTo({int? index}) {
     if (!isClosed && thumbSidebarScrollController.isAttached) {
@@ -1491,8 +1554,10 @@ class ViewExtController extends GetxController {
           // 下一张图片的加载完成标志 如果没有完成 取消翻页定时器
           vState.lastAutoNextSer = vState.currentItemIndex + 2;
 
-          logger.d('cur ${vState.loadCompleMap[vState.currentItemIndex]}  '
-              'nex ${vState.loadCompleMap[vState.currentItemIndex + 1]}');
+          logger.d(
+            'cur ${vState.loadCompleMap[vState.currentItemIndex]}  '
+            'nex ${vState.loadCompleMap[vState.currentItemIndex + 1]}',
+          );
 
           if (!(vState.loadCompleMap[vState.lastAutoNextSer] ?? false)) {
             autoNextTimer?.cancel();
@@ -1502,22 +1567,25 @@ class ViewExtController extends GetxController {
             () {
               if (pageController.positions.isNotEmpty) {
                 pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut);
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
               }
             },
             () {
               if (extendedPageController.positions.isNotEmpty) {
                 extendedPageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut);
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
               }
             },
             onPreviewPageController: () {
               if (preloadPageController.positions.isNotEmpty) {
                 preloadPageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut);
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
               }
             },
           );
@@ -1545,22 +1613,25 @@ class ViewExtController extends GetxController {
               () {
                 if (pageController.positions.isNotEmpty) {
                   pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut);
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
                 }
               },
               () {
                 if (extendedPageController.positions.isNotEmpty) {
                   extendedPageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut);
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
                 }
               },
               onPreviewPageController: () {
                 if (preloadPageController.positions.isNotEmpty) {
                   preloadPageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut);
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
                 }
               },
             );
@@ -1628,16 +1699,14 @@ class ViewExtController extends GetxController {
   final Map<String, bool> _loadExtendedImageRectComplets = {};
 
   void handOnLoadCompletExtendedImageRect({required String url}) {
-    Future.delayed(const Duration(milliseconds: 50)).then(
-      (_) {
-        if (!(_loadExtendedImageRectComplets[url] ?? false)) {
-          logger.d('onLoadComplet $url');
+    Future.delayed(const Duration(milliseconds: 50)).then((_) {
+      if (!(_loadExtendedImageRectComplets[url] ?? false)) {
+        logger.d('onLoadComplet $url');
 
-          _loadExtendedImageRectComplets[url] = true;
-          update([idThumbnailListView]);
-        }
-      },
-    );
+        _loadExtendedImageRectComplets[url] = true;
+        update([idThumbnailListView]);
+      }
+    });
   }
 
   void pageControllerCallBack(
@@ -1681,20 +1750,22 @@ class ViewExtController extends GetxController {
           // loggerSimple.d('ViewTemp download file, $ser $process');
           // _galleryPageController.uptImageProcess(ser, process);
           _galleryPageController?.uptImageBySer(
-              ser: ser,
-              imageCallback: (image) {
-                return image.copyWith(downloadProcess: process.oN);
-              });
+            ser: ser,
+            imageCallback: (image) {
+              return image.copyWith(downloadProcess: process.oN);
+            },
+          );
           update(['${idProcess}_$ser']);
         },
         onDownloadComplete: () {
           _galleryPageController?.uptImageBySer(
-              ser: ser,
-              imageCallback: (image) => image.copyWith(
-                    tempPath: savePath.oN,
-                    completeCache: true.oN,
-                    changeSource: false.oN,
-                  ));
+            ser: ser,
+            imageCallback: (image) => image.copyWith(
+              tempPath: savePath.oN,
+              completeCache: true.oN,
+              changeSource: false.oN,
+            ),
+          );
         },
       );
     } catch (e) {

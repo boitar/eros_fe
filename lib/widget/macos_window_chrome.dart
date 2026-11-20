@@ -1,19 +1,25 @@
 import 'dart:math' as math;
+
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
-import 'package:eros_fe/widget/detail_window_backdrop.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 /// Window-local logical coordinates, never screen pixels or a theme heuristic.
 @immutable
 class MacOSWindowControls {
-  const MacOSWindowControls({this.bounds = Rect.zero});
+  const MacOSWindowControls({
+    this.bounds = Rect.zero,
+    this.systemSafeTop = 0,
+    this.isKeyWindow = true,
+  });
+  const MacOSWindowControls.unknown()
+    : bounds = const Rect.fromLTWH(8, 8, 64, 16),
+      systemSafeTop = 0,
+      isKeyWindow = true;
   factory MacOSWindowControls.fromMessage(Object? value) {
-    if (value is! Map || value['fullscreen'] == true) {
-      return const MacOSWindowControls();
-    }
+    if (value is! Map) return const MacOSWindowControls.unknown();
     Rect? union;
     for (final item in (value['buttons'] as List? ?? const [])) {
       if (item is! Map || item['hidden'] == true) {
@@ -34,17 +40,29 @@ class MacOSWindowControls {
       }
       union = union == null ? rect : union.expandToInclude(rect);
     }
-    return MacOSWindowControls(bounds: union ?? Rect.zero);
+    final safe = value['safeTop'];
+    return MacOSWindowControls(
+      bounds: union ?? Rect.zero,
+      systemSafeTop: safe is num && safe.isFinite
+          ? math.max(0, safe.toDouble())
+          : 0,
+      isKeyWindow: value['keyWindow'] != false,
+    );
   }
   final Rect bounds;
+  final double systemSafeTop;
+  final bool isKeyWindow;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is MacOSWindowControls && bounds == other.bounds;
+      other is MacOSWindowControls &&
+          bounds == other.bounds &&
+          systemSafeTop == other.systemSafeTop &&
+          isKeyWindow == other.isKeyWindow;
 
   @override
-  int get hashCode => bounds.hashCode;
+  int get hashCode => Object.hash(bounds, systemSafeTop, isKeyWindow);
 
   double get leading => bounds.isEmpty ? 0 : bounds.right + bounds.height / 2;
   double get top =>
@@ -53,10 +71,25 @@ class MacOSWindowControls {
 
 abstract final class MacOSWindowChrome {
   static const channel = MethodChannel('eros/window-chrome');
-  static final controls = ValueNotifier(const MacOSWindowControls());
+  static final controls = ValueNotifier(const MacOSWindowControls.unknown());
 
   /// Whether the window is in its own fullscreen space.
   static final fullscreen = ValueNotifier(false);
+  static VoidCallback? manageGroups;
+  static (String, String)? _menuLabels;
+
+  static Future<void> configureBrowseMenu(String title, String manage) async {
+    if (_menuLabels == (title, manage)) return;
+    try {
+      await channel.invokeMethod<void>('browseMenu', {
+        'title': title,
+        'manage': manage,
+      });
+      _menuLabels = (title, manage);
+    } on MissingPluginException {
+      /* Widget hosts have no native menu. */
+    }
+  }
 
   static void _apply(Object? message) {
     controls.value = MacOSWindowControls.fromMessage(message);
@@ -68,7 +101,9 @@ abstract final class MacOSWindowChrome {
       return;
     }
     channel.setMethodCallHandler((call) async {
-      if (call.method == 'changed') {
+      if (call.method == 'manageGroups') {
+        manageGroups?.call();
+      } else if (call.method == 'changed') {
         _apply(call.arguments);
       }
     });
@@ -79,7 +114,7 @@ abstract final class MacOSWindowChrome {
             .timeout(const Duration(seconds: 2)),
       );
     } catch (_) {
-      controls.value = const MacOSWindowControls();
+      controls.value = const MacOSWindowControls.unknown();
     }
   }
 
@@ -96,83 +131,60 @@ abstract final class MacOSWindowChrome {
   }
 }
 
-/// Reserve the measured titlebar band once, outside all pages and split panes.
-/// This also protects off-mode/custom headers which don't consume SafeArea.
+/// The window stays in one coordinate system. Ordinary routes receive a safe
+/// inset; the desktop browse shell consumes it locally in the sidebar/left pane.
+/// Drag targets belong to toolbar whitespace, never an overlay above controls.
 class MacOSWindowContent extends StatelessWidget {
   const MacOSWindowContent({super.key, required this.child, this.dragRegion});
   final Widget child;
+  // Retained for source compatibility; page chrome owns local drag targets.
   final Widget? dragRegion;
   @override
   Widget build(BuildContext context) =>
       ValueListenableBuilder<MacOSWindowControls>(
         valueListenable: MacOSWindowChrome.controls,
-        builder: (context, controls, _) => ValueListenableBuilder<bool>(
-          valueListenable: DetailWindowBackdrop.active,
-          builder: (context, transparent, _) => LayoutBuilder(
-            builder: (context, constraints) {
-              final media = MediaQuery.of(context);
-              final band = controls.top.clamp(0.0, constraints.maxHeight);
-              final top = transparent ? 0.0 : band;
-              final safeTop = transparent ? band : 0.0;
-              final environment = AdaptiveEnvironment.maybeOf(context) ??
-                  AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
-              final contentEnvironment = environment
-                  .inRect(
-                    Rect.fromLTWH(
-                      0,
-                      top,
-                      media.size.width,
-                      math.max(0, media.size.height - top),
-                    ),
-                  )
-                  .copyWithGeometry(
-                    safeArea: media.padding.copyWith(top: safeTop),
-                    viewPadding: media.viewPadding.copyWith(top: safeTop),
-                    viewInsets: media.viewInsets,
-                  );
-              return Stack(
-                children: [
-                  Positioned.fill(
-                    child: ColoredBox(
-                      key: const ValueKey('macos-window-canvas'),
-                      color: CupertinoTheme.of(context).scaffoldBackgroundColor,
-                      // Window chrome shares the page canvas, including its
-                      // grain. An independent glass surface changes this tint.
-                      child: const CanvasGrain(child: SizedBox.expand()),
-                    ),
+        builder: (context, controls, _) => LayoutBuilder(
+          builder: (context, constraints) {
+            final media = MediaQuery.of(context);
+            final safeTop = math
+                .max(
+                  media.viewPadding.top,
+                  math.max(controls.top, controls.systemSafeTop),
+                )
+                .clamp(0.0, constraints.maxHeight);
+            final environment =
+                AdaptiveEnvironment.maybeOf(context) ??
+                AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
+            final contentEnvironment = environment.copyWithGeometry(
+              safeArea: media.padding.copyWith(top: safeTop),
+              viewPadding: media.viewPadding.copyWith(top: safeTop),
+              viewInsets: media.viewInsets,
+            );
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: ColoredBox(
+                    key: const ValueKey('macos-window-canvas'),
+                    color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+                    child: const CanvasGrain(child: SizedBox.expand()),
                   ),
-                  // Preserve the Navigator/SmartDialog Overlay when entering
-                  // fullscreen or switching to a detail backdrop.
-                  Positioned.fill(
-                    key: const ValueKey('macos-window-content'),
-                    top: top,
-                    child: AdaptiveEnvironmentScope(
-                      snapshot: contentEnvironment,
-                      child: MediaQuery(
-                        data: media.copyWith(
-                          size: Size(
-                            media.size.width,
-                            math.max(0, media.size.height - top),
-                          ),
-                          padding: media.padding.copyWith(top: safeTop),
-                          viewPadding: media.viewPadding.copyWith(top: safeTop),
-                        ),
-                        child: child,
+                ),
+                Positioned.fill(
+                  key: const ValueKey('macos-window-content'),
+                  child: AdaptiveEnvironmentScope(
+                    snapshot: contentEnvironment,
+                    child: MediaQuery(
+                      data: media.copyWith(
+                        padding: media.padding.copyWith(top: safeTop),
+                        viewPadding: media.viewPadding.copyWith(top: safeTop),
                       ),
+                      child: child,
                     ),
                   ),
-                  if (band > 0 && dragRegion != null)
-                    Positioned(
-                      top: 0,
-                      left: controls.leading,
-                      right: 0,
-                      height: band,
-                      child: dragRegion!,
-                    ),
-                ],
-              );
-            },
-          ),
+                ),
+              ],
+            );
+          },
         ),
       );
 }

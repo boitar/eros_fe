@@ -59,6 +59,31 @@ void main() {
       expect(narrow.widths, <double>[100, 100]);
     });
 
+    test('unbounded tracks keep finite intrinsic segment widths', () {
+      final layout = SegmentedRailLayout.compute(<double>[
+        30,
+        66,
+      ], double.infinity);
+      expect(layout.widths, <double>[54, 90]);
+      expect(layout.trackWidth, 144);
+      expect(layout.scrolls, isFalse);
+
+      final compact = SegmentedRailLayout.compute(
+        <double>[30, 30],
+        double.infinity,
+        compact: true,
+      );
+      expect(compact.widths, <double>[144, 144]);
+      expect(compact.trackWidth, 288);
+    });
+
+    test('NaN available width falls back to finite intrinsic widths', () {
+      final layout = SegmentedRailLayout.compute(<double>[30, 66], double.nan);
+      expect(layout.widths, <double>[54, 90]);
+      expect(layout.trackWidth, 144);
+      expect(layout.widths.every((width) => width.isFinite), isTrue);
+    });
+
     test('offsets accumulate segment widths', () {
       final layout = SegmentedRailLayout.compute(<double>[30, 30, 30], 300);
       expect(layout.offsetOf(0), 0);

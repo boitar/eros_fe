@@ -26,8 +26,9 @@ class NavigatorUtil {
   }) async {
     String _search = simpleSearch;
     if (simpleSearch.contains(':') &&
-        EHConst.translateTagType.keys
-            .contains(simpleSearch.split(':')[0].trim())) {
+        EHConst.translateTagType.keys.contains(
+          simpleSearch.split(':')[0].trim(),
+        )) {
       final List<String> searArr = simpleSearch.split(':');
       String _end = '';
       if (searArr[0] != 'uploader') {
@@ -38,8 +39,10 @@ class NavigatorUtil {
 
     final tags = Get.find<ControllerTagService>();
     final tag = tags.pushSearchPageCtrl(searchText: _search);
-    final repository =
-        SearchRepository(searchText: _search, advanceSearch: advanceSearch);
+    final repository = SearchRepository(
+      searchText: _search,
+      advanceSearch: advanceSearch,
+    );
 
     // Get.put(
     //   SearchPageController(),
@@ -53,7 +56,9 @@ class NavigatorUtil {
     );
 
     final ownership = ControllerTagSnapshot(
-        galleryTag: tags.snapshot.galleryTag, searchTag: tag);
+      galleryTag: tags.snapshot.galleryTag,
+      searchTag: tag,
+    );
     if (replace) {
       await Get.offNamed(
         EHRoutes.search,
@@ -99,7 +104,9 @@ class NavigatorUtil {
       id: listNavigatorId,
       preventDuplicates: false,
       arguments: ControllerTagSnapshot(
-          galleryTag: tags.snapshot.galleryTag, searchTag: tag),
+        galleryTag: tags.snapshot.galleryTag,
+        searchTag: tag,
+      ),
     );
 
     tags.popSearchPageCtrl(tag: tag);
@@ -122,10 +129,12 @@ class NavigatorUtil {
     GalleryRepository? repository;
 
     if (url != null && url.isNotEmpty) {
-      final galleryLink =
-          RegExp(r'https?://e[-x]hentai.org/g/([0-9]+)/[0-9a-z]+/?');
-      final imageLink =
-          RegExp(r'https?://e[-x]hentai.org/s/[0-9a-z]+/\d+-\d+/?');
+      final galleryLink = RegExp(
+        r'https?://e[-x]hentai.org/g/([0-9]+)/[0-9a-z]+/?',
+      );
+      final imageLink = RegExp(
+        r'https?://e[-x]hentai.org/s/[0-9a-z]+/\d+-\d+/?',
+      );
       if (galleryLink.hasMatch(url)) {
         gid = galleryLink.firstMatch(url)?.group(1);
         repository = GalleryRepository(url: url.linkRedirect);
@@ -161,12 +170,17 @@ class NavigatorUtil {
 
     final tag = tags.pushPageCtrl(gid: gid, owner: owner, unique: true);
     final ownership = ControllerTagSnapshot(
-        galleryTag: tag, searchTag: tags.snapshot.searchTag);
+      galleryTag: tag,
+      searchTag: tags.snapshot.searchTag,
+    );
     Get.lazyPut(() => repository!, tag: tag, fenix: true);
     try {
       if (replaceRoot) {
-        await Get.offNamed(EHRoutes.galleryPage,
-            preventDuplicates: false, arguments: ownership);
+        await Get.offNamed(
+          EHRoutes.galleryPage,
+          preventDuplicates: false,
+          arguments: ownership,
+        );
       } else if (isLayoutLarge &&
           url == null &&
           topRoute != null &&
@@ -191,16 +205,21 @@ class NavigatorUtil {
   }
 
   // 转到大图浏览
-  static Future<void> goGalleryViewPage(int index, String gid,
-      {String? galleryTag}) async {
+  static Future<void> goGalleryViewPage(
+    int index,
+    String gid, {
+    String? galleryTag,
+  }) async {
     // 命名路由方式
-    await Get.toNamed(EHRoutes.galleryViewExt,
-        arguments: ViewRepository(
-      index: index,
-      loadType: LoadFrom.gallery,
-      gid: gid,
-      galleryControllerTag: galleryTag ?? _liveGalleryTag(gid),
-        ));
+    await Get.toNamed(
+      EHRoutes.galleryViewExt,
+      arguments: ViewRepository(
+        index: index,
+        loadType: LoadFrom.gallery,
+        gid: gid,
+        galleryControllerTag: galleryTag ?? _liveGalleryTag(gid),
+      ),
+    );
   }
 
   /// The global tag can point at a gallery that was already closed; its fenix
@@ -222,28 +241,40 @@ class NavigatorUtil {
 
   // 打开已下载任务阅读
   static Future<void> goGalleryViewPageFile(
-      int index, List<String> pics, String gid) async {
+    int index,
+    List<String> pics,
+    String gid,
+  ) async {
     // 命名路由方式
-    await Get.toNamed(EHRoutes.galleryViewExt,
-        arguments: ViewRepository(
-      index: index,
-      files: pics,
-      loadType: LoadFrom.download,
-      gid: gid,
-        ));
+    await Get.toNamed(
+      EHRoutes.galleryViewExt,
+      arguments: ViewRepository(
+        index: index,
+        files: pics,
+        loadType: LoadFrom.download,
+        gid: gid,
+      ),
+    );
   }
 
   // 打开归档压缩包阅读
   static Future<void> goGalleryViewPageArchiver(
-      int index, AsyncArchive asyncArchive, String gid) async {
+    int index,
+    AsyncArchive asyncArchive,
+    String gid, {
+    String? sourcePath,
+  }) async {
     // 命名路由方式
-    await Get.toNamed(EHRoutes.galleryViewExt,
-        arguments: ViewRepository(
-      index: index,
-      asyncArchives: asyncArchive.files,
-      loadType: LoadFrom.archiver,
-      gid: gid,
-        ));
+    await Get.toNamed(
+      EHRoutes.galleryViewExt,
+      arguments: ViewRepository(
+        index: index,
+        asyncArchives: asyncArchive.files,
+        sourcePath: sourcePath,
+        loadType: LoadFrom.archiver,
+        gid: gid,
+      ),
+    );
   }
 
   static Future<void> goItemWidthSettingPage() async {
@@ -254,9 +285,6 @@ class NavigatorUtil {
       return;
     }
 
-    Get.toNamed(
-      EHRoutes.itemWidthSetting,
-      id: primaryNavigatorId,
-    );
+    Get.toNamed(EHRoutes.itemWidthSetting, id: primaryNavigatorId);
   }
 }

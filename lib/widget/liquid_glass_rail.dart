@@ -16,6 +16,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// A small, local control in the transparent Glass Rail.
@@ -265,7 +266,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             right: rightInset,
             top: widget.safeTop,
             height: LiquidGlassRail.controlSize,
-            child: Opacity(
+            child: _fadeControl(
               opacity: fadeOpacity,
               child: Semantics(
                 header: true,
@@ -337,7 +338,10 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             MediaQuery.textScalerOf(context),
             hasCategories: widget.categories.isNotEmpty,
           ),
-      child: Stack(fit: StackFit.expand, children: <Widget>[railContent]),
+      child: _fadeRail(
+        opacity: fadeOpacity,
+        child: Stack(fit: StackFit.expand, children: <Widget>[railContent]),
+      ),
     );
   }
 
@@ -428,9 +432,29 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             MediaQuery.textScalerOf(context),
             hasCategories: categories.isNotEmpty,
           ),
-      child: railContent,
+      child: _fadeRail(opacity: fadeOpacity, child: railContent),
     );
   }
+
+  bool get _sharesBackdrop =>
+      PlatformCapabilities.hostPlatform == TargetPlatform.android;
+
+  Widget _fadeRail({required double opacity, required Widget child}) {
+    if (!_sharesBackdrop) {
+      return child;
+    }
+    // These surfaces do not overlap and fade together. Keep the fade above
+    // the group: even Opacity(1) between a surface and its group prevents
+    // sharing, since it may open a separate render pass on a later frame.
+    // A rail owns its group; routes and retained tabs must not share it.
+    return Opacity(
+      opacity: opacity,
+      child: GlassBackdropGroup(child: child),
+    );
+  }
+
+  Widget _fadeControl({required double opacity, required Widget child}) =>
+      _sharesBackdrop ? child : Opacity(opacity: opacity, child: child);
 
   Widget _searchCapsule(
     LiquidGlassRailSearch search, {
@@ -447,7 +471,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
     );
     final radius = BorderRadius.circular(size / 2);
     final trailing = search.trailing;
-    return Opacity(
+    return _fadeControl(
       opacity: opacity,
       child: LiquidGlassSurface(
         key: const ValueKey<String>('liquid-glass-rail-search'),
@@ -572,7 +596,9 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
         );
         final widths = layout.widths;
         final surfaceWidth = layout.trackWidth;
-        Widget fitSurface(Widget child) => widget.compactCategories
+        final fitIntrinsicWidth =
+            widget.compactCategories || !constraints.maxWidth.isFinite;
+        Widget fitSurface(Widget child) => fitIntrinsicWidth
             ? Align(
                 child: SizedBox(width: surfaceWidth, child: child),
               )
@@ -714,7 +740,9 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             ),
           ),
         );
-        return fitSurface(Opacity(opacity: opacity, child: categorySurface));
+        return fitSurface(
+          _fadeControl(opacity: opacity, child: categorySurface),
+        );
       },
     );
   }
@@ -785,7 +813,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
       action.color ?? CupertinoColors.label,
       context,
     );
-    return Opacity(
+    return _fadeControl(
       opacity: opacity,
       child: SizedBox(
         width: LiquidGlassRail.controlSize,
@@ -1541,8 +1569,12 @@ class _NativeCategoryRailState extends State<NativeCategoryRail> {
       if (!mounted || widget.pageController?.hasClients != true) {
         return;
       }
+      final page = widget.pageController!.page;
+      if (page == null || !page.isFinite) {
+        return;
+      }
       _scrubTicker.update(widget.pageController);
-      _channel?.invokeMethod<void>('progress', widget.pageController!.page);
+      _channel?.invokeMethod<void>('progress', page);
     });
   }
 

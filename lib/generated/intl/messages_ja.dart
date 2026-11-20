@@ -198,6 +198,35 @@ class MessageLookup extends MessageLookupByLibrary {
       "タスクとコンテンツ",
     ),
     "delete_task_only": MessageLookupByLibrary.simpleMessage("タスクのみ"),
+    "desktop_all_history": MessageLookupByLibrary.simpleMessage("すべての履歴を表示"),
+    "desktop_clear_history_detail": MessageLookupByLibrary.simpleMessage(
+      "この端末の閲覧履歴と最近読んだ作品を消去します。読書位置とダウンロードは保持されます。",
+    ),
+    "desktop_current_group": MessageLookupByLibrary.simpleMessage("現在のグループ"),
+    "desktop_display_mode": MessageLookupByLibrary.simpleMessage("表示方法"),
+    "desktop_follow_global": MessageLookupByLibrary.simpleMessage("全体設定に従う"),
+    "desktop_global_mode": MessageLookupByLibrary.simpleMessage("全体の表示方法"),
+    "desktop_global_mode_hint": MessageLookupByLibrary.simpleMessage(
+      "全体設定に従う一覧にも適用",
+    ),
+    "desktop_hide_sidebar": MessageLookupByLibrary.simpleMessage("サイドバーを非表示"),
+    "desktop_mode_sync_failed": MessageLookupByLibrary.simpleMessage(
+      "表示形式を端末に保存しました。同期に失敗したため、接続を確認してください。",
+    ),
+    "desktop_no_groups": MessageLookupByLibrary.simpleMessage("グループなし"),
+    "desktop_read_unavailable": MessageLookupByLibrary.simpleMessage(
+      "作品を開けません。保存元を確認して再試行してください。",
+    ),
+    "desktop_recent_empty": MessageLookupByLibrary.simpleMessage(
+      "読み始めた作品がここに表示されます。",
+    ),
+    "desktop_recent_reading": MessageLookupByLibrary.simpleMessage("最近読んだ作品"),
+    "desktop_refresh": MessageLookupByLibrary.simpleMessage("現在の一覧を更新"),
+    "desktop_refreshing": MessageLookupByLibrary.simpleMessage("一覧を更新中"),
+    "desktop_resize_panes": MessageLookupByLibrary.simpleMessage("一覧と詳細の幅を調整"),
+    "desktop_show_sidebar": MessageLookupByLibrary.simpleMessage("サイドバーを表示"),
+    "desktop_untitled": MessageLookupByLibrary.simpleMessage("無題の作品"),
+    "desktop_view_details": MessageLookupByLibrary.simpleMessage("詳細を表示"),
     "detail_ambient_background": MessageLookupByLibrary.simpleMessage(
       "詳細ページの背景",
     ),

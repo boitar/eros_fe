@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
-import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/index.dart';
 import 'package:get/get.dart';
 
@@ -33,10 +32,28 @@ class CustomSubListController extends TabViewController {
   }
 
   @override
+  Object get requestIdentity => jsonEncode({
+    'uuid': profileUuid,
+    'cats': profile?.cats,
+    'search': profile?.searchText,
+    'advance': profile?.enableAdvance == true
+        ? profile?.advSearch?.toJson()
+        : null,
+    'type': profile?.listType.name,
+  });
+
+  @override
   Future<void> firstLoad() async {
+    final identity = requestIdentity;
+    final expectedRevision = requestRevision + 1;
     await super.firstLoad();
 
     try {
+      if (isClosed ||
+          identity != requestIdentity ||
+          isReloading ||
+          expectedRevision != requestRevision)
+        return;
       if (cancelToken?.isCancelled ?? false) {
         return;
       }
@@ -62,39 +79,20 @@ class CustomSubListController extends TabViewController {
       refresh: refresh,
       cancelToken: cancelToken,
       searchText: profile?.searchText?.join(' '),
-      advanceSearch:
-          (profile?.enableAdvance ?? false) ? profile?.advSearch : null,
+      advanceSearch: (profile?.enableAdvance ?? false)
+          ? profile?.advSearch
+          : null,
       galleryListType: profile?.listType ?? GalleryListType.gallery,
     );
 
-    pageState = PageState.Loading;
-
-    try {
-      FetchListClient fetchListClient = getFetchListClient(fetchConfig);
-      final GalleryList? result = await fetchListClient.fetch();
-      pageState = PageState.None;
-      if (cancelToken?.isCancelled ?? false) {
-        return null;
-      }
-
-      final _list = result?.gallerys
-              ?.map((e) => e.simpleTags ?? [])
-              .expand((List<SimpleTag> element) => element)
-              .toList() ??
-          [];
-
-      tagController.addAllSimpleTag(_list);
-
-      return result;
-    } on EhError catch (eherror) {
-      logger.e('type:${eherror.type}\n${eherror.message}');
-      showToast(eherror.message);
-      pageState = PageState.LoadingError;
-      rethrow;
-    } on Exception catch (e) {
-      pageState = PageState.LoadingError;
-      rethrow;
-    }
+    final token = cancelToken;
+    final result = await getFetchListClient(fetchConfig).fetch();
+    if (token?.isCancelled ?? false) return null;
+    tagController.addAllSimpleTag(
+      result?.gallerys?.expand((e) => e.simpleTags ?? <SimpleTag>[]).toList() ??
+          [],
+    );
+    return result;
   }
 
   @override
@@ -108,8 +106,9 @@ class CustomSubListController extends TabViewController {
       refresh: true,
       cancelToken: cancelToken,
       searchText: profile?.searchText?.join(' '),
-      advanceSearch:
-          (profile?.enableAdvance ?? false) ? profile?.advSearch : null,
+      advanceSearch: (profile?.enableAdvance ?? false)
+          ? profile?.advSearch
+          : null,
       galleryListType: profile?.listType ?? GalleryListType.gallery,
       page: nextPage,
     );
@@ -127,8 +126,9 @@ class CustomSubListController extends TabViewController {
       refresh: true,
       cancelToken: cancelToken,
       searchText: profile?.searchText?.join(' '),
-      advanceSearch:
-          (profile?.enableAdvance ?? false) ? profile?.advSearch : null,
+      advanceSearch: (profile?.enableAdvance ?? false)
+          ? profile?.advSearch
+          : null,
       galleryListType: profile?.listType ?? GalleryListType.gallery,
       page: prevPage,
     );
@@ -152,8 +152,9 @@ class CustomSubListController extends TabViewController {
       refresh: true,
       cancelToken: cancelToken,
       searchText: profile?.searchText?.join(' '),
-      advanceSearch:
-          (profile?.enableAdvance ?? false) ? profile?.advSearch : null,
+      advanceSearch: (profile?.enableAdvance ?? false)
+          ? profile?.advSearch
+          : null,
       galleryListType: profile?.listType ?? GalleryListType.gallery,
       jump: jump,
       seek: seek,

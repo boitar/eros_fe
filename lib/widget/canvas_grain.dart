@@ -2,10 +2,12 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:flutter/cupertino.dart';
 
 /// Fine grain on the page canvas, so glass at rest has texture to sample
 /// instead of a flat grey: 3% in light, 2.5% in graphite, none on pure black.
+/// Desktop shells use a flat canvas because their panels do not sample glass.
 ///
 /// It paints behind [child]; cards and covers drawn by the child stay clean.
 class CanvasGrain extends StatelessWidget {
@@ -26,10 +28,15 @@ class CanvasGrain extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = CupertinoTheme.of(context);
     final bool dark = theme.brightness == Brightness.dark;
-    final Color canvas = CupertinoDynamicColor.maybeResolve(
-            theme.scaffoldBackgroundColor, context) ??
+    final Color canvas =
+        CupertinoDynamicColor.maybeResolve(
+          theme.scaffoldBackgroundColor,
+          context,
+        ) ??
         theme.scaffoldBackgroundColor;
-    final double opacity = opacityFor(canvas, dark: dark);
+    final double opacity = PlatformCapabilities.isDesktop
+        ? 0
+        : opacityFor(canvas, dark: dark);
     // Increased contrast asks for flat surfaces.
     final bool flat = opacity <= 0 || MediaQuery.highContrastOf(context);
     // The same widgets with or without grain: switching to pure black must

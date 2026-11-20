@@ -87,6 +87,7 @@ class EhGridView extends StatelessWidget {
           ? KeyedSubtree(key: firstCardKey, child: item)
           : item;
       return GalleryAnchorItem(
+        mode: mode,
         id: _provider.gid ?? '$index',
         index: index,
         child: offlineGallerySemantics(_provider.gid, keyed),

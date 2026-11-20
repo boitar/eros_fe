@@ -1,17 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:eros_fe/widget/desktop_browse_style.dart';
 
 import 'adaptive_environment.dart';
 import 'platform_capabilities.dart';
 
 /// Describes the actual presentation, including the user's split preference.
 class BrowsePaneScope extends InheritedWidget {
-  const BrowsePaneScope({
-    super.key,
-    required this.split,
-    required super.child,
-  });
+  const BrowsePaneScope({super.key, required this.split, required super.child});
   final bool split;
 
   static bool isSplit(BuildContext context) =>
@@ -35,6 +32,7 @@ class AdaptiveBrowseLayout extends StatelessWidget {
     required this.detail,
     this.sideProportion = 0,
     this.divider,
+    this.desktop = false,
   });
 
   final AdaptiveEnvironmentSnapshot environment;
@@ -48,77 +46,112 @@ class AdaptiveBrowseLayout extends StatelessWidget {
   final Widget detail;
   final double sideProportion;
   final Widget? divider;
+  final bool desktop;
 
   static double primaryPaneWidth(double availableWidth, double proportion) {
     const minimum = AdaptiveEnvironmentSnapshot.minimumPaneWidth;
-    return minimum + math.max(0.0,availableWidth-minimum*2-1)*proportion.clamp(0.0,1.0);
+    return minimum +
+        math.max(0.0, availableWidth - minimum * 2 - 1) *
+            proportion.clamp(0.0, 1.0);
   }
 
   @override
   Widget build(BuildContext context) {
     final bounds = Offset.zero & environment.size;
     final safe = environment.contentRect;
-    final available = Rect.fromLTRB(safe.left, 0, safe.right, bounds.bottom);
+    final available = Rect.fromLTRB(
+      safe.left,
+      desktop ? math.max(8, safe.top + 8) : 0,
+      safe.right - (desktop ? 8 : 0),
+      bounds.bottom - (desktop ? 8 : 0),
+    );
     final panes = environment.paneRects;
     Rect primaryRect = available;
     Rect detailRect = available;
     Rect separator = Rect.zero;
     final extendDetailUnderVerticalBar =
         PlatformCapabilities.hostPlatform == TargetPlatform.iOS &&
-            environment.hasDuoVerticalBar;
+        environment.hasDuoVerticalBar;
     final extendDetailRight =
         extendDetailUnderVerticalBar && environment.systemBarEdge == 'right';
-    final extendDetailLeft = extendDetailUnderVerticalBar &&
+    final extendDetailLeft =
+        extendDetailUnderVerticalBar &&
         environment.systemBarEdge == 'left' &&
         !split;
     if (split) {
       if (environment.isBookFolded && panes.length == 2) {
         primaryRect = Rect.fromLTRB(
-            panes.first.left, 0, panes.first.right, bounds.bottom);
+          panes.first.left,
+          0,
+          panes.first.right,
+          bounds.bottom,
+        );
         detailRect = Rect.fromLTRB(
-            panes.last.left,
-            0,
-            extendDetailRight ? bounds.right : panes.last.right,
-            bounds.bottom);
+          panes.last.left,
+          0,
+          extendDetailRight ? bounds.right : panes.last.right,
+          bounds.bottom,
+        );
       } else {
-        final width = primaryPaneWidth(available.width, sideProportion);
-        primaryRect = Rect.fromLTWH(available.left, 0, width, available.height);
+        final width = desktop
+            ? DesktopBrowseStyle.listWidth(safe.width, sideProportion)
+            : primaryPaneWidth(available.width, sideProportion);
+        primaryRect = Rect.fromLTWH(
+          available.left,
+          available.top,
+          width,
+          available.height,
+        );
         detailRect = Rect.fromLTRB(
-            primaryRect.right + 1,
-            0,
-            extendDetailRight ? bounds.right : available.right,
-            bounds.bottom);
-        separator = Rect.fromLTWH(primaryRect.right, 0, 1, bounds.height);
+          primaryRect.right + (desktop ? 8 : 1),
+          available.top,
+          extendDetailRight ? bounds.right : available.right,
+          available.bottom,
+        );
+        separator = Rect.fromLTWH(
+          primaryRect.right,
+          available.top,
+          desktop ? 8 : 1,
+          available.height,
+        );
       }
     } else if (extendDetailRight || extendDetailLeft) {
       detailRect = Rect.fromLTRB(
-          extendDetailLeft ? bounds.left : available.left,
-          0,
-          extendDetailRight ? bounds.right : available.right,
-          bounds.bottom);
+        extendDetailLeft ? bounds.left : available.left,
+        0,
+        extendDetailRight ? bounds.right : available.right,
+        bounds.bottom,
+      );
     }
 
-    Widget pane(Widget child, Rect rect, bool visible) => BrowsePaneScope(
-          split: split,
-          child: AdaptivePane(
-            environment: environment,
-            rect: rect,
-            child: Offstage(
-              offstage: !visible,
-              child: TickerMode(
-                enabled: visible,
-                child: ExcludeFocus(
-                  excluding: !visible,
-                  child: Semantics(
-                    container: true,
-                    explicitChildNodes: true,
-                    child: ClipRect(child: child),
-                  ),
-                ),
+    Widget pane(
+      Widget child,
+      Rect rect,
+      bool visible, {
+      bool surface = false,
+    }) => BrowsePaneScope(
+      split: split,
+      child: AdaptivePane(
+        environment: environment,
+        rect: rect,
+        child: Offstage(
+          offstage: !visible,
+          child: TickerMode(
+            enabled: visible,
+            child: ExcludeFocus(
+              excluding: !visible,
+              child: Semantics(
+                container: true,
+                explicitChildNodes: true,
+                child: desktop && surface
+                    ? DesktopPaneSurface(child: child)
+                    : ClipRect(child: child),
               ),
             ),
           ),
-        );
+        ),
+      ),
+    );
 
     return Stack(
       fit: StackFit.expand,
@@ -126,28 +159,34 @@ class AdaptiveBrowseLayout extends StatelessWidget {
         Positioned.fromRect(
           rect: primaryRect,
           child: pane(
-              primary, primaryRect, split || !detailActive || detailMoving),
+            primary,
+            primaryRect,
+            split || !detailActive || detailMoving,
+          ),
         ),
         Positioned.fromRect(
           rect: detailRect,
-          child:
-              pane(detail, detailRect, split || detailActive || detailMoving),
+          child: pane(
+            detail,
+            detailRect,
+            split || detailActive || detailMoving,
+            surface: true,
+          ),
         ),
-        if (!separator.isEmpty)
+        if (!separator.isEmpty && !desktop)
           Positioned.fromRect(
             rect: separator,
             child: ColoredBox(
               color: CupertinoDynamicColor.resolve(
-                  CupertinoColors.separator, context),
+                CupertinoColors.separator,
+                context,
+              ),
             ),
           ),
-        if (split && !environment.isBookFolded && divider != null)
-          Positioned(
-            left: detailRect.left,
-            top: 0,
-            bottom: 0,
-            child: divider!,
-          ),
+        if (desktop && split && divider != null)
+          Positioned.fromRect(rect: separator, child: divider!),
+        if (!desktop && split && !environment.isBookFolded && divider != null)
+          Positioned(left: detailRect.left, top: 0, bottom: 0, child: divider!),
       ],
     );
   }

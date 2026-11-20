@@ -3,6 +3,7 @@ import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:eros_fe/widget/windows_window_content.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:window_size/window_size.dart';
 
@@ -34,6 +35,13 @@ class Desktop extends StatelessWidget {
     final windows = PlatformCapabilities.hostPlatform == TargetPlatform.windows;
     return Stack(
       children: [
+        if (windows)
+          Positioned.fill(
+            child: ColoredBox(
+              key: const ValueKey('windows-window-canvas'),
+              color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+            ),
+          ),
         if (windows)
           Positioned.fill(
             child: WindowsWindowContent(
@@ -125,7 +133,7 @@ class WindowButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
 
     return Row(
       children: [

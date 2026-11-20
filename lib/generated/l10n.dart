@@ -1,7 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import 'intl/messages_all.dart';
 
 // **************************************************************************
@@ -5189,6 +5188,196 @@ class L10n {
     return Intl.message(
       'Search options',
       name: 'sp_image_search_options',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show sidebar`
+  String get desktop_show_sidebar {
+    return Intl.message(
+      'Show sidebar',
+      name: 'desktop_show_sidebar',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hide sidebar`
+  String get desktop_hide_sidebar {
+    return Intl.message(
+      'Hide sidebar',
+      name: 'desktop_hide_sidebar',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Recently read`
+  String get desktop_recent_reading {
+    return Intl.message(
+      'Recently read',
+      name: 'desktop_recent_reading',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Recently read works appear here after you start reading.`
+  String get desktop_recent_empty {
+    return Intl.message(
+      'Recently read works appear here after you start reading.',
+      name: 'desktop_recent_empty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View all history`
+  String get desktop_all_history {
+    return Intl.message(
+      'View all history',
+      name: 'desktop_all_history',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No groups`
+  String get desktop_no_groups {
+    return Intl.message(
+      'No groups',
+      name: 'desktop_no_groups',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refresh current list`
+  String get desktop_refresh {
+    return Intl.message(
+      'Refresh current list',
+      name: 'desktop_refresh',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refreshing current list`
+  String get desktop_refreshing {
+    return Intl.message(
+      'Refreshing current list',
+      name: 'desktop_refreshing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Display mode`
+  String get desktop_display_mode {
+    return Intl.message(
+      'Display mode',
+      name: 'desktop_display_mode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Global display mode`
+  String get desktop_global_mode {
+    return Intl.message(
+      'Global display mode',
+      name: 'desktop_global_mode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Also affects lists that follow global settings`
+  String get desktop_global_mode_hint {
+    return Intl.message(
+      'Also affects lists that follow global settings',
+      name: 'desktop_global_mode_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Follow global`
+  String get desktop_follow_global {
+    return Intl.message(
+      'Follow global',
+      name: 'desktop_follow_global',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Current group`
+  String get desktop_current_group {
+    return Intl.message(
+      'Current group',
+      name: 'desktop_current_group',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Adjust gallery and detail widths`
+  String get desktop_resize_panes {
+    return Intl.message(
+      'Adjust gallery and detail widths',
+      name: 'desktop_resize_panes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clears browsing history and recently read works on this device. Reading progress and downloads are kept.`
+  String get desktop_clear_history_detail {
+    return Intl.message(
+      'Clears browsing history and recently read works on this device. Reading progress and downloads are kept.',
+      name: 'desktop_clear_history_detail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unable to open this work. Check its source and try again.`
+  String get desktop_read_unavailable {
+    return Intl.message(
+      'Unable to open this work. Check its source and try again.',
+      name: 'desktop_read_unavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Untitled work`
+  String get desktop_untitled {
+    return Intl.message(
+      'Untitled work',
+      name: 'desktop_untitled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View details`
+  String get desktop_view_details {
+    return Intl.message(
+      'View details',
+      name: 'desktop_view_details',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Display mode saved locally. Sync failed; check your connection.`
+  String get desktop_mode_sync_failed {
+    return Intl.message(
+      'Display mode saved locally. Sync failed; check your connection.',
+      name: 'desktop_mode_sync_failed',
       desc: '',
       args: [],
     );

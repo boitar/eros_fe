@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/controller/tag_controller.dart';
@@ -76,6 +75,57 @@ abstract class TabViewController extends GetxController {
   final RxBool _isBackgroundRefresh = false.obs;
   bool get isBackgroundRefresh => _isBackgroundRefresh.value;
   set isBackgroundRefresh(bool val) => _isBackgroundRefresh.value = val;
+
+  /// A toolbar refresh must not start a second request for the same list.
+  /// Keeping this state in the shared list controller also protects the
+  /// desktop action when the user changes groups while a response is in flight.
+  final RxBool _isReloading = false.obs;
+  bool get isReloading => _isReloading.value;
+  Future<void>? _reloadInFlight;
+  int _requestGeneration = 0;
+  int _successfulReloads = 0;
+  Object? _reloadIdentity;
+  bool _disposed = false;
+
+  /// Only request conditions belong here; presentation preferences do not.
+  Object? get requestIdentity => null;
+
+  @protected
+  int get requestRevision => _requestGeneration;
+
+  bool _isCurrent(int generation, Object? identity) =>
+      !_disposed &&
+      generation == _requestGeneration &&
+      identity == requestIdentity;
+
+  int _replaceRequest() {
+    cancelToken?.cancel('list request replaced');
+    _reloadInFlight = null;
+    _isReloading.value = false;
+    return ++_requestGeneration;
+  }
+
+  @override
+  void onClose() {
+    _disposed = true;
+    _replaceRequest();
+    pageTextEditController.dispose();
+    gidTextEditController.dispose();
+    jumpOrSeekTextEditController.dispose();
+    gidNode.dispose();
+    super.onClose();
+  }
+
+  Future<void> refreshFromToolbar({bool Function()? isCurrent}) async {
+    final revision = _successfulReloads;
+    await reloadData();
+    if (!_disposed &&
+        _successfulReloads > revision &&
+        (isCurrent?.call() ?? true)) {
+      galleryAnchor.forget();
+      tabScrollController?.scrollToTop();
+    }
+  }
 
   final GlobalKey<SliverAnimatedListState> sliverAnimatedListKey =
       GlobalKey<SliverAnimatedListState>();
@@ -156,62 +206,79 @@ abstract class TabViewController extends GetxController {
     pageTextEditController.clear();
   }
 
-  // 首次请求
+  // Replacement requests retain ownership across cache and network awaits.
   Future<void> firstLoad() async {
+    final generation = _replaceRequest();
+    final identity = requestIdentity;
     canLoadMore = false;
     await Future.delayed(200.milliseconds);
+    if (!_isCurrent(generation, identity)) return;
     try {
-      cancelToken = CancelToken();
-      final GalleryList? result = await fetchData();
-      if (result == null) {
-        change(null, status: RxStatus.loading());
-        return;
-      }
-
-      final _listItem = result.gallerys;
-
-      logger.t('_listItem ${_listItem?.length}');
-
+      final result = await fetchData();
+      if (!_isCurrent(generation, identity) || result == null) return;
       setResultPage(result);
-      change(_listItem, status: RxStatus.success());
+      lastNext = lastPrev = null;
+      change(result.gallerys, status: RxStatus.success());
+      pageState = PageState.None;
     } catch (err, stack) {
-      logger.e('$err\n$stack');
-      final errMsg = err is HttpException ? err.message : '$err';
-      change(null, status: RxStatus.error(errMsg));
-    } finally {
-      canLoadMore = true;
-    }
-  }
-
-  // 重新加载
-  Future<void> reloadData() async {
-    resetResultPage();
-
-    try {
-      final GalleryList? result = await fetchData(
-        refresh: true,
-      );
-
-      logger.t('reloadData length ${result?.gallerys?.length}');
-
-      if (result == null) {
+      if (!_isCurrent(generation, identity) ||
+          (err is DioException && CancelToken.isCancel(err)))
         return;
-      }
-
-      final List<GalleryProvider>? resultList = result.gallerys;
-
-      setResultPage(result);
-
-      logger.t('reloadData next $next, prev $prev');
-
-      change(resultList, status: RxStatus.success());
-      afterJump = false;
-    } catch (err) {
-      // change(state, status: RxStatus.error(err.toString()));
-      final errmsg = err is HttpException ? err.message : '$err';
-      showToast(errmsg);
+      logger.e('$err\n$stack');
+      final message = err is HttpException ? err.message : '$err';
+      change(null, status: RxStatus.error(message));
+      pageState = PageState.LoadingError;
+    } finally {
+      if (_isCurrent(generation, identity)) canLoadMore = true;
     }
   }
+
+  Future<void> reloadData() {
+    final identity = requestIdentity;
+    final existing = _reloadInFlight;
+    if (existing != null && identity == _reloadIdentity) return existing;
+    if (pageState == PageState.LoadingMore) lastNext = null;
+    if (pageState == PageState.LoadingPrev) lastPrev = null;
+    final generation = _replaceRequest();
+    _reloadIdentity = identity;
+    _isReloading.value = true;
+    late final Future<void> tracked;
+    tracked = _reloadData(generation, identity).whenComplete(() {
+      if (identical(_reloadInFlight, tracked)) _reloadInFlight = null;
+    });
+    _reloadInFlight = tracked;
+    return tracked;
+  }
+
+  Future<void> _reloadData(int generation, Object? identity) async {
+    // Cursors, content, anchor and pagination remain intact on failure.
+    final previousCanLoadMore = canLoadMore;
+    try {
+      final result = await fetchData(refresh: true);
+      if (!_isCurrent(generation, identity) || result == null) return;
+      setResultPage(result);
+      lastNext = lastPrev = null;
+      afterJump = false;
+      canLoadMore = true;
+      change(result.gallerys, status: RxStatus.success());
+      _successfulReloads++;
+    } catch (err) {
+      if (_isCurrent(generation, identity)) {
+        canLoadMore = previousCanLoadMore;
+        if (!(err is DioException && CancelToken.isCancel(err))) {
+          reportRefreshError(err is HttpException ? err.message : '$err');
+        }
+      }
+    } finally {
+      if (generation == _requestGeneration && !_disposed) {
+        _isReloading.value = false;
+        pageState = PageState.None;
+      }
+    }
+  }
+
+  @protected
+  void reportRefreshError(String message) => showToast(message);
 
   Future<void> jumpToTop() async {
     await reloadData();
@@ -220,126 +287,73 @@ abstract class TabViewController extends GetxController {
   String? lastNext;
   String? lastPrev;
 
-  // 加载更多
-  Future<void> loadDataMore() async {
+  Future<void> loadDataMore() => _loadAdjacent(previous: false);
+
+  Future<void> loadPrevious() => _loadAdjacent(previous: true);
+
+  Future<void> _loadAdjacent({required bool previous}) async {
+    final generation = _requestGeneration;
+    final identity = requestIdentity;
     await Future.delayed(100.milliseconds);
-    if (!canLoadData) {
-      logger.e('not canLoadData');
+    if (!_isCurrent(generation, identity) ||
+        isReloading ||
+        !canLoadData ||
+        !canLoadMore)
       return;
+    final cursor = previous ? prev : next;
+    if ((previous ? lastPrev : lastNext) == cursor) return;
+    pageState = previous ? PageState.LoadingPrev : PageState.LoadingMore;
+    if (previous) {
+      lastPrev = cursor;
+    } else {
+      lastNext = cursor;
     }
-
-    if (!canLoadMore) {
-      logger.e('not canLoadMore');
-      return;
-    }
-
-    if (lastNext == next) {
-      logger.t('lastNext == next  $next');
-      return;
-    }
-
-    logger.t('loadDataMore .....');
-    pageState = PageState.LoadingMore;
-
-    logger.d('load page next: $next');
-
-    lastNext = next;
-
+    var committed = false;
     try {
-      final GalleryList? result = await fetchMoreData();
-
-      if (result == null) {
-        return;
-      }
-
-      final List<GalleryProvider> resultList = result.gallerys ?? [];
-
-      final n = state?.indexWhere(
-              (GalleryProvider e) => e.gid == resultList.firstOrNull?.gid) ==
-          -1;
-
-      if (resultList.isNotEmpty && n) {
-        setResultPage(result);
-
-        logger.d('loadDataMore next $next, prev $prev');
-      }
-
-      final insertIndex = state?.length ?? 0;
-
-      logger.t('insertIndex $insertIndex');
-
-      if (state == null) {
-        change(resultList, status: RxStatus.success());
-      } else {
-        state!.addAll(resultList);
-        change(state, status: RxStatus.success());
-      }
-    } catch (e, stack) {
-      pageState = PageState.LoadingException;
-      rethrow;
-    }
-    // 成功才更新
-
-    pageState = PageState.None;
-  }
-
-  // 加载上一页
-  Future<void> loadPrevious() async {
-    await Future.delayed(100.milliseconds);
-    logger.d('loadPrevious .....');
-    if (!canLoadData) {
-      logger.e('not loadPrevious');
-      return;
-    }
-
-    if (!canLoadMore) {
-      logger.e('not loadPrevious');
-      return;
-    }
-
-    if (lastPrev == prev) {
-      logger.t('lastPrev == prev  $prev');
-      return;
-    }
-
-    logger.t('loadPrevious .....');
-    pageState = PageState.LoadingPrev;
-
-    logger.t('load page prev: $prevGid');
-
-    lastPrev = prevGid;
-
-    try {
-      final GalleryList? result = await fetchPrevData();
-
-      if (result == null) {
-        return;
-      }
-
-      final List<GalleryProvider> resultList = result.gallerys ?? [];
-
-      if (resultList.isNotEmpty &&
-          state?.indexWhere(
-                  (GalleryProvider e) => e.gid == resultList.first.gid) ==
-              -1) {
-        setResultPage(result);
-      }
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (state == null) {
-          change(resultList, status: RxStatus.success());
+      final result = await (previous ? fetchPrevData() : fetchMoreData());
+      if (!_isCurrent(generation, identity) || result == null) return;
+      final existingIds = {
+        for (final item in state ?? <GalleryProvider>[]) item.gid,
+      };
+      final items = (result.gallerys ?? <GalleryProvider>[])
+          .where((item) => item.gid == null || existingIds.add(item.gid))
+          .toList();
+      setResultPage(result);
+      void commit() {
+        if (!_isCurrent(generation, identity)) return;
+        final list = state ?? <GalleryProvider>[];
+        if (previous) {
+          list.insertAll(0, items);
         } else {
-          state!.insertAll(0, resultList);
-          change(state, status: RxStatus.success());
+          list.addAll(items);
         }
-      });
-    } catch (e, stack) {
+        change(list, status: RxStatus.success());
+      }
+
+      if (previous) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => commit());
+      } else {
+        commit();
+      }
+      committed = true;
+    } catch (err) {
+      if (!_isCurrent(generation, identity) ||
+          (err is DioException && CancelToken.isCancel(err)))
+        return;
       pageState = PageState.LoadingException;
       rethrow;
+    } finally {
+      if (_isCurrent(generation, identity)) {
+        if (!committed) {
+          if (previous) {
+            lastPrev = null;
+          } else {
+            lastNext = null;
+          }
+        }
+        if (pageState != PageState.LoadingException) pageState = PageState.None;
+      }
     }
-    // 成功才更新
-
-    pageState = PageState.None;
   }
 
   Future<void> loadFrom({
@@ -350,8 +364,8 @@ abstract class TabViewController extends GetxController {
     int? page,
     bool markAfterJump = true,
   }) async {
-    cancelToken = CancelToken();
-
+    final generation = _replaceRequest();
+    final identity = requestIdentity;
     canLoadMore = false;
     pageState = PageState.Loading;
     change(state, status: RxStatus.loading());
@@ -363,6 +377,7 @@ abstract class TabViewController extends GetxController {
         seek: seek,
         page: page,
       );
+      if (!_isCurrent(generation, identity)) return;
       if (result == null) {
         change(null, status: RxStatus.loading());
         return;
@@ -373,21 +388,29 @@ abstract class TabViewController extends GetxController {
       logger.t('loadFrom _listItem ${_listItem?.length}');
 
       setResultPage(result);
+      lastNext = lastPrev = null;
       change(_listItem, status: RxStatus.success());
       pageState = PageState.None;
       logger.d('loadFrom next $next, prev $prev');
       afterJump = markAfterJump;
     } catch (err, stack) {
+      if (!_isCurrent(generation, identity) ||
+          (err is DioException && CancelToken.isCancel(err)))
+        return;
       logger.e('$err\n$stack');
       final errMsg = err is HttpException ? err.message : '$err';
       pageState = PageState.LoadingError;
       change(null, status: RxStatus.error(errMsg));
     } finally {
-      canLoadMore = true;
+      if (_isCurrent(generation, identity)) canLoadMore = true;
     }
   }
 
   Future<void> onRefresh() async {
+    if (isReloading) {
+      await reloadData();
+      return;
+    }
     if (!(cancelToken?.isCancelled ?? false)) {
       cancelToken?.cancel();
     }
@@ -456,8 +479,11 @@ abstract class TabViewController extends GetxController {
     if (!(primary?.hasClients ?? false)) {
       return;
     }
-    primary!.animateTo(0.0,
-        duration: const Duration(milliseconds: 500), curve: Curves.ease);
+    primary!.animateTo(
+      0.0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.ease,
+    );
   }
 
   void scrollToTopRefresh(BuildContext context) {
@@ -468,8 +494,11 @@ abstract class TabViewController extends GetxController {
     if (!(primary?.hasClients ?? false)) {
       return;
     }
-    primary!.animateTo(-kDefaultRefreshTriggerPullDistance,
-        duration: const Duration(milliseconds: 500), curve: Curves.ease);
+    primary!.animateTo(
+      -kDefaultRefreshTriggerPullDistance,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.ease,
+    );
   }
 
   final _showDatePicker = true.obs;
@@ -484,8 +513,9 @@ abstract class TabViewController extends GetxController {
     if (nextPage > -1 || prevPage > -1) {
       final l10n = L10n.of(context);
       final max = maxPage ?? 1;
-      final fallbackPage =
-          nextPage > -1 ? nextPage.clamp(1, max < 1 ? 1 : max) : max;
+      final fallbackPage = nextPage > -1
+          ? nextPage.clamp(1, max < 1 ? 1 : max)
+          : max;
       final current =
           int.tryParse(pageTextEditController.text.trim()) ?? fallbackPage;
       final result = await showPageJumpSheet(
@@ -501,10 +531,7 @@ abstract class TabViewController extends GetxController {
           await loadFrom(page: 0, markAfterJump: false);
         } else {
           pageTextEditController.text = '${result.page}';
-          await loadFrom(
-            page: result.page - 1,
-            markAfterJump: result.page > 1,
-          );
+          await loadFrom(page: result.page - 1, markAfterJump: result.page > 1);
         }
       }
       return;
@@ -613,16 +640,11 @@ abstract class TabViewController extends GetxController {
     // else if pageType is next, toGid is next
     final toGid = _gid.isEmpty
         ? pageType == PageType.prev
-            ? prevGid
-            : nextGid
+              ? prevGid
+              : nextGid
         : _gid;
 
-    loadFrom(
-      jump: jump,
-      seek: seek,
-      gid: toGid,
-      pageType: pageType,
-    );
+    loadFrom(jump: jump, seek: seek, gid: toGid, pageType: pageType);
     if (closeDialog) {
       Get.back();
     }

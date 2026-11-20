@@ -3,6 +3,7 @@ import 'package:eros_fe/pages/item/gallery_grid_tags.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 void main() {
   testWidgets('gallery identity survives 20 list/grid/column-count cycles',
@@ -34,6 +35,26 @@ void main() {
         expect(bounds.top, lessThan(size.height));
         expect(tester.takeException(), isNull);
       }
+    }
+  });
+
+  testWidgets('list grid and masonry retain a deep work anchor', (tester) async {
+    final fixture = await _mount(tester);
+    fixture.scroll.jumpTo(8500);
+    await tester.pumpAndSettle();
+    final before = fixture.anchor.anchor!;
+    for (final size in [
+      const Size(800, 700), const Size(1200, 700),
+      const Size(650, 700), const Size(390, 700),
+      const Size(1200, 700), const Size(390, 700),
+    ]) {
+      tester.view.physicalSize = size;
+      await tester.pumpAndSettle();
+      final after = fixture.anchor.anchor!;
+      expect(after.id, before.id, reason: 'size=$size');
+      expect(after.leading / after.extent,
+        closeTo(before.leading / before.extent, .01));
+      expect(tester.takeException(), isNull);
     }
   });
 
@@ -130,6 +151,7 @@ Future<_Fixture> _mount(WidgetTester tester) async {
       valueListenable: fixture.ids,
       builder: (context, ids, _) {
         final grid = MediaQuery.sizeOf(context).width >= 600;
+        final masonry = MediaQuery.sizeOf(context).width >= 1100;
         Widget item(int index) => GalleryAnchorItem(
               key: ValueKey(ids[index]),
               id: ids[index],
@@ -146,8 +168,13 @@ Future<_Fixture> _mount(WidgetTester tester) async {
             AnchoredGallerySliver(
               controller: fixture.anchor,
               itemIds: ids,
-              layout: grid,
-              sliver: grid
+              layout: (grid, masonry),
+              sliver: masonry ? SliverWaterfallFlow(
+                gridDelegate: const SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3, mainAxisSpacing: 8, crossAxisSpacing: 8),
+                delegate: SliverChildBuilderDelegate((_, index) => item(index),
+                  childCount: ids.length),
+              ) : grid
                   ? SliverPadding(
                       padding: const EdgeInsets.all(8),
                       sliver: GalleryGridTagsSliver(

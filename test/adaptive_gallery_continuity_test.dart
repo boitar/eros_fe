@@ -1,4 +1,5 @@
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -20,6 +21,8 @@ import 'support/grid_tags_fixture.dart';
 void main() {
   testWidgets('production list/tag grid keeps a gallery across 20 size cycles',
       (tester) async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
     Logger.level = Level.off;
     Get.testMode = true;
     final settings = Get.put<EhSettingService>(_Settings());

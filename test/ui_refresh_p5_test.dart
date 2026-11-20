@@ -468,6 +468,7 @@ void main() {
     });
 
     testWidgets('steps aside for increased contrast', (tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
       Widget grain({required bool highContrast}) => CupertinoTheme(
             data: _theme(Brightness.light),
             child: MediaQuery(
@@ -505,6 +506,7 @@ void main() {
 
     testWidgets('shades the canvas evenly, across every tile seam',
         (tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
       tester.view.physicalSize = const Size(300, 300);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);

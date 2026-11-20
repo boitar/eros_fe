@@ -148,6 +148,7 @@ class EhWaterfallFlow extends StatelessWidget {
                   ? KeyedSubtree(key: firstCardKey, child: item)
                   : item;
               return GalleryAnchorItem(
+                mode: ListModeEnum.waterfallLarge,
                 id: _provider.gid ?? '$index',
                 index: index,
                 child: offlineGallerySemantics(_provider.gid, keyed),
@@ -164,6 +165,7 @@ class EhWaterfallFlow extends StatelessWidget {
                   ? KeyedSubtree(key: firstCardKey, child: item)
                   : item;
               return GalleryAnchorItem(
+                mode: ListModeEnum.waterfall,
                 id: _provider.gid ?? '$index',
                 index: index,
                 child: offlineGallerySemantics(_provider.gid, keyed),

@@ -17,7 +17,10 @@ import '../tabhome_controller.dart';
 import 'custom_sublist_controller.dart';
 
 final CustomProfile profileChinese = CustomProfile(
-    uuid: generateUuidv4(), name: '汉语', searchText: const ['l:chinese']);
+  uuid: generateUuidv4(),
+  name: '汉语',
+  searchText: const ['l:chinese'],
+);
 
 /// 控制所有自定义列表
 class CustomTabbarController extends DefaultTabViewController {
@@ -58,8 +61,38 @@ class CustomTabbarController extends DefaultTabViewController {
   set reorderable(bool val) => _reorderable.value = val;
 
   Map<String, CustomSubListController> subControllerMap = {};
+  bool _mutatingListMode = false;
   CustomSubListController? get _currSubController =>
       subControllerMap[currProfileUuid];
+
+  CustomSubListController? get currentSubController => _currSubController;
+
+  /// The effective mode shown by the current desktop gallery. A group that
+  /// follows the global preference exposes the resolved global mode here.
+  ListModeEnum get currentListMode {
+    final mode = profileMap[currProfileUuid]?.listMode ?? ListModeEnum.global;
+    return mode == ListModeEnum.global ? ehSettingService.listMode.value : mode;
+  }
+
+  bool get currentListFollowsGlobal =>
+      profileMap[currProfileUuid]?.listMode == ListModeEnum.global;
+
+  @override
+  bool get isReloading => _currSubController?.isReloading ?? false;
+
+  @override
+  bool get isBackgroundRefresh =>
+      _currSubController?.isBackgroundRefresh ?? false;
+
+  @override
+  Future<void> refreshFromToolbar({bool Function()? isCurrent}) async {
+    final uuid = currProfileUuid;
+    final child = _currSubController;
+    await child?.refreshFromToolbar(
+      isCurrent: () =>
+          !isClosed && currProfileUuid == uuid && (isCurrent?.call() ?? true),
+    );
+  }
 
   PageController? _pageController;
   PageController get pageController =>
@@ -84,30 +117,35 @@ class CustomTabbarController extends DefaultTabViewController {
     heroTag = EHRoutes.gallery;
 
     // 初始化分组
-    profiles.value = customTabConfig?.profiles ??
-        [
-          CustomProfile(
-                  name: L10n.of(Get.context!).tab_popular,
-                  uuid: generateUuidv4())
-              .copyWithListType(GalleryListType.popular),
-          CustomProfile(
-                  name: L10n.of(Get.context!).tab_gallery,
-                  uuid: generateUuidv4())
-              .copyWithListType(GalleryListType.gallery),
-          CustomProfile(
-                  name: L10n.of(Get.context!).tab_watched,
-                  uuid: generateUuidv4())
-              .copyWithListType(GalleryListType.watched),
-          if (Get.find<LocaleService>().isLanguageCodeZh) profileChinese,
-          CustomProfile(
+    profiles.value = List<CustomProfile>.of(
+      customTabConfig?.profiles ??
+          [
+            CustomProfile(
+              name: L10n.of(Get.context!).tab_popular,
+              uuid: generateUuidv4(),
+            ).copyWithListType(GalleryListType.popular),
+            CustomProfile(
+              name: L10n.of(Get.context!).tab_gallery,
+              uuid: generateUuidv4(),
+            ).copyWithListType(GalleryListType.gallery),
+            CustomProfile(
+              name: L10n.of(Get.context!).tab_watched,
+              uuid: generateUuidv4(),
+            ).copyWithListType(GalleryListType.watched),
+            if (Get.find<LocaleService>().isLanguageCodeZh) profileChinese,
+            CustomProfile(
               uuid: generateUuidv4(),
               name: 'Anthology',
-              searchText: const ['o:anthology'])
-        ];
+              searchText: const ['o:anthology'],
+            ),
+          ],
+    );
 
     ever<List<CustomProfile>>(profiles, (value) {
+      if (_mutatingListMode) return;
       _reconcileSelection();
-      customTabConfig = customTabConfig?.copyWith(profiles: value.oN) ??
+      customTabConfig =
+          customTabConfig?.copyWith(profiles: value.oN) ??
           CustomTabConfig(profiles: value);
       Global.saveProfile();
     });
@@ -115,7 +153,8 @@ class CustomTabbarController extends DefaultTabViewController {
     final savedIndex = customTabConfig?.lastIndex ?? 0;
     _reconcileSelection(fallbackIndex: savedIndex, synchronizePage: false);
     ever<int>(_index, (value) {
-      customTabConfig = customTabConfig?.copyWith(lastIndex: value.oN) ??
+      customTabConfig =
+          customTabConfig?.copyWith(lastIndex: value.oN) ??
           CustomTabConfig(lastIndex: value);
       Global.saveProfile();
     });
@@ -131,8 +170,10 @@ class CustomTabbarController extends DefaultTabViewController {
     }
 
     for (final profile in profiles) {
-      Get.lazyPut(() => CustomSubListController(profileUuid: profile.uuid),
-          tag: profile.uuid);
+      Get.lazyPut(
+        () => CustomSubListController(profileUuid: profile.uuid),
+        tag: profile.uuid,
+      );
     }
 
     syncProfiles();
@@ -220,7 +261,8 @@ class CustomTabbarController extends DefaultTabViewController {
       return;
     }
     final retained = visible.indexWhere(
-        (profile) => profile.uuid == (preferredUuid ?? currProfileUuid));
+      (profile) => profile.uuid == (preferredUuid ?? currProfileUuid),
+    );
     final target = retained >= 0
         ? retained
         : (fallbackIndex ?? index).clamp(0, visible.length - 1).toInt();
@@ -237,8 +279,9 @@ class CustomTabbarController extends DefaultTabViewController {
       if (isClosed || epoch != _selectionEpoch) {
         return;
       }
-      final currentIndex =
-          profilesShow.indexWhere((profile) => profile.uuid == selectedUuid);
+      final currentIndex = profilesShow.indexWhere(
+        (profile) => profile.uuid == selectedUuid,
+      );
       if (currentIndex >= 0) {
         final page = _pageController;
         if (page != null && page.hasClients && page.positions.length == 1) {
@@ -277,14 +320,47 @@ class CustomTabbarController extends DefaultTabViewController {
     }
   }
 
+  /// Change only the presentation preference. The existing list controller and
+  /// its anchor stay mounted, so switching modes does not issue a network
+  /// request or reset pagination.
+  Future<void> setGroupListMode(String uuid, ListModeEnum mode) async {
+    final profile = profileMap[uuid];
+    if (profile == null || profile.listMode == mode) return;
+    final index = profiles.indexWhere((item) => item.uuid == uuid);
+    if (index < 0) return;
+    _mutatingListMode = true;
+    try {
+      profiles[index] = profile.copyWith(
+        listModeValue: mode.name.oN,
+        lastEditTime: DateTime.now().millisecondsSinceEpoch.oN,
+      );
+      subControllerMap[uuid]?..listMode = mode;
+      Global.profile = Global.profile.copyWith(
+        customTabConfig: customTabConfig
+            ?.copyWith(profiles: profiles.toList().oN)
+            .oN,
+      );
+      Global.saveProfile();
+    } finally {
+      _mutatingListMode = false;
+    }
+    if (currProfileUuid == uuid) update();
+    try {
+      await syncProfiles();
+    } catch (error, stack) {
+      // The local preference is already committed. Let the menu surface the
+      // separate cloud-sync failure instead of hiding it behind a false
+      // success state.
+      logger.w('Could not sync group display mode: $error\n$stack');
+      rethrow;
+    }
+  }
+
   @override
   Future<void> firstLoad() async {}
 
   Future<void> pressedBar() async {
-    await Get.toNamed(
-      EHRoutes.customProfiles,
-      id: primaryNavigatorId,
-    );
+    await Get.toNamed(EHRoutes.customProfiles, id: primaryNavigatorId);
   }
 
   // 编辑分组（新增或者修改现有）
@@ -295,7 +371,8 @@ class CustomTabbarController extends DefaultTabViewController {
 
     // 依赖注入
     Get.replace<CustomProfile>(
-        profileMap[uuid] ?? CustomProfile(name: '', uuid: generateUuidv4()));
+      profileMap[uuid] ?? CustomProfile(name: '', uuid: generateUuidv4()),
+    );
 
     // arguments 方式不能跨栈传递，改回依赖注入
 
@@ -347,8 +424,9 @@ class CustomTabbarController extends DefaultTabViewController {
     if (profile == null) {
       return;
     }
-    final oldVisibleIndex =
-        profilesShow.indexWhere((item) => item.uuid == uuid);
+    final oldVisibleIndex = profilesShow.indexWhere(
+      (item) => item.uuid == uuid,
+    );
 
     if (_profileUuid == uuid) {
       await 200.milliseconds.delay();
@@ -357,7 +435,9 @@ class CustomTabbarController extends DefaultTabViewController {
     addDelProfile(profile);
     profiles.removeWhere((element) => element.uuid == uuid);
     _reconcileSelection(
-        preferredUuid: _profileUuid, fallbackIndex: oldVisibleIndex);
+      preferredUuid: _profileUuid,
+      fallbackIndex: oldVisibleIndex,
+    );
 
     await syncProfiles();
   }
@@ -367,8 +447,9 @@ class CustomTabbarController extends DefaultTabViewController {
     final nowTime = DateTime.now().millisecondsSinceEpoch;
     final _index = delProfiles.indexOf((e) => e.name == profile.name);
     if (_index > -1) {
-      delProfiles[_index] =
-          delProfiles[_index].copyWith(lastEditTime: nowTime.oN);
+      delProfiles[_index] = delProfiles[_index].copyWith(
+        lastEditTime: nowTime.oN,
+      );
     } else {
       delProfiles.add(profile);
     }
@@ -379,37 +460,42 @@ class CustomTabbarController extends DefaultTabViewController {
   // 删除对话框
   void showDeleteGroupModalBottomSheet(String uuid, BuildContext context) {
     showCupertinoModalPopup(
-        context: context,
-        builder: (context) {
-          return EhActionSheet(
-              actions: [
-                CupertinoActionSheetAction(
-                    onPressed: () {
-                      deleteProfile(uuid: uuid);
-                      Get.back();
-                    },
-                    child: Text(
-                      L10n.of(context).delete,
-                      style: const TextStyle(
-                          color: CupertinoColors.destructiveRed),
-                    )),
-              ],
-              cancelButton: CupertinoActionSheetAction(
-                  onPressed: () {
-                    Get.back();
-                  },
-                  child: Text(L10n.of(context).cancel)));
-        });
+      context: context,
+      builder: (context) {
+        return EhActionSheet(
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                deleteProfile(uuid: uuid);
+                Get.back();
+              },
+              child: Text(
+                L10n.of(context).delete,
+                style: const TextStyle(color: CupertinoColors.destructiveRed),
+              ),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () {
+              Get.back();
+            },
+            child: Text(L10n.of(context).cancel),
+          ),
+        );
+      },
+    );
   }
 
   void addProfile(CustomProfile profile) {
     logger.t(' ${jsonEncode(profile)}');
 
-    final oriIndexOfSameUuid =
-        profiles.indexWhere((element) => element.uuid == profile.uuid);
+    final oriIndexOfSameUuid = profiles.indexWhere(
+      (element) => element.uuid == profile.uuid,
+    );
 
-    final oriIndexOfSameName =
-        profiles.indexWhere((element) => element.name == profile.name);
+    final oriIndexOfSameName = profiles.indexWhere(
+      (element) => element.name == profile.name,
+    );
 
     if (oriIndexOfSameUuid >= 0) {
       // 优先覆盖相同uuid
@@ -424,15 +510,16 @@ class CustomTabbarController extends DefaultTabViewController {
     }
 
     Get.lazyPut(
-      () => CustomSubListController(profileUuid: profile.uuid)
-        ..heroTag = profile.uuid,
+      () =>
+          CustomSubListController(profileUuid: profile.uuid)
+            ..heroTag = profile.uuid,
       tag: profile.uuid,
       fenix: true,
     );
 
     final CustomSubListController subController = Get.find(tag: profile.uuid);
     subController.listMode = profile.listMode;
-    subController.onInit();
+    subController.firstLoad();
   }
 
   Future<void> syncProfiles() async {
@@ -466,41 +553,41 @@ class CustomTabbarController extends DefaultTabViewController {
     logger.t('diff ${diff.map((e) => e?.toJson())}');
 
     // 本地分组中 编辑时间更靠后的
-    final localNewer = listLocal.where(
-      (eLocal) {
-        final _eRemote = listRemote.firstWhereOrNull((eRemote) =>
-            eRemote.uuid == eLocal.uuid || eRemote.name == eLocal.name);
-        if (_eRemote == null) {
-          return true;
-        }
+    final localNewer = listLocal.where((eLocal) {
+      final _eRemote = listRemote.firstWhereOrNull(
+        (eRemote) => eRemote.uuid == eLocal.uuid || eRemote.name == eLocal.name,
+      );
+      if (_eRemote == null) {
+        return true;
+      }
 
-        return (eLocal.lastEditTime ?? 0) > (_eRemote.lastEditTime ?? 0);
-      },
-    );
+      return (eLocal.lastEditTime ?? 0) > (_eRemote.lastEditTime ?? 0);
+    });
     logger.t('localNewer count ${localNewer.length}');
 
     // 远程 编辑时间更靠后的
-    final remoteNewer = listRemote.where(
-      (eRemote) {
-        final _eLocal = listLocal.firstWhereOrNull((eLocal) =>
-            eLocal.uuid == eRemote.uuid || eLocal.name == eRemote.name);
+    final remoteNewer = listRemote.where((eRemote) {
+      final _eLocal = listLocal.firstWhereOrNull(
+        (eLocal) => eLocal.uuid == eRemote.uuid || eLocal.name == eRemote.name,
+      );
 
-        // delProfiles 中 name 和远程文件一样的
-        final _eDelFlg = delProfiles.where(
-            (eDel) => eDel.uuid == eRemote.uuid || eDel.name == eRemote.name);
+      // delProfiles 中 name 和远程文件一样的
+      final _eDelFlg = delProfiles.where(
+        (eDel) => eDel.uuid == eRemote.uuid || eDel.name == eRemote.name,
+      );
 
-        if (_eDelFlg.isNotEmpty) {
-          return _eDelFlg.every(
-              (e) => (eRemote.lastEditTime ?? 0) > (e.lastEditTime ?? 0));
-        }
+      if (_eDelFlg.isNotEmpty) {
+        return _eDelFlg.every(
+          (e) => (eRemote.lastEditTime ?? 0) > (e.lastEditTime ?? 0),
+        );
+      }
 
-        if (_eLocal == null) {
-          return true;
-        }
+      if (_eLocal == null) {
+        return true;
+      }
 
-        return (eRemote.lastEditTime ?? 0) > (_eLocal.lastEditTime ?? 0);
-      },
-    );
+      return (eRemote.lastEditTime ?? 0) > (_eLocal.lastEditTime ?? 0);
+    });
     logger.t('remoteNewer ${remoteNewer.map((e) => e.name).toList()}');
 
     await _downloadProfiles(remoteNewer.toSet().toList());
@@ -513,8 +600,10 @@ class CustomTabbarController extends DefaultTabViewController {
       executor.scheduleTask(() async {
         final _remote = await webdavController.downloadGroupProfile(remote);
         if (_remote != null) {
-          final ori = profiles.firstWhereOrNull((element) =>
-              element.uuid == _remote.uuid || element.name == _remote.name);
+          final ori = profiles.firstWhereOrNull(
+            (element) =>
+                element.uuid == _remote.uuid || element.name == _remote.name,
+          );
 
           if (ori != null &&
               (remote.lastEditTime ?? 0) <= (ori.lastEditTime ?? 0)) {
@@ -534,8 +623,10 @@ class CustomTabbarController extends DefaultTabViewController {
   }) async {
     for (final profile in localHisList) {
       executor.scheduleTask(() async {
-        final _oriRemote = listRemote?.firstWhereOrNull((element) =>
-            element?.uuid == profile?.uuid || element?.name == profile?.name);
+        final _oriRemote = listRemote?.firstWhereOrNull(
+          (element) =>
+              element?.uuid == profile?.uuid || element?.name == profile?.name,
+        );
 
         if (profile != null) {
           final upload = webdavController.uploadGroupProfile(profile);

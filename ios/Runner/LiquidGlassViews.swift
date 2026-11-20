@@ -743,6 +743,7 @@ private final class LiquidGlassCategoryCore: NSObject,
     }
 
     func setProgress(_ value: CGFloat) {
+        guard value.isFinite else { return }
         pageProgress = value
         updateProgress()
     }
@@ -776,7 +777,10 @@ private final class LiquidGlassCategoryCore: NSObject,
         longPressEnabled = arguments["longPressEnabled"] as? [Bool] ?? longPressEnabled
         fontSize = CGFloat((arguments["fontSize"] as? NSNumber)?.doubleValue ?? 15)
         if let widths = arguments["segmentWidths"] as? [NSNumber] {
-            segmentWidths = widths.map { CGFloat($0.doubleValue) }
+            let received = widths.map { CGFloat($0.doubleValue) }
+            segmentWidths = received.allSatisfy { $0.isFinite && $0 >= 0 }
+                ? received
+                : []
         }
         opacity = min(1, max(0, CGFloat((arguments["opacity"] as? NSNumber)?.doubleValue ?? 1)))
         root.alpha = opacity

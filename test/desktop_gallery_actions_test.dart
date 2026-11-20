@@ -1,7 +1,9 @@
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/controller/favorite_state_store.dart';
 import 'package:eros_fe/common/controller/history_controller.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/gallery_provider.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
@@ -119,6 +121,38 @@ void main() {
   }
 
   Finder card(String gid) => find.byKey(ValueKey('desktop-card-$gid'));
+
+  testWidgets('gallery anchors forward their group card layout', (
+    tester,
+  ) async {
+    Get.testMode = true;
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.windows;
+    addTearDown(() {
+      PlatformCapabilities.debugHostPlatformOverride = null;
+      Get.reset();
+    });
+
+    await tester.pumpWidget(
+      const CupertinoApp(
+        home: SizedBox(
+          width: 300,
+          child: GalleryAnchorItem(
+            id: 'waterfall-gallery',
+            index: 0,
+            mode: ListModeEnum.waterfall,
+            child: _Card(),
+          ),
+        ),
+      ),
+    );
+
+    final chrome = tester.widget<DesktopCardChrome>(
+      find.byKey(const ValueKey('desktop-card-chrome-waterfall-gallery')),
+    );
+    expect(chrome.mode, ListModeEnum.waterfall);
+    expect(cardInsetsFor(chrome.mode), EdgeInsets.zero);
+    expect(cardRadiusFor(chrome.mode), 6);
+  });
 
   double quickOpacity(WidgetTester tester, String gid) => tester
       .widget<AnimatedOpacity>(find.byKey(ValueKey('desktop-quick-$gid')))

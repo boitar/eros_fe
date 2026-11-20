@@ -1,7 +1,6 @@
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
-import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/const/eh_palette.dart';
@@ -66,9 +65,10 @@ EdgeInsets cardInsetsFor(ListModeEnum mode) => switch (mode) {
 ///
 /// Touch platforms get [child] unchanged.
 class DesktopCardChrome extends StatefulWidget {
-  const DesktopCardChrome({super.key, required this.gid, required this.child});
+  const DesktopCardChrome({super.key, required this.gid, this.mode = ListModeEnum.list, required this.child});
 
   final String gid;
+  final ListModeEnum mode;
   final Widget child;
 
   /// Stands in for the gallery page controllers in widget tests.
@@ -174,9 +174,7 @@ class _DesktopCardChromeState extends State<DesktopCardChrome> {
               gidForTag: DesktopCardChrome.debugGidForTag,
             ) ==
             widget.gid;
-    final mode = Get.isRegistered<EhSettingService>()
-        ? Get.find<EhSettingService>().listMode.value
-        : ListModeEnum.list;
+    final mode = widget.mode;
     final double radius = cardRadiusFor(mode);
     final item = DesktopGalleryActions.itemFor(widget.gid);
     final insets = cardInsetsFor(mode);
@@ -223,12 +221,11 @@ class _DesktopCardChromeState extends State<DesktopCardChrome> {
                           key: ValueKey<String>(
                             'desktop-card-ring-${widget.gid}',
                           ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(radius),
-                            border: Border.all(
-                              color: EhPalette.accent.resolveFrom(context),
-                              width: 2,
-                            ),
+                          decoration: ShapeDecoration(
+                            shape: (mode == ListModeEnum.waterfallLarge
+                                ? RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(radius))
+                                : RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)))
+                                .copyWith(side: BorderSide(color: EhPalette.accent.resolveFrom(context), width: 2)),
                           ),
                         ),
                       ),

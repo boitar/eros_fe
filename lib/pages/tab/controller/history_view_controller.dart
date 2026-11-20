@@ -16,11 +16,14 @@ class HistoryViewController extends DefaultTabViewController {
     super.onInit();
     heroTag = EHRoutes.history;
 
-    loadData().then((List<GalleryProvider> value) {
-      change(value, status: RxStatus.success());
-    }, onError: (err) {
-      change(null, status: RxStatus.error(err.toString()));
-    });
+    loadData().then(
+      (List<GalleryProvider> value) {
+        change(value, status: RxStatus.success());
+      },
+      onError: (err) {
+        change(null, status: RxStatus.error(err.toString()));
+      },
+    );
   }
 
   Future<List<GalleryProvider>> loadData() async {
@@ -32,8 +35,9 @@ class HistoryViewController extends DefaultTabViewController {
   @override
   Future<void> reloadData() async {
     await historyController.reloadHistories();
-    final List<GalleryProvider> gallerItemBeans =
-        List<GalleryProvider>.of(historyController.histories);
+    final List<GalleryProvider> gallerItemBeans = List<GalleryProvider>.of(
+      historyController.histories,
+    );
     change(gallerItemBeans);
     update();
   }
@@ -45,6 +49,7 @@ class HistoryViewController extends DefaultTabViewController {
       builder: (BuildContext context) {
         return EhAlertDialog(
           title: Text(L10n.of(context).t_Clear_all_history),
+          content: Text(L10n.of(context).desktop_clear_history_detail),
           actions: <Widget>[
             CupertinoDialogAction(
               child: Text(L10n.of(context).cancel),

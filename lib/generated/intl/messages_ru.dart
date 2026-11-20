@@ -248,6 +248,57 @@ class MessageLookup extends MessageLookupByLibrary {
     "delete_task_only": MessageLookupByLibrary.simpleMessage(
       "Удалить только задание",
     ),
+    "desktop_all_history": MessageLookupByLibrary.simpleMessage("Вся история"),
+    "desktop_clear_history_detail": MessageLookupByLibrary.simpleMessage(
+      "Удаляет историю просмотра и недавнее чтение на устройстве. Прогресс чтения и загрузки сохраняются.",
+    ),
+    "desktop_current_group": MessageLookupByLibrary.simpleMessage(
+      "Текущая группа",
+    ),
+    "desktop_display_mode": MessageLookupByLibrary.simpleMessage(
+      "Режим отображения",
+    ),
+    "desktop_follow_global": MessageLookupByLibrary.simpleMessage(
+      "Использовать общий",
+    ),
+    "desktop_global_mode": MessageLookupByLibrary.simpleMessage(
+      "Общий режим отображения",
+    ),
+    "desktop_global_mode_hint": MessageLookupByLibrary.simpleMessage(
+      "Также применяется к спискам с общими настройками",
+    ),
+    "desktop_hide_sidebar": MessageLookupByLibrary.simpleMessage(
+      "Скрыть боковую панель",
+    ),
+    "desktop_mode_sync_failed": MessageLookupByLibrary.simpleMessage(
+      "Режим сохранён на устройстве. Не удалось синхронизировать: проверьте соединение.",
+    ),
+    "desktop_no_groups": MessageLookupByLibrary.simpleMessage("Нет групп"),
+    "desktop_read_unavailable": MessageLookupByLibrary.simpleMessage(
+      "Не удалось открыть произведение. Проверьте источник и повторите попытку.",
+    ),
+    "desktop_recent_empty": MessageLookupByLibrary.simpleMessage(
+      "Начните чтение, и произведения появятся здесь.",
+    ),
+    "desktop_recent_reading": MessageLookupByLibrary.simpleMessage(
+      "Недавно прочитанное",
+    ),
+    "desktop_refresh": MessageLookupByLibrary.simpleMessage(
+      "Обновить текущий список",
+    ),
+    "desktop_refreshing": MessageLookupByLibrary.simpleMessage(
+      "Обновление списка",
+    ),
+    "desktop_resize_panes": MessageLookupByLibrary.simpleMessage(
+      "Изменить ширину списка и сведений",
+    ),
+    "desktop_show_sidebar": MessageLookupByLibrary.simpleMessage(
+      "Показать боковую панель",
+    ),
+    "desktop_untitled": MessageLookupByLibrary.simpleMessage("Без названия"),
+    "desktop_view_details": MessageLookupByLibrary.simpleMessage(
+      "Показать сведения",
+    ),
     "detail_ambient_background": MessageLookupByLibrary.simpleMessage(
       "Фон страницы галереи",
     ),

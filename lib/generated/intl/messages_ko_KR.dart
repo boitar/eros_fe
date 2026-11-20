@@ -214,6 +214,37 @@ class MessageLookup extends MessageLookupByLibrary {
     "delete_task_only": MessageLookupByLibrary.simpleMessage(
       "Delete task only",
     ),
+    "desktop_all_history": MessageLookupByLibrary.simpleMessage("전체 기록 보기"),
+    "desktop_clear_history_detail": MessageLookupByLibrary.simpleMessage(
+      "이 기기의 탐색 기록과 최근 읽은 작품을 지웁니다. 읽기 진행률과 다운로드는 유지됩니다.",
+    ),
+    "desktop_current_group": MessageLookupByLibrary.simpleMessage("현재 그룹"),
+    "desktop_display_mode": MessageLookupByLibrary.simpleMessage("표시 방식"),
+    "desktop_follow_global": MessageLookupByLibrary.simpleMessage("전체 설정 따르기"),
+    "desktop_global_mode": MessageLookupByLibrary.simpleMessage("전체 표시 방식"),
+    "desktop_global_mode_hint": MessageLookupByLibrary.simpleMessage(
+      "전체 설정을 따르는 목록에도 적용",
+    ),
+    "desktop_hide_sidebar": MessageLookupByLibrary.simpleMessage("사이드바 숨기기"),
+    "desktop_mode_sync_failed": MessageLookupByLibrary.simpleMessage(
+      "표시 방식을 기기에 저장했습니다. 동기화에 실패했습니다. 연결을 확인하세요.",
+    ),
+    "desktop_no_groups": MessageLookupByLibrary.simpleMessage("그룹 없음"),
+    "desktop_read_unavailable": MessageLookupByLibrary.simpleMessage(
+      "작품을 열 수 없습니다. 원본을 확인하고 다시 시도하세요.",
+    ),
+    "desktop_recent_empty": MessageLookupByLibrary.simpleMessage(
+      "읽기 시작한 작품이 여기에 표시됩니다.",
+    ),
+    "desktop_recent_reading": MessageLookupByLibrary.simpleMessage("최근 읽은 작품"),
+    "desktop_refresh": MessageLookupByLibrary.simpleMessage("현재 목록 새로고침"),
+    "desktop_refreshing": MessageLookupByLibrary.simpleMessage("목록 새로고침 중"),
+    "desktop_resize_panes": MessageLookupByLibrary.simpleMessage(
+      "갤러리 및 상세 너비 조절",
+    ),
+    "desktop_show_sidebar": MessageLookupByLibrary.simpleMessage("사이드바 표시"),
+    "desktop_untitled": MessageLookupByLibrary.simpleMessage("제목 없는 작품"),
+    "desktop_view_details": MessageLookupByLibrary.simpleMessage("상세 보기"),
     "detail_ambient_background": MessageLookupByLibrary.simpleMessage(
       "상세 페이지 배경",
     ),

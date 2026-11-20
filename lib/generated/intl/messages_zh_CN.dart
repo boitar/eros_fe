@@ -188,6 +188,35 @@ class MessageLookup extends MessageLookupByLibrary {
       "删除任务和下载内容",
     ),
     "delete_task_only": MessageLookupByLibrary.simpleMessage("仅删除任务"),
+    "desktop_all_history": MessageLookupByLibrary.simpleMessage("查看全部历史"),
+    "desktop_clear_history_detail": MessageLookupByLibrary.simpleMessage(
+      "清空本机浏览历史与最近阅读，保留阅读进度和下载文件。",
+    ),
+    "desktop_current_group": MessageLookupByLibrary.simpleMessage("当前分组"),
+    "desktop_display_mode": MessageLookupByLibrary.simpleMessage("显示方式"),
+    "desktop_follow_global": MessageLookupByLibrary.simpleMessage("跟随全局"),
+    "desktop_global_mode": MessageLookupByLibrary.simpleMessage("全局显示方式"),
+    "desktop_global_mode_hint": MessageLookupByLibrary.simpleMessage(
+      "同时影响跟随全局的列表",
+    ),
+    "desktop_hide_sidebar": MessageLookupByLibrary.simpleMessage("隐藏侧栏"),
+    "desktop_mode_sync_failed": MessageLookupByLibrary.simpleMessage(
+      "显示方式已保存在本机，同步失败，请检查连接。",
+    ),
+    "desktop_no_groups": MessageLookupByLibrary.simpleMessage("暂无分组"),
+    "desktop_read_unavailable": MessageLookupByLibrary.simpleMessage(
+      "无法打开作品，请检查来源后重试。",
+    ),
+    "desktop_recent_empty": MessageLookupByLibrary.simpleMessage(
+      "开始阅读后，最近阅读会显示在这里",
+    ),
+    "desktop_recent_reading": MessageLookupByLibrary.simpleMessage("最近阅读"),
+    "desktop_refresh": MessageLookupByLibrary.simpleMessage("刷新当前列表"),
+    "desktop_refreshing": MessageLookupByLibrary.simpleMessage("正在刷新当前列表"),
+    "desktop_resize_panes": MessageLookupByLibrary.simpleMessage("调整画廊与详情宽度"),
+    "desktop_show_sidebar": MessageLookupByLibrary.simpleMessage("显示侧栏"),
+    "desktop_untitled": MessageLookupByLibrary.simpleMessage("未命名作品"),
+    "desktop_view_details": MessageLookupByLibrary.simpleMessage("查看详情"),
     "detail_ambient_background": MessageLookupByLibrary.simpleMessage(
       "详情页氛围背景",
     ),

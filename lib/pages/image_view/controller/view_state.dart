@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:eros_fe/common/controller/recent_reading_store.dart';
+import 'package:path/path.dart' as path;
+
 import 'package:archive_async/archive_async.dart';
 import 'package:collection/collection.dart';
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
@@ -22,17 +25,20 @@ import 'view_controller.dart';
 
 class ViewExtState {
   /// 初始化操作
-  ViewExtState({ViewRepository? repository}) {
+  ViewExtState({ViewRepository? repository, RecentReadingStore? readingStore})
+    : _recentReadingStore = readingStore ?? RecentReadingStore.instance {
     // 设置加载类型
     // 优先使用显式注入的仓库；退出动画期间全局 Get.arguments 会被清空，
     // 依赖它会让复活的控制器拿到空状态。
-    final ViewRepository? vr = repository ??
+    final ViewRepository? vr =
+        repository ??
         (Get.arguments is ViewRepository
             ? Get.arguments as ViewRepository
             : null);
     if (vr != null) {
       logger.t('vr.loadType ${vr.loadType}, index: ${vr.index}');
       loadFrom = vr.loadType;
+      readingSourcePath = vr.sourcePath;
 
       switch (loadFrom) {
         case LoadFrom.download:
@@ -43,7 +49,8 @@ class ViewExtState {
           break;
         case LoadFrom.gallery:
           galleryPageController = Get.find<GalleryPageController>(
-              tag: vr.galleryControllerTag ?? pageCtrlTag);
+            tag: vr.galleryControllerTag ?? pageCtrlTag,
+          );
           gid = galleryPageController?.gState.gid;
           break;
         case LoadFrom.archiver:
@@ -56,14 +63,20 @@ class ViewExtState {
     }
 
     _positionWorkers.add(ever(_currentItemIndex, (val) => saveLastIndex()));
-    _positionWorkers.add(debounce(
-        _currentItemIndex, (callback) => saveLastIndex(saveToStore: true),
-        time: 3.seconds));
+    _positionWorkers.add(
+      debounce(
+        _currentItemIndex,
+        (callback) => saveLastIndex(saveToStore: true),
+        time: 3.seconds,
+      ),
+    );
   }
 
   final List<Worker> _positionWorkers = [];
+  final RecentReadingStore _recentReadingStore;
 
   void dispose() {
+    _readingDisposed = true;
     for (final worker in _positionWorkers) {
       worker.dispose();
     }
@@ -91,7 +104,73 @@ class ViewExtState {
   final _currentItemIndex = 0.obs;
   int get currentItemIndex => _currentItemIndex.value;
   set currentItemIndex(int val) {
-    _currentItemIndex.value = val;
+    if (_currentItemIndex.value != val || _readingTicket == null) {
+      _readingTicket = null;
+      _currentItemIndex.value = val;
+      _prepareReadingTicket();
+    }
+    recordPresentedPage();
+  }
+
+  String? readingSourcePath;
+  int? _lastPresentedIndex;
+  bool _readingDisposed = false;
+  ReadingEventTicket? _readingTicket;
+
+  String? get _readingId {
+    if (gid?.isNotEmpty == true) return 'gid:$gid';
+    final locator = readingSourcePath ?? imagePathList.firstOrNull;
+    return locator == null ? null : '${loadFrom.name}:$locator';
+  }
+
+  void _prepareReadingTicket() {
+    final id = _readingId;
+    if (id != null) _readingTicket = _recentReadingStore.ticket(id);
+  }
+
+  /// Called only for a decoded current page, not prefetched neighbors. Index
+  /// zero is a valid first page, even when the reader never turns a page.
+  void recordPresentedPage() {
+    if (_readingDisposed ||
+        !(loadCompleMap[currentItemIndex + 1] ?? false) ||
+        _lastPresentedIndex == currentItemIndex)
+      return;
+    final currentGid = gid;
+    final locator = readingSourcePath ?? imagePathList.firstOrNull;
+    if ((currentGid == null || currentGid.isEmpty) && locator == null) return;
+    final id = currentGid != null && currentGid.isNotEmpty
+        ? 'gid:$currentGid'
+        : '${loadFrom.name}:$locator';
+    final store = _recentReadingStore;
+    final ticket = _readingTicket;
+    if (ticket == null) return;
+    final provider =
+        pageState?.galleryProvider ??
+        _galleryCacheController.getGalleryProviderCache(currentGid);
+    _lastPresentedIndex = currentItemIndex;
+    final entry = RecentReadingEntry(
+      id: id,
+      gid: currentGid,
+      index: currentItemIndex,
+      time: DateTime.now().millisecondsSinceEpoch,
+      source: loadFrom.name,
+      sourcePath:
+          readingSourcePath ??
+          (imagePathList.isEmpty ? null : path.dirname(imagePathList.first)),
+      title:
+          provider?.japaneseTitle ??
+          provider?.englishTitle ??
+          (locator == null ? null : path.basename(locator)),
+      cover: provider?.imgUrl,
+      url: provider?.url,
+      token: provider?.token,
+      total: fileCount,
+    );
+    // Image load callbacks can run during build. A microtask defers the store
+    // notification without relying on another frame being scheduled.
+    scheduleMicrotask(() {
+      if (!_readingDisposed) store.record(ticket, entry);
+    });
   }
 
   void saveLastIndex({bool saveToStore = false}) {
@@ -101,13 +180,18 @@ class ViewExtState {
           conditionItemIndex) {
         pageState!.lastIndex = currentItemIndex;
         _galleryCacheController.setIndex(
-            pageState!.galleryProvider?.gid ?? '0', currentItemIndex,
-            saveToStore: saveToStore);
+          pageState!.galleryProvider?.gid ?? '0',
+          currentItemIndex,
+          saveToStore: saveToStore,
+        );
       }
     } else {
       if (gid != null) {
-        _galleryCacheController.setIndex(gid ?? '', currentItemIndex,
-            saveToStore: saveToStore);
+        _galleryCacheController.setIndex(
+          gid ?? '',
+          currentItemIndex,
+          saveToStore: saveToStore,
+        );
       }
     }
   }

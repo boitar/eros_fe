@@ -34,13 +34,13 @@ void main() {
       {'x': 48.0, 'y': 10.0, 'width': 14.0, 'height': 14.0},
     ],
   };
-  test('window controls union derives safe band from actual frames', () {
+  test('window controls retain actual visible bounds even in fullscreen', () {
     final controls = MacOSWindowControls.fromMessage(message);
     expect(controls.bounds, const Rect.fromLTRB(8, 10, 62, 24));
     expect(controls.leading, 69);
     expect(controls.top, 31);
     expect(
-      MacOSWindowControls.fromMessage(const {...message, 'fullscreen': true})
+      MacOSWindowControls.fromMessage(const {'buttons': [], 'fullscreen': true})
           .top,
       0,
     );
@@ -62,7 +62,7 @@ void main() {
     );
   });
   testWidgets(
-    'safe band protects every glass mode and vanishes in fullscreen',
+    'content stays edge aligned and publishes safe insets for local chrome',
     (tester) async {
       for (final mode in ['native', 'flutter', 'off']) {
         PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.macOS;
@@ -70,6 +70,7 @@ void main() {
         MacOSWindowChrome.controls.value = MacOSWindowControls.fromMessage(
           message,
         );
+        late MediaQueryData contentMedia;
         await tester.pumpWidget(
           CupertinoApp(
             home: GlassPreference(
@@ -78,10 +79,11 @@ void main() {
                 child: Align(
                   alignment: Alignment.topLeft,
                   child: Builder(
-                    builder: (context) => Text(
-                      GlassMode.of(context).name,
-                      key: const ValueKey('header'),
-                    ),
+                    builder: (context) {
+                      contentMedia = MediaQuery.of(context);
+                      return Text(GlassMode.of(context).name,
+                        key: const ValueKey('header'));
+                    },
                   ),
                 ),
               ),
@@ -89,9 +91,10 @@ void main() {
           ),
         );
         expect(find.text(mode), findsOneWidget);
-        expect(tester.getTopLeft(find.byKey(const ValueKey('header'))).dy, 31);
+        expect(tester.getTopLeft(find.byKey(const ValueKey('header'))).dy, 0);
+        expect(contentMedia.padding.top, 31);
         MacOSWindowChrome.controls.value = MacOSWindowControls.fromMessage(
-          const {...message, 'fullscreen': true},
+          const {'buttons': [], 'fullscreen': true},
         );
         await tester.pump();
         expect(tester.getTopLeft(find.byKey(const ValueKey('header'))).dy, 0);
@@ -109,9 +112,18 @@ void main() {
     expect(first.hashCode, same.hashCode);
     expect(first, isNot(const MacOSWindowControls()));
     expect(
-      MacOSWindowControls.fromMessage(const {...message, 'fullscreen': true}),
+      MacOSWindowControls.fromMessage(const {'buttons': [], 'fullscreen': true}),
       const MacOSWindowControls(),
     );
+  });
+
+  test('fullscreen visible controls and system safe region remain protected', () {
+    final controls = MacOSWindowControls.fromMessage({...message,
+      'fullscreen': true, 'safeTop': 38, 'keyWindow': false});
+    expect(controls.top, 31);
+    expect(controls.systemSafeTop, 38);
+    expect(controls.isKeyWindow, isFalse);
+    expect(const MacOSWindowControls.unknown().leading, greaterThan(0));
   });
 
   for (final (name, palette, brightness) in [
@@ -186,15 +198,15 @@ void main() {
         final grain = find.descendant(
             of: background, matching: find.byType(CustomPaint));
         expect(grain, findsOneWidget);
-        expect(tester.widget<CustomPaint>(grain).painter,
-            name == 'OLED' ? isNull : isNotNull);
+        expect(tester.widget<CustomPaint>(grain).painter, isNull);
         final drag = find.byKey(const ValueKey('window-drag-region'));
-        expect(tester.getRect(drag), const Rect.fromLTWH(69, 0, 331, 31));
+        // No full-width hit layer: window dragging now belongs to local chrome.
+        expect(drag, findsNothing);
         final oldStarts = dragStarts;
         await tester.tapAt(const Offset(60, 15));
         expect(dragStarts, oldStarts);
         await tester.tapAt(const Offset(180, 15));
-        expect(dragStarts, oldStarts + 1);
+        expect(dragStarts, oldStarts);
         for (var i = 0; i < 2; i++) {
           await _expectCanvasPixels(tester, capture, canvas);
           await tester.tap(find.text('Toggle sidebar'));
@@ -207,7 +219,8 @@ void main() {
         MacOSWindowChrome.controls.value =
             MacOSWindowControls.fromMessage(message);
         await tester.pump();
-        expect(tester.getRect(drag), const Rect.fromLTWH(69, 0, 331, 31));
+        // No full-width hit layer: window dragging now belongs to local chrome.
+        expect(drag, findsNothing);
       }
       await tester.pumpWidget(const SizedBox());
     });
@@ -294,9 +307,9 @@ void main() {
       expect(builds, initialBuilds);
       expect(
         tester.getTopLeft(find.byKey(const ValueKey('geometry-header'))).dy,
-        31,
+        0,
       );
-      await send({...message, 'fullscreen': true});
+      await send({'buttons': [], 'fullscreen': true});
       expect(notifications, 1);
       expect(builds, greaterThan(initialBuilds));
       expect(
@@ -304,14 +317,14 @@ void main() {
         0,
       );
       final fullscreenBuilds = builds;
-      await send({...message, 'fullscreen': true});
+      await send({'buttons': [], 'fullscreen': true});
       expect(notifications, 1);
       expect(builds, fullscreenBuilds);
       await send(message);
       expect(notifications, 2);
       expect(
         tester.getTopLeft(find.byKey(const ValueKey('geometry-header'))).dy,
-        31,
+        0,
       );
       await tester.pumpWidget(const SizedBox());
     },

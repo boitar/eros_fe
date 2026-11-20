@@ -4,6 +4,10 @@ import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/desktop_ui_preferences.dart';
+import 'package:eros_fe/widget/desktop_browse_style.dart';
+import 'package:eros_fe/widget/desktop_recent_reading.dart';
+import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
@@ -29,8 +33,7 @@ typedef TabDestinationBuilder = Widget Function(BuildContext, String route);
 bool usesAndroidNavigationRail({
   required bool split,
   required AdaptiveEnvironmentSnapshot environment,
-}) =>
-    PlatformCapabilities.topSearchCapsule && split && environment.isSplit;
+}) => PlatformCapabilities.topSearchCapsule && split && environment.isSplit;
 
 /// Android gives a pushed page (detail, search, a group) the whole screen,
 /// so the tab bar slides away while [stack] holds a page above its roots.
@@ -74,18 +77,32 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
   @override
   void initState() {
     super.initState();
+    _desktopPreferences.load();
+    _desktopPreferences.addListener(_desktopPreferencesChanged);
     // Warm the haptic engine so the first tab switch isn't late.
     vibrateUtil.prepareHaptics();
     controller.tabController.addListener(_tabSelectionChanged);
     _navigation.addListener(_publishNativeNavigationState);
-    NativeNavigationBridge.chromeRevision
-        .addListener(_publishNativeNavigationState);
+    NativeNavigationBridge.chromeRevision.addListener(
+      _publishNativeNavigationState,
+    );
     HardwareKeyboard.instance.addHandler(_handleDesktopShortcut);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (PlatformCapabilities.hostPlatform == TargetPlatform.macOS) {
+      MacOSWindowChrome.manageGroups = () {
+        if (Get.isRegistered<CustomTabbarController>()) {
+          Get.find<CustomTabbarController>().pressedBar();
+        }
+      };
+      MacOSWindowChrome.configureBrowseMenu(
+        L10n.of(context).setting_group_browse,
+        L10n.of(context).group_management,
+      );
+    }
     final route = ModalRoute.of(context);
     if (_nativeSource?.route == route || route == null) return;
     _nativeSource?.dispose();
@@ -101,7 +118,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
         if (_layout.isLayoutLarge &&
             (_navigation.selected?.detailObserver.history.length ?? 0) > 1 &&
             NativeNavigationBridge.chromeFor(
-                    _navigation.selected!.detailObserver.history.last) ==
+                  _navigation.selected!.detailObserver.history.last,
+                ) ==
                 _currentChrome &&
             _currentChrome != null) {
           await Get.nestedKey(detailNavigatorId)!.currentState!.maybePop();
@@ -117,17 +135,22 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     controller.tabController.removeListener(_tabSelectionChanged);
     _nativeSource?.dispose();
     _navigation.removeListener(_publishNativeNavigationState);
-    NativeNavigationBridge.chromeRevision
-        .removeListener(_publishNativeNavigationState);
+    NativeNavigationBridge.chromeRevision.removeListener(
+      _publishNativeNavigationState,
+    );
     controller.resetTabTapSequence();
     _barMotion.dispose();
     HardwareKeyboard.instance.removeHandler(_handleDesktopShortcut);
+    MacOSWindowChrome.manageGroups = null;
+    _desktopPreferences.removeListener(_desktopPreferencesChanged);
     super.dispose();
   }
 
-  /// Whether the last build showed the desktop sidebar, whose search field
-  /// answers ⌘F / Ctrl+F.
-  bool _sidebarShown = false;
+  bool _desktopShell = false;
+  final _desktopPreferences = DesktopUiPreferences.instance;
+  void _desktopPreferencesChanged() {
+    if (mounted) setState(() {});
+  }
 
   bool _handleDesktopShortcut(KeyEvent event) {
     if (!PlatformCapabilities.isDesktop || event is! KeyDownEvent || !mounted) {
@@ -139,7 +162,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
       return false;
     }
     final keyboard = HardwareKeyboard.instance;
-    if (_sidebarShown && DesktopSidebar.searchShortcut.accepts(event, keyboard)) {
+    if (_desktopShell &&
+        DesktopSidebar.searchShortcut.accepts(event, keyboard)) {
+      _desktopPreferences.showSidebar(true);
       _openSearch();
       return true;
     }
@@ -161,7 +186,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
   }
 
   void _openSearch() {
-    final bool isFavorite = controller.currRoute == EHRoutes.favorite ||
+    final bool isFavorite =
+        controller.currRoute == EHRoutes.favorite ||
         controller.currRoute == EHRoutes.favoriteTabbar;
     NavigatorUtil.goSearchPage(
       searchType: isFavorite ? SearchType.favorite : SearchType.normal,
@@ -169,8 +195,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     );
   }
 
-  Widget _buildDesktopSidebar(BuildContext context, CupertinoTabBar tabBar,
-      {required bool glass}) {
+  Widget _buildDesktopSidebar(BuildContext context, CupertinoTabBar tabBar) {
     final l10n = L10n.of(context);
     void selectTab(int index) {
       vibrateUtil.tabSwitch();
@@ -178,21 +203,69 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     }
 
     Widget sidebar(
-            List<DesktopSidebarGroup> groups, ValueChanged<int>? onGroupTap) =>
-        DesktopSidebar(
-          routes: controller.visibleTabRoutes,
-          items: tabBar.items,
-          currentIndex: tabBar.currentIndex,
-          onTap: selectTab,
-          glass: glass,
-          searchLabel: l10n.search,
-          onSearch: _openSearch,
-          browseLabel: l10n.setting_group_browse,
-          libraryLabel: l10n.sidebar_library,
-          groupsLabel: l10n.group,
-          groups: groups,
-          onGroupTap: onGroupTap,
+      List<DesktopSidebarGroup> groups,
+      ValueChanged<int>? onGroupTap,
+    ) => DesktopSidebar(
+      routes: controller.visibleTabRoutes,
+      items: tabBar.items,
+      currentIndex: tabBar.currentIndex,
+      onTap: selectTab,
+      searchLabel: l10n.search,
+      onSearch: _openSearch,
+      browseLabel: l10n.setting_group_browse,
+      libraryLabel: l10n.sidebar_library,
+      groupsLabel: l10n.group,
+      groups: groups,
+      onGroupTap: onGroupTap,
+      preferences: _desktopPreferences,
+      recentReading: DesktopRecentReading(
+        onHistory: () {
+          if (controller.visibleTabRoutes.contains(EHRoutes.history)) {
+            controller.selectRoute(EHRoutes.history);
+          } else {
+            Get.toNamed(EHRoutes.history, id: primaryNavigatorId);
+          }
+        },
+      ),
+      onManageGroups: (position) {
+        if (!Get.isRegistered<CustomTabbarController>()) return;
+        showDesktopGalleryMenu(
+          context,
+          position: position,
+          entries: [
+            DesktopMenuEntry(
+              label: l10n.group_management,
+              icon: CupertinoIcons.folder,
+              onSelected: Get.find<CustomTabbarController>().pressedBar,
+            ),
+          ],
         );
+      },
+      onGroupContext: (index, position) {
+        final groupController = Get.find<CustomTabbarController>();
+        final profile = groupController.profilesShow[index];
+        showDesktopGalleryMenu(
+          context,
+          position: position,
+          entries: [
+            DesktopMenuEntry(
+              label: l10n.edit,
+              icon: CupertinoIcons.pencil,
+              onSelected: () => groupController.toEditPage(uuid: profile.uuid),
+            ),
+            DesktopMenuEntry(
+              label: l10n.delete,
+              icon: CupertinoIcons.trash,
+              destructive: true,
+              onSelected: () => groupController.showDeleteGroupModalBottomSheet(
+                profile.uuid,
+                context,
+              ),
+            ),
+          ],
+        );
+      },
+    );
     if (!Get.isRegistered<CustomTabbarController>()) {
       return sidebar(const <DesktopSidebarGroup>[], null);
     }
@@ -204,13 +277,13 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
         <DesktopSidebarGroup>[
           for (var index = 0; index < profiles.length; index++)
             DesktopSidebarGroup(
+              id: profiles[index].uuid,
               title: profiles[index].name,
               selected: onGallery && index == groups.index,
             ),
         ],
         (index) {
-          final gallery =
-              controller.visibleTabRoutes.indexOf(EHRoutes.gallery);
+          final gallery = controller.visibleTabRoutes.indexOf(EHRoutes.gallery);
           if (!onGallery && gallery >= 0) {
             selectTab(gallery);
           }
@@ -233,9 +306,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
   /// Android gives a pushed page (detail, search, a group) the whole screen,
   /// so its own bottom controls never sit on top of the tab bar.
   bool get _hidesBarForPushedPage => hidesTabBarForPushedPage(
-        _navigation.selected,
-        layoutLarge: _layout.isLayoutLarge,
-      );
+    _navigation.selected,
+    layoutLarge: _layout.isLayoutLarge,
+  );
 
   NativePageChrome? get _currentChrome {
     final stack = _navigation.selected;
@@ -276,7 +349,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
       selectedTabId: route,
       fallbackTitle: titles[route] ?? route,
       backTitle: L10n.of(context).back,
-      canGoBack: (Get.key.currentState?.canPop() ?? false) ||
+      canGoBack:
+          (Get.key.currentState?.canPop() ?? false) ||
           (Get.nestedKey(primaryNavigatorId)?.currentState?.canPop() ??
               false) ||
           (Get.nestedKey(detailNavigatorId)?.currentState?.canPop() ?? false),
@@ -298,7 +372,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     final EhSettingService ehSettingService = Get.find();
 
     return Obx(() {
-      final useLiquidGlass = ehSettingService.liquidGlass &&
+      final useLiquidGlass =
+          ehSettingService.liquidGlass &&
           (GlassMode.of(context).forComponent(flutterImplemented: true) !=
               GlassMode.off);
       controller.setNavigationMode(useLiquidGlass: useLiquidGlass);
@@ -308,37 +383,37 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
               items: controller.listBottomNavigationBarItem,
               onTap: (index) =>
                   _handleTabTap(index, useLiquidGlass: useLiquidGlass),
-              followSystemTransparency:
-                  ehSettingService.liquidGlassMaterial,
+              followSystemTransparency: ehSettingService.liquidGlassMaterial,
               nativeItems: controller.liquidGlassTabItems,
               searchLabel: L10n.of(context).search,
               // Android searches from the capsule at the top of list pages.
               onSearch: PlatformCapabilities.topSearchCapsule
                   ? null
                   : () {
-                final bool isFavorite =
-                    controller.currRoute == EHRoutes.favorite ||
-                        controller.currRoute == EHRoutes.favoriteTabbar;
-                NavigatorUtil.goSearchPage(
-                  searchType:
-                      isFavorite ? SearchType.favorite : SearchType.normal,
-                  fromTabItem: controller.tabMap[controller.currRoute] ?? false,
-                );
-              },
+                      final bool isFavorite =
+                          controller.currRoute == EHRoutes.favorite ||
+                          controller.currRoute == EHRoutes.favoriteTabbar;
+                      NavigatorUtil.goSearchPage(
+                        searchType: isFavorite
+                            ? SearchType.favorite
+                            : SearchType.normal,
+                        fromTabItem:
+                            controller.tabMap[controller.currRoute] ?? false,
+                      );
+                    },
             )
           : PlatformCapabilities.topSearchCapsule
-              ? AndroidNavigationBar(
-                  items: controller.listBottomNavigationBarItem,
-                  onTap: (index) {
-                    vibrateUtil.tabSwitch();
-                    _handleTabTap(index, useLiquidGlass: useLiquidGlass);
-                  },
-                )
-              : CupertinoTabBar(
+          ? AndroidNavigationBar(
+              items: controller.listBottomNavigationBarItem,
+              onTap: (index) {
+                vibrateUtil.tabSwitch();
+                _handleTabTap(index, useLiquidGlass: useLiquidGlass);
+              },
+            )
+          : CupertinoTabBar(
               backgroundColor: kEnableImpeller
-                  ? CupertinoTheme.of(context).barBackgroundColor.withValues(
-                        alpha: 1,
-                      )
+                  ? CupertinoTheme.of(context).barBackgroundColor
+                        .withValues(alpha: 1)
                   : null,
               items: controller.listBottomNavigationBarItem,
               onTap: (index) {
@@ -371,160 +446,209 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     final selected = controller.navigationIdentity;
     _navigation.select(selected);
     _tabRoots.putIfAbsent(
-        selected,
-        () =>
-            widget.destinationBuilder?.call(context, controller.currRoute) ??
-            tabPages.tabViews[controller.currRoute]!);
+      selected,
+      () =>
+          widget.destinationBuilder?.call(context, controller.currRoute) ??
+          tabPages.tabViews[controller.currRoute]!,
+    );
     final media = MediaQuery.of(context);
-    final source = AdaptiveEnvironment.maybeOf(context) ??
+    final source =
+        AdaptiveEnvironment.maybeOf(context) ??
         AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
-    final androidRail = !nativeShellEnabled &&
+    final androidRail =
+        !nativeShellEnabled &&
         usesAndroidNavigationRail(split: widget.split, environment: source);
-    final sidebarMode = !nativeShellEnabled &&
+    final desktopShell =
+        !nativeShellEnabled &&
         !androidRail &&
         usesDesktopSidebar(environment: source);
-    _sidebarShown = sidebarMode;
+    final sidebarMode = desktopShell && _desktopPreferences.sidebarVisible;
+    _desktopShell = desktopShell;
     // Either takes the destinations off the bottom edge to the left.
-    final railMode = androidRail || sidebarMode;
+    final railMode = androidRail || desktopShell;
     final glassRail = tabBar is LiquidGlassTabBar;
-    final railWidth = sidebarMode
-        ? DesktopSidebar.reservedWidth(glass: glassRail)
+    final railWidth = desktopShell
+        ? (sidebarMode
+              ? DesktopSidebar.reservedWidth()
+              : DesktopBrowseStyle.inset)
         : railMode
-            ? AndroidNavigationRail.reservedWidth(
-                glass: glassRail,
-                leftInset: media.padding.left,
-              )
-            : 0.0;
+        ? AndroidNavigationRail.reservedWidth(
+            glass: glassRail,
+            leftInset: media.padding.left,
+          )
+        : 0.0;
     final barHidden =
         !nativeShellEnabled && !railMode && _hidesBarForPushedPage;
     final barHeight = nativeShellEnabled || barHidden || railMode
         ? 0.0
         : tabBar.preferredSize.height + media.padding.bottom;
-    final opaqueBar = !nativeShellEnabled &&
+    final opaqueBar =
+        !nativeShellEnabled &&
         !barHidden &&
         !railMode &&
         tabBar.opaque(context);
-    final contentBottom =
-        math.max(media.viewInsets.bottom, opaqueBar ? barHeight : 0.0);
+    final contentBottom = math.max(
+      media.viewInsets.bottom,
+      opaqueBar ? barHeight : 0.0,
+    );
     var contentMedia = media.removeViewInsets(removeBottom: true);
     if (railMode) {
       // The rail covers the left edge, cutout included.
       contentMedia = contentMedia.removePadding(removeLeft: true);
     }
+    if (desktopShell &&
+        PlatformCapabilities.hostPlatform == TargetPlatform.macOS) {
+      final safeTop = MacOSWindowChrome.controls.value.systemSafeTop;
+      contentMedia = contentMedia.copyWith(
+        padding: contentMedia.padding.copyWith(top: safeTop),
+        viewPadding: contentMedia.viewPadding.copyWith(top: safeTop),
+      );
+    }
     if (opaqueBar && barHeight > media.viewInsets.bottom) {
       contentMedia = contentMedia.removePadding(removeBottom: true);
     } else if (barHeight > media.viewInsets.bottom) {
       contentMedia = contentMedia.copyWith(
-          padding: contentMedia.padding.copyWith(bottom: barHeight));
+        padding: contentMedia.padding.copyWith(bottom: barHeight),
+      );
     }
     final rect = Rect.fromLTWH(
-        railWidth,
-        0,
-        math.max(0.0, source.size.width - railWidth),
-        math.max(0.0, source.size.height - contentBottom));
-    final environment = source.inRect(rect).copyWithGeometry(
+      railWidth,
+      0,
+      math.max(0.0, source.size.width - railWidth),
+      math.max(0.0, source.size.height - contentBottom),
+    );
+    final environment = source
+        .inRect(rect)
+        .copyWithGeometry(
           safeArea: contentMedia.padding,
           viewPadding: contentMedia.viewPadding,
           viewInsets: contentMedia.viewInsets,
         );
-    final split = widget.split && environment.isSplit;
+    final split =
+        widget.split &&
+        (desktopShell
+            ? DesktopBrowseStyle.canSplit(environment.contentRect.width)
+            : environment.isSplit);
     _layout.updateNavigationSplit(split);
     return offlineDuoNavigationProbe(
-        child: ColoredBox(
-      color: CupertinoTheme.of(context).scaffoldBackgroundColor,
-      // Shows through the transparent list pages of the glass layout.
-      child: CanvasGrain(
+      child: ColoredBox(
+        color: desktopShell ? DesktopBrowseStyle.canvas(context) : CupertinoTheme.of(context).scaffoldBackgroundColor,
+        // Shows through the transparent list pages of the glass layout.
+        child: CanvasGrain(
           child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fromRect(
-            rect: rect,
-            child: AdaptiveEnvironmentScope(
-              snapshot: environment,
-              child: MediaQuery(
-                data: contentMedia.copyWith(size: rect.size),
-                child: DesktopSidebarScope(
-                  visible: sidebarMode,
-                  child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    for (final entry in _tabRoots.entries)
-                      RetainedTab(
-                        key: ValueKey(entry.key),
-                        active: entry.key == selected,
-                        child: AdaptiveTabNavigator(
-                          key: _tabNavigators.putIfAbsent(
-                              entry.key, GlobalKey.new),
-                          stack: _navigation.stackFor(entry.key),
-                          split: split,
-                          primaryRoot: entry.value,
-                        ),
+            fit: StackFit.expand,
+            children: [
+              Positioned.fromRect(
+                rect: rect,
+                child: AdaptiveEnvironmentScope(
+                  snapshot: environment,
+                  child: MediaQuery(
+                    data: contentMedia.copyWith(size: rect.size),
+                    child: DesktopSidebarScope(
+                      visible: sidebarMode,
+                      desktop: desktopShell,
+                      onShow: () => _desktopPreferences.showSidebar(true),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          for (final entry in _tabRoots.entries)
+                            RetainedTab(
+                              key: ValueKey(entry.key),
+                              active: entry.key == selected,
+                              child: AdaptiveTabNavigator(
+                                key: _tabNavigators.putIfAbsent(
+                                  entry.key,
+                                  GlobalKey.new,
+                                ),
+                                stack: _navigation.stackFor(entry.key),
+                                split: split,
+                                primaryRoot: entry.value,
+                              ),
+                            ),
+                        ],
                       ),
-                  ],
-                ),
-                ),
-              ),
-            ),
-          ),
-          if (sidebarMode)
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: railWidth,
-              child: _buildDesktopSidebar(context, tabBar, glass: glassRail),
-            )
-          else if (railMode)
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: railWidth,
-              child: MediaQuery.withNoTextScaling(
-                child: AndroidNavigationRail(
-                  items: tabBar.items,
-                  currentIndex: tabBar.currentIndex,
-                  glass: glassRail,
-                  onTap: (index) {
-                    // The solid bar's own handler already ticks.
-                    if (glassRail) {
-                      vibrateUtil.tabSwitch();
-                    }
-                    tabBar.onTap?.call(index);
-                  },
-                ),
-              ),
-            )
-          else if (!nativeShellEnabled && PlatformCapabilities.hostPlatform == TargetPlatform.macOS && widget.split && source.isSplit)
-            Obx(()=>Positioned(bottom:0,left:source.contentRect.left,
-              width:AdaptiveBrowseLayout.primaryPaneWidth(source.contentRect.width,Get.find<LayoutServices>().sideProportion),
-              child:MediaQuery.withNoTextScaling(child:tabBar)))
-          else if (!nativeShellEnabled && !PlatformCapabilities.topSearchCapsule)
-            // Only Android hides the bar for pushed pages; elsewhere keep the
-            // bar's original tree so its taps behave exactly as before.
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: MediaQuery.withNoTextScaling(child: tabBar),
-            )
-          else if (!nativeShellEnabled)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: AnimatedSlide(
-                key: const ValueKey<String>('tab-bar-slide'),
-                offset: barHidden ? const Offset(0, 1.5) : Offset.zero,
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                child: IgnorePointer(
-                  ignoring: barHidden,
-                  child: ExcludeSemantics(
-                    excluding: barHidden,
-                    child: MediaQuery.withNoTextScaling(child: tabBar),
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
-      )),
-    ));
+              if (sidebarMode)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: railWidth,
+                  child: _buildDesktopSidebar(
+                    context,
+                    tabBar,
+                  ),
+                )
+              else if (androidRail)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: railWidth,
+                  child: MediaQuery.withNoTextScaling(
+                    child: AndroidNavigationRail(
+                      items: tabBar.items,
+                      currentIndex: tabBar.currentIndex,
+                      glass: glassRail,
+                      onTap: (index) {
+                        // The solid bar's own handler already ticks.
+                        if (glassRail) {
+                          vibrateUtil.tabSwitch();
+                        }
+                        tabBar.onTap?.call(index);
+                      },
+                    ),
+                  ),
+                )
+              else if (!desktopShell &&
+                  !nativeShellEnabled &&
+                  PlatformCapabilities.hostPlatform == TargetPlatform.macOS &&
+                  widget.split &&
+                  source.isSplit)
+                Obx(
+                  () => Positioned(
+                    bottom: 0,
+                    left: source.contentRect.left,
+                    width: AdaptiveBrowseLayout.primaryPaneWidth(
+                      source.contentRect.width,
+                      Get.find<LayoutServices>().sideProportion,
+                    ),
+                    child: MediaQuery.withNoTextScaling(child: tabBar),
+                  ),
+                )
+              else if (!desktopShell &&
+                  !nativeShellEnabled &&
+                  !PlatformCapabilities.topSearchCapsule)
+                // Only Android hides the bar for pushed pages; elsewhere keep the
+                // bar's original tree so its taps behave exactly as before.
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: MediaQuery.withNoTextScaling(child: tabBar),
+                )
+              else if (!desktopShell && !nativeShellEnabled)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: AnimatedSlide(
+                    key: const ValueKey<String>('tab-bar-slide'),
+                    offset: barHidden ? const Offset(0, 1.5) : Offset.zero,
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    child: IgnorePointer(
+                      ignoring: barHidden,
+                      child: ExcludeSemantics(
+                        excluding: barHidden,
+                        child: MediaQuery.withNoTextScaling(child: tabBar),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

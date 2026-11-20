@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import '../const/const.dart';
 import '../widget/desktop_card_chrome.dart';
 import 'platform_capabilities.dart';
 
@@ -95,6 +96,14 @@ class _AnchoredGallerySliverState extends State<AnchoredGallerySliver> {
             final index = found >= 0
                 ? found
                 : math.min(anchor.index, widget.itemIds.length - 1);
+            // A viewport resized while bouncing can keep the old ballistic
+            // target. End that activity after index restoration has laid out.
+            final scrollable = Scrollable.maybeOf(context);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              final position = scrollable?.position;
+              if (position is ScrollPositionWithSingleContext) position.goIdle();
+            });
             _restoration = GalleryAnchorRestoration(
               GalleryScrollAnchor(
                 id: widget.itemIds[index],
@@ -146,11 +155,13 @@ class GalleryAnchorItem extends StatelessWidget {
     super.key,
     required this.id,
     required this.index,
+    this.mode = ListModeEnum.list,
     required this.child,
   });
 
   final String id;
   final int index;
+  final ListModeEnum mode;
   final Widget child;
 
   @override
@@ -162,6 +173,7 @@ class GalleryAnchorItem extends StatelessWidget {
         ? DesktopCardChrome(
             key: ValueKey<String>('desktop-card-chrome-$id'),
             gid: id,
+            mode: mode,
             child: child,
           )
         : child;
@@ -275,6 +287,8 @@ class _RenderGalleryAnchorSliver extends RenderProxySliver {
   double? _lastScrollOffset;
   String? _preferredId;
   bool _restoring = false;
+  int? _seekingGeneration;
+  int _seekPasses = 0;
 
   RenderSliverGrid? _grid(RenderObject object) {
     if (object is RenderSliverGrid) {
@@ -298,11 +312,15 @@ class _RenderGalleryAnchorSliver extends RenderProxySliver {
     }
     final restore = restoration;
     if (restore != null && restore.generation != _restoredGeneration) {
-      _restoredGeneration = restore.generation;
+      if (_seekingGeneration != restore.generation) {
+        _seekingGeneration = restore.generation;
+        _seekPasses = 0;
+      }
       _preferredId = restore.anchor.id;
       _restoring = true;
       final grid = _grid(child!);
       if (grid != null) {
+        _restoredGeneration = restore.generation;
         final tile = grid.gridDelegate
             .getLayout(grid.constraints)
             .getGeometryForChildIndex(restore.anchor.index);
@@ -321,10 +339,20 @@ class _RenderGalleryAnchorSliver extends RenderProxySliver {
           return;
         }
       } else {
+        var found = false;
+        final materialized = <(int, Rect)>[];
+        for (final item in controller._items) {
+          if (item.attached && item.hasSize) {
+            final bounds = MatrixUtils.transformRect(item.getTransformTo(this), item.layoutBounds);
+            if (bounds.isFinite) materialized.add((item.index, bounds));
+          }
+        }
         for (final item in controller._items) {
           if (item.id != restore.anchor.id || !item.attached || !item.hasSize) {
             continue;
           }
+          found = true;
+          _restoredGeneration = restore.generation;
           final bounds = MatrixUtils.transformRect(
               item.getTransformTo(this), item.layoutBounds);
           final correction = restore.anchor.atStart
@@ -337,6 +365,27 @@ class _RenderGalleryAnchorSliver extends RenderProxySliver {
           }
           break;
         }
+        if (!found && materialized.isNotEmpty && _seekPasses++ < 8) {
+          // Masonry does not expose index geometry. Seek by the measured
+          // materialized range, then align the actual card before painting.
+          materialized.sort((a, b) => a.$1.compareTo(b.$1));
+          final first = materialized.first;
+          final last = materialized.last;
+          final stride = math.max(1.0, (last.$2.top - first.$2.top) /
+              math.max(1, last.$1 - first.$1));
+          final nearest = restore.anchor.index < first.$1 ? first : last;
+          final correction = restore.anchor.atStart
+              ? -constraints.scrollOffset
+              : nearest.$2.top + (restore.anchor.index - nearest.$1) * stride -
+                  restore.anchor.leadingForExtent(nearest.$2.height);
+          if (correction.isFinite && correction.abs() > precisionErrorTolerance) {
+            geometry = SliverGeometry(scrollOffsetCorrection:
+                math.max(-constraints.scrollOffset, correction));
+            return;
+          }
+        }
+        if (materialized.isEmpty) return;
+        _restoredGeneration = restore.generation;
       }
     }
     _capture();
