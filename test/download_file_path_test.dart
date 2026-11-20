@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/controller/download/download_cover_resolver.dart';
 import 'package:eros_fe/common/controller/download/download_file_path.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as path;
 
 void main() {
   test('builds a regular downloaded file path', () {
@@ -9,7 +10,7 @@ void main() {
         directoryPath: '/Documents/Download/123 - gallery',
         fileName: '0001.jpg',
       ),
-      '/Documents/Download/123 - gallery/0001.jpg',
+      path.join('/Documents/Download/123 - gallery', '0001.jpg'),
     );
   });
 
