@@ -869,9 +869,19 @@ Future<User?> userLogin(String username, String passwd) async {
 
   if (httpResponse.ok && httpResponse.data is User) {
     return httpResponse.data as User;
-  } else {
-    throw httpResponse.error ?? HttpException('login error');
   }
+  final err = httpResponse.error;
+  if (isCfBlockedError(err) ||
+      (err?.data is String && isCloudflareChallenge(err!.data as String))) {
+    throw EhError(
+      type: EhErrorType.cfBlocked,
+      error: 'Cloudflare verification required',
+    );
+  }
+  if (err is BadRequestException && err.code == 401) {
+    throw EhError(type: EhErrorType.login, error: err.message);
+  }
+  throw err ?? HttpException('login error');
 }
 
 Future<User?> getUserInfo(String userId, {bool forceRefresh = true}) async {
@@ -1203,7 +1213,27 @@ Future<void> getExIgneous() async {
     options: getCacheOptions(refresh: true),
   );
   if (!httpResponse.ok) {
-    throw httpResponse.error ?? HttpException('getExIgneous error');
+    final err = httpResponse.error;
+    if (isCfBlockedError(err) ||
+        (err?.data is String && isCloudflareChallenge(err!.data as String))) {
+      throw EhError(
+        type: EhErrorType.cfBlocked,
+        error: 'Cloudflare verification required',
+      );
+    }
+    throw err ?? HttpException('getExIgneous error');
+  }
+}
+
+/// 仅清除 `.exhentai.org` 域下残留的失败记录与旧 cookie，保留表站与论坛登录态
+Future<void> clearExHentaiCookies() async {
+  final PersistCookieJar cookieJar = await Api.cookieJar;
+  await cookieJar.delete(Uri.parse(EHConst.EX_BASE_URL), true);
+  if (Get.isRegistered<UserController>()) {
+    final userCtrl = Get.find<UserController>();
+    if (userCtrl.isLogin) {
+      userCtrl.user(userCtrl.user.value.copyWith(igneous: null.oN));
+    }
   }
 }
 

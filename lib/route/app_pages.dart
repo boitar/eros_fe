@@ -14,6 +14,7 @@ import 'package:eros_fe/pages/login/controller/login_controller.dart';
 import 'package:eros_fe/pages/login/view/login_page.dart';
 import 'package:eros_fe/pages/login/view/web_login_in.dart';
 import 'package:eros_fe/pages/setting/about_page.dart';
+import 'package:eros_fe/pages/setting/account_session_page.dart';
 import 'package:eros_fe/pages/setting/advanced_setting_page.dart';
 import 'package:eros_fe/pages/setting/avatar_setting_page.dart';
 import 'package:eros_fe/pages/setting/block/block_rule_edit_page.dart';
@@ -102,6 +103,10 @@ class AppPages {
       page: () => const EhSettingPage(),
     ),
     GetPage(
+      name: EHRoutes.accountSession,
+      page: () => const AccountSessionPage(),
+    ),
+    GetPage(
       name: EHRoutes.layoutSetting,
       page: () => const LayoutSettingPage(),
     ),
@@ -147,7 +152,7 @@ class AppPages {
     ),
     GetPage(
       name: EHRoutes.webLogin,
-      page: () => WebLoginViewIn(),
+      page: () => const WebLoginViewIn(),
     ),
     GetPage(
       name: EHRoutes.galleryComment,
@@ -418,6 +423,13 @@ class AppPages {
             return GetPageRoute(
               settings: settings,
               page: () => const AvatarSettingPage(),
+            );
+          case EHRoutes.accountSession:
+            return GetPageRoute(
+              settings: settings,
+              page: () => const AccountSessionPage(),
+              transition: Transition.fadeIn,
+              showCupertinoParallax: false,
             );
           case EHRoutes.logfile:
             return GetPageRoute(

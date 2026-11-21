@@ -1,3 +1,5 @@
+import 'package:eros_fe/network/app_dio/exception.dart';
+
 enum EhErrorType {
   banned,
 
@@ -42,4 +44,5 @@ class EhError implements Exception {
 }
 
 bool isCfBlockedError(Object? error) =>
-    error is EhError && error.type == EhErrorType.cfBlocked;
+    (error is EhError && error.type == EhErrorType.cfBlocked) ||
+    error is CloudflareChallengeException;
