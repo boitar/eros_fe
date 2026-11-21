@@ -2,6 +2,7 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 // ignore: depend_on_referenced_packages
 import 'package:bitsdojo_window_platform_interface/bitsdojo_window_platform_interface.dart';
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
+import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
 import 'package:eros_fe/widget/desktop.dart';
@@ -276,6 +277,59 @@ void main() {
       );
     }
   });
+
+  testWidgets(
+    'desktop split layout wraps both primary and detail panes with platform pane radii',
+    (tester) async {
+      addTearDown(() {
+        PlatformCapabilities.debugHostPlatformOverride = null;
+      });
+      for (final (platform, expectedRadius) in [
+        (TargetPlatform.windows, 10.0),
+        (TargetPlatform.macOS, 16.0),
+      ]) {
+        PlatformCapabilities.debugHostPlatformOverride = platform;
+        expect(DesktopBrowseStyle.paneRadius, expectedRadius);
+
+        await tester.pumpWidget(
+          CupertinoApp(
+            key: ValueKey(platform),
+            home: const SizedBox(
+              width: 1000,
+              height: 700,
+              child: AdaptiveBrowseLayout(
+                environment: AdaptiveEnvironmentSnapshot(
+                  size: Size(1000, 700),
+                ),
+                split: true,
+                desktop: true,
+                detailActive: false,
+                primary: Text('primary pane'),
+                detail: Text('detail pane'),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final surfaces = find.byType(DesktopPaneSurface);
+        expect(surfaces, findsNWidgets(2));
+        for (var i = 0; i < 2; i++) {
+          final clip = tester.widget<ClipRRect>(
+            find.descendant(
+              of: surfaces.at(i),
+              matching: find.byType(ClipRRect),
+            ),
+          );
+          expect(clip.borderRadius, BorderRadius.circular(expectedRadius));
+        }
+        expect(find.text('primary pane'), findsOneWidget);
+        expect(find.text('detail pane'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 }
 
 class _WindowPlatform extends BitsdojoWindowPlatform {

@@ -147,107 +147,117 @@ class ReaderDesktopLayout extends GetView<ViewExtController> {
     final visible = state.showBar;
     final vertical = state.viewMode == ViewMode.topToBottom;
     final sidebar = !glass && visible && state.showThumbList;
-    final top = !glass && visible ? topBarHeight : 0.0;
     final left = sidebar ? sidebarWidth : 0.0;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final contentRect = Rect.fromLTRB(
-          left,
-          top,
-          constraints.maxWidth,
-          constraints.maxHeight,
-        );
-        final bottomWidth = math.min(
-          glass ? 760.0 : 600.0,
-          contentRect.width - 32,
-        );
-        return ColoredBox(
-          color: const Color(0xFF08090B),
-          child: Stack(
-            children: [
-              Positioned.fromRect(
-                rect: contentRect,
-                // Spreads size themselves from the environment: give them
-                // the page area, not the whole window.
-                child: AdaptivePane(
-                  environment:
-                      AdaptiveEnvironment.maybeOf(context) ??
-                      AdaptiveEnvironmentSnapshot.fromMediaQuery(context),
-                  rect: contentRect,
-                  child: _WheelPager(enabled: !vertical, child: content),
-                ),
-              ),
-              if (glass)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  child: ReaderChromeFade(
-                    visible: visible,
-                    slide: const Offset(0, -0.15),
-                    child: const ReaderDesktopTopBar(glass: true),
-                  ),
-                )
-              else if (visible)
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  height: topBarHeight,
-                  child: ReaderDesktopTopBar(glass: false),
-                ),
-              if (sidebar)
-                const Positioned(
-                  left: 0,
-                  top: topBarHeight,
-                  bottom: 0,
-                  width: sidebarWidth,
-                  child: DecoratedBox(
-                    key: ValueKey<String>('reader-desktop-sidebar'),
-                    decoration: BoxDecoration(
-                      color: _kSidebar,
-                      border: Border(right: BorderSide(color: _kHairline)),
+    return ValueListenableBuilder<MacOSWindowControls>(
+      valueListenable: MacOSWindowChrome.controls,
+      builder: (context, controls, _) {
+        final macSafeTop =
+            PlatformCapabilities.hostPlatform == TargetPlatform.macOS
+            ? controls.systemSafeTop
+            : 0.0;
+        final top = !glass && visible ? macSafeTop + topBarHeight : 0.0;
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final contentRect = Rect.fromLTRB(
+              left,
+              top,
+              constraints.maxWidth,
+              constraints.maxHeight,
+            );
+            final bottomWidth = math.min(
+              glass ? 760.0 : 600.0,
+              contentRect.width - 32,
+            );
+            return ColoredBox(
+              color: const Color(0xFF08090B),
+              child: Stack(
+                children: [
+                  Positioned.fromRect(
+                    rect: contentRect,
+                    // Spreads size themselves from the environment: give them
+                    // the page area, not the whole window.
+                    child: AdaptivePane(
+                      environment:
+                          AdaptiveEnvironment.maybeOf(context) ??
+                          AdaptiveEnvironmentSnapshot.fromMediaQuery(context),
+                      rect: contentRect,
+                      child: _WheelPager(enabled: !vertical, child: content),
                     ),
-                    child: Center(
-                      child: SizedBox(
-                        width: ThumbnailListView.sidebarThumbWidth + 16,
-                        child: ThumbnailListView(axis: Axis.vertical),
+                  ),
+                  if (glass)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: macSafeTop,
+                      child: ReaderChromeFade(
+                        visible: visible,
+                        slide: const Offset(0, -0.15),
+                        child: const ReaderDesktopTopBar(glass: true),
+                      ),
+                    )
+                  else if (visible)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: macSafeTop,
+                      height: topBarHeight,
+                      child: const ReaderDesktopTopBar(glass: false),
+                    ),
+                  if (sidebar)
+                    Positioned(
+                      left: 0,
+                      top: macSafeTop + topBarHeight,
+                      bottom: 0,
+                      width: sidebarWidth,
+                      child: const DecoratedBox(
+                        key: ValueKey<String>('reader-desktop-sidebar'),
+                        decoration: BoxDecoration(
+                          color: _kSidebar,
+                          border: Border(right: BorderSide(color: _kHairline)),
+                        ),
+                        child: Center(
+                          child: SizedBox(
+                            width: ThumbnailListView.sidebarThumbWidth + 16,
+                            child: ThumbnailListView(axis: Axis.vertical),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              if (!vertical) ...[
-                Positioned(
-                  left: contentRect.left + (glass ? 20 : 16),
-                  top: contentRect.center.dy - 22,
-                  child: ReaderChromeFade(
-                    visible: visible,
-                    child: _PageButton(glass: glass, forward: false),
-                  ),
-                ),
-                Positioned(
-                  right: glass ? 20 : 16,
-                  top: contentRect.center.dy - 22,
-                  child: ReaderChromeFade(
-                    visible: visible,
-                    child: _PageButton(glass: glass, forward: true),
-                  ),
-                ),
-              ],
-              if (bottomWidth > 0)
-                Positioned(
-                  left:
-                      contentRect.left + (contentRect.width - bottomWidth) / 2,
-                  width: bottomWidth,
-                  bottom: glass ? 16 : 22,
-                  child: ReaderChromeFade(
-                    visible: visible,
-                    slide: const Offset(0, 0.15),
-                    child: ReaderDesktopBottomBar(glass: glass),
-                  ),
-                ),
-            ],
-          ),
+                  if (!vertical) ...[
+                    Positioned(
+                      left: contentRect.left + (glass ? 20 : 16),
+                      top: contentRect.center.dy - 22,
+                      child: ReaderChromeFade(
+                        visible: visible,
+                        child: _PageButton(glass: glass, forward: false),
+                      ),
+                    ),
+                    Positioned(
+                      right: glass ? 20 : 16,
+                      top: contentRect.center.dy - 22,
+                      child: ReaderChromeFade(
+                        visible: visible,
+                        child: _PageButton(glass: glass, forward: true),
+                      ),
+                    ),
+                  ],
+                  if (bottomWidth > 0)
+                    Positioned(
+                      left:
+                          contentRect.left +
+                          (contentRect.width - bottomWidth) / 2,
+                      width: bottomWidth,
+                      bottom: glass ? 16 : 22,
+                      child: ReaderChromeFade(
+                        visible: visible,
+                        slide: const Offset(0, 0.15),
+                        child: ReaderDesktopBottomBar(glass: glass),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -514,172 +524,196 @@ class ReaderDesktopTopBar extends GetView<ViewExtController> {
   @override
   Widget build(BuildContext context) {
     final l10n = L10n.of(context);
-    return GetBuilder<ViewExtController>(
-      id: idViewTopBar,
-      builder: (logic) => LayoutBuilder(
-        builder: (context, constraints) {
-          final state = logic.vState;
-          final size = glass ? 32.0 : 30.0;
-          final fullWidth =
-              _LayoutSegments.widthFor(context, glass: glass) +
-              (glass ? 64 : 52) +
-              size * ((glass ? 1 : 2) + (desktopReaderCanFullscreen ? 4 : 3)) +
-              124;
-          final compact = constraints.maxWidth < fullWidth;
-          final title = GalleryTitleParts.parse(
-            state.pageState?.displayTitle ?? '',
-          ).title;
-          final page = l10n.reader_page_of(
-            desktopReaderPageLabel(state),
-            state.fileCount,
-          );
-          final vertical = state.viewMode == ViewMode.topToBottom;
-          final showTitle = title.isNotEmpty && !compact;
-          final titleBlock = Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (showTitle)
+    return ValueListenableBuilder<MacOSWindowControls>(
+      valueListenable: MacOSWindowChrome.controls,
+      builder: (context, controls, _) => GetBuilder<ViewExtController>(
+        id: idViewTopBar,
+        builder: (logic) => LayoutBuilder(
+          builder: (context, constraints) {
+            final state = logic.vState;
+            final size = glass ? 32.0 : 30.0;
+            final mac = PlatformCapabilities.hostPlatform == TargetPlatform.macOS;
+            final macLeading =
+                mac && !controls.bounds.isEmpty ? controls.leading + 4.0 : 0.0;
+            final extraLeading = math.max(
+              0.0,
+              macLeading - (glass ? 12.0 : 14.0),
+            );
+            final fullWidth =
+                _LayoutSegments.widthFor(context, glass: glass) +
+                (glass ? 64 : 52) +
+                size * ((glass ? 1 : 2) + (desktopReaderCanFullscreen ? 4 : 3)) +
+                124 +
+                extraLeading;
+            final compact = constraints.maxWidth < fullWidth;
+            final gap = compact ? 8.0 : 12.0;
+            final title = GalleryTitleParts.parse(
+              state.pageState?.displayTitle ?? '',
+            ).title;
+            final page = l10n.reader_page_of(
+              desktopReaderPageLabel(state),
+              state.fileCount,
+            );
+            final vertical = state.viewMode == ViewMode.topToBottom;
+            final showTitle = title.isNotEmpty && !compact;
+            final titleBlock = Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (showTitle)
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _kText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 Text(
-                  title,
+                  page,
+                  key: const ValueKey<String>('reader-desktop-page'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _kText,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    color: showTitle ? _kText2 : _kText,
+                    fontSize: showTitle ? 11 : 13,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
-              Text(
-                page,
-                key: const ValueKey<String>('reader-desktop-page'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: showTitle ? _kText2 : _kText,
-                  fontSize: showTitle ? 11 : 13,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ],
-          );
-          final leading = <Widget>[
-            _BarButton(
-              glass: glass,
-              icon: CupertinoIcons.chevron_left,
-              label: l10n.back,
-              onTap: Get.back,
-            ),
-            if (!glass)
-              GetBuilder<ViewExtController>(
-                id: idShowThumbListIcon,
-                builder: (logic) => _BarButton(
-                  icon: CupertinoIcons.sidebar_left,
-                  label: l10n.thumbnails,
-                  selected: logic.vState.showThumbList,
-                  onTap: logic.switchShowThumbList,
-                ),
-              ),
-          ];
-          final trailing = <Widget>[
-            _LayoutSegments(controller: logic, glass: glass, compact: compact),
-            const SizedBox(width: 4),
-            if (!compact) ...[
+              ],
+            );
+            final leading = <Widget>[
               _BarButton(
                 glass: glass,
-                // Vertical scrolling has no reading direction to flip.
-                enabled: !vertical,
-                icon: state.viewMode == ViewMode.rightToLeft
-                    ? CupertinoIcons.arrow_left
-                    : CupertinoIcons.arrow_right,
-                label:
-                    '${l10n.reading_direction}: '
-                    '${state.viewMode == ViewMode.rightToLeft ? l10n.right_to_left : l10n.left_to_right}',
-                onTap: () => toggleDesktopReaderDirection(logic),
+                icon: CupertinoIcons.chevron_left,
+                label: l10n.back,
+                onTap: Get.back,
               ),
-              GetBuilder<ViewExtController>(
-                id: idAutoReadIcon,
-                builder: (logic) => _BarButton(
-                  glass: glass,
-                  icon: CupertinoIcons.timer,
-                  label: l10n.reader_auto_read,
-                  selected: logic.vState.autoRead,
-                  onTap: () => logic.tapAutoRead(context),
-                ),
-              ),
-              if (desktopReaderCanFullscreen)
-                ValueListenableBuilder<bool>(
-                  valueListenable: MacOSWindowChrome.fullscreen,
-                  builder: (context, fullscreen, _) => _BarButton(
-                    glass: glass,
-                    icon: fullscreen
-                        ? CupertinoIcons.fullscreen_exit
-                        : CupertinoIcons.fullscreen,
-                    label: l10n.fullscreen,
-                    selected: fullscreen,
-                    onTap: MacOSWindowChrome.toggleFullscreen,
+              if (!glass)
+                GetBuilder<ViewExtController>(
+                  id: idShowThumbListIcon,
+                  builder: (logic) => _BarButton(
+                    icon: CupertinoIcons.sidebar_left,
+                    label: l10n.thumbnails,
+                    selected: logic.vState.showThumbList,
+                    onTap: logic.switchShowThumbList,
                   ),
                 ),
-            ],
-            _ReaderMoreMenu(controller: logic, glass: glass, compact: compact),
-          ];
-          if (!glass) {
-            return Container(
+            ];
+            final trailing = <Widget>[
+              _LayoutSegments(controller: logic, glass: glass, compact: compact),
+              const SizedBox(width: 4),
+              if (!compact) ...[
+                _BarButton(
+                  glass: glass,
+                  // Vertical scrolling has no reading direction to flip.
+                  enabled: !vertical,
+                  icon: state.viewMode == ViewMode.rightToLeft
+                      ? CupertinoIcons.arrow_left
+                      : CupertinoIcons.arrow_right,
+                  label:
+                      '${l10n.reading_direction}: '
+                      '${state.viewMode == ViewMode.rightToLeft ? l10n.right_to_left : l10n.left_to_right}',
+                  onTap: () => toggleDesktopReaderDirection(logic),
+                ),
+                GetBuilder<ViewExtController>(
+                  id: idAutoReadIcon,
+                  builder: (logic) => _BarButton(
+                    glass: glass,
+                    icon: CupertinoIcons.timer,
+                    label: l10n.reader_auto_read,
+                    selected: logic.vState.autoRead,
+                    onTap: () => logic.tapAutoRead(context),
+                  ),
+                ),
+                if (desktopReaderCanFullscreen)
+                  ValueListenableBuilder<bool>(
+                    valueListenable: MacOSWindowChrome.fullscreen,
+                    builder: (context, fullscreen, _) => _BarButton(
+                      glass: glass,
+                      icon: fullscreen
+                          ? CupertinoIcons.fullscreen_exit
+                          : CupertinoIcons.fullscreen,
+                      label: l10n.fullscreen,
+                      selected: fullscreen,
+                      onTap: MacOSWindowChrome.toggleFullscreen,
+                    ),
+                  ),
+              ],
+              _ReaderMoreMenu(controller: logic, glass: glass, compact: compact),
+            ];
+            if (!glass) {
+              return Container(
+                key: const ValueKey<String>('reader-desktop-topbar'),
+                padding: EdgeInsets.fromLTRB(
+                  math.max(14.0, macLeading),
+                  0,
+                  14,
+                  0,
+                ),
+                decoration: const BoxDecoration(
+                  color: _kBar,
+                  border: Border(bottom: BorderSide(color: _kHairline)),
+                ),
+                child: Row(
+                  children: [
+                    ...leading,
+                    SizedBox(width: gap),
+                    Expanded(child: titleBlock),
+                    SizedBox(width: gap),
+                    ...trailing,
+                  ],
+                ),
+              );
+            }
+            Widget capsule(Widget child, {Key? key}) => _glassSurface(
+              radius: 20,
+              child: SizedBox(
+                key: key,
+                height: 40,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: child,
+                ),
+              ),
+            );
+            return Padding(
               key: const ValueKey<String>('reader-desktop-topbar'),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: const BoxDecoration(
-                color: _kBar,
-                border: Border(bottom: BorderSide(color: _kHairline)),
+              padding: EdgeInsets.fromLTRB(
+                math.max(12.0, macLeading),
+                12,
+                12,
+                12,
               ),
               child: Row(
                 children: [
-                  ...leading,
-                  const SizedBox(width: 12),
-                  Expanded(child: titleBlock),
-                  const SizedBox(width: 12),
-                  ...trailing,
-                ],
-              ),
-            );
-          }
-          Widget capsule(Widget child, {Key? key}) => _glassSurface(
-            radius: 20,
-            child: SizedBox(
-              key: key,
-              height: 40,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: child,
-              ),
-            ),
-          );
-          return Padding(
-            key: const ValueKey<String>('reader-desktop-topbar'),
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                capsule(Row(mainAxisSize: MainAxisSize.min, children: leading)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 420),
-                      child: capsule(
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: titleBlock,
+                  capsule(
+                    Row(mainAxisSize: MainAxisSize.min, children: leading),
+                  ),
+                  SizedBox(width: gap),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: capsule(
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: titleBlock,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                capsule(
-                  Row(mainAxisSize: MainAxisSize.min, children: trailing),
-                ),
-              ],
-            ),
-          );
-        },
+                  SizedBox(width: gap),
+                  capsule(
+                    Row(mainAxisSize: MainAxisSize.min, children: trailing),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

@@ -162,6 +162,7 @@ class AdaptiveBrowseLayout extends StatelessWidget {
             primary,
             primaryRect,
             split || !detailActive || detailMoving,
+            surface: true,
           ),
         ),
         Positioned.fromRect(

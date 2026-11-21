@@ -330,12 +330,14 @@ private final class MacOSWindowChromePlugin: NSObject, FlutterPlugin {
   init(host: NSView?, channel: FlutterMethodChannel) {
     self.host = host; self.channel = channel
     super.init()
-    for name in [NSWindow.didResizeNotification, NSWindow.didMoveNotification,
+    for name in [NSWindow.didResizeNotification, NSWindow.didEndLiveResizeNotification,
+                 NSWindow.didMoveNotification,
                  NSWindow.didEnterFullScreenNotification, NSWindow.didExitFullScreenNotification,
                  NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification,
                  NSWindow.didChangeScreenNotification, NSWindow.didChangeBackingPropertiesNotification] {
       observers.append(NotificationCenter.default.addObserver(forName:name,object:nil,queue:.main) { [weak self] note in
         guard let self, let window = note.object as? NSWindow, window === self.host?.window else { return }
+        (window as? MainFlutterWindow)?.positionTrafficLights()
         self.publishGeometryIfChanged()
       })
     }
@@ -347,6 +349,7 @@ private final class MacOSWindowChromePlugin: NSObject, FlutterPlugin {
   }
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     if call.method == "get" {
+      (host?.window as? MainFlutterWindow)?.positionTrafficLights()
       let current = geometry()
       lastGeometry = current
       result(current)

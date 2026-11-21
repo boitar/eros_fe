@@ -146,14 +146,41 @@ class DesktopSidebar extends StatelessWidget {
               height: DesktopBrowseStyle.toolbarHeight,
               child: Row(
                 children: [
-                  // Only whitespace participates in window dragging.
-                  Expanded(child: MoveWindow(child: const SizedBox.expand())),
+                  // Only whitespace (and the passive Windows label) moves the window.
+                  Expanded(
+                    child: MoveWindow(
+                      child:
+                          PlatformCapabilities.hostPlatform ==
+                              TargetPlatform.windows
+                          ? Align(
+                              alignment: Alignment.centerLeft,
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Text(
+                                  browseLabel.isNotEmpty
+                                      ? browseLabel
+                                      : l10n.app_title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: palette.text2.resolveFrom(context),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const SizedBox.expand(),
+                    ),
+                  ),
                   DesktopControl(
                     key: const ValueKey('desktop-hide-sidebar'),
                     label: l10n.desktop_hide_sidebar,
+                    minSize: 30,
+                    radius: 8,
                     onPressed: () => prefs.showSidebar(false),
                     padding: const EdgeInsets.all(6),
-                    child: const Icon(CupertinoIcons.sidebar_left, size: 18),
+                    child: const Icon(CupertinoIcons.sidebar_left, size: 17),
                   ),
                 ],
               ),
@@ -286,7 +313,16 @@ class DesktopSidebar extends StatelessWidget {
                 ],
               ),
             ),
-            if (setting != null) destination(setting),
+            if (setting != null) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 4),
+                child: SizedBox(
+                  height: 1,
+                  child: ColoredBox(color: palette.hairline.resolveFrom(context)),
+                ),
+              ),
+              destination(setting),
+            ],
           ],
         ),
       ),
@@ -306,7 +342,7 @@ class DesktopSidebar extends StatelessWidget {
         ),
         child: SizedBox(
           width: width,
-          child: DesktopPaneSurface(child: content),
+          child: DesktopPaneSurface(sidebar: true, child: content),
         ),
       ),
     );

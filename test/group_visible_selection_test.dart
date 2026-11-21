@@ -11,7 +11,9 @@ import 'package:eros_fe/pages/tab/controller/group/custom_tabbar_controller.dart
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/view/tabbar/custom_tabbar_page.dart';
 import 'package:eros_fe/store/hive/hive.dart';
+import 'package:eros_fe/widget/desktop_browse_style.dart';
 import 'package:eros_fe/widget/desktop_control.dart';
+import 'package:eros_fe/widget/desktop_gallery_actions.dart';
 import 'package:eros_fe/widget/desktop_gallery_toolbar.dart';
 import 'package:eros_fe/widget/desktop_sidebar.dart';
 import 'package:eros_fe/widget/macos_window_chrome.dart';
@@ -31,6 +33,8 @@ class _Settings extends GetxService implements EhSettingService {
   RxBool get pureDarkThemeObs => false.obs;
   @override
   bool get liquidGlassMaterial => true;
+  @override
+  final Rx<ListModeEnum> listMode = ListModeEnum.list.obs;
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw StateError('Unexpected group setting');
@@ -197,6 +201,154 @@ void main() {
     expect(tester.getRect(group).left, unobstructed);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'desktop toolbar keeps right cluster flush and restores sidebar on macOS and Windows',
+    (tester) async {
+      final controller = await mount(tester, attach: false);
+      final previousControls = MacOSWindowChrome.controls.value;
+      addTearDown(() {
+        MacOSWindowChrome.controls.value = previousControls;
+        PlatformCapabilities.debugHostPlatformOverride = null;
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(960, 500);
+      const controls = MacOSWindowControls(bounds: Rect.fromLTWH(22, 24, 54, 16));
+      MacOSWindowChrome.controls.value = controls;
+
+      for (final host in [TargetPlatform.macOS, TargetPlatform.windows]) {
+        PlatformCapabilities.debugHostPlatformOverride = host;
+        var restores = 0;
+        await tester.pumpWidget(
+          CupertinoApp(
+            localizationsDelegates: const [
+              L10n.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+            ],
+            supportedLocales: L10n.delegate.supportedLocales,
+            home: DesktopSidebarScope(
+              desktop: true,
+              visible: false,
+              onShow: () => restores++,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: 440,
+                  height: DesktopBrowseStyle.toolbarHeight,
+                  child: DesktopGalleryToolbar(controller: controller),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final toolbarRect = tester.getRect(find.byType(DesktopGalleryToolbar));
+        final restoreFinder = find.byKey(const ValueKey('desktop-show-sidebar'));
+        final moreFinder = find.byKey(const ValueKey('desktop-more-actions'));
+        expect(restoreFinder, findsOneWidget);
+        expect(moreFinder, findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('desktop-jump-page')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('desktop-refresh-list')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('desktop-view-list')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('desktop-display-mode')),
+          findsOneWidget,
+        );
+
+        if (host == TargetPlatform.macOS) {
+          expect(
+            tester.getRect(restoreFinder).left,
+            greaterThanOrEqualTo(controls.leading - DesktopBrowseStyle.inset),
+          );
+        }
+        expect(
+          toolbarRect.right - tester.getRect(moreFinder).right,
+          lessThanOrEqualTo(12),
+        );
+
+        await tester.tap(restoreFinder);
+        await tester.pump();
+        expect(restores, 1);
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'desktop toolbar segmented view switch and group menu update active state',
+    (tester) async {
+      final controller = await mount(tester, useBar: false);
+      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.windows;
+
+      await tester.pumpWidget(
+        GetCupertinoApp(
+          localizationsDelegates: const [
+            L10n.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: L10n.delegate.supportedLocales,
+          home: DesktopSidebarScope(
+            desktop: true,
+            visible: true,
+            child: Column(
+              children: [
+                SizedBox(
+                  height: DesktopBrowseStyle.toolbarHeight,
+                  child: DesktopGalleryToolbar(controller: controller),
+                ),
+                Expanded(
+                  child: Obx(
+                    () => PageView(
+                      controller: controller.pageController,
+                      onPageChanged: controller.onPageChanged,
+                      children: controller.profilesShow
+                          .map((p) => Center(child: Text(p.uuid)))
+                          .toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.currentListMode, ListModeEnum.list);
+      await tester.tap(find.byKey(const ValueKey('desktop-display-mode')));
+      await tester.pumpAndSettle();
+      expect(controller.currentListMode, ListModeEnum.grid);
+
+      await tester.tap(find.byKey(const ValueKey('desktop-view-list')));
+      await tester.pumpAndSettle();
+      expect(controller.currentListMode, ListModeEnum.list);
+
+      await tester.tap(find.byKey(const ValueKey('desktop-group-menu')));
+      await tester.pumpAndSettle();
+      expect(find.byType(DesktopGalleryMenu), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('desktop-menu-Visible D')));
+      await tester.pumpAndSettle();
+      expect(controller.currProfileUuid, 'd');
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'traditional group rail excludes hidden profiles and selects its actual page',

@@ -60,6 +60,10 @@ class CustomTabbarController extends DefaultTabViewController {
   bool get reorderable => _reorderable.value;
   set reorderable(bool val) => _reorderable.value = val;
 
+  final _editingProfileUuid = RxnString();
+  String? get editingProfileUuid => _editingProfileUuid.value;
+  int _editSessionEpoch = 0;
+
   Map<String, CustomSubListController> subControllerMap = {};
   bool _mutatingListMode = false;
   CustomSubListController? get _currSubController =>
@@ -365,38 +369,47 @@ class CustomTabbarController extends DefaultTabViewController {
 
   // 编辑分组（新增或者修改现有）
   Future<void> toEditPage({String? uuid}) async {
+    final int epoch = ++_editSessionEpoch;
     final topRoute =
         SecondNavigatorObserver().history.lastOrNull?.settings.name;
     logger.d('topRoute $topRoute');
 
+    final CustomProfile target =
+        profileMap[uuid] ?? CustomProfile(name: '', uuid: generateUuidv4());
+
     // 依赖注入
-    Get.replace<CustomProfile>(
-      profileMap[uuid] ?? CustomProfile(name: '', uuid: generateUuidv4()),
-    );
+    Get.replace<CustomProfile>(target);
+    _editingProfileUuid.value =
+        uuid != null && profileMap.containsKey(uuid) ? uuid : null;
 
     // arguments 方式不能跨栈传递，改回依赖注入
+    try {
+      late final dynamic _result;
 
-    late final dynamic _result;
+      if (isLayoutLarge && topRoute == EHRoutes.customProfileSetting) {
+        _result = await Get.offNamed(
+          EHRoutes.customProfileSetting,
+          id: detailNavigatorId,
+          preventDuplicates: false,
+          // arguments: profileMap[uuid],
+        );
+      } else {
+        _result = await Get.toNamed(
+          EHRoutes.customProfileSetting,
+          id: detailNavigatorId,
+          preventDuplicates: false,
+          // arguments: profileMap[uuid],
+        );
+      }
 
-    if (isLayoutLarge && topRoute == EHRoutes.customProfileSetting) {
-      _result = await Get.offNamed(
-        EHRoutes.customProfileSetting,
-        id: detailNavigatorId,
-        preventDuplicates: false,
-        // arguments: profileMap[uuid],
-      );
-    } else {
-      _result = await Get.toNamed(
-        EHRoutes.customProfileSetting,
-        id: detailNavigatorId,
-        preventDuplicates: false,
-        // arguments: profileMap[uuid],
-      );
-    }
-
-    if (_result != null && _result is CustomProfile) {
-      addProfile(_result);
-      syncProfiles();
+      if (_result != null && _result is CustomProfile) {
+        addProfile(_result);
+        syncProfiles();
+      }
+    } finally {
+      if (_editSessionEpoch == epoch) {
+        _editingProfileUuid.value = null;
+      }
     }
   }
 
@@ -484,6 +497,48 @@ class CustomTabbarController extends DefaultTabViewController {
         );
       },
     );
+  }
+
+  /// Shows a desktop confirmation dialog before deleting [profile] and closes
+  /// an open editor route targeting the same group.
+  Future<bool> confirmDeleteGroup(
+    BuildContext context,
+    CustomProfile profile,
+  ) async {
+    final l10n = L10n.of(context);
+    final label = profile.name.trim().isNotEmpty
+        ? profile.name
+        : l10n.desktop_untitled;
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: Text(l10n.delete),
+        content: Text(label),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return false;
+    }
+    if (editingProfileUuid == profile.uuid) {
+      final detailNav = Get.nestedKey(detailNavigatorId)?.currentState;
+      if (detailNav != null && detailNav.canPop()) {
+        detailNav.pop();
+      }
+    }
+    await deleteProfile(uuid: profile.uuid);
+    return true;
   }
 
   void addProfile(CustomProfile profile) {

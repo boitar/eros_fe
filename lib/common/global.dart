@@ -101,7 +101,12 @@ class Global {
   static late String extStoreTempPath = '';
   static String dbPath = '';
 
-  static late PackageInfo packageInfo;
+  static PackageInfo packageInfo = PackageInfo(
+    appName: EHConst.appTitle,
+    packageName: '',
+    version: '',
+    buildNumber: '',
+  );
 
   static bool isDBinappSupportPath = false;
 
@@ -156,8 +161,10 @@ class Global {
             extStorePath
         : '';
 
-    if (!GetPlatform.isWindows) {
+    try {
       packageInfo = await PackageInfo.fromPlatform();
+    } catch (_) {
+      // Keep default placeholder PackageInfo when platform metadata is unavailable.
     }
 
     initLogger();

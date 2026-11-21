@@ -6,6 +6,7 @@ import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/item/favorite_icon.dart';
+import 'package:eros_fe/widget/desktop_sidebar.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -79,24 +80,40 @@ class GalleryItemWidget extends StatelessWidget {
   }
 
   Widget _buildCardItem(BuildContext context) {
+    final inDesktopPane = DesktopSidebarScope.maybeOf(context)?.desktop == true;
     return Obx(() {
       if (!_ehSettingService.fullTitleInGalleryPage) {
-        return _card(context);
+        return _card(context, inDesktopPane: inDesktopPane);
       }
       return LayoutBuilder(
         builder: (context, constraints) {
-          final coverWidth = Get.context!.isPhone
+          final coverWidth = inDesktopPane
+              ? 88.0
+              : Get.context!.isPhone
               ? Get.context!.mediaQueryShortestSide / 3
               : 0.7 * kFixedHeight;
-          final titleWidth =
-              constraints.maxWidth - 20 - kPaddingHorizontal - 6 - coverWidth;
-          return _card(context, titleWidth: titleWidth);
+          final horizontalChrome = inDesktopPane
+              ? (20 + 16 + 12)
+              : (20 + kPaddingHorizontal + 6);
+          final titleWidth = constraints.maxWidth - horizontalChrome - coverWidth;
+          return _card(
+            context,
+            titleWidth: titleWidth,
+            inDesktopPane: inDesktopPane,
+          );
         },
       );
     });
   }
 
-  Widget _card(BuildContext context, {double? titleWidth}) {
+  Widget _card(
+    BuildContext context, {
+    double? titleWidth,
+    bool inDesktopPane = false,
+  }) {
+    if (inDesktopPane) {
+      return _desktopRowCard(context, titleWidth: titleWidth);
+    }
     return Obx(() {
       final bool useFixedHeight = _useFixedHeight(context);
       return Container(
@@ -219,6 +236,144 @@ class GalleryItemWidget extends StatelessWidget {
             ],
           ),
         ),
+      );
+    });
+  }
+
+  Widget _desktopRowCard(BuildContext context, {double? titleWidth}) {
+    return Obx(() {
+      final useFixedHeight = _useFixedHeight(context);
+      final palette = ehTheme.palette;
+      final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+      final subtitle = (galleryProvider.uploader?.isNotEmpty ?? false)
+          ? galleryProvider.uploader ?? ''
+          : (galleryProvider.favNote?.isNotEmpty ?? false)
+          ? 'Note: ${galleryProvider.favNote ?? ''}'
+          : '';
+      final hasTags = galleryProvider.simpleTags?.isNotEmpty ?? false;
+      final ratingColor =
+          ThemeColors.colorRatingMap[itemController.colorRating.trim().isEmpty
+              ? 'ir'
+              : itemController.colorRating.trim()];
+      final cover = ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 88,
+          height: 118,
+          color: palette.fill.resolveFrom(context),
+          child: HeroMode(
+            enabled: !isLayoutLarge,
+            child: Hero(
+              tag: '${galleryProvider.gid}_cover_$tabTag',
+              child: CoverImg(
+                imgUrl: galleryProvider.imgUrl ?? '',
+                width: galleryProvider.imgWidth?.toDouble(),
+                height: galleryProvider.imgHeight?.toDouble(),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
+      );
+      final row = Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(alignment: Alignment.topLeft, child: cover),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GalleryCardTitle(
+                  lines: useFixedHeight ? 2 : 3,
+                  availableWidth: titleWidth,
+                  legacy: Text(
+                    itemController.title,
+                    maxLines: useFixedHeight ? 2 : 3,
+                    textAlign: TextAlign.left,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      height: 1.32,
+                      fontWeight: FontWeight.w500,
+                      color: palette.text1.resolveFrom(context),
+                    ),
+                  ),
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: palette.text2.resolveFrom(context),
+                    ),
+                  ),
+                ],
+                if (hasTags)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: TagWaterfallFlowViewBox(
+                      simpleTags: galleryProvider.simpleTags,
+                      crossAxisCount: 1,
+                    ),
+                  ),
+                if (useFixedHeight) const Spacer() else const SizedBox(height: 8),
+                Row(
+                  children: [
+                    StaticRatingBar(
+                      size: 13.0,
+                      rate: itemController.ratingFallBack,
+                      radiusRatio: 1.5,
+                      colorLight: ratingColor,
+                      colorDark: palette.text3.resolveFrom(context),
+                    ),
+                    const Spacer(),
+                    Obx(
+                      () => _FavcatIcon(
+                        favCat: itemController.favCat,
+                        isFavorite: itemController.hasFavoriteColor,
+                      ),
+                    ),
+                    _Filecont(
+                      translated: galleryProvider.translated,
+                      filecount: galleryProvider.filecount,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    _Category(category: galleryProvider.category, compact: true),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: PostTime(
+                        postTime: galleryProvider.postTime,
+                        expunged: galleryProvider.expunged,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+      return Container(
+        height: useFixedHeight ? 136.0 : null,
+        decoration: BoxDecoration(
+          color: dark
+              ? palette.raised.resolveFrom(context).withValues(alpha: .55)
+              : const Color(0xFFF9FAFC),
+          borderRadius: BorderRadius.circular(kCardRadius),
+          border: Border.all(color: palette.hairline.resolveFrom(context)),
+        ),
+        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.fromLTRB(10, topMargin, 10, 4),
+        child: useFixedHeight ? row : IntrinsicHeight(child: row),
       );
     });
   }
@@ -522,8 +677,10 @@ class _Rating extends StatelessWidget {
 }
 
 class _Category extends StatelessWidget {
-  const _Category({Key? key, required this.category}) : super(key: key);
+  const _Category({Key? key, required this.category, this.compact = false})
+    : super(key: key);
   final String? category;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -538,12 +695,15 @@ class _Category extends StatelessWidget {
         color: _colorCategory,
         borderRadius: BorderRadius.circular(4),
       ),
-      padding: const EdgeInsets.fromLTRB(6, 3, 6, 3),
+      padding: compact
+          ? const EdgeInsets.symmetric(horizontal: 6, vertical: 2)
+          : const EdgeInsets.fromLTRB(6, 3, 6, 3),
       child: Text(
         category ?? '',
-        style: const TextStyle(
-          fontSize: 14,
+        style: TextStyle(
+          fontSize: compact ? 11 : 14,
           height: 1,
+          fontWeight: compact ? FontWeight.w500 : FontWeight.normal,
           color: CupertinoColors.white,
         ),
       ),

@@ -560,6 +560,73 @@ void main() {
     });
   });
 
+  group('macOS traffic-light clearance', () {
+    const trafficLights = Rect.fromLTWH(22, 24, 54, 16);
+
+    for (final glass in [false, true]) {
+      for (final width in [1280.0, 400.0]) {
+        testWidgets(
+          'windowed macOS glass=$glass width=$width clears traffic lights',
+          (tester) async {
+            MacOSWindowChrome.controls.value = const MacOSWindowControls(
+              bounds: trafficLights,
+            );
+            addTearDown(
+              () => MacOSWindowChrome.controls.value =
+                  const MacOSWindowControls.unknown(),
+            );
+            await pump(
+              tester,
+              glass: glass,
+              host: TargetPlatform.macOS,
+              size: Size(width, 800),
+              configure: (s) => s.pageState = _GalleryState(),
+            );
+            final backFinder = find.byKey(
+              ValueKey('reader-desktop-${L10n.current.back}'),
+            );
+            final backRect = tester.getRect(backFinder);
+            expect(backRect.left, greaterThanOrEqualTo(80));
+            expect(backRect.overlaps(trafficLights), isFalse);
+            expect(tester.takeException(), isNull);
+
+            if (width == 1280.0) {
+              // Fullscreen hides native window buttons so Back shifts left.
+              MacOSWindowChrome.controls.value = const MacOSWindowControls(
+                bounds: Rect.zero,
+              );
+              await tester.pump();
+              expect(tester.getRect(backFinder).left, lessThanOrEqualTo(24));
+            }
+          },
+        );
+      }
+
+      testWidgets('Windows glass=$glass keeps Back at standard leading edge', (
+        tester,
+      ) async {
+        MacOSWindowChrome.controls.value = const MacOSWindowControls(
+          bounds: trafficLights,
+        );
+        addTearDown(
+          () => MacOSWindowChrome.controls.value =
+              const MacOSWindowControls.unknown(),
+        );
+        await pump(
+          tester,
+          glass: glass,
+          host: TargetPlatform.windows,
+          size: const Size(1280, 800),
+        );
+        final backRect = tester.getRect(
+          find.byKey(ValueKey('reader-desktop-${L10n.current.back}')),
+        );
+        expect(backRect.left, lessThanOrEqualTo(24));
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
   group('fullscreen keys', () {
     final calls = <String>[];
     setUp(() {

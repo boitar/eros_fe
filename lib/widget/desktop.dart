@@ -1,5 +1,8 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
+import 'package:eros_fe/widget/detail_window_backdrop.dart';
 import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:eros_fe/widget/windows_window_content.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -66,32 +69,93 @@ class Desktop extends StatelessWidget {
                   final titleVisible = data?.titleVisible ?? true;
                   final buttonVisible = data?.buttonVisible ?? true;
                   final title = data?.title ?? '';
-                  print("SysTitle.title: $title");
+                  final palette = ehTheme.palette;
 
                   final titleWidget = titleVisible
-                      ? Text(
-                          title,
-                          style: TextStyle(fontSize: 12),
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 16,
+                              height: 16,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: EhPalette.accent.resolveFrom(context),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'E',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1,
+                                  color: EhPalette.onAccent.resolveFrom(
+                                    context,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Eros-N',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: palette.text1.resolveFrom(context),
+                              ),
+                            ),
+                            if (title.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  '· $title',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: palette.text2.resolveFrom(context),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         )
                       : null;
                   if (title != '') {
                     setWindowTitle('$title · Eros-N');
                   }
 
-                  return WindowTitleBarBox(
-                    child: Row(
-                      children: [
-                        Expanded(
-                            child: MoveWindow(
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 13),
-                            child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: titleWidget),
-                          ),
-                        )),
-                        if (buttonVisible) const WindowButtons()
-                      ],
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: DetailWindowBackdrop.active,
+                    builder: (context, transparent, _) => DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: transparent
+                            ? null
+                            : Border(
+                                bottom: BorderSide(
+                                  color: palette.hairline.resolveFrom(context),
+                                  width: 0.5,
+                                ),
+                              ),
+                      ),
+                      child: WindowTitleBarBox(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: MoveWindow(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 13),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: titleWidget,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (buttonVisible) const WindowButtons(),
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 })),

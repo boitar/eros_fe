@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/route_cover.dart';
-import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'tabbar/custom_tabbar_page.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
@@ -271,9 +270,10 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
                 detailActive: _stack.detailOnTop,
                 detailMoving: moving,
                 primary: DesktopLeadingHeader(
-                  enabled: desktop && !(scope?.visible ?? false) &&
-                      !(PlatformCapabilities.hostPlatform == TargetPlatform.macOS &&
-                          widget.primaryRoot is CustomTabbarList &&
+                  enabled:
+                      desktop &&
+                      !(scope?.visible ?? false) &&
+                      !(widget.primaryRoot is CustomTabbarList &&
                           _stack.primaryObserver.history.length <= 1),
                   onShowSidebar: scope?.onShow,
                   child: RouteCoverClip(

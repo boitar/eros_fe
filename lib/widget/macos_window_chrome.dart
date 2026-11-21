@@ -15,7 +15,7 @@ class MacOSWindowControls {
     this.isKeyWindow = true,
   });
   const MacOSWindowControls.unknown()
-    : bounds = const Rect.fromLTWH(8, 8, 64, 16),
+    : bounds = const Rect.fromLTWH(22, 24, 54, 16),
       systemSafeTop = 0,
       isKeyWindow = true;
   factory MacOSWindowControls.fromMessage(Object? value) {

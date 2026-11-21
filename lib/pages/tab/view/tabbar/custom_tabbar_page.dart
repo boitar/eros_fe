@@ -229,7 +229,8 @@ class _CustomTabbarListState extends State<CustomTabbarList>
       if (!liquidGlass) {
         return CupertinoPageScaffold(
           backgroundColor: DesktopSidebarScope.maybeOf(context)?.desktop == true
-              ? DesktopBrowseStyle.canvas(context) : null,
+              ? CupertinoTheme.of(context).scaffoldBackgroundColor
+              : null,
           child: CanvasGrain(
             child: offlineGroupSelection(
               uuid: controller.currProfileUuid,
@@ -368,8 +369,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
       body: buildSubPages(liquidGlass, hideTopBarOnScroll),
     );
     if (desktop) {
-      final canvas = DesktopSidebarScope.maybeOf(context)?.desktop == true
-          ? DesktopBrowseStyle.canvas(context) : CupertinoTheme.of(context).scaffoldBackgroundColor;
+      final surface = CupertinoTheme.of(context).scaffoldBackgroundColor;
       return ScrollEdgeProgressListener(
         controller: _nativeEdgeProgress,
         activePage: controller.currProfileUuid,
@@ -379,8 +379,17 @@ class _CustomTabbarListState extends State<CustomTabbarList>
             left: 0, right: 0, top: 0,
             child: Column(children: [
               ColoredBox(
-                color: canvas,
-                child: SizedBox(height: headerMaxHeight, child: DesktopGalleryToolbar(controller: controller)),
+                color: surface,
+                child: SizedBox(
+                  height: headerMaxHeight,
+                  child: DesktopGalleryToolbar(controller: controller),
+                ),
+              ),
+              SizedBox(
+                height: 1,
+                child: ColoredBox(
+                  color: ehTheme.palette.hairline.resolveFrom(context),
+                ),
               ),
               IgnorePointer(child: ValueListenableBuilder<double>(
                 valueListenable: _nativeEdgeProgress,
@@ -390,7 +399,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
                     key: const ValueKey('desktop-gallery-scroll-edge'),
                     decoration: BoxDecoration(gradient: LinearGradient(
                       begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                      colors: [canvas.withValues(alpha: progress), canvas.withValues(alpha: 0)],
+                      colors: [surface.withValues(alpha: progress), surface.withValues(alpha: 0)],
                     )),
                     child: const SizedBox.expand(),
                   ),

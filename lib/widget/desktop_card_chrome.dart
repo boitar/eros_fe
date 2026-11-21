@@ -2,6 +2,7 @@ import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/adaptive/tab_navigation.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
@@ -179,6 +180,9 @@ class _DesktopCardChromeState extends State<DesktopCardChrome> {
     final item = DesktopGalleryActions.itemFor(widget.gid);
     final insets = cardInsetsFor(mode);
     final onCover = quickActionsOnCoverStart(mode);
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final palette = ehTheme.palette;
+    final listRow = mode == ListModeEnum.list || mode == ListModeEnum.simpleList;
     return Semantics(
       selected: selected,
       child: MouseRegion(
@@ -186,14 +190,41 @@ class _DesktopCardChromeState extends State<DesktopCardChrome> {
         onExit: (_) => _setHovered(false),
         child: GestureDetector(
           onSecondaryTapUp: _openMenu,
-          child: AnimatedContainer(
+          child: KeyedSubtree(
             key: ValueKey<String>('desktop-card-${widget.gid}'),
-            duration: const Duration(milliseconds: 140),
-            curve: Curves.easeOutCubic,
-            transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
             child: Stack(
               children: <Widget>[
                 widget.child,
+                if (_hovered || selected)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Padding(
+                        padding: insets,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 120),
+                            color: selected && listRow
+                                ? EhPalette.accentSoft
+                                      .resolveFrom(context)
+                                      .withValues(alpha: dark ? .28 : .45)
+                                : _hovered
+                                ? palette.text1
+                                      .resolveFrom(context)
+                                      .withValues(alpha: dark ? .05 : .03)
+                                : const Color(0x00000000),
+                            alignment: Alignment.centerLeft,
+                            child: selected && listRow
+                                ? Container(
+                                    width: 3,
+                                    color: EhPalette.accent.resolveFrom(context),
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 if (item != null)
                   Positioned(
                     top: insets.top + 6,
