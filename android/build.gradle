@@ -32,7 +32,10 @@ subprojects {
                 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
                     kotlinOptions {
                         jvmTarget = javaVersion.toString()
-                        if (languageVersion == "1.6") {
+                        // Keep Kotlin 1.6 plugins compatible with Kotlin 2.2,
+                        // and explicitly cover Sentry's pinned 1.6 setting.
+                        if (languageVersion == "1.6" ||
+                            project.name == 'sentry_flutter') {
                             languageVersion = "1.8"
                         }
                     }

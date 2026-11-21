@@ -12,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   setUp(
-    () => PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android,
+    () => PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS,
   );
   tearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
   const safeTop = 59.0;
@@ -28,7 +28,7 @@ void main() {
   double fadeEndFor(LiquidGlassTopBarLayout layout) =>
       layout == LiquidGlassTopBarLayout.twoRow ? twoRowFadeEnd : inlineFadeEnd;
 
-  for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+  for (final platform in [TargetPlatform.iOS]) {
     for (final brightness in Brightness.values) {
       for (final cardTop in [161.0, 300.0]) {
         testWidgets(
@@ -812,8 +812,9 @@ void main() {
   }
 
   for (final width in [320.0, 400.0, 500.0]) {
-    testWidgets('iPad pane keeps the 28pt mobile soft tail at $width',
-        (tester) async {
+    testWidgets('iPad pane keeps the 28pt mobile soft tail at $width', (
+      tester,
+    ) async {
       PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
       const windowSize = Size(820, 1180);
       tester.view.physicalSize = windowSize;

@@ -68,10 +68,53 @@ Future<T?> showEhSheet<T>({
   bool barrierDismissible = true,
 }) {
   final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+  final barrierColor = Color.fromRGBO(
+    0,
+    0,
+    0,
+    EhSheetTokens.dimAlpha(dark: dark),
+  );
+  if (!PlatformCapabilities.uiKitGlass) {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final themes = InheritedTheme.capture(from: context, to: navigator.context);
+    return navigator.push<T>(
+      RawDialogRoute<T>(
+        barrierDismissible: barrierDismissible,
+        barrierLabel: CupertinoLocalizations.of(context)
+            .modalBarrierDismissLabel,
+        barrierColor: barrierColor,
+        requestFocus: true,
+        traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
+        transitionDuration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 180),
+        pageBuilder: (sheetContext, _, _) =>
+            themes.wrap(EhSheetFrame(child: Builder(builder: builder))),
+        transitionBuilder: (context, animation, _, child) {
+          final fade = animation.drive(CurveTween(curve: Curves.easeOut));
+          final centered =
+              PlatformCapabilities.isDesktop ||
+              MediaQuery.sizeOf(context).width >= EhSheetTokens.centeredFrom;
+          return FadeTransition(
+            opacity: fade,
+            child: centered
+                ? child
+                : SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, .08),
+                      end: Offset.zero,
+                    ).animate(fade),
+                    child: child,
+                  ),
+          );
+        },
+      ),
+    );
+  }
   return showCupertinoModalPopup<T>(
     context: context,
     barrierDismissible: barrierDismissible,
-    barrierColor: Color.fromRGBO(0, 0, 0, EhSheetTokens.dimAlpha(dark: dark)),
+    barrierColor: barrierColor,
     builder: (sheetContext) => EhSheetFrame(child: builder(sheetContext)),
   );
 }
@@ -86,9 +129,13 @@ class EhSheetFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final centered = media.size.width >= EhSheetTokens.centeredFrom;
+    final centered =
+        PlatformCapabilities.isDesktop ||
+        media.size.width >= EhSheetTokens.centeredFrom;
     return AnimatedPadding(
-      duration: const Duration(milliseconds: 180),
+      duration: media.disableAnimations
+          ? Duration.zero
+          : const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
       child: MediaQuery.removeViewInsets(
@@ -96,19 +143,23 @@ class EhSheetFrame extends StatelessWidget {
         removeBottom: true,
         child: SafeArea(
           minimum: const EdgeInsets.all(EhSheetTokens.inset),
-          child: LayoutBuilder(builder: (context, constraints) {
-            return Align(
-              alignment:
-                  centered ? Alignment.center : Alignment.bottomCenter,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: math.min(EhSheetTokens.maxWidth, constraints.maxWidth),
-                  maxHeight: constraints.maxHeight,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Align(
+                alignment: centered ? Alignment.center : Alignment.bottomCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: math.min(
+                      EhSheetTokens.maxWidth,
+                      constraints.maxWidth,
+                    ),
+                    maxHeight: constraints.maxHeight,
+                  ),
+                  child: EhSheetSurface(child: child),
                 ),
-                child: EhSheetSurface(child: child),
-              ),
-            );
-          }),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -146,14 +197,11 @@ class EhSheetSurface extends StatelessWidget {
     final backing = material == EhSheetMaterial.solid
         ? raised
         : raised.withValues(alpha: EhSheetTokens.backingAlpha(dark: dark));
-    final rim = dark
-        ? const Color(0x29FFFFFF)
-        : const Color(0xB3FFFFFF);
+    final rim = dark ? const Color(0x29FFFFFF) : const Color(0xB3FFFFFF);
 
     final content = DefaultTextStyle(
-      style: EhPopupTextStyles.body(context).copyWith(
-        color: palette.text1.resolveFrom(context),
-      ),
+      style: EhPopupTextStyles.body(context)
+          .copyWith(color: palette.text1.resolveFrom(context)),
       child: child,
     );
 
@@ -162,7 +210,10 @@ class EhSheetSurface extends StatelessWidget {
         color: backing,
         borderRadius: borderRadius,
         border: material == EhSheetMaterial.solid
-            ? Border.all(color: palette.hairline.resolveFrom(context), width: .5)
+            ? Border.all(
+                color: palette.hairline.resolveFrom(context),
+                width: .5,
+              )
             : Border.all(color: rim, width: .75),
       ),
       child: content,
@@ -228,32 +279,41 @@ class EhSheetHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
     final base = CupertinoTheme.of(context).textTheme.textStyle;
+    final actionWidth =
+        PlatformCapabilities.hostPlatform == TargetPlatform.android
+        ? 48.0
+        : 44.0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 5,
-            decoration: BoxDecoration(
-              color: palette.text3.resolveFrom(context).withValues(alpha: .45),
-              borderRadius: BorderRadius.circular(3),
+          if (!PlatformCapabilities.isDesktop) ...[
+            Container(
+              width: 36,
+              height: 5,
+              decoration: BoxDecoration(
+                color: palette.text3
+                    .resolveFrom(context)
+                    .withValues(alpha: .45),
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            height: 48,
+            const SizedBox(height: 6),
+          ],
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
             child: Row(
               children: [
                 SizedBox(
-                  width: 44,
+                  width: actionWidth,
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: EhButton(
                       icon: CupertinoIcons.xmark,
                       style: EhButtonStyle.glass,
-                      semanticLabel: closeLabel ??
+                      semanticLabel:
+                          closeLabel ??
                           CupertinoLocalizations.of(context)
                               .modalBarrierDismissLabel,
                       onPressed: onClose ?? () => Navigator.of(context).pop(),
@@ -294,7 +354,7 @@ class EhSheetHeader extends StatelessWidget {
                   ),
                 ),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 44),
+                  constraints: BoxConstraints(minWidth: actionWidth),
                   child: Align(
                     alignment: AlignmentDirectional.centerEnd,
                     child: trailing ?? const SizedBox.shrink(),
@@ -374,11 +434,11 @@ class EhSheetSectionLabel extends StatelessWidget {
             child: Text(
               text,
               style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0,
-                    color: ehTheme.palette.text2.resolveFrom(context),
-                  ),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0,
+                color: ehTheme.palette.text2.resolveFrom(context),
+              ),
             ),
           ),
           if (trailing != null) trailing!,
@@ -411,9 +471,8 @@ class EhSheetOptionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
     final accent = EhPalette.accent.resolveFrom(context);
-    final base = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-          letterSpacing: 0,
-        );
+    final base = CupertinoTheme.of(context).textTheme.textStyle
+        .copyWith(letterSpacing: 0);
     final interactive = enabled && onPressed != null;
     final content = Opacity(
       opacity: enabled ? 1 : .38,

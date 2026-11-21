@@ -46,13 +46,21 @@ class SoftEdgeCurve {
     0,
   ], maxSigma: 0);
 
-  /// For hosts without a reliable blur: denser, so the fade alone keeps
-  /// content under the bars out of the way.
+  /// For hosts without a reliable blur (Android): an airy monotone fade that
+  /// preserves translucent colour glow beneath floating glass pills while
+  /// keeping the status bar and chrome legible.
   static const SoftEdgeCurve withoutBlur = SoftEdgeCurve(<double>[
-    0.96,
-    0.92,
-    0.84,
-    0.36,
+    0.88,
+    0.72,
+    0.44,
+    0.14,
+    0,
+  ], maxSigma: 0);
+  static const SoftEdgeCurve withoutBlurDark = SoftEdgeCurve(<double>[
+    0.90,
+    0.74,
+    0.46,
+    0.16,
     0,
   ], maxSigma: 0);
   static const SoftEdgeCurve mediaWithoutBlur = SoftEdgeCurve(<double>[
@@ -284,8 +292,11 @@ class _SoftScrollEdgeEffectState extends State<SoftScrollEdgeEffect> {
     // seams, and a gradient mask drops the blur altogether. A denser fade in
     // the page colour hides content cleanly instead.
     if (PlatformCapabilities.hostPlatform == TargetPlatform.android) {
-      return widget.tone == SoftEdgeTone.media
-          ? SoftEdgeCurve.mediaWithoutBlur
+      if (widget.tone == SoftEdgeTone.media) {
+        return SoftEdgeCurve.mediaWithoutBlur;
+      }
+      return CupertinoTheme.brightnessOf(context) == Brightness.dark
+          ? SoftEdgeCurve.withoutBlurDark
           : SoftEdgeCurve.withoutBlur;
     }
     if (widget.tone == SoftEdgeTone.media) return SoftEdgeCurve.media;

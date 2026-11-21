@@ -46,10 +46,47 @@ enum LiquidGlassTopBarLayout {
   static LiquidGlassTopBarLayout parse(String? value) =>
       value == 'inline' ? inline : twoRow;
 
-  double categoryHeight(TextScaler scaler) =>
-      math.max(44, scaler.scale(18) + 16);
-  double expandedHeight(TextScaler scaler, {bool hasCategories = true}) =>
-      !hasCategories ? 44 : categoryHeight(scaler) + (this == twoRow ? 50 : 0);
+  static bool get _usesAndroidMetrics =>
+      PlatformCapabilities.hostPlatform == TargetPlatform.android;
+
+  /// Height of the primary control row (search row in [twoRow], or the single
+  /// combined row in [inline]). Non-Android platforms keep the 44pt HIG height.
+  double get primaryRowHeight {
+    if (!_usesAndroidMetrics) {
+      return 44.0;
+    }
+    return this == twoRow ? 38.0 : 40.0;
+  }
+
+  /// Vertical offset of the second row in [twoRow] relative to [safeTop].
+  double get secondRowOffset {
+    if (!_usesAndroidMetrics) {
+      return 50.0;
+    }
+    return primaryRowHeight + 6.0;
+  }
+
+  double categoryHeight(TextScaler scaler) {
+    if (!_usesAndroidMetrics) {
+      return math.max(44, scaler.scale(18) + 16);
+    }
+    if (this == twoRow) {
+      return math.max(30.0, scaler.scale(15) + 12);
+    }
+    return math.max(40.0, scaler.scale(16) + 16);
+  }
+
+  double expandedHeight(TextScaler scaler, {bool hasCategories = true}) {
+    if (!hasCategories) {
+      return primaryRowHeight;
+    }
+    if (!_usesAndroidMetrics) {
+      return categoryHeight(scaler) + (this == twoRow ? 50 : 0);
+    }
+    return this == twoRow
+        ? secondRowOffset + categoryHeight(scaler)
+        : categoryHeight(scaler);
+  }
 }
 
 @immutable
@@ -86,7 +123,9 @@ class LiquidGlassTopLayout {
   final double safeTop;
   final LiquidGlassCutout cutout;
 
-  bool get canDockTopRail => cutout != LiquidGlassCutout.none;
+  bool get canDockTopRail =>
+      cutout != LiquidGlassCutout.none ||
+      PlatformCapabilities.hostPlatform == TargetPlatform.android;
 
   /// The bottom edge to which the rail is docked before it is removed.
   ///
@@ -158,12 +197,12 @@ class LiquidGlassTabItem {
   final String fallbackSymbol;
 
   Map<String, dynamic> toMap() => <String, dynamic>{
-        'label': label,
-        'codePoint': codePoint,
-        'fontFamily': fontFamily,
-        'fontPackage': fontPackage,
-        'fallbackSymbol': fallbackSymbol,
-      };
+    'label': label,
+    'codePoint': codePoint,
+    'fontFamily': fontFamily,
+    'fontPackage': fontPackage,
+    'fallbackSymbol': fallbackSymbol,
+  };
 }
 
 /// Mirrors UIKit's Reduce Transparency setting for Flutter-composed fallback
@@ -270,7 +309,9 @@ class LiquidGlassSurface extends StatelessWidget {
     }
     if (mode == GlassMode.flutter && FlutterGlassRuntime.available) {
       final panel = FlutterGlassPanel(
-          borderRadius: borderRadius, child: child ?? const SizedBox.expand());
+        borderRadius: borderRadius,
+        child: child ?? const SizedBox.expand(),
+      );
       final alpha = opacity.clamp(0.0, 1.0).toDouble();
       return alpha >= 1 ? panel : Opacity(opacity: alpha, child: panel);
     }
@@ -278,7 +319,8 @@ class LiquidGlassSurface extends StatelessWidget {
   }
 
   Widget _buildLegacy(BuildContext context) {
-    final bool candidateNative = enabled &&
+    final bool candidateNative =
+        enabled &&
         useNativeGlass &&
         PlatformCapabilities.uiKitGlass &&
         GlassMode.of(context) == GlassMode.native;
@@ -296,10 +338,10 @@ class LiquidGlassSurface extends StatelessWidget {
         builder:
             (BuildContext context, bool? reduceTransparency, Widget? child) =>
                 _buildSurface(
-          context,
-          reduceTransparency: reduceTransparency ?? true,
-          allowNative: false,
-        ),
+                  context,
+                  reduceTransparency: reduceTransparency ?? true,
+                  allowNative: false,
+                ),
       );
     } else {
       surface = _buildSurface(
@@ -416,8 +458,8 @@ Widget _buildLiquidGlassFallback(
   final double fillAlpha = reduceTransparency
       ? 1.0
       : (isClear
-          ? 0.26
-          : (emphasizeFallbackEdge ? (isDark ? 0.72 : 0.64) : 0.68));
+            ? 0.26
+            : (emphasizeFallbackEdge ? (isDark ? 0.72 : 0.64) : 0.68));
   final double borderAlpha = isClear
       ? 0.14
       : (emphasizeFallbackEdge ? (isDark ? 0.34 : 0.28) : 0.22);
@@ -451,9 +493,7 @@ Widget _buildLiquidGlassFallback(
             decoration: BoxDecoration(
               borderRadius: borderRadius,
               border: Border.all(
-                color: highlight.withValues(
-                  alpha: isDark ? 0.16 : 0.52,
-                ),
+                color: highlight.withValues(alpha: isDark ? 0.16 : 0.52),
                 width: 0.5,
               ),
             ),
@@ -500,8 +540,9 @@ class _NativeLiquidGlassBackground extends StatefulWidget {
 
 class _NativeLiquidGlassBackgroundState
     extends State<_NativeLiquidGlassBackground> {
-  static const MethodChannel _cacheChannel =
-      MethodChannel('eros/liquid-glass-cache');
+  static const MethodChannel _cacheChannel = MethodChannel(
+    'eros/liquid-glass-cache',
+  );
   static int _nextCacheId = 1;
 
   late final int _cacheId = _nextCacheId++;
@@ -623,18 +664,18 @@ class _NativeLiquidGlassBackgroundState
             child: ValueListenableBuilder<bool?>(
               valueListenable:
                   LiquidGlassAccessibilitySettings.reduceTransparency,
-              builder: (
-                BuildContext context,
-                bool? reduceTransparency,
-                Widget? child,
-              ) =>
-                  _buildLiquidGlassFallback(
-                context,
-                borderRadius: BorderRadius.circular(widget.cornerRadius),
-                style: widget.style,
-                emphasizeFallbackEdge: widget.emphasizeFallbackEdge,
-                reduceTransparency: reduceTransparency ?? false,
-              ),
+              builder:
+                  (
+                    BuildContext context,
+                    bool? reduceTransparency,
+                    Widget? child,
+                  ) => _buildLiquidGlassFallback(
+                    context,
+                    borderRadius: BorderRadius.circular(widget.cornerRadius),
+                    style: widget.style,
+                    emphasizeFallbackEdge: widget.emphasizeFallbackEdge,
+                    reduceTransparency: reduceTransparency ?? false,
+                  ),
             ),
           )
         else
@@ -768,73 +809,83 @@ class LiquidGlassTabBar extends CupertinoTabBar {
         PlatformCapabilities.appKitGlass &&
         nativeItems != null &&
         nativeItems!.length == items.length) {
-      return _compactMacBar(context, SizedBox(
-        height: height + MediaQuery.viewPaddingOf(context).bottom,
-        child: AppKitGlassView(
-          kind: 'tabs',
-          configuration: {
-            'items': [for (final item in nativeItems!) item.toMap()],
-            'selectedIndex': currentIndex,
-            'searchLabel': searchLabel,
-            'search': onSearch != null,
-            'dark': CupertinoTheme.brightnessOf(context) == Brightness.dark,
-            'followSystemTransparency': followSystemTransparency,
-          },
-          onAction: (method, index) {
-            if (method == 'select' &&
-                index != null &&
-                index >= 0 &&
-                index < items.length) {
-              onTap?.call(index);
-            }
-            if (method == 'search') {
-              onSearch?.call();
-            }
-          },
+      return _compactMacBar(
+        context,
+        SizedBox(
+          height: height + MediaQuery.viewPaddingOf(context).bottom,
+          child: AppKitGlassView(
+            kind: 'tabs',
+            configuration: {
+              'items': [for (final item in nativeItems!) item.toMap()],
+              'selectedIndex': currentIndex,
+              'searchLabel': searchLabel,
+              'search': onSearch != null,
+              'dark': CupertinoTheme.brightnessOf(context) == Brightness.dark,
+              'followSystemTransparency': followSystemTransparency,
+            },
+            onAction: (method, index) {
+              if (method == 'select' &&
+                  index != null &&
+                  index >= 0 &&
+                  index < items.length) {
+                onTap?.call(index);
+              }
+              if (method == 'search') {
+                onSearch?.call();
+              }
+            },
+          ),
         ),
-      ));
+      );
     }
     if (mode == GlassMode.off) {
       return super.build(context);
     }
     if ((mode == GlassMode.flutter || PlatformCapabilities.appKitGlass) &&
         FlutterGlassRuntime.available) {
-      return _compactMacBar(context, LayoutBuilder(
+      return _compactMacBar(
+        context,
+        LayoutBuilder(
           builder: (context, constraints) => SizedBox(
-              width: constraints.hasBoundedWidth
-                  ? constraints.maxWidth
-                  : MediaQuery.sizeOf(context).width,
-              height: height + MediaQuery.viewPaddingOf(context).bottom,
-              child: glass.GlassTabBar.bottom(
-                tabs: [
-                  for (final item in items)
-                    glass.GlassTab(
-                        icon: item.icon,
-                        activeIcon: item.activeIcon,
-                        label: item.label)
-                ],
-                selectedIndex: _clampTabIndex(currentIndex, items.length),
-                quality: GlassPreference.materialOf(context).quality,
-                onTabSelected: (index) {
-                  // Retain the feedback of the previous non-native Cupertino bar.
-                  vibrateUtil.tabSwitch();
-                  onTap?.call(index);
-                },
-                horizontalPadding: 8,
-                verticalPadding: 6,
-                barHeight: height - 12,
-                selectedIconColor: activeColor,
-                unselectedIconColor: inactiveColor,
-                selectedLabelColor: activeColor,
-                unselectedLabelColor: inactiveColor,
-                extraButton: onSearch == null
-                    ? null
-                    : glass.GlassTabBarExtraButton(
-                        icon: const Icon(CupertinoIcons.search),
-                        onTap: onSearch!,
-                        label: searchLabel,
-                        size: height - 12),
-              ))));
+            width: constraints.hasBoundedWidth
+                ? constraints.maxWidth
+                : MediaQuery.sizeOf(context).width,
+            height: height + MediaQuery.viewPaddingOf(context).bottom,
+            child: glass.GlassTabBar.bottom(
+              tabs: [
+                for (final item in items)
+                  glass.GlassTab(
+                    icon: item.icon,
+                    activeIcon: item.activeIcon,
+                    label: item.label,
+                  ),
+              ],
+              selectedIndex: _clampTabIndex(currentIndex, items.length),
+              quality: GlassPreference.materialOf(context).quality,
+              onTabSelected: (index) {
+                // Retain the feedback of the previous non-native Cupertino bar.
+                vibrateUtil.tabSwitch();
+                onTap?.call(index);
+              },
+              horizontalPadding: 8,
+              verticalPadding: 6,
+              barHeight: height - 12,
+              selectedIconColor: activeColor,
+              unselectedIconColor: inactiveColor,
+              selectedLabelColor: activeColor,
+              unselectedLabelColor: inactiveColor,
+              extraButton: onSearch == null
+                  ? null
+                  : glass.GlassTabBarExtraButton(
+                      icon: const Icon(CupertinoIcons.search),
+                      onTap: onSearch!,
+                      label: searchLabel,
+                      size: height - 12,
+                    ),
+            ),
+          ),
+        ),
+      );
     }
     if (PlatformCapabilities.uiKitGlass && nativeItems != null) {
       return _buildNativeBar(context);
@@ -847,18 +898,37 @@ class LiquidGlassTabBar extends CupertinoTabBar {
     if (PlatformCapabilities.hostPlatform != TargetPlatform.macOS) {
       return child;
     }
-    final style = CupertinoTheme.of(context).textTheme.textStyle.copyWith(fontSize:13);
+    final style = CupertinoTheme.of(context).textTheme.textStyle
+        .copyWith(fontSize: 13);
     var maximumLabelWidth = 0.0;
-    final labels = [...items.map((item)=>item.label ?? ''), if(onSearch!=null) searchLabel];
+    final labels = [
+      ...items.map((item) => item.label ?? ''),
+      if (onSearch != null) searchLabel,
+    ];
     for (final label in labels) {
-      final painter = TextPainter(text:TextSpan(text:label,style:style),textDirection:Directionality.of(context))..layout();
-      maximumLabelWidth = math.max(maximumLabelWidth,painter.width);
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: Directionality.of(context),
+      )..layout();
+      maximumLabelWidth = math.max(maximumLabelWidth, painter.width);
       painter.dispose();
     }
-    final desired = 24.0 + labels.length * math.max(60.0,maximumLabelWidth + 36);
-    return LayoutBuilder(builder:(context,constraints)=>Align(
-      alignment:Alignment.bottomCenter, widthFactor:1, heightFactor:1,
-      child:SizedBox(width: math.max(0.0,math.min(math.min(desired,560.0), constraints.maxWidth-24)), child:child)));
+    final desired =
+        24.0 + labels.length * math.max(60.0, maximumLabelWidth + 36);
+    return LayoutBuilder(
+      builder: (context, constraints) => Align(
+        alignment: Alignment.bottomCenter,
+        widthFactor: 1,
+        heightFactor: 1,
+        child: SizedBox(
+          width: math.max(
+            0.0,
+            math.min(math.min(desired, 560.0), constraints.maxWidth - 24),
+          ),
+          child: child,
+        ),
+      ),
+    );
   }
 
   Widget _buildNativeBar(BuildContext context) {
@@ -919,8 +989,9 @@ class LiquidGlassTabBar extends CupertinoTabBar {
                 height: glassHeight,
                 child: LiquidGlassSurface(
                   enabled: true,
-                  borderRadius:
-                      const BorderRadius.all(Radius.circular(shellRadius)),
+                  borderRadius: const BorderRadius.all(
+                    Radius.circular(shellRadius),
+                  ),
                   style: LiquidGlassStyle.regular,
                   interactive: true,
                   followSystemTransparency: followSystemTransparency,
@@ -948,9 +1019,7 @@ class LiquidGlassTabBar extends CupertinoTabBar {
                   height: glassHeight,
                   child: LiquidGlassSurface(
                     enabled: true,
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(28),
-                    ),
+                    borderRadius: const BorderRadius.all(Radius.circular(28)),
                     style: LiquidGlassStyle.clear,
                     interactive: true,
                     followSystemTransparency: followSystemTransparency,
@@ -1043,15 +1112,15 @@ class _NativeLiquidGlassTabBarState extends State<_NativeLiquidGlassTabBar> {
   MethodChannel? _channel;
 
   Map<String, dynamic> _creationParams() => <String, dynamic>{
-        'items': widget.items.map((item) => item.toMap()).toList(),
-        'selectedIndex': widget.selectedIndex,
-        'followSystemTransparency': widget.followSystemTransparency,
-        'searchLabel': widget.searchLabel,
-        'bottomInset': widget.bottomInset,
-        'height': widget.height,
-        'hasSearch': widget.onSearch != null,
-        'dark': CupertinoTheme.brightnessOf(context) == Brightness.dark,
-      };
+    'items': widget.items.map((item) => item.toMap()).toList(),
+    'selectedIndex': widget.selectedIndex,
+    'followSystemTransparency': widget.followSystemTransparency,
+    'searchLabel': widget.searchLabel,
+    'bottomInset': widget.bottomInset,
+    'height': widget.height,
+    'hasSearch': widget.onSearch != null,
+    'dark': CupertinoTheme.brightnessOf(context) == Brightness.dark,
+  };
 
   void _sendUpdate() {
     final MethodChannel? channel = _channel;
@@ -1166,7 +1235,8 @@ class _InteractiveLiquidGlassTabs extends StatefulWidget {
 }
 
 class _InteractiveLiquidGlassTabsState
-    extends State<_InteractiveLiquidGlassTabs> with TickerProviderStateMixin {
+    extends State<_InteractiveLiquidGlassTabs>
+    with TickerProviderStateMixin {
   int _selectedIndex = 0;
   double _dragOffset = 0.0;
   double _visualPosition = 0.0;
@@ -1216,7 +1286,7 @@ class _InteractiveLiquidGlassTabsState
     setState(() {
       _visualPosition =
           ui.lerpDouble(_settleStart, _settleTarget, _settleController.value) ??
-              _settleTarget;
+          _settleTarget;
     });
   }
 
@@ -1356,7 +1426,8 @@ class _InteractiveLiquidGlassTabsState
     final item = widget.items[index];
     final distance = (activePosition - index).abs().clamp(0.0, 1.0);
     final activeFactor = 1.0 - distance;
-    final active = Color.lerp(
+    final active =
+        Color.lerp(
           CupertinoDynamicColor.resolve(widget.inactiveColor, context),
           CupertinoDynamicColor.resolve(widget.activeColor, context),
           activeFactor,
@@ -1418,13 +1489,16 @@ class _InteractiveLiquidGlassTabsState
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final width =
-            constraints.maxWidth.isFinite ? constraints.maxWidth : 0.0;
-        final height =
-            constraints.maxHeight.isFinite ? constraints.maxHeight : 0.0;
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 0.0;
+        final height = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : 0.0;
         final innerWidth = math.max(0.0, width - 8.0);
-        final tileWidth =
-            widget.items.isEmpty ? 0.0 : innerWidth / widget.items.length;
+        final tileWidth = widget.items.isEmpty
+            ? 0.0
+            : innerWidth / widget.items.length;
         final activePosition = widget.items.isEmpty || tileWidth <= 0.0
             ? 0.0
             : _visualPosition.clamp(0.0, widget.items.length - 1.0).toDouble();

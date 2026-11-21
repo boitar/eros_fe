@@ -490,7 +490,7 @@ class DownloadGlassHeader extends StatelessWidget {
           top: safeTop,
           left: leading != null || onExport != null ? 60 : 16,
           right: leading != null || onExport != null ? 60 : 16,
-          height: 44,
+          height: layout.primaryRowHeight,
           child: Center(
             child: Semantics(
               header: true,

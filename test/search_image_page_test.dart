@@ -11,6 +11,7 @@ import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/view/search_image_page.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -104,12 +105,61 @@ void main() {
     ],
     home: Builder(
       builder: (context) => MediaQuery(
-        data: MediaQuery.of(
-          context,
-        ).copyWith(padding: viewPadding, viewPadding: viewPadding),
+        data: MediaQuery.of(context)
+            .copyWith(padding: viewPadding, viewPadding: viewPadding),
         child: const SearchImagePage(),
       ),
     ),
+  );
+
+  Future<void> keyboardActivate(WidgetTester tester, Finder control) async {
+    final target = tester.element(control);
+    var reached = false;
+    for (var i = 0; i < 30 && !reached; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.context?.visitAncestorElements((e) {
+        reached = identical(e, target);
+        return !reached;
+      });
+    }
+    expect(reached, isTrue, reason: 'Control must be reachable with Tab');
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets(
+    'keyboard opens the picker and reopens collapsed search options',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+      await keyboardActivate(
+        tester,
+        find.byKey(const ValueKey('search_image_picker_card')),
+      );
+      expect(controller.pickCount, 1);
+      await tester.tap(find.byKey(const ValueKey('search_image_start_button')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('search_image_summary_bar')),
+        findsOneWidget,
+      );
+      await keyboardActivate(
+        tester,
+        find.byKey(const ValueKey('search_image_edit_options')),
+      );
+      expect(
+        find.byKey(const ValueKey('search_image_summary_bar')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('search_image_picker_card')),
+        findsOneWidget,
+      );
+    },
   );
 
   testWidgets('narrow flow picks image, toggles options, collapses on search', (
@@ -146,7 +196,9 @@ void main() {
 
     // Toggle switches.
     await tester.tap(find.byKey(const ValueKey('search_image_covers_switch')));
-    await tester.tap(find.byKey(const ValueKey('search_image_expunged_switch')));
+    await tester.tap(
+      find.byKey(const ValueKey('search_image_expunged_switch')),
+    );
     await tester.pumpAndSettle();
     expect(controller.onlyCovers.value, isTrue);
     expect(controller.includeExpunged.value, isTrue);
@@ -171,25 +223,31 @@ void main() {
     expect(find.byType(SoftScrollEdgeEffect), findsWidgets);
   });
 
-  testWidgets('wide / Duo landscape uses 2-column layout and respects viewPadding', (
-    tester,
-  ) async {
-    const size = Size(900, 600);
-    tester.view.physicalSize = size;
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+  testWidgets(
+    'wide / Duo landscape uses 2-column layout and respects viewPadding',
+    (tester) async {
+      const size = Size(900, 600);
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
 
-    const duoViewPadding = EdgeInsets.only(left: 120, top: 24, right: 20, bottom: 20);
-    await tester.pumpWidget(host(viewPadding: duoViewPadding));
-    await tester.pumpAndSettle();
+      const duoViewPadding = EdgeInsets.only(
+        left: 120,
+        top: 24,
+        right: 20,
+        bottom: 20,
+      );
+      await tester.pumpWidget(host(viewPadding: duoViewPadding));
+      await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey('search_image_wide_layout')),
-      findsOneWidget,
-    );
-    final cardRect = tester.getRect(
-      find.byKey(const ValueKey('search_image_picker_card')),
-    );
-    expect(cardRect.left, greaterThanOrEqualTo(136));
-  });
+      expect(
+        find.byKey(const ValueKey('search_image_wide_layout')),
+        findsOneWidget,
+      );
+      final cardRect = tester.getRect(
+        find.byKey(const ValueKey('search_image_picker_card')),
+      );
+      expect(cardRect.left, greaterThanOrEqualTo(136));
+    },
+  );
 }

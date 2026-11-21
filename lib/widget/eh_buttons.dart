@@ -1,6 +1,9 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 
 /// The four button levels of the secondary pages.
 ///
@@ -51,8 +54,9 @@ class EhButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
     final enabled = onPressed != null;
-    final effective =
-        style == EhButtonStyle.tonal && !selected ? EhButtonStyle.fill : style;
+    final effective = style == EhButtonStyle.tonal && !selected
+        ? EhButtonStyle.fill
+        : style;
     final Color background;
     final Color foreground;
     switch (effective) {
@@ -70,22 +74,25 @@ class EhButton extends StatelessWidget {
         foreground = palette.text2.resolveFrom(context);
       case EhButtonStyle.destructive:
         background = palette.fill.resolveFrom(context);
-        foreground =
-            CupertinoDynamicColor.resolve(CupertinoColors.systemRed, context);
+        foreground = CupertinoDynamicColor.resolve(
+          CupertinoColors.systemRed,
+          context,
+        );
     }
     final textScaler = MediaQuery.textScalerOf(context);
     final fontSize = size >= 48 ? 16.5 : (size >= 40 ? 15.5 : 13.5);
     final iconSize = size >= 48 ? 19.0 : (size >= 36 ? 18.0 : 15.0);
     final textStyle = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-          fontSize: fontSize,
-          fontWeight: effective == EhButtonStyle.fill ||
-                  effective == EhButtonStyle.destructive
-              ? FontWeight.w500
-              : FontWeight.w600,
-          letterSpacing: 0,
-          height: 1.2,
-          color: foreground,
-        );
+      fontSize: fontSize,
+      fontWeight:
+          effective == EhButtonStyle.fill ||
+              effective == EhButtonStyle.destructive
+          ? FontWeight.w500
+          : FontWeight.w600,
+      letterSpacing: 0,
+      height: 1.2,
+      color: foreground,
+    );
 
     Widget content;
     if (_circle) {
@@ -132,10 +139,7 @@ class EhButton extends StatelessWidget {
 
     final minHeight = textScaler.scale(size) > size ? null : size;
     Widget button = Container(
-      constraints: BoxConstraints(
-        minWidth: size,
-        minHeight: minHeight ?? size,
-      ),
+      constraints: BoxConstraints(minWidth: size, minHeight: minHeight ?? size),
       height: _circle ? size : null,
       width: _circle ? size : (expand ? double.infinity : null),
       padding: _circle
@@ -167,10 +171,23 @@ class EhButton extends StatelessWidget {
       button = IntrinsicWidth(child: button);
     }
     button = AnimatedOpacity(
-      duration: const Duration(milliseconds: 150),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 150),
       opacity: enabled ? 1 : .4,
       child: button,
     );
+    if (PlatformCapabilities.hostPlatform == TargetPlatform.android) {
+      // Keep the compact visual while giving touch input a 48 dp target.
+      button = ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        child: Center(
+          widthFactor: expand ? null : 1,
+          heightFactor: 1,
+          child: button,
+        ),
+      );
+    }
     return Semantics(
       button: true,
       enabled: enabled,
@@ -179,23 +196,29 @@ class EhButton extends StatelessWidget {
       excludeSemantics: semanticLabel != null,
       // Excluded children take their tap action with them; restore it.
       onTap: semanticLabel != null ? onPressed : null,
-      child: EhPressable(onPressed: onPressed, child: button),
+      child: EhPressable(
+        onPressed: onPressed,
+        borderRadius: BorderRadius.circular(999),
+        child: button,
+      ),
     );
   }
 }
 
-/// Scale-and-dim press feedback shared by the redesigned controls.
+/// Pointer and keyboard interaction shared by the redesigned controls.
 class EhPressable extends StatefulWidget {
   const EhPressable({
     super.key,
     required this.onPressed,
     required this.child,
     this.onLongPress,
+    this.borderRadius = const BorderRadius.all(Radius.circular(10)),
   });
 
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final Widget child;
+  final BorderRadius borderRadius;
 
   @override
   State<EhPressable> createState() => _EhPressableState();
@@ -203,6 +226,17 @@ class EhPressable extends StatefulWidget {
 
 class _EhPressableState extends State<EhPressable> {
   bool _down = false;
+  bool _hovered = false;
+  bool _focused = false;
+
+  static const _activationShortcuts = <ShortcutActivator, Intent>{
+    SingleActivator(LogicalKeyboardKey.enter, includeRepeats: false):
+        ActivateIntent(),
+    SingleActivator(LogicalKeyboardKey.numpadEnter, includeRepeats: false):
+        ActivateIntent(),
+    SingleActivator(LogicalKeyboardKey.space, includeRepeats: false):
+        ActivateIntent(),
+  };
 
   void _set(bool value) {
     if (_down != value && mounted) {
@@ -213,26 +247,95 @@ class _EhPressableState extends State<EhPressable> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null || widget.onLongPress != null;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: enabled ? (_) => _set(true) : null,
-      onTapUp: enabled ? (_) => _set(false) : null,
-      onTapCancel: enabled ? () => _set(false) : null,
-      onTap: widget.onPressed,
-      onLongPress: widget.onLongPress == null
-          ? null
-          : () {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final duration = reduceMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 120);
+    return MouseRegion(
+      onEnter: (event) {
+        if (event.kind == PointerDeviceKind.mouse) {
+          setState(() => _hovered = true);
+        }
+      },
+      onExit: (_) => setState(() => _hovered = false),
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: (_, event) {
+          // Do not let a held activation key fall through to an ancestor's
+          // default shortcut and repeatedly submit a sheet or open a page.
+          final keyboard = HardwareKeyboard.instance;
+          if (event is KeyRepeatEvent &&
+              !keyboard.isControlPressed &&
+              !keyboard.isMetaPressed &&
+              !keyboard.isAltPressed &&
+              !keyboard.isShiftPressed &&
+              (event.logicalKey == LogicalKeyboardKey.enter ||
+                  event.logicalKey == LogicalKeyboardKey.numpadEnter ||
+                  event.logicalKey == LogicalKeyboardKey.space)) {
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: FocusableActionDetector(
+          enabled: widget.onPressed != null,
+          mouseCursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+          shortcuts: _activationShortcuts,
+          actions: <Type, Action<Intent>>{
+            ActivateIntent: CallbackAction<ActivateIntent>(
+              onInvoke: (_) {
+                widget.onPressed?.call();
+                return null;
+              },
+            ),
+          },
+          onShowFocusHighlight: (value) => setState(() => _focused = value),
+          onFocusChange: (value) {
+            if (!value) {
               _set(false);
-              widget.onLongPress!();
-            },
-      child: AnimatedScale(
-        scale: _down ? .96 : 1,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        child: AnimatedOpacity(
-          opacity: _down ? .72 : 1,
-          duration: const Duration(milliseconds: 120),
-          child: widget.child,
+            }
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: enabled ? (_) => _set(true) : null,
+            onTapUp: enabled ? (_) => _set(false) : null,
+            onTapCancel: enabled ? () => _set(false) : null,
+            onTap: widget.onPressed,
+            onLongPress: widget.onLongPress == null
+                ? null
+                : () {
+                    _set(false);
+                    widget.onLongPress!();
+                  },
+            child: AnimatedScale(
+              scale: enabled && _down && !reduceMotion ? .96 : 1,
+              duration: duration,
+              curve: Curves.easeOut,
+              child: AnimatedOpacity(
+                opacity: enabled && _down ? .72 : 1,
+                duration: duration,
+                child: DecoratedBox(
+                  position: DecorationPosition.foreground,
+                  decoration: BoxDecoration(
+                    borderRadius: widget.borderRadius,
+                    color: enabled && _hovered
+                        ? CupertinoDynamicColor.resolve(
+                            CupertinoColors.label,
+                            context,
+                          ).withValues(alpha: .06)
+                        : null,
+                    border: widget.onPressed != null && _focused
+                        ? Border.all(
+                            color: EhPalette.accent.resolveFrom(context),
+                            width: 2,
+                          )
+                        : null,
+                  ),
+                  child: widget.child,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

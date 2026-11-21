@@ -318,7 +318,7 @@ void main() {
   testWidgets('dark top scrim spans the safe area without a color seam', (
     tester,
   ) async {
-    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
     addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
     _useIPhone18ProMaxView(tester);
     await tester.pumpWidget(
@@ -341,7 +341,9 @@ void main() {
         (decoratedBox.decoration as BoxDecoration).gradient! as LinearGradient;
     final Rect scrimRect = tester.getRect(find.byKey(scrimKey));
 
-    final expectedAlphas = [for (final a in [1.0, .55, .22, 0.0]) a * .37];
+    final expectedAlphas = [
+      for (final a in [1.0, .55, .22, 0.0]) a * .37,
+    ];
     expect(gradient.colors, [
       for (final alpha in expectedAlphas)
         systemBackground.withValues(alpha: alpha),
@@ -414,7 +416,7 @@ void main() {
   testWidgets('light top scrim spans the safe area without a color seam', (
     tester,
   ) async {
-    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
     addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
     _useIPhone18ProMaxView(tester);
     await tester.pumpWidget(
@@ -437,7 +439,9 @@ void main() {
         (decoratedBox.decoration as BoxDecoration).gradient! as LinearGradient;
     final Rect scrimRect = tester.getRect(find.byKey(scrimKey));
 
-    final expectedAlphas = [for (final a in [1.0, .55, .22, 0.0]) a * .32];
+    final expectedAlphas = [
+      for (final a in [1.0, .55, .22, 0.0]) a * .32,
+    ];
     expect(gradient.colors, [
       for (final alpha in expectedAlphas)
         systemBackground.withValues(alpha: alpha),
@@ -572,8 +576,10 @@ void main() {
                 as LinearGradient)
             .colors;
     final initial = gradientColors();
-    expect(initial.map((c) => c.a),
-        orderedEquals([.32, .32 * .55, .32 * .22, 0]));
+    expect(
+      initial.map((c) => c.a),
+      orderedEquals([.32, .32 * .55, .32 * .22, 0]),
+    );
 
     // Mobile keeps the legacy gradient regardless of accessibility settings.
     LiquidGlassAccessibilitySettings.watch();

@@ -6,8 +6,11 @@ import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/view/search_page.dart';
 import 'package:eros_fe/pages/tab/view/tabbar/favorite_tabbar_page.dart';
+import 'package:eros_fe/store/db/entity/tag_translat.dart';
+import 'package:eros_fe/widget/tag_suggestions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -119,30 +122,41 @@ void main() {
     });
   }
 
-  Future<void> mount(WidgetTester tester, _Search controller,
-      {double scale = 1, bool dark = false, Widget? content}) async {
+  Future<void> mount(
+    WidgetTester tester,
+    _Search controller, {
+    double scale = 1,
+    bool dark = false,
+    Widget? content,
+  }) async {
     Get.put<SearchPageController>(controller, tag: searchPageCtrlTag);
     // The existing widget probes an untyped registration before typed lookup.
     Get.put<dynamic>(controller, tag: searchPageCtrlTag);
-    await tester.pumpWidget(GetCupertinoApp(
-      locale: const Locale('zh', 'CN'),
-      supportedLocales: L10n.delegate.supportedLocales,
-      localizationsDelegates: const [
-        L10n.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate
-      ],
-      theme: CupertinoThemeData(
-          brightness: dark ? Brightness.dark : Brightness.light),
-      builder: (context, child) => MediaQuery(
+    await tester.pumpWidget(
+      GetCupertinoApp(
+        locale: const Locale('zh', 'CN'),
+        supportedLocales: L10n.delegate.supportedLocales,
+        localizationsDelegates: const [
+          L10n.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        theme: CupertinoThemeData(
+          brightness: dark ? Brightness.dark : Brightness.light,
+        ),
+        builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: TextScaler.linear(scale)),
-          child: child!),
-      home: content ??
-          const CupertinoPageScaffold(
-              child: Center(child: SearchTextFieldIn(iconOpacity: 1))),
-    ));
+          child: child!,
+        ),
+        home:
+            content ??
+            const CupertinoPageScaffold(
+              child: Center(child: SearchTextFieldIn(iconOpacity: 1)),
+            ),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -150,28 +164,34 @@ void main() {
     final action = find.bySemanticsLabel(label);
     expect(action, findsOneWidget);
     expect(
-        tester
-            .getSemantics(action)
-            .getSemanticsData()
-            .hasAction(SemanticsAction.tap),
-        isTrue);
+      tester
+          .getSemantics(action)
+          .getSemanticsData()
+          .hasAction(SemanticsAction.tap),
+      isTrue,
+    );
     await tester.tap(action);
     await tester.pumpAndSettle();
   }
 
-  semanticsTest('the decorative search prefix exposes no phantom button action',
-      (tester) async {
-    await mount(tester, _Search(''));
-    expect(
+  semanticsTest(
+    'the decorative search prefix exposes no phantom button action',
+    (tester) async {
+      await mount(tester, _Search(''));
+      expect(
         find.ancestor(
-            of: find.bySemanticsLabel('搜索'),
-            matching: find.byType(CupertinoButton)),
-        findsNothing);
-    expect(find.byType(CupertinoTextField), findsOneWidget);
-  });
+          of: find.bySemanticsLabel('搜索'),
+          matching: find.byType(CupertinoButton),
+        ),
+        findsNothing,
+      );
+      expect(find.byType(CupertinoTextField), findsOneWidget);
+    },
+  );
 
-  semanticsTest('empty input shows no edit actions inside the field',
-      (tester) async {
+  semanticsTest('empty input shows no edit actions inside the field', (
+    tester,
+  ) async {
     final controller = _Search('');
     await mount(tester, controller);
     expect(find.bySemanticsLabel('清空搜索词'), findsNothing);
@@ -183,72 +203,110 @@ void main() {
 
   for (final stress in [false, true]) {
     semanticsTest(
-        'text actions retain their callbacks with readable semantics, stress=$stress',
-        (tester) async {
-      final controller = _Search('neutral query');
-      await mount(tester, controller, dark: stress, scale: stress ? 2.5 : 1);
-      // "Add to quick searches" lives in the page's "More" menu now.
-      expect(find.bySemanticsLabel('加入快速搜索'), findsNothing);
-      await activate(tester, '清空搜索词');
-      expect(controller.cleared, 1);
-      expect(controller.added, 0);
-      expect(controller.searchTextController.text, isEmpty);
-      expect(find.bySemanticsLabel('加入快速搜索'), findsNothing);
-      expect(find.bySemanticsLabel('清空搜索词'), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
+      'text actions retain their callbacks with readable semantics, stress=$stress',
+      (tester) async {
+        final controller = _Search('neutral query');
+        await mount(tester, controller, dark: stress, scale: stress ? 2.5 : 1);
+        // "Add to quick searches" lives in the page's "More" menu now.
+        expect(find.bySemanticsLabel('加入快速搜索'), findsNothing);
+        await activate(tester, '清空搜索词');
+        expect(controller.cleared, 1);
+        expect(controller.added, 0);
+        expect(controller.searchTextController.text, isEmpty);
+        expect(find.bySemanticsLabel('加入快速搜索'), findsNothing);
+        expect(find.bySemanticsLabel('清空搜索词'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
   semanticsTest(
-      'gallery URL opens its own action instead of adding quick search',
-      (tester) async {
-    final controller = _Search('https://e-hentai.org/g/9100000/offline/',
-        textIsGalleryUrl: true);
-    await mount(tester, controller);
-    expect(find.bySemanticsLabel('加入快速搜索'), findsNothing);
-    await activate(tester, '打开画廊链接');
-    expect(controller.opened, 1);
-    expect(controller.added, 0);
-  });
+    'gallery URL opens its own action instead of adding quick search',
+    (tester) async {
+      final controller = _Search(
+        'https://e-hentai.org/g/9100000/offline/',
+        textIsGalleryUrl: true,
+      );
+      await mount(tester, controller);
+      expect(find.bySemanticsLabel('加入快速搜索'), findsNothing);
+      await activate(tester, '打开画廊链接');
+      expect(controller.opened, 1);
+      expect(controller.added, 0);
+    },
+  );
 
   semanticsTest(
-      'favorite navigation labels preserve sorting, jump and top actions',
-      (tester) async {
-    final favorites =
-        Get.put<FavoriteTabBarController>(_Favorites()) as _Favorites;
-    // Render the actual navigation builder without unrelated network subpages.
-    final dynamic state = const FavoriteTabTabBarPage().createState();
-    await mount(tester, _Search(''),
+    'favorite navigation labels preserve sorting, jump and top actions',
+    (tester) async {
+      final favorites =
+          Get.put<FavoriteTabBarController>(_Favorites()) as _Favorites;
+      // Render the actual navigation builder without unrelated network subpages.
+      final dynamic state = const FavoriteTabTabBarPage().createState();
+      await mount(
+        tester,
+        _Search(''),
         content: Builder(
-            builder: (context) => CupertinoPageScaffold(
-                    child: Column(children: [
-                  state.getNavigationBar(context) as Widget,
-                  const Expanded(child: SizedBox.expand())
-                ]))));
-    final sort = find.bySemanticsLabel(RegExp('收藏排序'));
-    expect(sort, findsOneWidget);
-    expect(
+          builder: (context) => CupertinoPageScaffold(
+            child: Column(
+              children: [
+                state.getNavigationBar(context) as Widget,
+                const Expanded(child: SizedBox.expand()),
+              ],
+            ),
+          ),
+        ),
+      );
+      final sort = find.bySemanticsLabel(RegExp('收藏排序'));
+      expect(sort, findsOneWidget);
+      expect(
         tester
             .getSemantics(sort)
             .getSemanticsData()
             .hasAction(SemanticsAction.tap),
-        isTrue);
-    await tester.tap(sort);
-    await tester.pumpAndSettle();
-    expect(favorites.sorted, 1);
-    await activate(tester, '回到顶部');
-    await activate(tester, '跳转/搜寻');
-    expect(favorites.topped, 1);
-    expect(favorites.jumps, 1);
-    expect(find.bySemanticsLabel('搜索'), findsOneWidget);
-  });
+        isTrue,
+      );
+      await tester.tap(sort);
+      await tester.pumpAndSettle();
+      expect(favorites.sorted, 1);
+      await activate(tester, '回到顶部');
+      await activate(tester, '跳转/搜寻');
+      expect(favorites.topped, 1);
+      expect(favorites.jumps, 1);
+      expect(find.bySemanticsLabel('搜索'), findsOneWidget);
+    },
+  );
 
-  semanticsTest('desktop refresh remains actionable through its new label',
-      (tester) async {
+  semanticsTest('desktop refresh remains actionable through its new label', (
+    tester,
+  ) async {
     final controller = _Search('query');
     await mount(tester, controller);
     expect(GetPlatform.isDesktop, isTrue);
     await activate(tester, '刷新');
     expect(controller.refreshed, 1);
+  });
+
+  semanticsTest('tag completion is reachable with Tab and adds with Enter', (
+    tester,
+  ) async {
+    var selected = 0;
+    await mount(
+      tester,
+      _Search(''),
+      content: CupertinoPageScaffold(
+        child: Center(
+          child: TagSuggestionTile(
+            tag: TagTranslat(namespace: 'artist', key: 'sample artist'),
+            query: 'sample',
+            onTap: () => selected++,
+          ),
+        ),
+      ),
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    expect(selected, 1);
+    expect(tester.takeException(), isNull);
   });
 }

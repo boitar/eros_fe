@@ -420,11 +420,7 @@ void main() {
                 ? (motion.value >= .72 ? 1.0 : 0.0)
                 : motion.value;
             expectExtent(
-              94 *
-                  (1 -
-                      SoftScrollEdgeEffect.quantizeStrength(
-                        visibleProgress,
-                      )),
+              94 * (1 - SoftScrollEdgeEffect.quantizeStrength(visibleProgress)),
             );
             await _drag(tester, 60);
             expect(motion.value, 0);
@@ -533,76 +529,75 @@ void main() {
       );
     }
   }
-  testWidgets(
-    'scrolled safe-area base stays solid at every mask progress',
-    (tester) async {
-      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
-      addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
-      final progress = ValueNotifier<double>(0);
-      addTearDown(progress.dispose);
-      await tester.pumpWidget(
-        CupertinoApp(
-          theme: const CupertinoThemeData(brightness: Brightness.light),
-          home: Stack(
-            children: [
-              const Positioned.fill(
-                child: ColoredBox(color: CupertinoColors.systemGrey),
-              ),
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: LiquidGlassSafeAreaBase(
-                  edgeProgress: AlwaysStoppedAnimation<double>(1),
-                  safeTop: 59,
-                  layout: LiquidGlassTopBarLayout.twoRow,
-                ),
-              ),
-              LiquidGlassSolidMask(
-                progressListenable: progress,
-                safeTop: 59,
-                height: 153,
-              ),
-              const LiquidGlassTopScrim(
+  testWidgets('scrolled safe-area base stays solid at every mask progress', (
+    tester,
+  ) async {
+    PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => PlatformCapabilities.debugHostPlatformOverride = null);
+    final progress = ValueNotifier<double>(0);
+    addTearDown(progress.dispose);
+    await tester.pumpWidget(
+      CupertinoApp(
+        theme: const CupertinoThemeData(brightness: Brightness.light),
+        home: Stack(
+          children: [
+            const Positioned.fill(
+              child: ColoredBox(color: CupertinoColors.systemGrey),
+            ),
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: LiquidGlassSafeAreaBase(
+                edgeProgress: AlwaysStoppedAnimation<double>(1),
                 safeTop: 59,
                 layout: LiquidGlassTopBarLayout.twoRow,
               ),
-            ],
-          ),
+            ),
+            LiquidGlassSolidMask(
+              progressListenable: progress,
+              safeTop: 59,
+              height: 153,
+            ),
+            const LiquidGlassTopScrim(
+              safeTop: 59,
+              layout: LiquidGlassTopBarLayout.twoRow,
+            ),
+          ],
         ),
-      );
-      // At full scroll-edge strength, the base remains independent of the
-      // solid-mask reveal. It stays solid through the safe area while the
-      // first card retracts the mask below it.
-      final status = find.byKey(const ValueKey('liquid-glass-safe-area-base'));
+      ),
+    );
+    // At full scroll-edge strength, the base remains independent of the
+    // solid-mask reveal. It stays solid through the safe area while the
+    // first card retracts the mask below it.
+    final status = find.byKey(const ValueKey('liquid-glass-safe-area-base'));
+    expect(status, findsOneWidget);
+    expect(tester.getRect(status).bottom, 153);
+    final scrim = find.byKey(const ValueKey('liquid-glass-top-scrim'));
+    expect(tester.getTopLeft(scrim).dy, 0);
+    final baseGradient =
+        (tester.widget<DecoratedBox>(status).decoration as BoxDecoration)
+                .gradient!
+            as LinearGradient;
+    expect(baseGradient.colors.first.toARGB32(), 0xFFFFFFFF);
+    expect(baseGradient.colors.last.a, 0.0);
+    for (final value in [0.0, 0.01, 0.25, 0.5, 0.75, 1.0]) {
+      progress.value = value;
+      await tester.pump();
       expect(status, findsOneWidget);
-      expect(tester.getRect(status).bottom, 153);
-      final scrim = find.byKey(const ValueKey('liquid-glass-top-scrim'));
-      expect(tester.getTopLeft(scrim).dy, 0);
-      final baseGradient =
-          (tester.widget<DecoratedBox>(status).decoration as BoxDecoration)
-                  .gradient!
-              as LinearGradient;
-      expect(baseGradient.colors.first.toARGB32(), 0xFFFFFFFF);
-      expect(baseGradient.colors.last.a, 0.0);
-      for (final value in [0.0, 0.01, 0.25, 0.5, 0.75, 1.0]) {
-        progress.value = value;
-        await tester.pump();
-        expect(status, findsOneWidget);
-        expect(
-          find.ancestor(of: status, matching: find.byType(Opacity)),
-          findsNothing,
-        );
-        final mask = find.byKey(const ValueKey('liquid-glass-solid-mask'));
-        if (value == 0.0) {
-          expect(mask, findsNothing);
-        } else {
-          expect(tester.widget<ColoredBox>(mask).color.toARGB32(), 0xFFFFFFFF);
-          expect(tester.getRect(mask).bottom, closeTo(59 + 94 * value, 0.001));
-        }
+      expect(
+        find.ancestor(of: status, matching: find.byType(Opacity)),
+        findsNothing,
+      );
+      final mask = find.byKey(const ValueKey('liquid-glass-solid-mask'));
+      if (value == 0.0) {
+        expect(mask, findsNothing);
+      } else {
+        expect(tester.widget<ColoredBox>(mask).color.toARGB32(), 0xFFFFFFFF);
+        expect(tester.getRect(mask).bottom, closeTo(59 + 94 * value, 0.001));
       }
-    },
-  );
+    }
+  });
   testWidgets('combined travel counts once and active-page changes rebase', (
     tester,
   ) async {

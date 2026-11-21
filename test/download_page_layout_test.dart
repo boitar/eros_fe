@@ -265,7 +265,7 @@ void main() {
   });
 
   for (final (platform, size, gap, tail) in [
-    (TargetPlatform.android, const Size(393, 852), 12.0, 20.0),
+    (TargetPlatform.android, const Size(393, 852), 6.0, 20.0),
     (TargetPlatform.iOS, const Size(393, 852), 12.0, 24.0),
     (TargetPlatform.iOS, const Size(820, 1180), 12.0, 28.0),
     (TargetPlatform.windows, const Size(820, 900), 12.0, 16.0),
@@ -287,12 +287,21 @@ void main() {
                       as BoxDecoration)
                   .gradient!
               as LinearGradient;
+      final android = platform == TargetPlatform.android;
       final mobile = !PlatformCapabilities.isDesktop;
       expect(find.byType(SoftScrollEdgeEffect), findsNothing);
-      expect(gradient().colors.first.a, closeTo(mobile ? .32 : 0, .001));
+      if (android) {
+        expect(find.byKey(key), findsNothing);
+      } else {
+        expect(gradient().colors.first.a, closeTo(mobile ? .32 : 0, .001));
+      }
       await tester.drag(find.byType(PageView), const Offset(0, -300));
       await tester.pumpAndSettle();
-      expect(gradient().colors.first.a, closeTo(mobile ? .32 : .92, .001));
+      if (android) {
+        expect(find.byKey(key), findsNothing);
+      } else {
+        expect(gradient().colors.first.a, closeTo(mobile ? .32 : .92, .001));
+      }
       if (mobile) {
         final state = tester.state<_DownloadsState>(find.byType(_Downloads));
         state.edge.update(
@@ -310,7 +319,7 @@ void main() {
           find.byType(SoftScrollEdgeEffect),
         );
         expect(effect.inset, 59);
-        expect(effect.bars, 94);
+        expect(effect.bars, android ? 74 : 94);
         expect(effect.tail, tail);
         expect(effect.strength, 1);
       }
@@ -320,10 +329,18 @@ void main() {
       final state = tester.state<_DownloadsState>(find.byType(_Downloads));
       state.pages.jumpToPage(1);
       await tester.pumpAndSettle();
-      expect(gradient().colors.first.a, closeTo(mobile ? .32 : 0, .001));
+      if (android) {
+        expect(find.byKey(key), findsNothing);
+      } else {
+        expect(gradient().colors.first.a, closeTo(mobile ? .32 : 0, .001));
+      }
       state.pages.jumpToPage(0);
       await tester.pumpAndSettle();
-      expect(gradient().colors.first.a, closeTo(mobile ? .32 : .92, .001));
+      if (android) {
+        expect(find.byKey(key), findsNothing);
+      } else {
+        expect(gradient().colors.first.a, closeTo(mobile ? .32 : .92, .001));
+      }
     });
   }
 

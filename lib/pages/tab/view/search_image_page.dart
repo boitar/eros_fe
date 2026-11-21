@@ -60,7 +60,10 @@ class _SearchImagePageState extends State<SearchImagePage> {
       builder: (context, constraints) {
         final media = MediaQuery.of(context);
         final safeLeft = math.max(media.padding.left, media.viewPadding.left);
-        final safeRight = math.max(media.padding.right, media.viewPadding.right);
+        final safeRight = math.max(
+          media.padding.right,
+          media.viewPadding.right,
+        );
         final usableWidth = constraints.maxWidth - safeLeft - safeRight;
         final isWide =
             constraints.maxWidth >= _wideWidthThreshold &&
@@ -161,10 +164,7 @@ class _SearchImagePageState extends State<SearchImagePage> {
             child: _buildControlsColumn(context, l10n),
           ),
         ),
-        Container(
-          width: 0.5,
-          color: palette.hairline.resolveFrom(context),
-        ),
+        Container(width: 0.5, color: palette.hairline.resolveFrom(context)),
         Expanded(
           child: hasResults
               ? _buildResultsScrollView(
@@ -210,8 +210,8 @@ class _SearchImagePageState extends State<SearchImagePage> {
         child: _buildControlsColumn(
           context,
           l10n,
-          showCancelEdit: _editingWithResults &&
-              controller.listType == ListType.gallery,
+          showCancelEdit:
+              _editingWithResults && controller.listType == ListType.gallery,
         ),
       );
     }
@@ -485,64 +485,70 @@ class _PickerCard extends StatelessWidget {
     final hasImage = imagePath.isNotEmpty;
 
     if (!hasImage) {
-      return GestureDetector(
+      return Semantics(
         key: const ValueKey('search_image_picker_card'),
-        behavior: HitTestBehavior.opaque,
+        button: true,
+        label: l10n.sp_pick_image,
+        excludeSemantics: true,
         onTap: onPick,
-        child: CustomPaint(
-          painter: _DashedRRectPainter(
-            color: palette.hairline.resolveFrom(context),
-            strokeWidth: 1.5,
-            radius: 18,
-          ),
-          child: Container(
-            height: 180,
-            decoration: BoxDecoration(
-              color: palette.surface.resolveFrom(context),
-              borderRadius: BorderRadius.circular(18),
+        child: EhPressable(
+          onPressed: onPick,
+          borderRadius: BorderRadius.circular(18),
+          child: CustomPaint(
+            painter: _DashedRRectPainter(
+              color: palette.hairline.resolveFrom(context),
+              strokeWidth: 1.5,
+              radius: 18,
             ),
-            alignment: Alignment.center,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(
-                      CupertinoIcons.photo,
-                      size: 40,
-                      color: EhPalette.accent.resolveFrom(context),
-                    ),
-                    Positioned(
-                      right: -6,
-                      bottom: -4,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: EhPalette.accent.resolveFrom(context),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.all(2),
-                          child: Icon(
-                            CupertinoIcons.plus,
-                            size: 13,
-                            color: CupertinoColors.white,
+            child: Container(
+              height: 180,
+              decoration: BoxDecoration(
+                color: palette.surface.resolveFrom(context),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        CupertinoIcons.photo,
+                        size: 40,
+                        color: EhPalette.accent.resolveFrom(context),
+                      ),
+                      Positioned(
+                        right: -6,
+                        bottom: -4,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: EhPalette.accent.resolveFrom(context),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(2),
+                            child: Icon(
+                              CupertinoIcons.plus,
+                              size: 13,
+                              color: CupertinoColors.white,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  l10n.sp_pick_image,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: palette.text1.resolveFrom(context),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.sp_pick_image,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: palette.text1.resolveFrom(context),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -676,44 +682,49 @@ class _ImageSummaryBar extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                child: Semantics(
+                  button: true,
+                  label: L10n.of(context).sp_image_search_options,
                   onTap: onTapSummary,
-                  child: Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 36,
-                          height: 36,
-                          child: Image.file(
-                            File(imagePath),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, _, _) => ColoredBox(
-                              color: palette.fill.resolveFrom(context),
-                              child: Icon(
-                                CupertinoIcons.photo,
-                                size: 18,
-                                color: palette.text3.resolveFrom(context),
+                  child: EhPressable(
+                    key: const ValueKey('search_image_edit_options'),
+                    onPressed: onTapSummary,
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: Image.file(
+                              File(imagePath),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, _, _) => ColoredBox(
+                                color: palette.fill.resolveFrom(context),
+                                child: Icon(
+                                  CupertinoIcons.photo,
+                                  size: 18,
+                                  color: palette.text3.resolveFrom(context),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          summaryText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: palette.text1.resolveFrom(context),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            summaryText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: palette.text1.resolveFrom(context),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -771,11 +782,7 @@ class _SwitchRow extends StatelessWidget {
               ),
             ),
           ),
-          CupertinoSwitch(
-            key: switchKey,
-            value: value,
-            onChanged: onChanged,
-          ),
+          CupertinoSwitch(key: switchKey, value: value, onChanged: onChanged),
         ],
       ),
     );

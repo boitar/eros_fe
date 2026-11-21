@@ -10,6 +10,7 @@ import 'package:eros_fe/utils/vibrate.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/eh_sheet.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
 
@@ -100,6 +101,91 @@ class _RateSheet extends StatefulWidget {
 
 class _RateSheetState extends State<_RateSheet> {
   late double _rating = widget.initial;
+  bool _showRatingFocus = false;
+
+  void _setRating(double value) {
+    final rating = _snap(value);
+    if (rating == _rating) {
+      return;
+    }
+    vibrateUtil.selection();
+    setState(() => _rating = rating);
+  }
+
+  Widget _ratingControl(BuildContext context) {
+    final l10n = L10n.of(context);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    return FocusableActionDetector(
+      mouseCursor: SystemMouseCursors.click,
+      descendantsAreFocusable: false,
+      descendantsAreTraversable: false,
+      shortcuts: <ShortcutActivator, Intent>{
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): VoidCallbackIntent(
+          () => _setRating(_rating + (rtl ? .5 : -.5)),
+        ),
+        const SingleActivator(LogicalKeyboardKey.arrowRight):
+            VoidCallbackIntent(() => _setRating(_rating + (rtl ? -.5 : .5))),
+        const SingleActivator(LogicalKeyboardKey.arrowUp): VoidCallbackIntent(
+          () => _setRating(_rating + .5),
+        ),
+        const SingleActivator(LogicalKeyboardKey.arrowDown): VoidCallbackIntent(
+          () => _setRating(_rating - .5),
+        ),
+        const SingleActivator(LogicalKeyboardKey.home): VoidCallbackIntent(
+          () => _setRating(.5),
+        ),
+        const SingleActivator(LogicalKeyboardKey.end): VoidCallbackIntent(
+          () => _setRating(5),
+        ),
+      },
+      actions: <Type, Action<Intent>>{VoidCallbackIntent: VoidCallbackAction()},
+      onShowFocusHighlight: (value) => setState(() => _showRatingFocus = value),
+      child: Semantics(
+        label: l10n.p_Rate,
+        slider: true,
+        value: '${_rating.toStringAsFixed(1)} / 5',
+        increasedValue: _rating < 5
+            ? '${(_rating + .5).toStringAsFixed(1)} / 5'
+            : null,
+        decreasedValue: _rating > .5
+            ? '${(_rating - .5).toStringAsFixed(1)} / 5'
+            : null,
+        onIncrease: _rating < 5 ? () => _setRating(_rating + .5) : null,
+        onDecrease: _rating > .5 ? () => _setRating(_rating - .5) : null,
+        excludeSemantics: true,
+        child: DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: _showRatingFocus
+                ? Border.all(
+                    color: EhPalette.accent.resolveFrom(context),
+                    width: 2,
+                  )
+                : null,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: RatingBar.builder(
+              initialRating: _rating,
+              minRating: .5,
+              glow: false,
+              allowHalfRating: true,
+              itemCount: 5,
+              itemSize: 40,
+              itemPadding: const EdgeInsets.symmetric(horizontal: 4),
+              unratedColor: ehTheme.palette.fillPressed.resolveFrom(context),
+              itemBuilder: (_, _) => Icon(
+                CupertinoIcons.star_fill,
+                color: EhPalette.star.resolveFrom(context),
+              ),
+              onRatingUpdate: _setRating,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,29 +203,7 @@ class _RateSheetState extends State<_RateSheet> {
           children: [
             EhSheetHeader(title: l10n.p_Rate),
             const SizedBox(height: 16),
-            Semantics(
-              label: l10n.p_Rate,
-              value: '${_rating.toStringAsFixed(1)} / 5',
-              child: RatingBar.builder(
-                initialRating: widget.initial,
-                minRating: 0.5,
-                glow: false,
-                allowHalfRating: true,
-                itemCount: 5,
-                itemSize: 40,
-                itemPadding: const EdgeInsets.symmetric(horizontal: 4),
-                unratedColor: palette.fillPressed.resolveFrom(context),
-                itemBuilder: (_, _) => Icon(
-                  CupertinoIcons.star_fill,
-                  color: EhPalette.star.resolveFrom(context),
-                ),
-                onRatingUpdate: (value) {
-                  // 每变动一档（含半星）一记 selection 轻点，跟手。
-                  vibrateUtil.selection();
-                  setState(() => _rating = value);
-                },
-              ),
-            ),
+            _ratingControl(context),
             const SizedBox(height: 10),
             Text.rich(
               TextSpan(

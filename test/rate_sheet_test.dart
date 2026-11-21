@@ -1,10 +1,13 @@
 import 'package:eros_fe/adaptive/native_sheet.dart';
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/view/rate_dialog.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,7 +40,122 @@ void main() {
 
   tearDown(() {
     NativeSheet.debugAvailable = null;
+    PlatformCapabilities.debugHostPlatformOverride = null;
     Get.reset();
+  });
+
+  testWidgets(
+    'desktop rating adjusts by keyboard and submits the visible value',
+    (tester) async {
+      PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.windows;
+      double? result;
+      await tester.pumpWidget(
+        GetCupertinoApp(
+          locale: const Locale('zh', 'CN'),
+          supportedLocales: L10n.delegate.supportedLocales,
+          localizationsDelegates: const [
+            L10n.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          home: Builder(
+            builder: (context) => CupertinoButton(
+              child: const Text('open'),
+              onPressed: () async {
+                result = await presentRateSheet(context, initial: 3.5);
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      // Traverse the close control, then the star group as one adjustable input.
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(tester.widget<RatingBar>(find.byType(RatingBar)).initialRating, 4);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.end);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(tester.widget<RatingBar>(find.byType(RatingBar)).initialRating, 5);
+      await tester.sendKeyEvent(LogicalKeyboardKey.home);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<RatingBar>(find.byType(RatingBar)).initialRating,
+        .5,
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(tester.widget<RatingBar>(find.byType(RatingBar)).initialRating, 1);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(result, 1);
+    },
+  );
+
+  testWidgets('rating exposes half-star accessibility adjustments and bounds', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        GetCupertinoApp(
+          locale: const Locale('zh', 'CN'),
+          supportedLocales: L10n.delegate.supportedLocales,
+          localizationsDelegates: const [
+            L10n.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          home: Builder(
+            builder: (context) => CupertinoButton(
+              child: const Text('open'),
+              onPressed: () => presentRateSheet(context, initial: .5),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      final slider = find.byWidgetPredicate(
+        (widget) => widget is Semantics && widget.properties.slider == true,
+      );
+      var node = tester.getSemantics(slider);
+      expect(node.getSemanticsData().value, '0.5 / 5');
+      expect(
+        node.getSemanticsData().hasAction(SemanticsAction.increase),
+        isTrue,
+      );
+      expect(
+        node.getSemanticsData().hasAction(SemanticsAction.decrease),
+        isFalse,
+      );
+
+      node.owner!.performAction(node.id, SemanticsAction.increase);
+      await tester.pumpAndSettle();
+      node = tester.getSemantics(slider);
+      expect(node.getSemanticsData().value, '1.0 / 5');
+      expect(tester.widget<RatingBar>(find.byType(RatingBar)).initialRating, 1);
+      node.owner!.performAction(node.id, SemanticsAction.decrease);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<RatingBar>(find.byType(RatingBar)).initialRating,
+        .5,
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 
   for (final dark in [false, true]) {

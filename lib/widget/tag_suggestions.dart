@@ -44,8 +44,12 @@ List<TextSpan> highlightSpans(
     if (index > start) {
       spans.add(TextSpan(text: text.substring(start, index), style: style));
     }
-    spans.add(TextSpan(
-        text: text.substring(index, index + needle.length), style: highlight));
+    spans.add(
+      TextSpan(
+        text: text.substring(index, index + needle.length),
+        style: highlight,
+      ),
+    );
     start = index + needle.length;
   }
   return spans;
@@ -93,7 +97,7 @@ class SliverTagSuggestions extends StatelessWidget {
   }
 }
 
-class TagSuggestionTile extends StatefulWidget {
+class TagSuggestionTile extends StatelessWidget {
   const TagSuggestionTile({
     super.key,
     required this.tag,
@@ -110,20 +114,10 @@ class TagSuggestionTile extends StatefulWidget {
   final bool divider;
 
   @override
-  State<TagSuggestionTile> createState() => _TagSuggestionTileState();
-}
-
-class _TagSuggestionTileState extends State<TagSuggestionTile> {
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
-    final tag = widget.tag;
-    final base = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-          letterSpacing: 0,
-          fontVariations: const [],
-        );
+    final base = CupertinoTheme.of(context).textTheme.textStyle
+        .copyWith(letterSpacing: 0, fontVariations: const []);
     final accent = EhPalette.accent.resolveFrom(context);
     final keyStyle = base.copyWith(
       fontSize: 15.5,
@@ -136,35 +130,28 @@ class _TagSuggestionTileState extends State<TagSuggestionTile> {
       color: palette.text2.resolveFrom(context),
     );
     final namespace = tag.namespace.trim();
-    final translatedNamespace = widget.showTranslation
+    final translatedNamespace = showTranslation
         ? (EHConst.translateTagType[namespace] ?? namespace)
         : namespace;
-    final translation = widget.showTranslation ? tag.nameNotMD : null;
-    final query = widget.query.contains(':')
-        ? widget.query.split(':').last
-        : widget.query;
+    final translation = showTranslation ? tag.nameNotMD : null;
+    final highlightedQuery = query.contains(':')
+        ? query.split(':').last
+        : query;
 
     return Semantics(
       button: true,
       label: L10n.of(context).sp_add_tag(tag.fullTagText ?? tag.key),
       hint: translation,
       excludeSemantics: true,
-      onTap: widget.onTap,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          color: _pressed
-              ? palette.fill.resolveFrom(context)
-              : const Color(0x00000000),
+      onTap: onTap,
+      child: EhPressable(
+        onPressed: onTap,
+        child: ColoredBox(
+          color: const Color(0x00000000),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (widget.divider)
+              if (divider)
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 14),
                   child: Container(
@@ -179,7 +166,9 @@ class _TagSuggestionTileState extends State<TagSuggestionTile> {
                     Container(
                       constraints: const BoxConstraints(minWidth: 52),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: palette.fill.resolveFrom(context),
                         borderRadius: BorderRadius.circular(6),
@@ -200,33 +189,37 @@ class _TagSuggestionTileState extends State<TagSuggestionTile> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text.rich(TextSpan(
-                            children: highlightSpans(
-                              tag.key,
-                              query,
-                              style: keyStyle,
-                              highlight: keyStyle.copyWith(
-                                color: accent,
-                                fontWeight: FontWeight.w600,
+                          Text.rich(
+                            TextSpan(
+                              children: highlightSpans(
+                                tag.key,
+                                highlightedQuery,
+                                style: keyStyle,
+                                highlight: keyStyle.copyWith(
+                                  color: accent,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                          )),
+                          ),
                           if (translation != null &&
                               translation.isNotEmpty &&
                               translation != tag.key)
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
-                              child: Text.rich(TextSpan(
-                                children: highlightSpans(
-                                  translation,
-                                  query,
-                                  style: subStyle,
-                                  highlight: subStyle.copyWith(
-                                    color: accent,
-                                    fontWeight: FontWeight.w600,
+                              child: Text.rich(
+                                TextSpan(
+                                  children: highlightSpans(
+                                    translation,
+                                    highlightedQuery,
+                                    style: subStyle,
+                                    highlight: subStyle.copyWith(
+                                      color: accent,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                              )),
+                              ),
                             ),
                         ],
                       ),
@@ -270,10 +263,8 @@ class SearchHistoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
-    final base = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-          letterSpacing: 0,
-          fontVariations: const [],
-        );
+    final base = CupertinoTheme.of(context).textTheme.textStyle
+        .copyWith(letterSpacing: 0, fontVariations: const []);
     final hasTranslation = translation != null && translation!.isNotEmpty;
     return Semantics(
       button: true,
@@ -343,11 +334,11 @@ class EhSectionHeader extends StatelessWidget {
               child: Text(
                 title,
                 style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0,
-                      color: ehTheme.palette.text2.resolveFrom(context),
-                    ),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                  color: ehTheme.palette.text2.resolveFrom(context),
+                ),
               ),
             ),
           ),
@@ -391,7 +382,10 @@ class TagTokenTextEditingController extends TextEditingController {
     // Leave IME composition to the framework so its underline stays right.
     if (color == null || (withComposing && value.isComposingRangeValid)) {
       return super.buildTextSpan(
-          context: context, style: style, withComposing: withComposing);
+        context: context,
+        style: style,
+        withComposing: withComposing,
+      );
     }
     final lastComma = text.lastIndexOf(RegExp(r'[,，]'));
     if (lastComma < 0) {
@@ -407,8 +401,9 @@ class TagTokenTextEditingController extends TextEditingController {
     final pattern = RegExp(r'[,，]');
     var start = 0;
     for (final match in pattern.allMatches(done)) {
-      children.add(TextSpan(
-          text: done.substring(start, match.start), style: tokenStyle));
+      children.add(
+        TextSpan(text: done.substring(start, match.start), style: tokenStyle),
+      );
       children.add(TextSpan(text: match.group(0), style: style));
       start = match.end;
     }

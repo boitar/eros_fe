@@ -17,7 +17,6 @@ import 'package:eros_fe/pages/tab/view/gallery_base.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/pages/tab/view/search_more_sheet.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
-import 'package:eros_fe/widget/desktop_pointer_effects.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/tag_suggestions.dart';
@@ -339,31 +338,29 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         child: NavigationToolbar(
           leading: canPop
               ? (glassOff
-                  ? EhButton(
-                      key: const ValueKey('search.splitBack'),
-                      icon: CupertinoIcons.chevron_back,
-                      style: EhButtonStyle.glass,
-                      size: 44,
-                      semanticLabel: backLabel,
-                      onPressed: () => Navigator.of(context).maybePop(),
-                    )
-                  : SizedBox.square(
-                      key: const ValueKey('search.splitBack'),
-                      dimension: 44,
-                      child: LiquidGlassSurface(
-                        enabled: true,
-                        borderRadius: BorderRadius.circular(22),
-                        style: LiquidGlassStyle.regular,
-                        interactive: false,
-                        followSystemTransparency: followSystemTransparency,
-                        child: Semantics(
-                          button: true,
-                          label: backLabel,
-                          child: NavigationHover(
-                            borderRadius: BorderRadius.circular(22),
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
+                    ? EhButton(
+                        key: const ValueKey('search.splitBack'),
+                        icon: CupertinoIcons.chevron_back,
+                        style: EhButtonStyle.glass,
+                        size: 44,
+                        semanticLabel: backLabel,
+                        onPressed: () => Navigator.of(context).maybePop(),
+                      )
+                    : SizedBox.square(
+                        key: const ValueKey('search.splitBack'),
+                        dimension: 44,
+                        child: LiquidGlassSurface(
+                          enabled: true,
+                          borderRadius: BorderRadius.circular(22),
+                          style: LiquidGlassStyle.regular,
+                          interactive: false,
+                          followSystemTransparency: followSystemTransparency,
+                          child: Semantics(
+                            button: true,
+                            label: backLabel,
+                            child: EhPressable(
+                              borderRadius: BorderRadius.circular(22),
+                              onPressed: () {
                                 liquidGlassFeedback(vibrateUtil.light);
                                 Navigator.of(context).maybePop();
                               },
@@ -377,8 +374,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                             ),
                           ),
                         ),
-                      ),
-                    ))
+                      ))
               : null,
           middle: Text(
             controller.placeholderText,
@@ -669,7 +665,8 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       builder: (SearchPageController sPageController) {
         final l10n = L10n.of(context);
         final history = sPageController.searchHistory;
-        final translate = sPageController.isTagTranslat &&
+        final translate =
+            sPageController.isTagTranslat &&
             sPageController.translateSearchHistory;
         return SliverToBoxAdapter(
           child: Column(
@@ -725,7 +722,8 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
               ],
               Obx(() {
                 final quick = sPageController
-                    .quickSearchController.searchTextList
+                    .quickSearchController
+                    .searchTextList
                     .where((e) => e.trim().isNotEmpty)
                     .take(3)
                     .toList();
@@ -738,7 +736,11 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                     EhSectionHeader(
                       title: l10n.quick_search,
                       padding: EdgeInsets.fromLTRB(
-                          20, history.isEmpty ? 12 : 26, 16, 10),
+                        20,
+                        history.isEmpty ? 12 : 26,
+                        16,
+                        10,
+                      ),
                       actions: [
                         EhButton(
                           label: l10n.sp_all,
@@ -758,8 +760,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                             _QuickSearchRow(
                               text: quick[i].trim(),
                               divider: i > 0,
-                              onPressed: () => sPageController
-                                  .applyQuickSearch(quick[i].trim()),
+                              onPressed: () => sPageController.applyQuickSearch(
+                                quick[i].trim(),
+                              ),
                             ),
                         ],
                       ),
@@ -897,26 +900,21 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       String label,
       VoidCallback onPressed, {
       Key? key,
-    }) =>
-        CupertinoButton(
-          key: key,
-          minimumSize: const Size(38, 44),
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          onPressed: onPressed,
-          child: Semantics(
-            label: label,
-            button: true,
-            excludeSemantics: true,
-            onTap: onPressed,
-            child: Icon(data, size: 20, color: color),
-          ),
-        );
+    }) => CupertinoButton(
+      key: key,
+      minimumSize: const Size(38, 44),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      onPressed: onPressed,
+      child: Semantics(
+        label: label,
+        button: true,
+        excludeSemantics: true,
+        onTap: onPressed,
+        child: Icon(data, size: 20, color: color),
+      ),
+    );
 
-    Widget hairline() => Container(
-          width: 0.5,
-          height: 18,
-          color: dividerColor,
-        );
+    Widget hairline() => Container(width: 0.5, height: 18, color: dividerColor);
 
     return ConstrainedBox(
       key: const ValueKey('search.trailingCapsule'),
@@ -1003,10 +1001,8 @@ class SearchTextFieldIn extends StatelessWidget {
     return Obx(() {
       ehTheme.isDarkMode;
       final palette = ehTheme.palette;
-      final base = CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-            letterSpacing: 0,
-            fontVariations: const [],
-          );
+      final base = CupertinoTheme.of(context).textTheme.textStyle
+          .copyWith(letterSpacing: 0, fontVariations: const []);
       final iconColor = palette.text2
           .resolveFrom(context)
           .withValues(alpha: iconOpacity.clamp(0, 1));
@@ -1047,39 +1043,38 @@ class SearchTextFieldIn extends StatelessWidget {
                   required String label,
                   required VoidCallback onPressed,
                   bool prominent = false,
-                }) =>
-                    Semantics(
-                      button: true,
-                      label: label,
-                      excludeSemantics: true,
-                      onTap: onPressed,
-                      child: EhPressable(
-                        onPressed: onPressed,
-                        child: SizedBox(
-                          width: 34,
-                          height: 34,
-                          child: Center(
-                            child: prominent
-                                ? Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      color: EhPalette.accent
-                                          .resolveFrom(context),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      CupertinoIcons.arrow_right,
-                                      size: 15,
-                                      color: EhPalette.onAccent
-                                          .resolveFrom(context),
-                                    ),
-                                  )
-                                : Icon(icon, size: 19, color: iconColor),
-                          ),
-                        ),
+                }) => Semantics(
+                  button: true,
+                  label: label,
+                  excludeSemantics: true,
+                  onTap: onPressed,
+                  child: EhPressable(
+                    onPressed: onPressed,
+                    child: SizedBox(
+                      width: 34,
+                      height: 34,
+                      child: Center(
+                        child: prominent
+                            ? Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: EhPalette.accent.resolveFrom(context),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  CupertinoIcons.arrow_right,
+                                  size: 15,
+                                  color: EhPalette.onAccent.resolveFrom(
+                                    context,
+                                  ),
+                                ),
+                              )
+                            : Icon(icon, size: 19, color: iconColor),
                       ),
-                    );
+                    ),
+                  ),
+                );
                 return Padding(
                   padding: const EdgeInsetsDirectional.only(end: 4),
                   child: Row(
@@ -1168,8 +1163,11 @@ class _DesktopRefreshButtonState extends State<_DesktopRefreshButton> {
           child: Center(
             child: _busy
                 ? const CupertinoActivityIndicator(radius: 8)
-                : Icon(CupertinoIcons.arrow_clockwise,
-                    size: 18, color: widget.color),
+                : Icon(
+                    CupertinoIcons.arrow_clockwise,
+                    size: 18,
+                    color: widget.color,
+                  ),
           ),
         ),
       ),
@@ -1210,7 +1208,8 @@ class _SearchForRow extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                  style: CupertinoTheme.of(context).textTheme.textStyle
+                      .copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0,
@@ -1245,9 +1244,8 @@ class _QuickSearchRow extends StatelessWidget {
       label: text,
       excludeSemantics: true,
       onTap: onPressed,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onPressed,
+      child: EhPressable(
+        onPressed: onPressed,
         child: Column(
           children: [
             if (divider)
@@ -1267,9 +1265,7 @@ class _QuickSearchRow extends StatelessWidget {
                       text,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: CupertinoTheme.of(context)
-                          .textTheme
-                          .textStyle
+                      style: CupertinoTheme.of(context).textTheme.textStyle
                           .copyWith(
                             fontSize: 15,
                             letterSpacing: 0,

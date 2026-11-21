@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../../component/exception/error.dart';
 import '../../../index.dart';
@@ -26,6 +25,8 @@ class SearchImageController extends DefaultTabViewController {
   ListType get listType => _listType.value;
   set listType(ListType val) => _listType.value = val;
 
+  bool _pickingImage = false;
+
   void clearImage() {
     imagePath = '';
     listType = ListType.init;
@@ -33,23 +34,28 @@ class SearchImageController extends DefaultTabViewController {
   }
 
   Future<void> selectSearchImage(BuildContext context) async {
-    // 权限检查
-    if (!await _checkPermission(context)) {
+    if (_pickingImage || isClosed || !context.mounted) {
       return;
     }
 
-    // 选取图片
-    FilePickerResult? result;
+    // The system picker grants access to the selected image. Requesting broad
+    // storage access first blocks Android 13+ and desktop, and PHPicker does
+    // not require photo-library access on supported iOS versions either.
+    _pickingImage = true;
     try {
-      result = await FilePicker.platform.pickFiles(type: FileType.image);
+      final result = await FilePicker.platform.pickFiles(type: FileType.image);
+      if (isClosed || !context.mounted || result?.files.length != 1) {
+        return;
+      }
+      final picked = result!.files.single.path;
+      if (picked != null && picked.isNotEmpty) {
+        imagePath = picked;
+      }
     } on Exception catch (e) {
       logger.e('Pick file failed', error: e);
+    } finally {
+      _pickingImage = false;
     }
-    final picked = result?.files.single.path;
-    if (picked == null || picked.isEmpty) {
-      return;
-    }
-    imagePath = picked;
   }
 
   Future<void> startSearch({bool clear = true}) async {
@@ -111,7 +117,8 @@ class SearchImageController extends DefaultTabViewController {
 
       pageState = PageState.None;
 
-      final _list = rult?.gallerys
+      final _list =
+          rult?.gallerys
               ?.map((e) => e.simpleTags ?? [])
               .expand((List<SimpleTag> element) => element)
               .toList() ??
@@ -127,57 +134,6 @@ class SearchImageController extends DefaultTabViewController {
     } on Exception catch (e) {
       pageState = PageState.LoadingError;
       rethrow;
-    }
-  }
-
-  Future<bool> _checkPermission(BuildContext context) async {
-    Future<bool?> _jumpToAppSettings(BuildContext context) async {
-      return await jumpToAppSettings(
-          context,
-          'You have disabled the necessary permissions for the application:'
-          '\nRead and write phone storage, is it allowed in the settings?');
-    }
-
-    if (GetPlatform.isIOS) {
-      final PermissionStatus statusPhotos = await Permission.photos.status;
-      final PermissionStatus statusPhotosAdd =
-          await Permission.photosAddOnly.status;
-
-      if (statusPhotos.isPermanentlyDenied &&
-          statusPhotosAdd.isPermanentlyDenied) {
-        _jumpToAppSettings(context);
-        return false;
-      }
-
-      final requestAddOnly =
-          () async => await Permission.photosAddOnly.request();
-      final requestAll = () async => await Permission.photos.request();
-
-      if (await requestAddOnly().isGranted ||
-          await requestAddOnly().isLimited ||
-          await requestAll().isGranted ||
-          await requestAll().isLimited) {
-        return true;
-      } else {
-        throw 'Unable to read pictures, please authorize first~';
-      }
-    }
-
-    final PermissionStatus status = await Permission.storage.status;
-
-    if (status.isPermanentlyDenied) {
-      if (await Permission.storage.request().isGranted) {
-        return true;
-      } else {
-        await _jumpToAppSettings(context);
-        return false;
-      }
-    } else {
-      if (await Permission.storage.request().isGranted) {
-        return true;
-      } else {
-        throw 'Unable to read pictures, please authorize first~';
-      }
     }
   }
 }

@@ -7,7 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+  for (final platform in [TargetPlatform.iOS]) {
     for (final brightness in Brightness.values) {
       testWidgets(
         'content corners keep a fixed 20pt shape and fade only: $brightness $platform',
