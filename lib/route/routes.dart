@@ -10,6 +10,7 @@ class EHRoutes {
   static const String unlockPage = '/unlockPage';
 
   static const String ehSetting = '/setting/ehSetting';
+  static const String accountSession = '/setting/accountSession';
   static const String layoutSetting = '/setting/layoutSetting';
   static const String itemWidthSetting = '/setting/itemWidthSetting';
   static const String downloadSetting = '/setting/downloadSetting';

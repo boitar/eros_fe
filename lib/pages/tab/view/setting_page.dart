@@ -1,6 +1,7 @@
 import 'package:eros_fe/adaptive/native_single_bar_edge.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/user_controller.dart';
+import 'package:eros_fe/common/service/auth_session_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -386,26 +387,70 @@ class _ProfileRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final UserController userController = Get.find();
     final EhSettingService ehSettingService = Get.find();
+    final SettingViewController settingController = Get.find();
+    final AuthSessionService authService = AuthSessionService.ensure();
     final palette = ehTheme.palette;
     return Obx(() {
       final bool signedIn = userController.isLogin;
       final user = userController.user();
+      final strings = AuthStrings.of(context);
+      final snap = authService.snapshot.value;
+      final now = authService.now;
+      final remDays = snap.remainingDaysAt(now);
+      final status = snap.statusAt(now);
+      final panes = settingController.openCategory.value != null;
+      final selected =
+          signedIn && settingController.openCategory.value == EHRoutes.accountSession;
+
       final String name = signedIn
           ? (user.nickName ?? user.username ?? '')
           : L10n.of(context).login;
+
       void open() {
         if (signedIn) {
-          userController.showLogOutDialog(context);
+          settingController.open(EHRoutes.accountSession);
         } else {
           Get.toNamed(EHRoutes.login);
         }
       }
+
+      final Color dotColor = switch (status) {
+        AuthCountdownStatus.valid => const Color(0xFF3FA86B),
+        AuthCountdownStatus.expiring => const Color(0xFFE39A2A),
+        AuthCountdownStatus.expired => const Color(0xFFC9353B),
+      };
+      final String siteLabel =
+          ehSettingService.isSiteEx.value ? 'EX' : 'E-Hentai';
+      final Widget? signedInSubtitle = signedIn
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dotColor,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    '$siteLabel · ${strings.remainingDaysSummary(remDays)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            )
+          : null;
 
       if (_androidGroups) {
         return MergeSemantics(
           child: Semantics(
             button: true,
             child: AndroidSettingTile(
+              key: const ValueKey<String>('setting-profile-row'),
               minHeight: 80,
               leading: UserAvatarImage(
                 url: signedIn ? user.avatarUrl ?? '' : '',
@@ -418,11 +463,7 @@ class _ProfileRow extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              subtitle: signedIn
-                  ? Text(ehSettingService.isSiteEx.value
-                      ? 'ExHentai'
-                      : 'E-Hentai')
-                  : null,
+              subtitle: signedInSubtitle,
               trailing: const Icon(CupertinoIcons.chevron_right, size: 18),
               onTap: open,
             ),
@@ -430,10 +471,15 @@ class _ProfileRow extends StatelessWidget {
         );
       }
 
+      final accent = EhPalette.accent.resolveFrom(context);
       return MergeSemantics(
         child: Semantics(
           button: true,
+          selected: selected,
           child: EhCupertinoListTile(
+            key: const ValueKey<String>('setting-profile-row'),
+            backgroundColor:
+                selected ? EhPalette.accentSoft.resolveFrom(context) : null,
             padding: const EdgeInsetsDirectional.fromSTEB(16, 11, 16, 11),
             leadingSize: 56,
             leadingToTitle: 14,
@@ -449,14 +495,11 @@ class _ProfileRow extends StatelessWidget {
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 letterSpacing: -0.4,
-                color: palette.text1.resolveFrom(context),
+                color: selected ? accent : palette.text1.resolveFrom(context),
               ),
             ),
-            subtitle: signedIn
-                ? Text(
-                    ehSettingService.isSiteEx.value ? 'ExHentai' : 'E-Hentai')
-                : null,
-            trailing: const CupertinoListTileChevron(),
+            subtitle: signedInSubtitle,
+            trailing: panes ? null : const CupertinoListTileChevron(),
             onTap: open,
           ),
         ),

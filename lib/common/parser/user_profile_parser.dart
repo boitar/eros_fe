@@ -50,6 +50,14 @@ class AvatarCpResult {
   final String? message;
 }
 
+/// Cloudflare 响应头 `cf-mitigated` 判定
+bool isCloudflareMitigatedHeader(String? headerValue) {
+  if (headerValue == null || headerValue.isEmpty) {
+    return false;
+  }
+  return headerValue.toLowerCase().contains('challenge');
+}
+
 /// Cloudflare 人机验证页特征
 bool isCloudflareChallenge(String html) {
   if (html.isEmpty) {
@@ -59,6 +67,7 @@ bool isCloudflareChallenge(String html) {
       html.contains('cf-browser-verification') ||
       html.contains('challenge-platform') ||
       html.contains('cf_chl_opt') ||
+      html.contains('turnstile') ||
       html.contains('Attention Required');
 }
 

@@ -3,15 +3,12 @@ import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
-import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/component/setting_base.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
-import 'package:eros_fe/pages/login/controller/login_controller.dart';
 import 'package:eros_fe/pages/setting/avatar_manage.dart';
-import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
 import 'package:eros_fe/widget/user_avatar_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -39,7 +36,6 @@ class ListViewEhSetting extends StatelessWidget {
   final UserController userController = Get.find();
   final TagTransController transController = Get.find();
   final LocaleService localeService = Get.find();
-  final LoginController loginController = Get.put(LoginController());
 
   Future<void> _handleSiteChanged(bool newValue) async {
     _ehSettingService.isSiteEx(newValue);
@@ -48,22 +44,6 @@ class ListViewEhSetting extends StatelessWidget {
       getExIgneous();
     }
     Api.selEhProfile();
-  }
-
-  Future<void> _handleCfVerify() async {
-    final verification = await openCfVerification();
-    if (verification == null || !verification.isComplete) {
-      return;
-    }
-    await applyCfVerification(verification);
-    try {
-      await loginController.asyncGetUserInfo(interactive: false);
-      showToast(L10n.current.cf_verify_success);
-    } catch (e) {
-      showToast(isCfBlockedError(e)
-          ? L10n.current.cf_verify_still_blocked
-          : '$e');
-    }
   }
 
   @override
@@ -244,13 +224,6 @@ class ListViewEhSetting extends StatelessWidget {
             onTap: () {
               showAvatarManageFlow(context);
             },
-          ),
-        if (isLogin)
-          EhCupertinoListTile(
-            title: Text(L10n.of(context).cf_verify_title),
-            subtitle: Text(L10n.of(context).cf_verify_summary),
-            trailing: const CupertinoListTileChevron(),
-            onTap: _handleCfVerify,
           ),
       ]),
 

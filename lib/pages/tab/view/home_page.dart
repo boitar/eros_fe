@@ -3,6 +3,7 @@ import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
+import 'package:eros_fe/widget/auth_expiry_top_banner.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -37,7 +38,7 @@ class HomePage extends GetView<TabHomeController> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: controller.onPopInvokedWithResult,
-      child: child,
+      child: AuthExpiryTopBannerHost(child: child),
     );
   }
 

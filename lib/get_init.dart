@@ -19,6 +19,7 @@ import 'common/controller/tag_controller.dart';
 import 'common/controller/tag_trans_controller.dart';
 import 'common/controller/user_controller.dart';
 import 'common/controller/webdav_controller.dart';
+import 'common/service/auth_session_service.dart';
 import 'common/service/controller_tag_service.dart';
 import 'common/service/dns_service.dart';
 import 'common/service/ehsetting_service.dart';
@@ -58,6 +59,7 @@ void getinit() {
   Get.lazyPut(() => LocalFavController(), fenix: true);
   Get.lazyPut(() => HistoryController(), fenix: true);
   Get.lazyPut(() => UserController(), fenix: true);
+  Get.lazyPut(() => AuthSessionService(), fenix: true);
   Get.lazyPut(() => AvatarController(), fenix: true);
   Get.lazyPut(() => CacheController(), fenix: true);
   Get.lazyPut(() => ImageBlockController(), fenix: true);
