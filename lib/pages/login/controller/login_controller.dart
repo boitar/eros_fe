@@ -146,7 +146,7 @@ class LoginController extends GetxController {
     final username = (overrideUsername ?? usernameController.text).trim();
     final password = passwdController.text;
     final zh =
-        (Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true);
+        Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
 
     if (username.isEmpty || password.isEmpty) {
       inlineError = zh ? '请输入用户名和密码' : 'Please enter username and password';
@@ -241,7 +241,7 @@ class LoginController extends GetxController {
     final username = (overrideUsername ?? usernameController.text).trim();
     final password = passwdController.text;
     final zh =
-        (Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true);
+        Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
 
     verifyWindowOpen = true;
     update();
@@ -441,7 +441,7 @@ class LoginController extends GetxController {
     final passHash = hashController.text.trim();
     final igneousInput = igneousController.text.trim();
     final zh =
-        (Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true);
+        Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
 
     if (memberId.isEmpty || passHash.isEmpty) {
       showToast(
@@ -515,13 +515,27 @@ class LoginController extends GetxController {
 
   /// 应用内网页登录（移动端与桌面端均可用）
   Future<void> handOnWeblogin({bool closeParentOnSuccess = true}) async {
+    if (verifyWindowOpen || loadingLogin) {
+      return;
+    }
     final zh =
-        (Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true);
+        Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
+    _cancelled = false;
+    inlineError = null;
+    verifyWindowOpen = true;
+    update();
+
     final verification = await openCfVerification(
       interactiveWebLogin: true,
       acquireExSession: true,
     );
+    verifyWindowOpen = false;
+
+    if (_cancelled) {
+      return;
+    }
     if (verification == null || !verification.hasLoginSession) {
+      update();
       return;
     }
 
@@ -536,24 +550,25 @@ class LoginController extends GetxController {
       );
     }
 
-    final hasEx =
-        verification.hasValidIgneous || _currentUserHasValidIgneous();
-    authService.recordAuthSuccess(
+    loadingLogin = true;
+    lastAuthMethod = AuthMethodKind.web;
+    lastVerifiedCf = verification.isComplete;
+    phase = LoginFlowPhase.authenticating;
+    _resetSteps();
+    stepStates[0] = LoginStepState.done;
+    stepMetas[0] = verification.isComplete ? 'CF ✓' : null;
+    stepStates[1] = LoginStepState.done;
+    update();
+
+    await _runExHandshakeAndProfileSync(
       memberId: memberId,
       method: AuthMethodKind.web,
-      hasExAccess: hasEx,
       verifiedCf: verification.isComplete,
+      alreadyHasExFromBrowser: verification.hasValidIgneous,
+      skipExNetworkBecauseBrowserTried: verification.exVisited,
       zh: zh,
+      closeOnComplete: !closeParentOnSuccess,
     );
-
-    asyncGetUserInfo(memberId: memberId, interactive: false)
-        .catchError((Object _) {});
-    Api.selEhProfile();
-
-    if (closeParentOnSuccess) {
-      phase = hasEx ? LoginFlowPhase.success : LoginFlowPhase.exDenied;
-      update();
-    }
   }
 
   /// [interactive] 为 false 时失败只抛出，不弹提示也不引导验证

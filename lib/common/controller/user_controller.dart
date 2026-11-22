@@ -16,6 +16,7 @@ import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter_inappwebview/flutter_inappwebview.dart' as inapp;
 import 'package:get/get.dart';
 import 'package:webview_cookie_manager_plus/webview_cookie_manager_plus.dart';
 
@@ -79,8 +80,15 @@ class UserController extends ProfileController {
 
   void _logOut() {
     user(kDefUser);
-    final WebviewCookieManager cookieManager = WebviewCookieManager();
-    cookieManager.clearCookies();
+    try {
+      final WebviewCookieManager cookieManager = WebviewCookieManager();
+      cookieManager.clearCookies().catchError((Object _) {});
+    } catch (_) {}
+    try {
+      inapp.CookieManager.instance()
+          .deleteAllCookies()
+          .catchError((Object _) => false);
+    } catch (_) {}
   }
 
   @override

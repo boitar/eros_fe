@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
+import 'dart:math' as math;
 
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/user_controller.dart';
@@ -10,11 +12,24 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/login/widget/login_material_chrome.dart';
 import 'package:eros_fe/utils/cf_verification.dart';
+import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show LinearProgressIndicator;
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
+
+/// 应用内验证与网页登录视图的工作模式
+enum CfWebFlowMode {
+  /// 已在客户端输入账号密码，过人机验证后自动填表提交并握手里站
+  autoLoginAfterCf,
+
+  /// 用户主动点击「网页登录」，在页面内手动输入论坛账号密码，成功后自动握手里站返回
+  interactiveWebLogin,
+
+  /// 免密安全验证（如账号页「网页安全验证」或头像上传前过盾）
+  cfOnly,
+}
 
 /// 打开内置 WebView 完成 Cloudflare 验证或直接完成浏览器登录与里站握手；取消时返回 null。
 ///
@@ -26,36 +41,66 @@ Future<CfVerification?> openCfVerification({
   String? password,
   bool interactiveWebLogin = false,
   bool acquireExSession = true,
+  @visibleForTesting WidgetBuilder? debugWebViewBuilder,
 }) async {
   final BuildContext? ctx = Get.context;
+  final bool hasAutoCreds =
+      (username?.isNotEmpty ?? false) && (password?.isNotEmpty ?? false);
+  final bool isManualWebLogin = interactiveWebLogin && !hasAutoCreds;
+
   if (PlatformCapabilities.isDesktop && ctx != null) {
     return showCupertinoDialog<CfVerification>(
       context: ctx,
       barrierDismissible: false,
-      builder: (dialogCtx) => Center(
-        child: Container(
-          width: 480,
-          height: 560,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x470A0C18),
-                blurRadius: 42,
-                offset: Offset(0, 18),
+      builder: (dialogCtx) {
+        final winSize = MediaQuery.sizeOf(dialogCtx);
+        final palette = ehTheme.palette;
+        final double dialogWidth = isManualWebLogin
+            ? math.min(820.0, math.max(480.0, winSize.width - 96))
+            : math.min(520.0, math.max(420.0, winSize.width - 96));
+        final double dialogHeight = isManualWebLogin
+            ? math.min(660.0, math.max(460.0, winSize.height - 72))
+            : math.min(580.0, math.max(440.0, winSize.height - 80));
+
+        return MediaQuery.removePadding(
+          context: dialogCtx,
+          removeLeft: true,
+          removeTop: true,
+          removeRight: true,
+          removeBottom: true,
+          child: Center(
+            child: Container(
+              key: const ValueKey<String>('desktop-web-auth-dialog'),
+              width: dialogWidth,
+              height: dialogHeight,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: palette.canvas.resolveFrom(dialogCtx),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: palette.hairline.resolveFrom(dialogCtx),
+                  width: 0.75,
+                ),
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x470A0C18),
+                    blurRadius: 42,
+                    offset: Offset(0, 18),
+                  ),
+                ],
               ),
-            ],
+              child: CfVerifyWebView(
+                username: username,
+                password: password,
+                interactiveWebLogin: interactiveWebLogin,
+                acquireExSession: acquireExSession,
+                inDesktopDialog: true,
+                debugWebViewBuilder: debugWebViewBuilder,
+              ),
+            ),
           ),
-          child: CfVerifyWebView(
-            username: username,
-            password: password,
-            interactiveWebLogin: interactiveWebLogin,
-            acquireExSession: acquireExSession,
-            inDesktopDialog: true,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -65,6 +110,7 @@ Future<CfVerification?> openCfVerification({
       password: password,
       interactiveWebLogin: interactiveWebLogin,
       acquireExSession: acquireExSession,
+      debugWebViewBuilder: debugWebViewBuilder,
     ),
   );
 }
@@ -157,6 +203,7 @@ class CfVerifyWebView extends StatefulWidget {
     this.interactiveWebLogin = false,
     this.acquireExSession = true,
     this.inDesktopDialog = false,
+    @visibleForTesting this.debugWebViewBuilder,
   });
 
   static const kVerifyUrl = 'https://forums.e-hentai.org/index.php';
@@ -178,27 +225,43 @@ class CfVerifyWebView extends StatefulWidget {
   final bool interactiveWebLogin;
   final bool acquireExSession;
   final bool inDesktopDialog;
+  final WidgetBuilder? debugWebViewBuilder;
 
   bool get hasAutoCredentials =>
       (username?.isNotEmpty ?? false) && (password?.isNotEmpty ?? false);
 
   bool get expectsLoginSession => hasAutoCredentials || interactiveWebLogin;
 
+  CfWebFlowMode get flowMode {
+    if (hasAutoCredentials) {
+      return CfWebFlowMode.autoLoginAfterCf;
+    }
+    if (interactiveWebLogin) {
+      return CfWebFlowMode.interactiveWebLogin;
+    }
+    return CfWebFlowMode.cfOnly;
+  }
+
   @override
   State<CfVerifyWebView> createState() => _CfVerifyWebViewState();
 }
 
 class _CfVerifyWebViewState extends State<CfVerifyWebView> {
-  final CookieManager _cookieManager = CookieManager.instance();
+  CookieManager? _lazyCookieManager;
+  CookieManager get _cookieManager =>
+      _lazyCookieManager ??= CookieManager.instance();
+
   InAppWebViewController? _controller;
 
+  bool _cookieReady = true;
   bool _finishing = false;
   bool _done = false;
   bool _submittedCredentials = false;
   bool _navigatedEx = false;
   bool _showTroubleActions = false;
+  bool _canGoBack = false;
 
-  /// 1: 完成验证, 2: 自动登录 / 获取里站, 3: 准备返回
+  /// 1: 完成验证 / 登录论坛, 2: 自动登录 / 获取里站, 3: 准备返回
   int _step = 1;
   double _loadProgress = 0.0;
   String _currentHost = 'forums.e-hentai.org';
@@ -207,7 +270,78 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
       ? CfVerifyWebView.kSignInUrl
       : CfVerifyWebView.kVerifyUrl;
 
-  Future<List<io.Cookie>> _collectAllSiteCookies() async {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.debugWebViewBuilder == null &&
+        widget.flowMode == CfWebFlowMode.interactiveWebLogin &&
+        !_isAppCurrentlyLoggedIn()) {
+      _cookieReady = false;
+      unawaited(_pruneStaleLoginCookiesBeforeInteractiveSignIn());
+    }
+  }
+
+  bool _isAppCurrentlyLoggedIn() {
+    if (!Get.isRegistered<UserController>()) {
+      return false;
+    }
+    return Get.find<UserController>().isLogin;
+  }
+
+  /// 未登录状态下进入手动「网页登录」前，先清除 WebView 内可能残留的旧账号会话 Cookie
+  /// （保留 `cf_clearance` / `cf_duid` 以免重复触发人机挑战）。
+  Future<void> _pruneStaleLoginCookiesBeforeInteractiveSignIn() async {
+    const staleKeys = <String>[
+      'ipb_member_id',
+      'ipb_pass_hash',
+      'igneous',
+      'sk',
+      'hath_perks',
+    ];
+    const siteOrigins = <(String, String)>[
+      ('https://forums.e-hentai.org/', '.e-hentai.org'),
+      ('https://forums.e-hentai.org/', 'forums.e-hentai.org'),
+      ('https://e-hentai.org/', '.e-hentai.org'),
+      ('https://exhentai.org/', '.exhentai.org'),
+    ];
+    try {
+      await Future<void>(() async {
+        for (final (rawUrl, domain) in siteOrigins) {
+          final webUri = WebUri(rawUrl);
+          for (final key in staleKeys) {
+            await _cookieManager.deleteCookie(
+              url: webUri,
+              name: key,
+              domain: domain,
+            );
+          }
+        }
+      }).timeout(const Duration(milliseconds: 450));
+    } catch (_) {
+      // 忽略个别平台或测试环境下的超时与平台通道差异
+    } finally {
+      if (mounted) {
+        setState(() => _cookieReady = true);
+      }
+    }
+  }
+
+  Future<void> _refreshCanGoBack() async {
+    final ctrl = _controller;
+    if (ctrl == null || !mounted) {
+      return;
+    }
+    try {
+      final canBack = await ctrl.canGoBack();
+      if (mounted && canBack != _canGoBack) {
+        setState(() => _canGoBack = canBack);
+      }
+    } catch (_) {}
+  }
+
+  Future<List<io.Cookie>> _collectAllSiteCookies({
+    InAppWebViewController? controller,
+  }) async {
     final merged = <String, io.Cookie>{};
     for (final rawUrl in const <String>[
       'https://forums.e-hentai.org/',
@@ -217,7 +351,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
       try {
         final list = await _cookieManager.getCookies(url: WebUri(rawUrl));
         for (final c in list) {
-          final val = '${c.value}';
+          final val = '${c.value}'.trim();
           if (val.isEmpty) {
             continue;
           }
@@ -235,6 +369,37 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
         logger.d('collect cookies from $rawUrl error: $e');
       }
     }
+
+    // 补充读取当前页面 document.cookie，防止桌面 WebView CookieStore 异步落盘延迟
+    if (controller != null) {
+      try {
+        final rawDocCookie =
+            await controller.evaluateJavascript(source: 'document.cookie');
+        final docCookieStr = rawDocCookie
+                ?.toString()
+                .trim()
+                .replaceAll(RegExp(r'^"|"$'), '') ??
+            '';
+        if (docCookieStr.isNotEmpty) {
+          for (final segment in docCookieStr.split(';')) {
+            final eq = segment.indexOf('=');
+            if (eq <= 0) {
+              continue;
+            }
+            final name = segment.substring(0, eq).trim();
+            final val = segment.substring(eq + 1).trim();
+            if (val.isEmpty || merged.containsKey(name)) {
+              continue;
+            }
+            if (CfVerification.sessionCookieNames.contains(name) ||
+                CfVerification.cookieNames.contains(name)) {
+              merged[name] = io.Cookie(name, val);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     return merged.values.toList();
   }
 
@@ -255,7 +420,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
         return;
       }
 
-      final cookies = await _collectAllSiteCookies();
+      final cookies = await _collectAllSiteCookies(controller: controller);
       final rawUa =
           await controller.evaluateJavascript(source: 'navigator.userAgent');
       final userAgent =
@@ -287,7 +452,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
         return;
       }
 
-      // 场景 B：需要完整登录态（带自动提交账号密码或应用内网页登录）
+      // 场景 B：需要完整登录态（带自动提交账号密码或应用内手动网页登录）
       if (!probe.hasLoginSession) {
         if (widget.hasAutoCredentials &&
             !_submittedCredentials &&
@@ -325,7 +490,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
         return;
       }
 
-      final finalCookies = await _collectAllSiteCookies();
+      final finalCookies = await _collectAllSiteCookies(controller: controller);
       await _completeWith(
         CfVerification(
           finalCookies,
@@ -389,15 +554,55 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final strings = AuthStrings.of(context);
-    final palette = ehTheme.palette;
-    final isAndroid =
-        PlatformCapabilities.hostPlatform == TargetPlatform.android;
-    final exitInfo = AuthSessionService.ensure().currentExit.value;
+  String _headerTitle(AuthStrings strings) {
+    return widget.flowMode == CfWebFlowMode.interactiveWebLogin
+        ? strings.webSignIn
+        : strings.verifyBrowserTitle;
+  }
 
-    final webView = InAppWebView(
+  (String, String, String) _stepLabels(AuthStrings strings) {
+    final third = widget.inDesktopDialog
+        ? strings.trackStepCloseWindow
+        : (widget.flowMode == CfWebFlowMode.interactiveWebLogin
+            ? strings.trackStepFinishReturn
+            : strings.trackStepReturn);
+    switch (widget.flowMode) {
+      case CfWebFlowMode.interactiveWebLogin:
+        return (strings.trackStepForumSignIn, strings.trackStepSyncEx, third);
+      case CfWebFlowMode.autoLoginAfterCf:
+        return (strings.trackStepVerify, strings.trackStepAutoLogin, third);
+      case CfWebFlowMode.cfOnly:
+        return (
+          strings.trackStepVerify,
+          strings.trackStepRefreshAccess,
+          third,
+        );
+    }
+  }
+
+  String _dockHintText(AuthStrings strings) {
+    switch (widget.flowMode) {
+      case CfWebFlowMode.interactiveWebLogin:
+        return _step >= 2
+            ? strings.dockHintWebLoginStep2
+            : strings.dockHintWebLoginStep1;
+      case CfWebFlowMode.autoLoginAfterCf:
+        return _step >= 2
+            ? strings.dockHintAutoLoginStep2
+            : strings.dockHintVerify;
+      case CfWebFlowMode.cfOnly:
+        return strings.dockHintCfOnly;
+    }
+  }
+
+  Widget _buildWebViewSurface(BuildContext context) {
+    if (widget.debugWebViewBuilder != null) {
+      return widget.debugWebViewBuilder!(context);
+    }
+    if (!_cookieReady) {
+      return const Center(child: CupertinoActivityIndicator());
+    }
+    return InAppWebView(
       initialUrlRequest: URLRequest(url: WebUri(_initialUrl)),
       // 不要开启无回调的 useShouldOverrideUrlLoading，避免 iOS 取消首次导航
       initialSettings: InAppWebViewSettings(
@@ -414,14 +619,46 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
         if (uri != null && uri.host.isNotEmpty && mounted) {
           setState(() => _currentHost = uri.host);
         }
+        unawaited(_refreshCanGoBack());
       },
       onLoadStop: (controller, uri) async {
         if (uri != null && uri.host.isNotEmpty && mounted) {
           setState(() => _currentHost = uri.host);
         }
+        await _refreshCanGoBack();
         await _onPageReady(uri);
       },
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AuthStrings.of(context);
+    final palette = ehTheme.palette;
+    final isAndroid =
+        PlatformCapabilities.hostPlatform == TargetPlatform.android;
+    final useDesktopChrome =
+        widget.inDesktopDialog || PlatformCapabilities.isDesktop;
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 40;
+    final exitInfo = AuthSessionService.ensure().currentExit.value;
+    final webView = _buildWebViewSurface(context);
+
+    // Desktop：三段式独立分栏布局（顶栏 + 独立原生 WebView 槽位 + 底栏），
+    // 不在 WKWebView / WebView2 原生视图上方叠放 Flutter 浮层，且不受主窗口标题栏安全区影响。
+    if (useDesktopChrome) {
+      return CupertinoPageScaffold(
+        backgroundColor: palette.canvas.resolveFrom(context),
+        resizeToAvoidBottomInset: false,
+        child: SizedBox.expand(
+          child: _buildDesktopLayout(
+            context: context,
+            strings: strings,
+            exitInfo: exitInfo,
+            webView: webView,
+          ),
+        ),
+      );
+    }
 
     if (isAndroid) {
       return CupertinoPageScaffold(
@@ -443,18 +680,24 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
                 ),
               Expanded(
                 child: Stack(
+                  fit: StackFit.expand,
                   children: <Widget>[
-                    Positioned.fill(child: webView),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: _buildAndroidBottomSheet(
-                        context,
-                        strings,
-                        exitInfo,
-                      ),
+                    Positioned.fill(
+                      key: const ValueKey<String>('web-auth-webview-slot'),
+                      child: webView,
                     ),
+                    if (!keyboardVisible)
+                      Positioned(
+                        key: const ValueKey<String>('web-auth-bottom-dock'),
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: _buildAndroidBottomSheet(
+                          context,
+                          strings,
+                          exitInfo,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -464,101 +707,229 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
       );
     }
 
-    // iOS & Desktop：全画幅网页 + 顶部三态材质地址胶囊栏 + 底部三态材质进度坞
+    // iOS：全画幅网页 + 顶部三态材质地址胶囊栏 + 底部三态材质进度坞（软键盘弹起时自动让出输入空间）
     return CupertinoPageScaffold(
       backgroundColor: palette.canvas.resolveFrom(context),
       child: Stack(
+        fit: StackFit.expand,
         children: <Widget>[
           Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(
-                top: widget.inDesktopDialog ? 54 : 0,
-              ),
-              child: webView,
-            ),
+            key: const ValueKey<String>('web-auth-webview-slot'),
+            child: webView,
           ),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: Row(
-                children: <Widget>[
-                  LoginFloatingCircleButton(
-                    icon: CupertinoIcons.xmark,
-                    tooltip: strings.cancel,
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SizedBox(
-                      height: 40,
-                      child: LoginFloatingMaterial(
-                        radius: 20,
-                        tone: LoginGlassTone.regular,
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            EhSvgIcon(
-                              CupertinoIcons.lock_fill,
-                              size: 13,
-                              color: palette.text2.resolveFrom(context),
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                _currentHost,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: palette.text1.resolveFrom(context),
+          Positioned(
+            key: const ValueKey<String>('web-auth-top-bar'),
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                child: Row(
+                  children: <Widget>[
+                    LoginFloatingCircleButton(
+                      key: const ValueKey<String>('web-auth-close-button'),
+                      icon: CupertinoIcons.xmark,
+                      tooltip: strings.cancel,
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 40,
+                        child: LoginFloatingMaterial(
+                          radius: 20,
+                          tone: LoginGlassTone.regular,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              EhSvgIcon(
+                                CupertinoIcons.lock_fill,
+                                size: 13,
+                                color: palette.text2.resolveFrom(context),
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  widget.flowMode ==
+                                          CfWebFlowMode.interactiveWebLogin
+                                      ? '${_headerTitle(strings)} · $_currentHost'
+                                      : _currentHost,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: palette.text1.resolveFrom(context),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  LoginFloatingCircleButton(
-                    icon: CupertinoIcons.refresh,
-                    onPressed: () => _controller?.reload(),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    LoginFloatingCircleButton(
+                      key: const ValueKey<String>('web-auth-reload-button'),
+                      icon: CupertinoIcons.refresh,
+                      onPressed: () => _controller?.reload(),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: widget.inDesktopDialog ? 12 : 24,
-            child: SafeArea(
-              top: false,
-              child: LoginFloatingMaterial(
-                radius: 24,
-                tone: LoginGlassTone.regular,
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                child: _buildDockContent(context, strings, exitInfo),
+          if (!keyboardVisible)
+            Positioned(
+              key: const ValueKey<String>('web-auth-bottom-dock'),
+              left: 12,
+              right: 12,
+              bottom: 24,
+              child: SafeArea(
+                top: false,
+                child: LoginFloatingMaterial(
+                  radius: 24,
+                  tone: LoginGlassTone.regular,
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                  child: _buildDockContent(context, strings, exitInfo),
+                ),
               ),
             ),
-          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDesktopLayout({
+    required BuildContext context,
+    required AuthStrings strings,
+    required ExitTraceInfo? exitInfo,
+    required Widget webView,
+  }) {
+    final palette = ehTheme.palette;
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final loading = _loadProgress > 0.0 && _loadProgress < 1.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SizedBox(
+          key: const ValueKey<String>('web-auth-top-bar'),
+          height: 48,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: <Widget>[
+                _DesktopChromeIconButton(
+                  key: const ValueKey<String>('web-auth-close-button'),
+                  icon: CupertinoIcons.xmark,
+                  tooltip: strings.cancel,
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+                const SizedBox(width: 6),
+                _DesktopChromeIconButton(
+                  key: const ValueKey<String>('web-auth-back-button'),
+                  icon: CupertinoIcons.chevron_left,
+                  onPressed: _canGoBack
+                      ? () async {
+                          await _controller?.goBack();
+                          await _refreshCanGoBack();
+                        }
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    height: 30,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: palette.surface.resolveFrom(context),
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(
+                        color: palette.hairline.resolveFrom(context),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(
+                          CupertinoIcons.lock_fill,
+                          size: 12,
+                          color: palette.text2.resolveFrom(context),
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            '${_headerTitle(strings)} · $_currentHost',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              color: palette.text1.resolveFrom(context),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _DesktopChromeIconButton(
+                  key: const ValueKey<String>('web-auth-reload-button'),
+                  icon: CupertinoIcons.refresh,
+                  onPressed: () => _controller?.reload(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 2,
+          child: loading
+              ? LinearProgressIndicator(
+                  value: _loadProgress,
+                  backgroundColor: EhPalette.accentSoft.resolveFrom(context),
+                  color: EhPalette.accent.resolveFrom(context),
+                )
+              : null,
+        ),
+        Expanded(
+          child: ColoredBox(
+            key: const ValueKey<String>('web-auth-webview-slot'),
+            color: dark ? const Color(0xFF14161A) : const Color(0xFFFFFFFF),
+            child: webView,
+          ),
+        ),
+        DecoratedBox(
+          key: const ValueKey<String>('web-auth-bottom-dock'),
+          decoration: BoxDecoration(
+            color: palette.canvas.resolveFrom(context),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
+            child: _buildDockContent(context, strings, exitInfo),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildAndroidHeader(BuildContext context, AuthStrings strings) {
     final palette = ehTheme.palette;
     return SizedBox(
+      key: const ValueKey<String>('web-auth-top-bar'),
       height: 60,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Row(
           children: <Widget>[
             CupertinoButton(
+              key: const ValueKey<String>('web-auth-close-button'),
               padding: const EdgeInsets.all(12),
               onPressed: () => Navigator.of(context).maybePop(),
               child: EhSvgIcon(
@@ -573,7 +944,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    strings.verifyBrowserTitle,
+                    _headerTitle(strings),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -605,6 +976,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
               ),
             ),
             CupertinoButton(
+              key: const ValueKey<String>('web-auth-reload-button'),
               padding: const EdgeInsets.all(12),
               onPressed: () => _controller?.reload(),
               child: EhSvgIcon(
@@ -668,6 +1040,11 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
   ) {
     final palette = ehTheme.palette;
     final accent = EhPalette.accent.resolveFrom(context);
+    final (step1Label, step2Label, step3Label) = _stepLabels(strings);
+    final troubleText = widget.flowMode == CfWebFlowMode.interactiveWebLogin
+        ? strings.webLoginTroubleLink
+        : strings.troubleLink;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -677,7 +1054,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
             _TrackDot(number: 1, active: _step >= 1),
             const SizedBox(width: 6),
             Text(
-              strings.trackStepVerify,
+              step1Label,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: _step == 1 ? FontWeight.w600 : FontWeight.w500,
@@ -696,7 +1073,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
             _TrackDot(number: 2, active: _step >= 2),
             const SizedBox(width: 6),
             Text(
-              strings.trackStepAutoLogin,
+              step2Label,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: _step == 2 ? FontWeight.w600 : FontWeight.w500,
@@ -715,7 +1092,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
             _TrackDot(number: 3, active: _step >= 3),
             const SizedBox(width: 6),
             Text(
-              strings.trackStepReturn,
+              step3Label,
               style: TextStyle(
                 fontSize: 12,
                 color: _step >= 3
@@ -727,9 +1104,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
         ),
         const SizedBox(height: 10),
         Text(
-          widget.expectsLoginSession
-              ? strings.dockHintVerify
-              : strings.dockHintCfOnly,
+          _dockHintText(strings),
           style: TextStyle(
             fontSize: 13,
             height: 1.45,
@@ -761,10 +1136,11 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
             ],
             const Spacer(),
             GestureDetector(
+              key: const ValueKey<String>('web-auth-trouble-toggle'),
               onTap: () =>
                   setState(() => _showTroubleActions = !_showTroubleActions),
               child: Text(
-                strings.troubleLink,
+                troubleText,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -792,6 +1168,49 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _DesktopChromeIconButton extends StatelessWidget {
+  const _DesktopChromeIconButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ehTheme.palette;
+    final enabled = onPressed != null;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: tooltip,
+      child: EhPressable(
+        onPressed: onPressed,
+        child: Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: palette.fill.resolveFrom(context),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: 15,
+            color: enabled
+                ? palette.text1.resolveFrom(context)
+                : palette.text3.resolveFrom(context),
+          ),
+        ),
+      ),
     );
   }
 }

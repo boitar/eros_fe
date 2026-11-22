@@ -12,6 +12,7 @@ import 'package:eros_fe/network/app_dio/exception.dart';
 import 'package:eros_fe/pages/login/controller/login_controller.dart';
 import 'package:eros_fe/pages/login/view/login_page.dart';
 import 'package:eros_fe/pages/login/widget/login_material_chrome.dart';
+import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
 import 'package:eros_fe/utils/cf_verification.dart';
 import 'package:eros_fe/widget/auth_expiry_top_banner.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
@@ -317,5 +318,287 @@ void main() {
         },
       );
     }
+  });
+
+  group('CfVerifyWebView layout geometry & flow mode separation', () {
+    testWidgets(
+      'Desktop interactive Web Sign-in dialog uses non-overlapping 3-band layout, wider size, and manual login copy even when window has top safe area',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.macOS;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(1280, 820);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        Get.put<UserController>(_FakeUserController(), permanent: true);
+        final authService = Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+        authService.currentExit.value = const ExitTraceInfo(
+          countryCode: 'JP',
+          colo: 'NRT',
+          fetchedAtMs: 1,
+        );
+
+        await tester.pumpWidget(
+          GetCupertinoApp(
+            locale: const Locale('zh', 'CN'),
+            supportedLocales: const <Locale>[
+              Locale('zh', 'CN'),
+              Locale('en', 'US'),
+            ],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            builder: (context, child) {
+              final media = MediaQuery.of(context);
+              // Simulate MacOSWindowChrome injecting unified titlebar safeTop = 40
+              return MediaQuery(
+                data: media.copyWith(
+                  padding: media.padding.copyWith(top: 40),
+                  viewPadding: media.viewPadding.copyWith(top: 40),
+                ),
+                child: child!,
+              );
+            },
+            home: CupertinoPageScaffold(
+              child: Center(
+                child: CupertinoButton(
+                  key: const ValueKey<String>('trigger-web-login'),
+                  child: const Text('打开网页登录'),
+                  onPressed: () {
+                    openCfVerification(
+                      interactiveWebLogin: true,
+                      debugWebViewBuilder: (_) => const ColoredBox(
+                        key: ValueKey<String>('mock-webview'),
+                        color: Color(0xFFFFFFFF),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.byKey(const ValueKey<String>('trigger-web-login')));
+        await tester.pumpAndSettle();
+
+        final dialogRect = tester.getRect(
+          find.byKey(const ValueKey<String>('desktop-web-auth-dialog')),
+        );
+        final topBarRect = tester.getRect(
+          find.byKey(const ValueKey<String>('web-auth-top-bar')),
+        );
+        final webSlotRect = tester.getRect(
+          find.byKey(const ValueKey<String>('web-auth-webview-slot')),
+        );
+        final bottomDockRect = tester.getRect(
+          find.byKey(const ValueKey<String>('web-auth-bottom-dock')),
+        );
+
+        // Wide comfortable desktop dialog for full forum login page
+        expect(dialogRect.width, 820.0);
+        expect(dialogRect.height, 660.0);
+
+        // Top bar, WebView, and bottom dock must never overlap or clip outside dialog
+        expect(topBarRect.top, greaterThanOrEqualTo(dialogRect.top));
+        expect(topBarRect.height, 48.0);
+        expect(topBarRect.bottom, lessThanOrEqualTo(webSlotRect.top));
+        expect(webSlotRect.height, greaterThan(450.0));
+        expect(webSlotRect.bottom, lessThanOrEqualTo(bottomDockRect.top));
+        expect(bottomDockRect.bottom, lessThanOrEqualTo(dialogRect.bottom));
+
+        // Copy must reflect manual Web Sign-in rather than auto credential injection
+        expect(find.textContaining('网页登录 · forums.e-hentai.org'), findsOneWidget);
+        expect(find.text('登录论坛'), findsOneWidget);
+        expect(find.text('获取里站权限'), findsOneWidget);
+        expect(find.text('关闭窗口'), findsOneWidget);
+        expect(find.textContaining('请在页面中登录 E-Hentai 论坛'), findsOneWidget);
+        expect(find.text('自动登录'), findsNothing);
+        expect(find.textContaining('会自动提交账号'), findsNothing);
+
+        // Trouble toggle expands helper chips cleanly
+        await tester.tap(
+          find.byKey(const ValueKey<String>('web-auth-trouble-toggle')),
+        );
+        await tester.pump();
+        expect(find.text('清除站点数据并刷新'), findsOneWidget);
+
+        // Close button dismisses dialog cleanly
+        await tester.tap(
+          find.byKey(const ValueKey<String>('web-auth-close-button')),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey<String>('desktop-web-auth-dialog')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets(
+      'Desktop auto-credential CF check dialog uses compact size and auto-login copy',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.macOS;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(1280, 820);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        Get.put<UserController>(_FakeUserController(), permanent: true);
+        Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+
+        await tester.pumpWidget(
+          GetCupertinoApp(
+            locale: const Locale('zh', 'CN'),
+            supportedLocales: const <Locale>[Locale('zh', 'CN')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: CupertinoPageScaffold(
+              child: Center(
+                child: CupertinoButton(
+                  key: const ValueKey<String>('trigger-cf-auto'),
+                  child: const Text('打开验证'),
+                  onPressed: () {
+                    openCfVerification(
+                      username: 'miyuu',
+                      password: 'secret',
+                      debugWebViewBuilder: (_) => const SizedBox.expand(),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.byKey(const ValueKey<String>('trigger-cf-auto')));
+        await tester.pumpAndSettle();
+
+        final dialogRect = tester.getRect(
+          find.byKey(const ValueKey<String>('desktop-web-auth-dialog')),
+        );
+        expect(dialogRect.width, 520.0);
+        expect(dialogRect.height, 580.0);
+        expect(find.textContaining('安全验证 · forums.e-hentai.org'), findsOneWidget);
+        expect(find.text('完成验证'), findsOneWidget);
+        expect(find.text('自动登录'), findsOneWidget);
+        expect(find.textContaining('会自动提交账号并返回'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'iOS full-screen CfVerifyWebView expands Stack to full height and hides bottom dock when keyboard opens',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        tester.view.padding = const FakeViewPadding(top: 54, bottom: 34);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+          tester.view.resetPadding();
+          tester.view.resetViewInsets();
+        });
+
+        Get.put<UserController>(_FakeUserController(), permanent: true);
+        Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+
+        await tester.pumpWidget(
+          CupertinoApp(
+            locale: const Locale('zh', 'CN'),
+            supportedLocales: const <Locale>[Locale('zh', 'CN')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: CfVerifyWebView(
+              interactiveWebLogin: true,
+              debugWebViewBuilder: (_) => const SizedBox.expand(),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final webSlotRect = tester.getRect(
+          find.byKey(const ValueKey<String>('web-auth-webview-slot')),
+        );
+        final topBarRect = tester.getRect(
+          find.byKey(const ValueKey<String>('web-auth-top-bar')),
+        );
+        final bottomDockRect = tester.getRect(
+          find.byKey(const ValueKey<String>('web-auth-bottom-dock')),
+        );
+
+        expect(webSlotRect.size, const Size(390, 844));
+        expect(topBarRect.bottom, lessThan(120));
+        expect(bottomDockRect.top, greaterThan(620));
+        expect(bottomDockRect.bottom, lessThanOrEqualTo(844));
+
+        // Simulate soft keyboard opening for forum form input
+        tester.view.viewInsets = const FakeViewPadding(bottom: 320);
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey<String>('web-auth-bottom-dock')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets(
+      'Android Web Sign-in shows Web Sign-in header title and hides bottom sheet when keyboard opens',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(412, 915);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+          tester.view.resetViewInsets();
+        });
+
+        Get.put<UserController>(_FakeUserController(), permanent: true);
+        Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+
+        await tester.pumpWidget(
+          CupertinoApp(
+            locale: const Locale('zh', 'CN'),
+            supportedLocales: const <Locale>[Locale('zh', 'CN')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: CfVerifyWebView(
+              interactiveWebLogin: true,
+              debugWebViewBuilder: (_) => const SizedBox.expand(),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('网页登录'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('web-auth-bottom-dock')),
+          findsOneWidget,
+        );
+
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey<String>('web-auth-bottom-dock')),
+          findsNothing,
+        );
+      },
+    );
   });
 }
