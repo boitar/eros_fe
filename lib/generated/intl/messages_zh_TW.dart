@@ -650,6 +650,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_favorite": MessageLookupByLibrary.simpleMessage("收藏"),
     "tab_gallery": MessageLookupByLibrary.simpleMessage("畫廊"),
     "tab_history": MessageLookupByLibrary.simpleMessage("歷史"),
+    "tab_history_duo_sidebar_note": MessageLookupByLibrary.simpleMessage(
+      "「歷史」欄位不會顯示在 iPhone Duo 側邊欄中，可從頁面頂部操作列進入。",
+    ),
     "tab_popular": MessageLookupByLibrary.simpleMessage("熱門"),
     "tab_setting": MessageLookupByLibrary.simpleMessage("設定"),
     "tab_sort": MessageLookupByLibrary.simpleMessage("長按並拖動以進行排序"),

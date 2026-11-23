@@ -651,5 +651,6 @@
   "desktop_read_unavailable": "Unable to open this work. Check its source and try again.",
   "desktop_untitled": "Untitled work",
   "desktop_view_details": "View details",
-  "desktop_mode_sync_failed": "Display mode saved locally. Sync failed; check your connection."
+  "desktop_mode_sync_failed": "Display mode saved locally. Sync failed; check your connection.",
+  "tab_history_duo_sidebar_note": "The History tab is not shown in the iPhone Duo side bar; access History from the page action bar instead."
 }

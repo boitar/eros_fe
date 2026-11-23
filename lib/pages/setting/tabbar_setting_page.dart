@@ -1,3 +1,4 @@
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/controller/tab_setting_controller.dart';
@@ -13,13 +14,17 @@ class TabbarSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
+    final footerText = PlatformCapabilities.uiKitGlass
+        ? '${l10n.tab_sort}\n${l10n.tab_history_duo_sidebar_note}'
+        : l10n.tab_sort;
     return SettingScaffold(
-      title: L10n.of(context).tabbar_setting,
+      title: l10n.tabbar_setting,
       child: CustomScrollView(slivers: [
         SliverSafeArea(
           sliver: MultiSliver(children: [
             SliverCupertinoListSection.listInsetGrouped(
-              footer: Text(L10n.of(context).tab_sort),
+              footer: Text(footerText),
               children: const [TabbarListView()],
             ),
           ]),
@@ -67,7 +72,7 @@ class TabbarListView extends StatelessWidget {
         trailing: Obx(() {
           return CupertinoSwitch(
             value: controller.tabMap[tag] ?? false,
-            onChanged: (controller.disableSwitch && controller.tabMap[tag]!)
+            onChanged: controller.isSwitchDisabled(tag)
                 ? null
                 : (bool val) {
                     controller.onChanged(val, tag);

@@ -134,10 +134,18 @@ class TabHomeController extends GetxController {
   String? _reselectionRoute;
   EhTabController? _reselectionController;
   bool? _useLiquidGlass;
+  Worker? _adaptiveWorker;
+  bool _lastSuppressHistoryInDuoSidebar = false;
 
   final EhSettingService _ehSettingService = Get.find();
 
   bool get isSafeMode => _ehSettingService.isSafeMode.value;
+
+  /// The iPhone Duo vertical side bar only fits five tabs cleanly, and History
+  /// already has a dedicated entry in the page action bar.
+  bool get suppressesHistoryTabInDuoSidebar =>
+      Get.isRegistered<AdaptiveEnvironmentService>() &&
+      Get.find<AdaptiveEnvironmentService>().snapshot.value.hasDuoVerticalBar;
 
   final CupertinoTabController tabController = CupertinoTabController();
 
@@ -158,8 +166,12 @@ class TabHomeController extends GetxController {
       : _sortedTabList;
 
   List<String> get _sortedTabList {
+    final suppressHistory = suppressesHistoryTabInDuoSidebar;
     final List<String> _list = <String>[];
     for (final String key in tabNameList) {
+      if (suppressHistory && key == EHRoutes.history) {
+        continue;
+      }
       if (tabMap[key] ?? false) {
         _list.add(key);
       }
@@ -244,6 +256,33 @@ class TabHomeController extends GetxController {
       logger.d(
           '${_tabConfig.tabItemList.map((e) => '${e.name}:${e.enable}').toList().join('\n')} ');
     });
+
+    bindAdaptiveEnvironment();
+  }
+
+  /// Keeps the selected tab index aligned when iPhone Duo enters or leaves its
+  /// vertical side bar (which excludes History from the 5-slot bar).
+  void bindAdaptiveEnvironment() {
+    _adaptiveWorker?.dispose();
+    _adaptiveWorker = null;
+    if (!Get.isRegistered<AdaptiveEnvironmentService>()) {
+      return;
+    }
+    final adaptive = Get.find<AdaptiveEnvironmentService>();
+    _lastSuppressHistoryInDuoSidebar =
+        adaptive.snapshot.value.hasDuoVerticalBar;
+    _adaptiveWorker = ever(
+      adaptive.snapshot,
+      (AdaptiveEnvironmentSnapshot snapshot) {
+        final suppress = snapshot.hasDuoVerticalBar;
+        if (suppress == _lastSuppressHistoryInDuoSidebar) {
+          return;
+        }
+        _lastSuppressHistoryInDuoSidebar = suppress;
+        _syncSelectedTab();
+        selectionRevision.value++;
+      },
+    );
   }
 
   void _syncSelectedTab() {
@@ -287,15 +326,16 @@ class TabHomeController extends GetxController {
       }).toList();
 
   List<String> get hiddenTabRoutes {
-    // Read all three observables even in safe mode or with an empty list, so
-    // an Obx caller continues to follow changes to the complete configuration.
+    // Read all observables even in safe mode or with an empty list, so an Obx
+    // caller continues to follow changes to the complete configuration and Duo
+    // vertical-bar transitions.
     final safeMode = isSafeMode;
     final routes = tabNameList.toList();
-    final visibility = Map<String, bool>.of(tabMap);
+    final visible = _sortedTabList.toSet();
     if (safeMode) {
       return const [];
     }
-    return routes.where((route) => !(visibility[route] ?? false)).toList();
+    return routes.where((route) => !visible.contains(route)).toList();
   }
 
   Future<void> openHiddenTab(String route) async {
@@ -476,6 +516,8 @@ class TabHomeController extends GetxController {
 
   @override
   void onClose() {
+    _adaptiveWorker?.dispose();
+    _adaptiveWorker = null;
     resetTabTapSequence();
     tabController.dispose();
     selectionRevision.dispose();

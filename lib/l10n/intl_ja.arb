@@ -651,5 +651,6 @@
   "desktop_read_unavailable": "作品を開けません。保存元を確認して再試行してください。",
   "desktop_untitled": "無題の作品",
   "desktop_view_details": "詳細を表示",
-  "desktop_mode_sync_failed": "表示形式を端末に保存しました。同期に失敗したため、接続を確認してください。"
+  "desktop_mode_sync_failed": "表示形式を端末に保存しました。同期に失敗したため、接続を確認してください。",
+  "tab_history_duo_sidebar_note": "「履歴」タブは iPhone Duo のサイドバーには表示されません。ページ上部のアクションバーから開けます。"
 }
