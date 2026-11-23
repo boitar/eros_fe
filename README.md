@@ -7,7 +7,7 @@ screens with Liquid Glass navigation and fixes downloads, favorites, sharing, hi
 haptics and Cloudflare verification. It started on iOS/iPadOS and iPhone Duo; **the new UI now also
 supports Android and desktop (macOS)**. A Windows build is in progress and will follow in a few days.
 
-The current version is `1.10.1+568`. The iOS Bundle ID is `cn.honjow.fehv`.
+The current version is `1.11.0+569`. The iOS Bundle ID is `cn.honjow.fehv`.
 
 ## Screenshots
 
@@ -92,6 +92,44 @@ The native vertical bars sit on the right edge.
   shell and the older glass top bar (one hidden tab opens directly; several open a picker).
 
 ## Changelog
+
+### 2026-11-24: v1.11.0, cross-platform login, sidebar and settings redesign
+
+Tag: `v1.11.0` ([release](https://github.com/boitar/eros_fe/releases/tag/v1.11.0)).
+
+- **Sidebar, settings and multi-appearance app icons ([#6](https://github.com/boitar/eros_fe/pull/6)):**
+  Unified cross-platform sidebar and settings navigation with a new SVG icon set. Added 4-mode app
+  icon switching (**Auto / Light / Dark / Classic Purple**) across iOS alternate icons, macOS dynamic
+  Dock icon, Android `<activity-alias>` launchers and Windows multi-size `.ico` synced with system
+  theme, reflected in the login brand badge. Fixed iOS split-settings selection and detail stack sync,
+  and unified desktop settings split initial/reset width to 34%.
+- **Redesigned login, Cloudflare verification loop and 30-day session center ([#6](https://github.com/boitar/eros_fe/pull/6)):**
+  New cover-curtain mobile login and two-column desktop login with smart clipboard cookie parsing,
+  `/cdn-cgi/trace` egress check and Asia-node notice. Network layer detects `cf-mitigated: challenge`
+  and resets failed `.exhentai.org` handshakes; the reworked in-app verification browser auto-submits
+  login and fetches `igneous`. Tapping the logged-in avatar opens the account & 30-day session page
+  with unified re-authentication and an in-app expiry top banner.
+- **Desktop three-pane floating islands and group management:** Upgraded macOS/Windows to floating
+  island panes and redesigned desktop group management/editing. Fixed Windows Settings middle-pane
+  crash (`PackageInfo`), Dart-only proxy plugin registration and Skia fallback; fixed macOS reader
+  top bar overlap with traffic-light controls and file-picker entitlements.
+- **Secondary pages and sheets redesign:** Unified search, add tags, rating, archiver, torrents,
+  filter, image search, page jump / seek (with first/prev/next/last buttons), favorite order and
+  search "More" into the new sheet and button hierarchy (native UIKit sheets on iOS with Liquid Glass).
+- **iOS native shell, iPhone Duo and Android glass polish:** Fixed iPhone Duo vertical sidebar
+  overflow locking out Settings when History is enabled ([#5](https://github.com/boitar/eros_fe/pull/5)).
+  Extended open Duo gallery detail backdrops under the trailing system bar, moved Duo search actions
+  to the system bar, and fixed pane bar ownership and detail entry right-edge flicker. Added scroll
+  edges to single-bar pages, cached native glass views to eliminate modal overlay bleed/redraw,
+  improved Android glass top bar & `GlassBackdropGroup` sharing, restored long-press favorite card
+  haptics and fixed LiveContainer pagination NaN crashes.
+- **Issue responses:**
+  - Fixed [#2](https://github.com/boitar/eros_fe/issues/2) ([#4](https://github.com/boitar/eros_fe/pull/4)):
+    tapping the artist/group byline below a gallery title no longer double-quotes the query
+    (`artist:""name"$"`), matching tag-list searches.
+  - Follow-up on [#1](https://github.com/boitar/eros_fe/issues/1#issuecomment-6833126811): the
+    suggestions for full-screen swipe-back on gallery detail and double-tap exit in the reader have
+    been noted for evaluation in a future release.
 
 ### 2026-11-11: v1.10.1, show full title
 

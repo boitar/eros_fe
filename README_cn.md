@@ -5,7 +5,7 @@
 的个人 fork，`custom` 分支重做主要界面并接入液态玻璃导航，修复下载、收藏、分享、历史、头像、触感与 Cloudflare 验证等问题。
 最初面向 iOS／iPadOS 与 iPhone Duo，**新版 UI 现已支持 Android 与桌面端（macOS）**；Windows 版正在打包，预计过几天发布。
 
-当前版本 `1.10.1+568`，iOS Bundle ID 为 `cn.honjow.fehv`。
+当前版本 `1.11.0+569`，iOS Bundle ID 为 `cn.honjow.fehv`。
 
 ## 应用截图
 
@@ -64,6 +64,19 @@
 - 隐藏栏目入口：底栏隐藏的栏目在 iOS 27.1 原生导航与旧版玻璃顶栏中都按实际设置显示入口（1 项直接打开，多项弹出选择面板）。
 
 ## 更新记录
+
+### 2026-11-24：v1.11.0，跨平台登录、侧栏与设置界面重设计
+
+Tag：`v1.11.0`（[Release](https://github.com/boitar/eros_fe/releases/tag/v1.11.0)）。
+
+- **侧栏、设置与多外观应用图标重设计（[#6](https://github.com/boitar/eros_fe/pull/6)）：** 统一跨平台侧栏与设置导航布局并引入新 SVG 图标体系；新增 **自适应（跟随系统）／凝脂白／曜石黑／紫韵经典** 4 档应用图标切换（覆盖 iOS 备选图标、macOS 动态程序坞图标、Android `<activity-alias>` 与 Windows 多分辨率图标及系统主题同步），登录页品牌徽章同步联动；修复 iOS 设置分栏分类/账号选中态与详情栈同步，桌面设置分栏初始及双击重置宽度统一为 34%。
+- **三端登录页、Cloudflare 验证闭环与 30 天登录态管理（[#6](https://github.com/boitar/eros_fe/pull/6)）：** 重做移动端封面幕布与桌面端左右分栏登录页，支持剪贴板 Cookie 智能识别、出口探测与亚洲节点提醒；网络层优先识别 `cf-mitigated: challenge` 并支持里站 Cookie 重握手，内置验证浏览器通过后自动填表并获取 `igneous`；设置页点击已登录头像改为进入账号与 30 天登录态管理页，整合「重新认证」面板并新增进入应用顶部轻提醒。
+- **桌面端三栏浮岛布局与分组管理重设计：** 桌面端升级三栏独立浮岛与发丝边框、重做桌面分组管理与编辑页；修复 Windows 设置中栏灰屏、代理插件注册与 Impeller 启动白/黑屏回退（Skia）；修复 macOS 阅读器顶栏与红绿灯重叠并补齐文件选择权限。
+- **二级页面与弹层重设计：** 搜索、添加标签、评分、归档、种子、筛选、以图搜图、跳页/搜寻（新增首/上/下/末页四按钮）、收藏夹排序与搜索「更多」统一为新弹层与四级按钮体系（iOS 液态玻璃优先走原生 UIKit 弹层）。
+- **iOS 原生壳、iPhone Duo 与 Android 玻璃打磨：** 修复 iPhone Duo 竖向侧栏开启「历史」后超过 5 项溢出卡死无法进设置（[#5](https://github.com/boitar/eros_fe/pull/5)）；Duo 横屏展开详情页背景延展至右侧系统栏下方、搜索操作迁至右侧系统栏，修复分栏工具栏归属与详情进场动画右缘闪烁；为单行栏页面补全顶部滚动渐隐，缓存复用原生玻璃视图以消除分栏弹窗穿透与重绘闪烁；优化 Android 液态玻璃顶栏与 `GlassBackdropGroup` 共享；修复长按画廊卡片收藏缺少震动反馈及 LiveContainer 分页 NaN 崩溃。
+- **Issue 响应：**
+  - 修复 [#2](https://github.com/boitar/eros_fe/issues/2)（[#4](https://github.com/boitar/eros_fe/pull/4)）：点击画廊标题下方作者/社团副标题时不再错误重复拼接引号（`artist:""name"$"`），统一与标签列表一致。
+  - 响应 [#1](https://github.com/boitar/eros_fe/issues/1#issuecomment-6833126811) 后续反馈：关于画廊详情页任意位置横滑返回与阅读页双击退出的建议已记录，将在后续版本评估。
 
 ### 2026-11-11：v1.10.1，显示完整标题
 
