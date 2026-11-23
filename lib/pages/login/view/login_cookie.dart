@@ -7,6 +7,7 @@ import 'package:eros_fe/pages/login/controller/login_controller.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class LoginCookie extends GetView<LoginController> {
   const LoginCookie({super.key});
@@ -49,7 +50,7 @@ class LoginCookie extends GetView<LoginController> {
                           ),
                           child: Row(
                             children: <Widget>[
-                              Icon(
+                              EhSvgIcon(
                                 CupertinoIcons.doc_on_clipboard,
                                 size: 18,
                                 color: accent,
@@ -178,7 +179,7 @@ class LoginCookie extends GetView<LoginController> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Icon(
+                              EhSvgIcon(
                                 CupertinoIcons.doc_on_clipboard,
                                 size: 17,
                                 color: palette.text1.resolveFrom(context),

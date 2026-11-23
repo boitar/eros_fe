@@ -5,6 +5,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 
 class SecuritySettingPage extends StatelessWidget {
   const SecuritySettingPage({super.key});
@@ -19,13 +20,20 @@ class SecuritySettingPage extends StatelessWidget {
       child: CustomScrollView(
         slivers: [
           SliverSafeArea(
-            sliver: SliverCupertinoListSection.insetGrouped(
-              hasLeading: false,
-              additionalDividerMargin: 6,
-              itemBuilder: (context, index) {
-                return _widgetList[index];
-              },
-              itemCount: _widgetList.length,
+            sliver: MultiSliver(
+              children: [
+                const SliverSettingCategoryHero(
+                  route: EHRoutes.securitySetting,
+                ),
+                SliverCupertinoListSection.insetGrouped(
+                  hasLeading: false,
+                  additionalDividerMargin: 6,
+                  itemBuilder: (context, index) {
+                    return _widgetList[index];
+                  },
+                  itemCount: _widgetList.length,
+                ),
+              ],
             ),
           ),
         ],

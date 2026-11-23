@@ -143,7 +143,7 @@ class _NetworkExtendedImageState extends State<NetworkExtendedImage>
                       final showCustomWidget = snapshot.data ?? false;
                       return showCustomWidget
                           ? const Center(
-                              child: FaIcon(FontAwesomeIcons.rectangleAd))
+                              child: EhSvgFaIcon(FontAwesomeIcons.rectangleAd))
                           : _image;
                     } else if (snapshot.connectionState ==
                         ConnectionState.waiting) {
@@ -164,7 +164,7 @@ class _NetworkExtendedImageState extends State<NetworkExtendedImage>
           case LoadState.failed:
             return Container(
               alignment: Alignment.center,
-              child: const Icon(
+              child: const EhSvgIcon(
                 Icons.error,
                 color: Colors.red,
               ),
@@ -299,7 +299,7 @@ class _ExtendedImageRectState extends State<ExtendedImageRect> {
             },
             child: Container(
               alignment: Alignment.center,
-              child: const Icon(
+              child: const EhSvgIcon(
                 Icons.error,
                 color: Colors.red,
               ),

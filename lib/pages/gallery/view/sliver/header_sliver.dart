@@ -273,7 +273,7 @@ class _InfoWidget extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.max,
       children: [
-        FaIcon(
+        EhSvgFaIcon(
           icon,
           color: CupertinoDynamicColor.resolve(
               CupertinoColors.secondaryLabel, context),
@@ -311,7 +311,7 @@ class GalleryInfoView extends StatelessWidget {
     Widget languageWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(
+            EhSvgFaIcon(
               FontAwesomeIcons.language,
               color: CupertinoDynamicColor.resolve(
                   CupertinoColors.secondaryLabel, context),
@@ -327,7 +327,7 @@ class GalleryInfoView extends StatelessWidget {
     Widget imageCountWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(
+            EhSvgFaIcon(
               FontAwesomeIcons.solidImages,
               size: 12,
               color: CupertinoDynamicColor.resolve(
@@ -342,7 +342,7 @@ class GalleryInfoView extends StatelessWidget {
     Widget fileSizeWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(
+            EhSvgFaIcon(
               FontAwesomeIcons.fileArrowDown,
               size: 12,
               color: CupertinoDynamicColor.resolve(
@@ -357,7 +357,7 @@ class GalleryInfoView extends StatelessWidget {
     Widget favCountWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(
+            EhSvgFaIcon(
               FontAwesomeIcons.solidHeart,
               // color: CupertinoColors.systemRed,
               color: CupertinoDynamicColor.resolve(
@@ -371,7 +371,7 @@ class GalleryInfoView extends StatelessWidget {
     Widget rateCountWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(
+            EhSvgFaIcon(
               FontAwesomeIcons.solidStar,
               color: CupertinoDynamicColor.resolve(
                   CupertinoColors.secondaryLabel, context),
@@ -384,7 +384,7 @@ class GalleryInfoView extends StatelessWidget {
     Widget potTimeWidget() => Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(
+            EhSvgFaIcon(
               FontAwesomeIcons.solidClock,
               size: 12,
               color: CupertinoDynamicColor.resolve(

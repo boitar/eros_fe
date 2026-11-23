@@ -13,6 +13,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart' as glass;
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Basic feedback is optional and must not interrupt navigation or previews.
 /// Use the existing utility without depending on the enhanced haptics module.
@@ -877,7 +878,7 @@ class LiquidGlassTabBar extends CupertinoTabBar {
               extraButton: onSearch == null
                   ? null
                   : glass.GlassTabBarExtraButton(
-                      icon: const Icon(CupertinoIcons.search),
+                      icon: const EhSvgIcon(CupertinoIcons.search),
                       onTap: onSearch!,
                       label: searchLabel,
                       size: height - 12,
@@ -1030,7 +1031,7 @@ class LiquidGlassTabBar extends CupertinoTabBar {
                         behavior: HitTestBehavior.opaque,
                         onTap: onSearch,
                         child: Center(
-                          child: Icon(
+                          child: EhSvgIcon(
                             CupertinoIcons.search,
                             size: 24,
                             color: CupertinoDynamicColor.resolve(

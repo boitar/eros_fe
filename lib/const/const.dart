@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 final kFilenameFormat =
     GetPlatform.isWindows ? 'yyyy-MM-dd HH_mm_ss' : 'yyyy-MM-dd HH:mm:ss';
@@ -103,7 +104,7 @@ LoadStateChanged defLoadStateChanged = (ExtendedImageState state) {
     case LoadState.failed:
       return Container(
         alignment: Alignment.center,
-        child: const Icon(
+        child: const EhSvgIcon(
           Icons.error,
           color: Colors.red,
         ),

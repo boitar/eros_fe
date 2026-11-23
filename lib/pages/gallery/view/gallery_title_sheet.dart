@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show SelectableText;
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Sheet with the gallery's titles in full, each selectable and copyable,
 /// the one on screen first. Opened by tapping the detail page title.
@@ -327,7 +328,7 @@ class _TitleCardState extends State<_TitleCard> {
                             .animate(animation),
                         child: FadeTransition(opacity: animation, child: child),
                       ),
-                      child: Icon(
+                      child: EhSvgIcon(
                         _copied
                             ? CupertinoIcons.checkmark_alt
                             : CupertinoIcons.doc_on_doc,
@@ -394,7 +395,7 @@ class _SheetButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: 17, color: foreground),
+            EhSvgIcon(icon, size: 17, color: foreground),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
@@ -439,7 +440,7 @@ class _CloseButton extends StatelessWidget {
             color: CupertinoDynamicColor.resolve(palette.fillPressed, context),
             shape: const CircleBorder(),
           ),
-          child: Icon(
+          child: EhSvgIcon(
             CupertinoIcons.xmark,
             size: 13,
             weight: 700,

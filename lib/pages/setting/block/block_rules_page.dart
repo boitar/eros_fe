@@ -48,7 +48,7 @@ class BlockRulesPage extends GetView<BlockController> {
         padding: const EdgeInsets.all(0),
         minSize: 40,
         onPressed: addRule,
-        child: const Icon(
+        child: const EhSvgIcon(
           CupertinoIcons.plus_circle,
           size: 28,
         ),

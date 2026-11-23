@@ -14,6 +14,7 @@ import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/tag_suggestions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class AddTagPage extends StatefulWidget {
   const AddTagPage({super.key});
@@ -170,7 +171,7 @@ class _AddTagPageState extends State<AddTagPage> {
                                 onTap: controller.clear,
                                 child: EhPressable(
                                   onPressed: controller.clear,
-                                  child: Icon(
+                                  child: EhSvgIcon(
                                     CupertinoIcons.xmark_circle_fill,
                                     size: 19,
                                     color: palette.text3.resolveFrom(context),

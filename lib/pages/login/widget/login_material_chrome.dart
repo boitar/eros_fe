@@ -10,6 +10,7 @@ import 'package:eros_fe/widget/eh_sheet.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// 浮层玻璃变体：
 /// - [clear]：圆形返回钮、封面上的地区胶囊等小控件，高透透镜质感；
@@ -282,7 +283,7 @@ class LoginFloatingCircleButton extends StatelessWidget {
             radius: size / 2,
             tone: LoginGlassTone.clear,
             child: Center(
-              child: Icon(icon, size: iconSize, color: text1),
+              child: EhSvgIcon(icon, size: iconSize, color: text1),
             ),
           ),
         ),

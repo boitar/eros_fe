@@ -146,9 +146,9 @@ class AvatarSettingPage extends StatelessWidget {
                         title: Center(
                           child: AnimatedCrossFade(
                             duration: const Duration(milliseconds: 300),
-                            firstChild: const Icon(CupertinoIcons.circle,
+                            firstChild: const EhSvgIcon(CupertinoIcons.circle,
                                 color: CupertinoColors.systemGrey),
-                            secondChild: const Icon(
+                            secondChild: const EhSvgIcon(
                                 CupertinoIcons.check_mark_circled_solid),
                             crossFadeState: _ehSettingService.avatarType ==
                                     AvatarType.boringAvatar
@@ -213,9 +213,9 @@ class AvatarSettingPage extends StatelessWidget {
                         title: Center(
                           child: AnimatedCrossFade(
                             duration: const Duration(milliseconds: 300),
-                            firstChild: const Icon(CupertinoIcons.circle,
+                            firstChild: const EhSvgIcon(CupertinoIcons.circle,
                                 color: CupertinoColors.systemGrey),
-                            secondChild: const Icon(
+                            secondChild: const EhSvgIcon(
                                 CupertinoIcons.check_mark_circled_solid),
                             crossFadeState: _ehSettingService.avatarType ==
                                     AvatarType.textAvatar

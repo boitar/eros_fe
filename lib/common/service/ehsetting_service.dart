@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
+import 'package:eros_fe/common/service/app_icon_service.dart';
 import 'package:eros_fe/common/service/base_service.dart';
 import 'package:eros_fe/const/storages.dart';
 import 'package:eros_fe/index.dart';
@@ -15,6 +17,7 @@ import 'package:eros_fe/pages/image_view/view/view_page.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/pages/tab/controller/toplist_controller.dart';
 import 'package:eros_fe/pages/tab/view/favorite_order_sheet.dart';
+import 'package:eros_fe/store/hive/hive.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/storage.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
@@ -25,6 +28,7 @@ import 'package:flutter_boring_avatars/flutter_boring_avatars.dart';
 import 'package:flutter_windowmanager_plus/flutter_windowmanager_plus.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:logger/logger.dart';
 
 import 'controller_tag_service.dart';
@@ -55,6 +59,49 @@ class EhSettingService extends ProfileService {
   bool get isPureDarkTheme => _isPureDarkTheme.value;
   set isPureDarkTheme(bool val) => _isPureDarkTheme.value = val;
   RxBool get pureDarkThemeObs => _isPureDarkTheme;
+
+  static const String appIconStyleKey = 'app_icon_style';
+
+  final Rx<EhAppIconStyle> _appIconStyle = EhAppIconStyle.auto.obs;
+  EhAppIconStyle get appIconStyle => _appIconStyle.value;
+  Rx<EhAppIconStyle> get appIconStyleObs => _appIconStyle;
+
+  String? _readHiveConfigString(String key) {
+    try {
+      if (!Hive.isBoxOpen(configBox)) {
+        return null;
+      }
+      return Hive.box<String>(configBox).get(key);
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<void> _writeHiveConfigString(String key, String value) async {
+    try {
+      if (Hive.isBoxOpen(configBox)) {
+        await Hive.box<String>(configBox).put(key, value);
+      }
+    } on Object catch (error) {
+      debugPrint('Failed to persist $key: $error');
+    }
+  }
+
+  @visibleForTesting
+  void initAppIconPreference() {
+    _appIconStyle.value =
+        EhAppIconStyle.parse(_readHiveConfigString(appIconStyleKey));
+    unawaited(AppIconService.syncStartupIcon(_appIconStyle.value));
+  }
+
+  Future<void> setAppIconStyle(EhAppIconStyle style) async {
+    if (_appIconStyle.value == style) {
+      return;
+    }
+    _appIconStyle.value = style;
+    await _writeHiveConfigString(appIconStyleKey, style.name);
+    await AppIconService.setAppIcon(style);
+  }
 
   final _blurredInRecentTasks = false.obs;
   bool get blurredInRecentTasks => _blurredInRecentTasks.value;
@@ -1103,6 +1150,8 @@ class EhSettingService extends ProfileService {
     _initLayoutConfig();
 
     _initBlockConfig();
+
+    initAppIconPreference();
   }
 
   void applyBlurredInRecentTasks() {
@@ -1169,7 +1218,7 @@ class EhSettingService extends ProfileService {
                 if (element == toplist)
                   const SizedBox(
                     width: 40,
-                    child: FaIcon(FontAwesomeIcons.circleCheck),
+                    child: EhSvgFaIcon(FontAwesomeIcons.circleCheck),
                   ),
                 Text(toplistTextMap[element] ?? ''),
                 if (element == toplist)

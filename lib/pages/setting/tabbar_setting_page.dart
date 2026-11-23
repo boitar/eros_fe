@@ -59,7 +59,7 @@ class TabbarListView extends StatelessWidget {
       return EhCupertinoListTile(
         title: Text(tabPages.tabTitles[tag] ?? ''),
         key: ValueKey(tag),
-        leading: FaIcon(
+        leading: EhSvgFaIcon(
           tabPages.iconDatas[tag],
           color: CupertinoDynamicColor.resolve(
               CupertinoColors.systemGrey, context),

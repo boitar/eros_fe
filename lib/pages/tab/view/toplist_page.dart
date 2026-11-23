@@ -285,7 +285,7 @@ class _ToplistTabState extends State<ToplistTab>
                   minSize: 40,
                   child: isRefresh
                       ? const CupertinoActivityIndicator(radius: 10)
-                      : const Icon(CupertinoIcons.arrow_clockwise, size: 24),
+                      : const EhSvgIcon(CupertinoIcons.arrow_clockwise, size: 24),
                   onPressed: () async {
                     setState(() {
                       isRefresh = true;
@@ -307,7 +307,7 @@ class _ToplistTabState extends State<ToplistTab>
             child: const Stack(
               alignment: Alignment.centerRight,
               // mainAxisSize: MainAxisSize.min,
-              children: <Widget>[Icon(CupertinoIcons.sort_down, size: 28)],
+              children: <Widget>[EhSvgIcon(CupertinoIcons.sort_down, size: 28)],
             ),
             onPressed: () => controller.setToplist(context),
           ),
@@ -316,7 +316,7 @@ class _ToplistTabState extends State<ToplistTab>
               return CupertinoButton(
                 minSize: 40,
                 padding: const EdgeInsets.all(0),
-                child: const Icon(CupertinoIcons.arrow_up_circle, size: 28),
+                child: const EhSvgIcon(CupertinoIcons.arrow_up_circle, size: 28),
                 onPressed: () {
                   controller.jumpToTop();
                 },
@@ -330,7 +330,7 @@ class _ToplistTabState extends State<ToplistTab>
               return CupertinoButton(
                 minSize: 40,
                 padding: const EdgeInsets.all(0),
-                child: const Icon(
+                child: const EhSvgIcon(
                   CupertinoIcons.arrow_uturn_down_circle,
                   size: 28,
                 ),
@@ -643,7 +643,7 @@ class _ToplistTabState extends State<ToplistTab>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FaIcon(
+                EhSvgFaIcon(
                   FontAwesomeIcons.hippo,
                   size: 100,
                   color: CupertinoDynamicColor.resolve(

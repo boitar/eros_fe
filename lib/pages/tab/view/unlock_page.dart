@@ -1,6 +1,7 @@
 import 'package:eros_fe/pages/tab/controller/unlock_page_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class UnLockPage extends StatefulWidget {
   const UnLockPage({
@@ -46,7 +47,7 @@ class _UnLockPageState extends State<UnLockPage> {
         color: CupertinoColors.activeOrange,
         onPressed: () => controller.unlockToBack(
             context: context, autoBack: widget.autoBack),
-        child: const Icon(
+        child: const EhSvgIcon(
           CupertinoIcons.lock_fill,
           size: 50,
         ));

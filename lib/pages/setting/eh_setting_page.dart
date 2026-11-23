@@ -23,7 +23,14 @@ class EhSettingPage extends StatelessWidget {
     return SettingScaffold(
       title: L10n.of(context).setting_site,
       child: CustomScrollView(slivers: [
-        SliverSafeArea(sliver: ListViewEhSetting()),
+        SliverSafeArea(
+          sliver: MultiSliver(
+            children: [
+              const SliverSettingCategoryHero(route: EHRoutes.ehSetting),
+              ListViewEhSetting(),
+            ],
+          ),
+        ),
       ]),
     );
   }

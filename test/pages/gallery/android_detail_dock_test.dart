@@ -74,7 +74,7 @@ void main() {
     await tester.pumpWidget(_floating(showRead: true));
     await tester.pumpAndSettle();
     final colors = tester
-        .widgetList<Icon>(find.byType(Icon))
+        .widgetList<Icon>(find.bySubtype<Icon>())
         .map((icon) => icon.color)
         .toSet();
     expect(colors, hasLength(1));

@@ -245,7 +245,7 @@ class _AuthExpiryTopBannerHostState extends State<AuthExpiryTopBannerHost>
                               onTap: () => _hide(recordCooldown: true),
                               child: Padding(
                                 padding: const EdgeInsets.all(4),
-                                child: Icon(
+                                child: EhSvgIcon(
                                   CupertinoIcons.xmark,
                                   size: 13,
                                   color: palette.text3.resolveFrom(context),

@@ -35,13 +35,13 @@ class GalleryFavButton extends StatelessWidget {
               ),
             ),
             if (_favController.isFav)
-              FaIcon(
+              EhSvgFaIcon(
                 FontAwesomeIcons.solidHeart,
                 color: ThemeColors.favColorFor(_favController.favcat),
                 size: iconSize,
               )
             else
-              const FaIcon(
+              const EhSvgFaIcon(
                 FontAwesomeIcons.heart,
                 color: CupertinoColors.systemGrey,
                 size: iconSize,
@@ -149,7 +149,7 @@ class _FavCatAddListItemState extends State<FavCatAddListItem> {
                   ExcludeSemantics(
                     child: SizedBox(
                       width: 20,
-                      child: FaIcon(
+                      child: EhSvgFaIcon(
                         FontAwesomeIcons.solidHeart,
                         color: CupertinoDynamicColor.resolve(
                             ThemeColors.favColorFor(widget.favcat), context),
@@ -196,7 +196,7 @@ class _FavCatAddListItemState extends State<FavCatAddListItem> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(
+            EhSvgFaIcon(
               FontAwesomeIcons.solidHeart,
               color: CupertinoDynamicColor.resolve(
                   ThemeColors.favColorFor(widget.favcat), context),

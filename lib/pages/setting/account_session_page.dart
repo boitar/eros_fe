@@ -246,7 +246,7 @@ class _AccountSessionPageState extends State<AccountSessionPage> {
                                   ),
                                   if (entries[i].$2?.isNotEmpty ?? false) ...<Widget>[
                                     const SizedBox(width: 6),
-                                    Icon(
+                                    EhSvgIcon(
                                       CupertinoIcons.doc_on_doc,
                                       size: 13,
                                       color:
@@ -451,7 +451,7 @@ class _AccountSessionPageState extends State<AccountSessionPage> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: <Widget>[
-                                  Icon(
+                                  EhSvgIcon(
                                     CupertinoIcons.person_crop_circle,
                                     size: 15,
                                     color: palette.text1.resolveFrom(context),
@@ -592,7 +592,7 @@ class _AccountSessionPageState extends State<AccountSessionPage> {
                           ? const CupertinoActivityIndicator(radius: 8)
                           : GestureDetector(
                               onTap: _handleRetryEx,
-                              child: Icon(
+                              child: EhSvgIcon(
                                 CupertinoIcons.refresh,
                                 size: 15,
                                 color: EhPalette.accent.resolveFrom(context),
@@ -717,7 +717,7 @@ class _AccountSessionPageState extends State<AccountSessionPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                const Icon(
+                const EhSvgIcon(
                   CupertinoIcons.square_arrow_right,
                   size: 17,
                   color: Color(0xFFC9353B),
@@ -846,7 +846,7 @@ class _AccountSessionPageState extends State<AccountSessionPage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Icon(
+                          EhSvgIcon(
                             CupertinoIcons.refresh,
                             size: 14,
                             color: onAccent,
@@ -1099,7 +1099,7 @@ class _AccountSessionPageState extends State<AccountSessionPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              const Icon(
+                              const EhSvgIcon(
                                 CupertinoIcons.square_arrow_right,
                                 size: 15,
                                 color: Color(0xFFC9353B),
@@ -1401,7 +1401,7 @@ class _ReauthenticateSheetBodyState extends State<ReauthenticateSheetBody> {
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: Row(
                       children: <Widget>[
-                        Icon(
+                        EhSvgIcon(
                           CupertinoIcons.person,
                           size: 18,
                           color: palette.text3.resolveFrom(context),
@@ -1416,7 +1416,7 @@ class _ReauthenticateSheetBodyState extends State<ReauthenticateSheetBody> {
                             ),
                           ),
                         ),
-                        Icon(
+                        EhSvgIcon(
                           CupertinoIcons.lock_fill,
                           size: 14,
                           color: palette.text3.resolveFrom(context),
@@ -1438,7 +1438,7 @@ class _ReauthenticateSheetBodyState extends State<ReauthenticateSheetBody> {
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: Row(
                       children: <Widget>[
-                        Icon(
+                        EhSvgIcon(
                           CupertinoIcons.lock,
                           size: 18,
                           color: palette.text3.resolveFrom(context),
@@ -1462,7 +1462,7 @@ class _ReauthenticateSheetBodyState extends State<ReauthenticateSheetBody> {
                         ),
                         GestureDetector(
                           onTap: () => setState(() => _obscure = !_obscure),
-                          child: Icon(
+                          child: EhSvgIcon(
                             _obscure
                                 ? CupertinoIcons.eye_slash
                                 : CupertinoIcons.eye,
@@ -1552,7 +1552,7 @@ class _ReauthenticateSheetBodyState extends State<ReauthenticateSheetBody> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Icon(
+                        EhSvgIcon(
                           CupertinoIcons.shield_lefthalf_fill,
                           size: 16,
                           color: palette.text1.resolveFrom(context),
@@ -1594,7 +1594,7 @@ class _ReauthenticateSheetBodyState extends State<ReauthenticateSheetBody> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Icon(
+                        EhSvgIcon(
                           CupertinoIcons.tickets,
                           size: 16,
                           color: palette.text1.resolveFrom(context),
@@ -1730,7 +1730,7 @@ class _CountdownMonitorCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    Icon(
+                    EhSvgIcon(
                       CupertinoIcons.refresh,
                       size: 16,
                       color: isUrgent ? onAccent : accent,
@@ -1873,7 +1873,7 @@ class _AccountInfoRow extends StatelessWidget {
                           ),
                         if (mono && onTap != null) ...<Widget>[
                           const SizedBox(width: 6),
-                          Icon(
+                          EhSvgIcon(
                             CupertinoIcons.doc_on_doc,
                             size: 13,
                             color: palette.text3.resolveFrom(context),
@@ -1881,7 +1881,7 @@ class _AccountInfoRow extends StatelessWidget {
                         ],
                         if (showChevron) ...<Widget>[
                           const SizedBox(width: 4),
-                          Icon(
+                          EhSvgIcon(
                             CupertinoIcons.chevron_forward,
                             size: 14,
                             color: palette.text3.resolveFrom(context),

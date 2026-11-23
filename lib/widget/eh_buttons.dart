@@ -4,6 +4,7 @@ import 'package:eros_fe/const/eh_palette.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// The four button levels of the secondary pages.
 ///
@@ -96,7 +97,7 @@ class EhButton extends StatelessWidget {
 
     Widget content;
     if (_circle) {
-      content = Icon(icon, size: iconSize, color: foreground);
+      content = EhSvgIcon(icon, size: iconSize, color: foreground);
     } else {
       final text = caption == null
           ? Text(label!, style: textStyle, maxLines: 1)
@@ -125,13 +126,13 @@ class EhButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: iconSize, color: foreground),
+            EhSvgIcon(icon, size: iconSize, color: foreground),
             SizedBox(width: size >= 44 ? 8 : 5),
           ],
           Flexible(child: text),
           if (trailingIcon != null) ...[
             SizedBox(width: size >= 44 ? 8 : 5),
-            Icon(trailingIcon, size: iconSize, color: foreground),
+            EhSvgIcon(trailingIcon, size: iconSize, color: foreground),
           ],
         ],
       );

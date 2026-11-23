@@ -225,10 +225,12 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
     final environment =
         AdaptiveEnvironment.maybeOf(context) ??
         AdaptiveEnvironmentSnapshot.fromMediaQuery(context);
+    final isSetting = LayoutServices.isSettingStack(_stack.id);
     return ListenableBuilder(
       listenable: DesktopUiPreferences.instance,
       builder: (context, _) => Obx(() {
-        final proportion = _layout.sideProportion;
+        final browseProportion = _layout.sideProportion;
+        final proportion = _layout.sideProportionFor(_stack.id);
         return AnimatedBuilder(
           animation: Listenable.merge([
             _stack.primaryObserver.revision,
@@ -245,13 +247,15 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
                     : environment.isSplit);
             final oldWidth = AdaptiveBrowseLayout.primaryPaneWidth(
               environment.contentRect.width,
-              prefs.legacyProportion ?? proportion,
+              prefs.legacyProportion ?? browseProportion,
             );
-            final desktopRatio =
-                prefs.splitRatio ??
-                (prefs.legacyProportion == null
-                    ? DesktopBrowseStyle.defaultRatio
-                    : oldWidth / (environment.contentRect.width - 16));
+            final desktopRatio = isSetting
+                ? (prefs.settingSplitRatio ??
+                      DesktopBrowseStyle.defaultSettingRatio)
+                : (prefs.splitRatio ??
+                    (prefs.legacyProportion == null
+                        ? DesktopBrowseStyle.defaultRatio
+                        : oldWidth / (environment.contentRect.width - 16)));
             _layout.updateNavigationSplit(split);
             final moving = !split && _detailMoving;
             // A page opened in the list column puts the list back on top while
@@ -294,8 +298,13 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
                           desktopRatio,
                         ),
                         preferences: prefs,
+                        isSettings: isSetting,
                       )
-                    : const SideControllerbar(child: SizedBox(width: 28)),
+                    : SideControllerbar(
+                        stackId: _stack.id,
+                        availableWidth: environment.contentRect.width,
+                        child: const SizedBox(width: 28),
+                      ),
               ),
             );
           },
@@ -317,8 +326,15 @@ class _AdaptiveTabNavigatorState extends State<AdaptiveTabNavigator> {
 }
 
 class SideControllerbar extends StatefulWidget {
-  const SideControllerbar({Key? key, required this.child}) : super(key: key);
+  const SideControllerbar({
+    Key? key,
+    required this.child,
+    this.stackId,
+    this.availableWidth,
+  }) : super(key: key);
   final Widget child;
+  final String? stackId;
+  final double? availableWidth;
 
   @override
   _SideControllerbarState createState() => _SideControllerbarState();
@@ -377,14 +393,19 @@ class _SideControllerbarState extends State<SideControllerbar> {
             });
           },
           onPanUpdate: (details) {
-            final available = max(
-              1.0,
-              MediaQuery.sizeOf(context).width - 2 * kMinWidth,
-            );
+            final targetStackId =
+                widget.stackId ?? TabNavigationScope.maybeOf(context)?.id;
+            final totalWidth =
+                widget.availableWidth ?? MediaQuery.sizeOf(context).width;
+            final available = max(1.0, totalWidth - 2 * kMinWidth - 1);
             final proportion =
-                layoutServices.sideProportion + details.delta.dx / available;
+                layoutServices.sideProportionFor(targetStackId) +
+                details.delta.dx / available;
 
-            layoutServices.sideProportion = max(min(1.0, proportion), 0.0);
+            layoutServices.setSideProportionFor(
+              targetStackId,
+              proportion.clamp(0.0, 1.0).toDouble(),
+            );
           },
           child: getbar(),
         ),

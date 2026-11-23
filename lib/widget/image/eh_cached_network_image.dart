@@ -217,7 +217,7 @@ class EhCachedNetworkImage extends StatelessWidget {
                   onHideFlagChanged?.call(showHidePlaceWidget);
                   return showHidePlaceWidget
                       ? Center(
-                          child: Icon(
+                          child: EhSvgIcon(
                             CupertinoIcons.xmark_shield_fill,
                             size: 32,
                             color: CupertinoDynamicColor.resolve(

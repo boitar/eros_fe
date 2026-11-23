@@ -267,7 +267,7 @@ class DefaultTabViewController extends TabViewController {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  FaIcon(
+                  EhSvgFaIcon(
                     tabPages.iconDatas[elem.key],
                     size: 20,
                   ),
@@ -309,7 +309,7 @@ class DefaultTabViewController extends TabViewController {
     final tabFlag = singleTabFlag;
 
     return CupertinoButton(
-        child: FaIcon(
+        child: EhSvgFaIcon(
           tabPages.iconDatas[tabFlag],
           size: 20,
         ),
@@ -327,7 +327,7 @@ class DefaultTabViewController extends TabViewController {
       child: CustomPopupMenu(
         child: Container(
           padding: const EdgeInsets.only(left: 14, bottom: 2),
-          child: const Icon(
+          child: const EhSvgIcon(
             CupertinoIcons.ellipsis_circle,
             size: 24,
           ),

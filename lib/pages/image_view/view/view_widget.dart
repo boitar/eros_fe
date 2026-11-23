@@ -61,7 +61,7 @@ class ViewErr509 extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: FaIcon(
+                  child: EhSvgFaIcon(
                     FontAwesomeIcons.fill,
                     size: 77,
                     color: CupertinoColors.systemPink.darkColor,
@@ -110,7 +110,7 @@ class ViewErr429 extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: FaIcon(
+                  child: EhSvgFaIcon(
                     FontAwesomeIcons.roadBarrier,
                     size: 77,
                     color: CupertinoColors.systemPink.darkColor,
@@ -159,7 +159,7 @@ class ViewAD extends StatelessWidget {
                 ),
                 Expanded(
                   child: Center(
-                    child: Icon(
+                    child: EhSvgIcon(
                       CupertinoIcons.xmark_shield_fill,
                       size: 80,
                       color: CupertinoColors.systemPink.darkColor,
@@ -195,7 +195,7 @@ class ViewError extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          const EhSvgIcon(
             Icons.error,
             size: 60,
             color: Colors.red,
@@ -381,7 +381,7 @@ class ImageExt extends GetView<ViewExtController> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      const EhSvgIcon(
                         Icons.error,
                         size: 50,
                         color: Colors.red,
@@ -525,7 +525,7 @@ class ImageExtProvider extends GetView<ViewExtController> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      const EhSvgIcon(
                         Icons.error,
                         size: 50,
                         color: Colors.red,
@@ -950,7 +950,7 @@ class ViewTopBar extends GetView<ViewExtController> {
               children: [
                 _button(
                   onTap: Get.back,
-                  icon: FaIcon(
+                  icon: EhSvgFaIcon(
                     FontAwesomeIcons.chevronLeft,
                     semanticLabel: L10n.of(context).back,
                     color: CupertinoColors.systemGrey6,
@@ -968,7 +968,7 @@ class ViewTopBar extends GetView<ViewExtController> {
                   ),
                 _button(
                   onTap: controller.cycleSurfacePreference,
-                  icon: Icon(
+                  icon: EhSvgIcon(
                     CupertinoIcons.square_split_1x2,
                     color: CupertinoColors.systemGrey6,
                     size: 22,
@@ -982,7 +982,7 @@ class ViewTopBar extends GetView<ViewExtController> {
                     vibrateUtil.light();
                     controller.tapShare(context);
                   },
-                  icon: FaIcon(
+                  icon: EhSvgFaIcon(
                     FontAwesomeIcons.share,
                     semanticLabel: L10n.of(context).share,
                     color: CupertinoColors.systemGrey6,
@@ -997,7 +997,7 @@ class ViewTopBar extends GetView<ViewExtController> {
                     await Get.toNamed(EHRoutes.readSetting);
                     controller.addVolumeKeydownListen();
                   },
-                  icon: FaIcon(
+                  icon: EhSvgFaIcon(
                     FontAwesomeIcons.ellipsis,
                     semanticLabel: L10n.of(context).read_setting,
                     color: CupertinoColors.systemGrey6,
@@ -1176,7 +1176,7 @@ class ControllerButtonBar extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FaIcon(
+                  EhSvgFaIcon(
                     FontAwesomeIcons.solidFloppyDisk,
                     semanticLabel: L10n.of(context).save_current_image,
                     color: CupertinoColors.systemGrey6,
@@ -1217,7 +1217,7 @@ class ControllerButtonBar extends StatelessWidget {
                   GetBuilder<ViewExtController>(
                     id: idViewColumnModeIcon,
                     builder: (logic) {
-                      return FaIcon(
+                      return EhSvgFaIcon(
                         FontAwesomeIcons.bookOpen,
                         semanticLabel: '${L10n.of(context).double_page_model}: '
                             '${logic.vState.columnMode.name}',
@@ -1279,7 +1279,7 @@ class ControllerButtonBar extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      FaIcon(
+                      EhSvgFaIcon(
                         FontAwesomeIcons.hourglassHalf,
                         semanticLabel: 'Auto read',
                         size: 22,
@@ -1335,7 +1335,7 @@ class ControllerButtonBar extends StatelessWidget {
                     GetBuilder<ViewExtController>(
                       id: idShowThumbListIcon,
                       builder: (logic) {
-                        return FaIcon(
+                        return EhSvgFaIcon(
                           FontAwesomeIcons.solidImages,
                           semanticLabel: L10n.of(context).thumbnails,
                           size: 22,
@@ -1582,7 +1582,7 @@ class ThumbnailListView extends GetView<ViewExtController> {
                     borderRadius: const BorderRadius.all(Radius.circular(40.0)),
                   ),
                   alignment: Alignment.center,
-                  child: FaIcon(
+                  child: EhSvgFaIcon(
                     FontAwesomeIcons.lock,
                     size: 20,
                     color: logic.vState.syncThumbList
@@ -1675,7 +1675,7 @@ class _FutureThumblArchiveState extends State<FutureThumblArchive> {
         _future = getFileData(widget.gid, widget.asyncArchiveFile);
         setState(() {});
       },
-      child: const FaIcon(FontAwesomeIcons.rotateRight,
+      child: const EhSvgFaIcon(FontAwesomeIcons.rotateRight,
           color: CupertinoColors.destructiveRed),
     );
   }
@@ -1779,7 +1779,7 @@ class _FutureThumblState extends State<FutureThumbl> {
         _future = logic.fetchThumb(widget.itemSer);
         setState(() {});
       },
-      child: const FaIcon(FontAwesomeIcons.redoAlt,
+      child: const EhSvgFaIcon(FontAwesomeIcons.redoAlt,
           color: CupertinoColors.destructiveRed),
     );
   }

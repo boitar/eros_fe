@@ -4,10 +4,12 @@ import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/route/navigator_util.dart';
+import 'package:eros_fe/widget/desktop_browse_style.dart';
 import 'package:eros_fe/widget/desktop_control.dart';
 import 'package:eros_fe/widget/desktop_gallery_actions.dart';
 import 'package:eros_fe/widget/image/eh_cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// The compact, five-row reading projection used by the desktop sidebar.
 /// It observes only successful reader presentations; browser history remains a
@@ -120,6 +122,9 @@ class _DesktopRecentReadingState extends State<DesktopRecentReading> {
           ],
           DesktopControl(
             label: l10n.desktop_all_history,
+            tooltip: false,
+            hoverColor: DesktopBrowseStyle.capsuleHover(context),
+            pressedColor: DesktopBrowseStyle.capsulePressed(context),
             onPressed: widget.onHistory,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Align(
@@ -165,6 +170,9 @@ class _RecentReadingRow extends StatelessWidget {
     final cover = entry.cover;
     return DesktopControl(
       label: '$title, $progress',
+      tooltip: false,
+      hoverColor: DesktopBrowseStyle.capsuleHover(context),
+      pressedColor: DesktopBrowseStyle.capsulePressed(context),
       onPressed: onTap,
       onSecondaryTapDown: onSecondaryTapDown,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -182,15 +190,15 @@ class _RecentReadingRow extends StatelessWidget {
                         color: ehTheme.palette.text2
                             .resolveFrom(context)
                             .withValues(alpha: .12),
-                        child: const Icon(CupertinoIcons.book, size: 14),
+                        child: const EhSvgIcon(CupertinoIcons.book, size: 14),
                       )
                     : EhCachedNetworkImage(
                         imageUrl: cover,
                         fit: BoxFit.cover,
                         placeholder: (_, __) =>
-                            const Icon(CupertinoIcons.book, size: 14),
+                            const EhSvgIcon(CupertinoIcons.book, size: 14),
                         errorWidget: (_, __, ___) =>
-                            const Icon(CupertinoIcons.book, size: 14),
+                            const EhSvgIcon(CupertinoIcons.book, size: 14),
                       ),
               ),
             ),

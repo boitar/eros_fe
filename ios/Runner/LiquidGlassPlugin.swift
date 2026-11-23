@@ -213,6 +213,76 @@ final class ErosAppearancePlugin: NSObject, FlutterPlugin {
     }
 }
 
+final class ErosAppIconPlugin: NSObject, FlutterPlugin {
+    private static let channelName = "eros/app_icon"
+
+    static func register(with registrar: FlutterPluginRegistrar) {
+        let channel = FlutterMethodChannel(
+            name: channelName,
+            binaryMessenger: registrar.messenger()
+        )
+        registrar.addMethodCallDelegate(ErosAppIconPlugin(), channel: channel)
+    }
+
+    func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard call.method == "setAppIcon" else {
+            result(FlutterMethodNotImplemented)
+            return
+        }
+        guard let style = call.arguments as? String else {
+            result(FlutterError(
+                code: "invalid_arguments",
+                message: "Expected app icon style string",
+                details: nil
+            ))
+            return
+        }
+
+        let targetName: String?
+        switch style {
+        case "auto", "monochrome":
+            targetName = nil
+        case "light":
+            targetName = "AppIconLight"
+        case "dark":
+            targetName = "AppIconDark"
+        case "purple":
+            targetName = "AppIconPurple"
+        default:
+            result(FlutterError(
+                code: "invalid_app_icon",
+                message: "Expected auto, light, dark, or purple",
+                details: nil
+            ))
+            return
+        }
+
+        DispatchQueue.main.async {
+            guard UIApplication.shared.supportsAlternateIcons else {
+                result(nil)
+                return
+            }
+            if UIApplication.shared.alternateIconName == targetName {
+                result(nil)
+                return
+            }
+            UIApplication.shared.setAlternateIconName(targetName) { error in
+                DispatchQueue.main.async {
+                    if let error {
+                        result(FlutterError(
+                            code: "set_app_icon_failed",
+                            message: error.localizedDescription,
+                            details: nil
+                        ))
+                    } else {
+                        result(nil)
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// Pull-down menus for Flutter setting rows. A transparent button placed over
 /// the row's value presents a real UIMenu, so the material, haptics and morph
 /// all come from UIKit. Requires `performPrimaryAction` (iOS 17.4); Flutter

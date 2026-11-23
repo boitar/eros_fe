@@ -19,17 +19,19 @@ void main() {
     WidgetTester tester, {
     TargetPlatform host = TargetPlatform.macOS,
     LayoutMode mode = LayoutMode.large,
+    String stackId = EHRoutes.setting,
   }) async {
     Get.testMode = true;
     PlatformCapabilities.debugHostPlatformOverride = host;
     layout = Get.put<LayoutServices>(_Layout());
     layout.layoutMode = mode;
     controller = Get.put(SettingViewController());
-    final stack = layout.tabNavigation.select(EHRoutes.setting);
+    final owner = Object();
+    final navigation = layout.mountNavigation(owner);
+    final stack = navigation.select(stackId);
     addTearDown(() {
       PlatformCapabilities.debugHostPlatformOverride = null;
-      // Observers are shared by navigator id; start each test clean.
-      layout.tabNavigation.reset();
+      layout.unmountNavigation(owner, navigation);
       Get.reset();
     });
     await tester.pumpWidget(
@@ -149,6 +151,122 @@ void main() {
       expect(controller.openCategory.value, isNull);
     });
   }
+
+  testWidgets(
+    'iOS split syncs selected category and account without auto-opening when empty',
+    (tester) async {
+      await pump(tester, host: TargetPlatform.iOS, mode: LayoutMode.large);
+
+      // Empty pane stays empty on iOS split view.
+      controller.syncPane(split: true);
+      await tester.pumpAndSettle();
+      expect(pane(), <String>[EHRoutes.empty]);
+      expect(controller.openCategory.value, isNull);
+
+      // Opening a category selects it and keeps it selected across sub-pages.
+      controller.open(EHRoutes.layoutSetting, split: true);
+      await tester.pumpAndSettle();
+      expect(pane(), <String>[EHRoutes.empty, EHRoutes.layoutSetting]);
+      expect(controller.openCategory.value, EHRoutes.layoutSetting);
+
+      Get.toNamed<void>(
+        EHRoutes.itemWidthSetting,
+        id: layout.tabNavigation.selected!.detailId,
+      );
+      await tester.pumpAndSettle();
+      controller.syncPane(split: true);
+      expect(controller.openCategory.value, EHRoutes.layoutSetting);
+
+      // Switching categories replaces both the old category and any non-/setting/ sub-page.
+      controller.open(EHRoutes.advancedSetting, split: true);
+      await tester.pumpAndSettle();
+      expect(pane(), <String>[EHRoutes.empty, EHRoutes.advancedSetting]);
+      expect(controller.openCategory.value, EHRoutes.advancedSetting);
+
+      Get.toNamed<void>(
+        EHRoutes.customHosts,
+        id: layout.tabNavigation.selected!.detailId,
+      );
+      await tester.pumpAndSettle();
+      controller.syncPane(split: true);
+      expect(controller.openCategory.value, EHRoutes.advancedSetting);
+
+      // Opening account session selects account and replaces previous sub-pages.
+      controller.open(EHRoutes.accountSession, split: true);
+      await tester.pumpAndSettle();
+      expect(pane(), <String>[EHRoutes.empty, EHRoutes.accountSession]);
+      controller.syncPane(split: true);
+      expect(controller.openCategory.value, EHRoutes.accountSession);
+
+      // Popping back to empty clears selection without auto-reopening.
+      Get.nestedKey(layout.tabNavigation.selected!.detailId)!
+          .currentState!
+          .pop();
+      await tester.pumpAndSettle();
+      controller.syncPane(split: true);
+      await tester.pumpAndSettle();
+      expect(pane(), <String>[EHRoutes.empty]);
+      expect(controller.openCategory.value, isNull);
+
+      // Switching to single-column clears any active selection.
+      controller.open(EHRoutes.about, split: true);
+      await tester.pumpAndSettle();
+      expect(controller.openCategory.value, EHRoutes.about);
+      controller.syncPane(split: false);
+      expect(controller.openCategory.value, isNull);
+    },
+  );
+
+  testWidgets('Android large layout keeps openCategory null', (tester) async {
+    await pump(tester, host: TargetPlatform.android, mode: LayoutMode.large);
+    controller.open(EHRoutes.layoutSetting);
+    await tester.pumpAndSettle();
+    expect(pane(), <String>[EHRoutes.empty, EHRoutes.layoutSetting]);
+    controller.syncPane(split: true);
+    expect(controller.openCategory.value, isNull);
+  });
+
+  testWidgets('desktop safe mode never reopens the normal account page', (
+    tester,
+  ) async {
+    await pump(tester, stackId: 'safe:${EHRoutes.setting}');
+    controller.lastCategory = EHRoutes.accountSession;
+
+    controller.syncPane(split: true);
+    await tester.pumpAndSettle();
+    expect(pane(), <String>[EHRoutes.empty, EHRoutes.layoutSetting]);
+    expect(controller.openCategory.value, EHRoutes.layoutSetting);
+    expect(controller.lastCategory, EHRoutes.accountSession);
+
+    controller.open(EHRoutes.readSetting, split: true);
+    await tester.pumpAndSettle();
+    expect(pane(), <String>[EHRoutes.empty, EHRoutes.readSetting]);
+    expect(controller.openCategory.value, EHRoutes.readSetting);
+    expect(controller.lastCategory, EHRoutes.accountSession);
+  });
+
+  testWidgets('Android large layout keeps its legacy nested route behavior', (
+    tester,
+  ) async {
+    await pump(tester, host: TargetPlatform.android);
+    controller.open(EHRoutes.advancedSetting);
+    await tester.pumpAndSettle();
+    Get.toNamed<void>(
+      EHRoutes.customHosts,
+      id: layout.tabNavigation.selected!.detailId,
+    );
+    await tester.pumpAndSettle();
+
+    controller.open(EHRoutes.searchSetting);
+    await tester.pumpAndSettle();
+    expect(pane(), <String>[
+      EHRoutes.empty,
+      EHRoutes.advancedSetting,
+      EHRoutes.customHosts,
+      EHRoutes.searchSetting,
+    ]);
+    expect(controller.openCategory.value, isNull);
+  });
 }
 
 class _Layout extends LayoutServices {

@@ -164,7 +164,11 @@ private final class AppKitGlassHost: NSView {
   override func layout() {
     super.layout()
     let inset: CGFloat = decorative ? 0 : 6
-    backing?.frame = bounds.insetBy(dx: inset, dy: inset)
+    backing?.frame = (!bounds.isNull && !bounds.isInfinite
+      && bounds.width.isFinite && bounds.height.isFinite
+      && bounds.width > inset * 2 && bounds.height > inset * 2)
+      ? bounds.insetBy(dx: inset, dy: inset)
+      : .zero
     if let frosted = backing as? NSVisualEffectView, !decorative {
       frosted.layer?.cornerRadius = frosted.bounds.height / 2
     }

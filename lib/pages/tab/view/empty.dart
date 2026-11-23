@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class EmptyPage extends StatelessWidget {
   const EmptyPage({Key? key}) : super(key: key);
@@ -58,7 +59,7 @@ class EmptyPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: ExcludeSemantics(
-                              child: FaIcon(
+                              child: EhSvgFaIcon(
                                 FontAwesomeIcons.layerGroup,
                                 size: 22,
                                 color: palette.text3.resolveFrom(context),
@@ -94,7 +95,7 @@ class EmptyPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const ExcludeSemantics(
-                            child: FaIcon(
+                            child: EhSvgFaIcon(
                               FontAwesomeIcons.layerGroup,
                               size: 100,
                               color: CupertinoColors.inactiveGray,

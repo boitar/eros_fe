@@ -613,9 +613,9 @@ Widget _buildLinkIcon(
   Color? color,
 }) {
   if (icon is FaIconData) {
-    return FaIcon(icon, size: size, color: color);
+    return EhSvgFaIcon(icon, size: size, color: color);
   }
-  return Icon(icon as IconData?, size: size, color: color);
+  return EhSvgIcon(icon as IconData?, size: size, color: color);
 }
 
 class WSLChannelScrollViewNeedScrollEvent {

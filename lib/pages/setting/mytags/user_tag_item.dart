@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class UserTagItem extends StatefulWidget {
   const UserTagItem({
@@ -70,7 +71,7 @@ class _UserTagItemState extends State<UserTagItem> {
 
     return Container(
       margin: const EdgeInsets.only(right: 10),
-      child: FaIcon(
+      child: EhSvgFaIcon(
         iconData,
         size: 24,
         color: iconColor,
@@ -125,7 +126,7 @@ class _UserTagItemState extends State<UserTagItem> {
                   ),
                 if (widget.addItem)
                   Container(
-                    child: const FaIcon(FontAwesomeIcons.tag)
+                    child: const EhSvgFaIcon(FontAwesomeIcons.tag)
                         .paddingOnly(right: 12),
                   ),
                 Expanded(

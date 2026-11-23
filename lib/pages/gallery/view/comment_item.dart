@@ -356,7 +356,7 @@ class _CommentTail extends StatelessWidget {
           CupertinoButton(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             minSize: 0,
-            child: FaIcon(
+            child: EhSvgFaIcon(
               FontAwesomeIcons.penToSquare,
               size: kSizeNotVote,
               color: ehTheme.commitIconColor,
@@ -375,7 +375,7 @@ class _CommentTail extends StatelessWidget {
           CupertinoButton(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             minSize: 0,
-            child: FaIcon(
+            child: EhSvgFaIcon(
               galleryComment.vote! > 0
                   ? FontAwesomeIcons.solidThumbsUp
                   : FontAwesomeIcons.thumbsUp,
@@ -393,7 +393,7 @@ class _CommentTail extends StatelessWidget {
           CupertinoButton(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             minSize: 0,
-            child: FaIcon(
+            child: EhSvgFaIcon(
               galleryComment.vote! < 0
                   ? FontAwesomeIcons.solidThumbsDown
                   : FontAwesomeIcons.thumbsDown,
@@ -410,7 +410,7 @@ class _CommentTail extends StatelessWidget {
           CupertinoButton(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             minSize: 0,
-            child: FaIcon(
+            child: EhSvgFaIcon(
               // FontAwesomeIcons.reply,
               // FontAwesomeIcons.at,
               FontAwesomeIcons.message,
@@ -668,7 +668,7 @@ class _TranslateButtonState extends State<TranslateButton> {
 
   @override
   Widget build(BuildContext context) {
-    final _icon = FaIcon(
+    final _icon = EhSvgFaIcon(
       FontAwesomeIcons.language,
       size: widget.sizeVote,
       color: widget.galleryComment.showTranslate ?? false

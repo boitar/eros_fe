@@ -8,6 +8,7 @@ import 'package:eros_fe/widget/desktop_browse_style.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Tooltip;
 import 'package:flutter/services.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Pointer, keyboard and assistive activation share one callback. This keeps
 /// focus feedback distinct from hover and selection throughout desktop chrome.
@@ -26,6 +27,12 @@ class DesktopControl extends StatefulWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     this.tooltip = true,
     this.autofocus = false,
+    this.selectedColor,
+    this.selectedHoverColor,
+    this.pressedColor,
+    this.hoverColor,
+    this.idleColor,
+    this.cursor,
   });
   final String label;
   final Widget child;
@@ -39,19 +46,144 @@ class DesktopControl extends StatefulWidget {
   final EdgeInsetsGeometry padding;
   final bool tooltip;
   final bool autofocus;
+  final Color? selectedColor;
+  final Color? selectedHoverColor;
+  final Color? pressedColor;
+  final Color? hoverColor;
+  final Color? idleColor;
+  final MouseCursor? cursor;
 
   @override
   State<DesktopControl> createState() => _DesktopControlState();
 }
 
-class _DesktopControlState extends State<DesktopControl> {
+class _DesktopControlState extends State<DesktopControl>
+    with SingleTickerProviderStateMixin {
   bool _hover = false;
   bool _focus = false;
+  int _pressEpoch = 0;
+
+  late final AnimationController _pressController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 85),
+    reverseDuration: const Duration(milliseconds: 190),
+  );
+
+  @override
+  void didUpdateWidget(covariant DesktopControl oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.onPressed == null) {
+      _hover = false;
+      _pressEpoch++;
+      _pressController.value = 0.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
+
+  void _handlePressDown() {
+    _pressEpoch++;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _pressController.value = 1.0;
+    } else {
+      _pressController.forward();
+    }
+  }
+
+  void _handlePressUp() {
+    final int epoch = ++_pressEpoch;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _pressController.value = 0.0;
+      return;
+    }
+    if (_pressController.value < 0.65) {
+      _pressController
+          .animateTo(
+            1.0,
+            duration: const Duration(milliseconds: 55),
+            curve: Curves.easeOut,
+          )
+          .then((_) {
+            if (mounted && _pressEpoch == epoch) {
+              _pressController.reverse();
+            }
+          });
+    } else {
+      _pressController.reverse();
+    }
+  }
+
+  void _handlePressCancel() {
+    _pressEpoch++;
+    if (!_pressController.isAnimating && _pressController.value == 0.0) {
+      return;
+    }
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _pressController.value = 0.0;
+    } else {
+      _pressController.reverse();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = ehTheme.palette;
     final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
     final active = widget.onPressed != null;
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final Color defaultHover = palette.text1
+        .resolveFrom(context)
+        .withValues(alpha: dark ? .11 : .07);
+    final Color hoverFill = widget.hoverColor ?? defaultHover;
+    final Color baseSelected =
+        widget.selectedColor ?? EhPalette.accentSoft.resolveFrom(context);
+    final Color effectiveSelectedHover =
+        widget.selectedHoverColor ??
+        Color.alphaBlend(
+          palette.text1
+              .resolveFrom(context)
+              .withValues(alpha: dark ? .06 : .05),
+          baseSelected,
+        );
+    final Color effectivePressed = widget.selected
+        ? (widget.selectedColor != null
+              ? DesktopBrowseStyle.capsuleSelectedPressed(context)
+              : Color.alphaBlend(
+                  dark ? const Color(0x10FFFFFF) : const Color(0x0C14161C),
+                  baseSelected,
+                ))
+        : (widget.pressedColor ?? DesktopBrowseStyle.capsulePressed(context));
+    final Color baseBackground;
+    if (widget.selected) {
+      baseBackground = _hover && active ? effectiveSelectedHover : baseSelected;
+    } else if (_hover && active) {
+      baseBackground = hoverFill;
+    } else {
+      baseBackground = widget.idleColor ?? hoverFill.withValues(alpha: 0);
+    }
+
+    final Color focusBorderColor = _focus
+        ? EhPalette.accent.resolveFrom(context)
+        : const Color(0x00000000);
+    final BorderRadius borderRadius = BorderRadius.circular(widget.radius);
+    final BoxConstraints constraints = BoxConstraints(
+      minHeight: widget.minSize,
+      minWidth: widget.minSize,
+    );
+    final Widget content = IconTheme.merge(
+      data: IconThemeData(
+        size: 18,
+        color: palette.text1
+            .resolveFrom(context)
+            .withValues(alpha: active ? 1 : .4),
+      ),
+      child: widget.child,
+    );
+
     final child = Semantics(
       button: true,
       enabled: active,
@@ -64,10 +196,7 @@ class _DesktopControlState extends State<DesktopControl> {
         focusNode: widget.focusNode,
         autofocus: widget.autofocus,
         enabled: active,
-        mouseCursor: active
-            ? SystemMouseCursors.click
-            : SystemMouseCursors.basic,
-        onShowHoverHighlight: (value) => setState(() => _hover = value),
+        mouseCursor: MouseCursor.defer,
         onShowFocusHighlight: (value) => setState(() => _focus = value),
         shortcuts: const {
           SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
@@ -81,41 +210,69 @@ class _DesktopControlState extends State<DesktopControl> {
             },
           ),
         },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onPressed,
-          onSecondaryTapDown: widget.onSecondaryTapDown,
-          child: AnimatedContainer(
-            duration: DesktopBrowseStyle.motion(context, 120),
-            constraints: BoxConstraints(
-              minHeight: widget.minSize,
-              minWidth: widget.minSize,
-            ),
-            padding: widget.padding,
-            decoration: BoxDecoration(
-              color: widget.selected
-                  ? EhPalette.accentSoft.resolveFrom(context)
-                  : _hover
-                  ? palette.text1
-                        .resolveFrom(context)
-                        .withValues(alpha: dark ? .09 : .05)
-                  : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(widget.radius),
-              border: Border.all(
-                color: _focus
-                    ? EhPalette.accent.resolveFrom(context)
-                    : const Color(0x00000000),
-                width: 1.5,
+        child: MouseRegion(
+          cursor: active
+              ? (widget.cursor ?? DesktopBrowseStyle.interactionCursor)
+              : SystemMouseCursors.basic,
+          onEnter: (_) {
+            if (active && !_hover) {
+              setState(() => _hover = true);
+            }
+          },
+          onExit: (_) {
+            if (_hover) {
+              setState(() => _hover = false);
+            }
+            _handlePressCancel();
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: active ? (_) => _handlePressDown() : null,
+            onTapUp: active ? (_) => _handlePressUp() : null,
+            onTapCancel: active ? _handlePressCancel : null,
+            onTap: widget.onPressed,
+            onSecondaryTapDown: widget.onSecondaryTapDown,
+            child: TweenAnimationBuilder<Color?>(
+              tween: ColorTween(end: baseBackground),
+              duration: DesktopBrowseStyle.hoverDuration(
+                context,
+                entering: _hover,
               ),
-            ),
-            child: IconTheme.merge(
-              data: IconThemeData(
-                size: 18,
-                color: palette.text1
-                    .resolveFrom(context)
-                    .withValues(alpha: active ? 1 : .4),
+              curve: _hover
+                  ? DesktopBrowseStyle.hoverEnterCurve
+                  : DesktopBrowseStyle.hoverExitCurve,
+              child: content,
+              builder: (context, animatedBase, innerChild) => AnimatedBuilder(
+                animation: _pressController,
+                child: innerChild,
+                builder: (context, child) {
+                  final double t = Curves.easeOutCubic.transform(
+                    _pressController.value,
+                  );
+                  final Color resolvedBase = animatedBase ?? baseBackground;
+                  final Color fill = active && t > 0
+                      ? (Color.lerp(resolvedBase, effectivePressed, t) ??
+                            effectivePressed)
+                      : resolvedBase;
+                  return Transform.scale(
+                    scale: disableAnimations ? 1.0 : 1.0 - 0.01 * t,
+                    child: AnimatedContainer(
+                      duration: Duration.zero,
+                      constraints: constraints,
+                      padding: widget.padding,
+                      decoration: BoxDecoration(
+                        color: fill,
+                        borderRadius: borderRadius,
+                        border: Border.all(
+                          color: focusBorderColor,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: child,
+                    ),
+                  );
+                },
               ),
-              child: widget.child,
             ),
           ),
         ),
@@ -205,7 +362,7 @@ class _DesktopToolbarPillState extends State<DesktopToolbarPill> {
       child: FocusableActionDetector(
         enabled: active,
         mouseCursor: active
-            ? SystemMouseCursors.click
+            ? DesktopBrowseStyle.interactionCursor
             : SystemMouseCursors.basic,
         onShowHoverHighlight: (value) => setState(() => _hover = value),
         onShowFocusHighlight: (value) => setState(() => _focus = value),
@@ -225,7 +382,8 @@ class _DesktopToolbarPillState extends State<DesktopToolbarPill> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.onPressed,
           child: AnimatedContainer(
-            duration: DesktopBrowseStyle.motion(context, 120),
+            duration: DesktopBrowseStyle.motion(context, 180),
+            curve: Curves.easeOutQuart,
             height: 30,
             padding: widget.padding,
             alignment: Alignment.center,
@@ -245,7 +403,7 @@ class _DesktopToolbarPillState extends State<DesktopToolbarPill> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (widget.icon != null) ...[
-                  Icon(
+                  EhSvgIcon(
                     widget.icon,
                     size: widget.iconSize,
                     color: foreground.withValues(alpha: active ? 1 : .45),

@@ -3,6 +3,7 @@ import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/utils/vibrate.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Android's list header when glass is off: a search field row, then the
 /// groups as scrollable filter chips. Both rows keep the heights of the bars
@@ -93,7 +94,7 @@ class _AndroidSolidTopBarState extends State<AndroidSolidTopBar> {
             },
             child: SizedBox.square(
               dimension: widget.rowHeight,
-              child: Icon(action.icon, size: 22, color: action.color ?? text1),
+              child: EhSvgIcon(action.icon, size: 22, color: action.color ?? text1),
             ),
           ),
         );
@@ -119,7 +120,7 @@ class _AndroidSolidTopBarState extends State<AndroidSolidTopBar> {
           ),
           child: Row(
             children: <Widget>[
-              Icon(CupertinoIcons.search, size: 20, color: text2),
+              EhSvgIcon(CupertinoIcons.search, size: 20, color: text2),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -259,7 +260,7 @@ class _FilterChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               if (selected) ...<Widget>[
-                Icon(CupertinoIcons.checkmark_alt, size: 16, color: accent),
+                EhSvgIcon(CupertinoIcons.checkmark_alt, size: 16, color: accent),
                 const SizedBox(width: 4),
               ],
               Text(

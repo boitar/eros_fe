@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/common/service/app_icon_service.dart';
 import 'package:eros_fe/common/service/auth_session_service.dart';
+import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/pages/login/controller/login_controller.dart';
@@ -13,6 +15,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show LinearProgressIndicator;
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class LoginPage extends GetView<LoginController> {
   const LoginPage({super.key});
@@ -373,7 +376,7 @@ class LoginPage extends GetView<LoginController> {
           const SizedBox(height: 10),
           Row(
             children: <Widget>[
-              const Icon(
+              const EhSvgIcon(
                 CupertinoIcons.exclamationmark_circle,
                 size: 15,
                 color: Color(0xFFC9353B),
@@ -539,7 +542,7 @@ class LoginPage extends GetView<LoginController> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: <Widget>[
-                  Icon(
+                  EhSvgIcon(
                     CupertinoIcons.person,
                     size: 19,
                     color: palette.text3.resolveFrom(context),
@@ -580,7 +583,7 @@ class LoginPage extends GetView<LoginController> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: <Widget>[
-                  Icon(
+                  EhSvgIcon(
                     CupertinoIcons.lock,
                     size: 19,
                     color: palette.text3.resolveFrom(context),
@@ -609,7 +612,7 @@ class LoginPage extends GetView<LoginController> {
                     behavior: HitTestBehavior.opaque,
                     child: Padding(
                       padding: const EdgeInsets.all(6),
-                      child: Icon(
+                      child: EhSvgIcon(
                         logic.obscurePasswd
                             ? CupertinoIcons.eye_slash
                             : CupertinoIcons.eye,
@@ -648,7 +651,7 @@ class LoginPage extends GetView<LoginController> {
           ),
           child: Row(
             children: <Widget>[
-              Icon(
+              EhSvgIcon(
                 CupertinoIcons.person,
                 size: 21,
                 color: palette.text2.resolveFrom(context),
@@ -688,7 +691,7 @@ class LoginPage extends GetView<LoginController> {
           ),
           child: Row(
             children: <Widget>[
-              Icon(
+              EhSvgIcon(
                 CupertinoIcons.lock,
                 size: 21,
                 color: palette.text2.resolveFrom(context),
@@ -716,7 +719,7 @@ class LoginPage extends GetView<LoginController> {
                 onTap: logic.switchObscure,
                 child: Padding(
                   padding: const EdgeInsets.all(6),
-                  child: Icon(
+                  child: EhSvgIcon(
                     logic.obscurePasswd
                         ? CupertinoIcons.eye_slash
                         : CupertinoIcons.eye,
@@ -828,7 +831,7 @@ class LoginPage extends GetView<LoginController> {
               ),
               GestureDetector(
                 onTap: logic.switchObscure,
-                child: Icon(
+                child: EhSvgIcon(
                   logic.obscurePasswd
                       ? CupertinoIcons.eye_slash
                       : CupertinoIcons.eye,
@@ -1210,7 +1213,7 @@ class LoginStepChainCard extends StatelessWidget {
           width: 22,
           height: 22,
           decoration: BoxDecoration(shape: BoxShape.circle, color: accent),
-          child: Icon(CupertinoIcons.checkmark, size: 13, color: onAccent),
+          child: EhSvgIcon(CupertinoIcons.checkmark, size: 13, color: onAccent),
         );
       case LoginStepState.running:
         return const SizedBox(
@@ -1226,7 +1229,7 @@ class LoginStepChainCard extends StatelessWidget {
             shape: BoxShape.circle,
             color: Color(0x24E39A2A),
           ),
-          child: const Icon(
+          child: const EhSvgIcon(
             CupertinoIcons.shield_lefthalf_fill,
             size: 13,
             color: Color(0xFFB26A00),
@@ -1333,34 +1336,37 @@ class _BrandMarkBox extends StatelessWidget {
 
   final double size;
 
+  EhFeLogoStyle _resolveLogoStyle(EhAppIconStyle iconStyle) {
+    return switch (iconStyle) {
+      EhAppIconStyle.auto => EhFeLogoStyle.monochrome,
+      EhAppIconStyle.light => EhFeLogoStyle.lightGlass,
+      EhAppIconStyle.dark => EhFeLogoStyle.darkGlass,
+      EhAppIconStyle.purple => EhFeLogoStyle.brandSquircle,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: dark ? const Color(0xFFECEDF0) : const Color(0xFF14161A),
-        borderRadius: BorderRadius.circular(size * 0.29),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Color(0x38141628),
-            blurRadius: 20,
-            offset: Offset(0, 8),
+    if (Get.isRegistered<EhSettingService>()) {
+      final settings = Get.find<EhSettingService>();
+      Rx<EhAppIconStyle>? iconObs;
+      try {
+        iconObs = settings.appIconStyleObs;
+      } on Object {
+        iconObs = null;
+      }
+      if (iconObs != null) {
+        return Obx(
+          () => EhFeAppLogo(
+            size: size,
+            style: _resolveLogoStyle(iconObs!.value),
           ),
-        ],
-      ),
-      child: Center(
-        child: Text(
-          'EH',
-          style: TextStyle(
-            fontSize: size * 0.36,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.6,
-            color: dark ? const Color(0xFF0E0F12) : const Color(0xFFFFFFFF),
-          ),
-        ),
-      ),
+        );
+      }
+    }
+    return EhFeAppLogo(
+      size: size,
+      style: EhFeLogoStyle.monochrome,
     );
   }
 }
@@ -1405,7 +1411,7 @@ class _PrimaryLoginButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     if (icon != null) ...<Widget>[
-                      Icon(icon, size: 18, color: onAccent),
+                      EhSvgIcon(icon, size: 18, color: onAccent),
                       const SizedBox(width: 8),
                     ],
                     Text(
@@ -1471,7 +1477,7 @@ class _SecondaryActionButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             if (icon != null) ...<Widget>[
-              Icon(icon, size: 16, color: fgColor),
+              EhSvgIcon(icon, size: 16, color: fgColor),
               const SizedBox(width: 7),
             ],
             Text(
@@ -1515,7 +1521,7 @@ class _AmberNoticeCard extends StatelessWidget {
         children: <Widget>[
           const Padding(
             padding: EdgeInsets.only(top: 2),
-            child: Icon(
+            child: EhSvgIcon(
               CupertinoIcons.exclamationmark_triangle,
               size: 16,
               color: Color(0xFFB26A00),

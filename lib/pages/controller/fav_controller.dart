@@ -23,6 +23,7 @@ import 'package:get/get.dart';
 
 import 'favorite_note_draft.dart';
 import 'favorite_sel_controller.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class FavController extends GetxController {
   EhSettingService get _ehSettingService => Get.find();
@@ -65,7 +66,7 @@ class FavController extends GetxController {
                     right: liquidGlassPopupsEnabled ? 12 : 4,
                     bottom: liquidGlassPopupsEnabled ? 0 : 4,
                   ),
-                  child: FaIcon(
+                  child: EhSvgFaIcon(
                     FontAwesomeIcons.solidHeart,
                     color: ThemeColors.favColor[e.favId],
                     size: 18,

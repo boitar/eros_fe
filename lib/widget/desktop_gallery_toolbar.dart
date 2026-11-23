@@ -16,6 +16,7 @@ import 'package:eros_fe/widget/desktop_sidebar.dart';
 import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// A pane-local toolbar shared by desktop glass and solid appearances.
 /// Mobile rails keep their existing layout and gestures.
@@ -159,7 +160,7 @@ class DesktopGalleryToolbar extends StatelessWidget {
               radius: 8,
               onPressed: sidebar.onShow,
               padding: const EdgeInsets.all(6),
-              child: const Icon(CupertinoIcons.sidebar_left, size: 17),
+              child: const EhSvgIcon(CupertinoIcons.sidebar_left, size: 17),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -220,7 +221,7 @@ class DesktopGalleryToolbar extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  Icon(
+                                  EhSvgIcon(
                                     CupertinoIcons.chevron_down,
                                     size: 10,
                                     color: palette.text3.resolveFrom(context),
@@ -271,7 +272,7 @@ class DesktopGalleryToolbar extends StatelessWidget {
                 ? null
                 : () => controller.showJumpDialog(context),
             padding: const EdgeInsets.all(6),
-            child: const Icon(CupertinoIcons.arrow_up_arrow_down, size: 15),
+            child: const EhSvgIcon(CupertinoIcons.arrow_up_arrow_down, size: 15),
           ),
           const SizedBox(width: 2),
           DesktopControl(
@@ -288,7 +289,7 @@ class DesktopGalleryToolbar extends StatelessWidget {
                     radius: 8,
                     animating: !MediaQuery.disableAnimationsOf(context),
                   )
-                : const Icon(CupertinoIcons.arrow_clockwise, size: 16),
+                : const EhSvgIcon(CupertinoIcons.arrow_clockwise, size: 16),
           ),
           const SizedBox(width: 6),
           _ViewModeSegmentedSwitch(
@@ -325,7 +326,7 @@ class DesktopGalleryToolbar extends StatelessWidget {
               onPressed: () => _showMoreMenu(anchor),
               onSecondaryTapDown: (event) =>
                   _showMoreMenu(anchor, position: event.globalPosition),
-              child: const Icon(CupertinoIcons.ellipsis, size: 16),
+              child: const EhSvgIcon(CupertinoIcons.ellipsis, size: 16),
             ),
           ),
         ],
@@ -449,7 +450,7 @@ class _SegmentButtonState extends State<_SegmentButton> {
                     ]
                   : null,
             ),
-            child: Icon(
+            child: EhSvgIcon(
               widget.icon,
               size: 14,
               color: widget.active

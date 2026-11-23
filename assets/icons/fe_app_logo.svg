@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="feCeramicPearlBg" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#FCFDFF"/>
+      <stop offset="52%" stop-color="#EEF2F8"/>
+      <stop offset="100%" stop-color="#DDE3EF"/>
+    </linearGradient>
+    <radialGradient id="feStudioGlow" cx="512" cy="120" r="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.72"/>
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="feSquircleRim" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.92"/>
+      <stop offset="45%" stop-color="#DCE4F2" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#8B98B2" stop-opacity="0.38"/>
+    </linearGradient>
+    <linearGradient id="fePrimarySmoked" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#2C3342" stop-opacity="0.93"/>
+      <stop offset="55%" stop-color="#1E2430" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#131721" stop-opacity="0.97"/>
+    </linearGradient>
+    <linearGradient id="feSecondarySmoked" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#56627A" stop-opacity="0.58"/>
+      <stop offset="50%" stop-color="#444F65" stop-opacity="0.54"/>
+      <stop offset="100%" stop-color="#363F52" stop-opacity="0.50"/>
+    </linearGradient>
+    <linearGradient id="feSpecularRim" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.62"/>
+      <stop offset="45%" stop-color="#DCE6F5" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#131721" stop-opacity="0.16"/>
+    </linearGradient>
+    <filter id="feDualElevation" x="-25%" y="-25%" width="150%" height="160%">
+      <feOffset in="SourceAlpha" dx="0" dy="18" result="off1"/>
+      <feGaussianBlur in="off1" stdDeviation="16" result="blur1"/>
+      <feFlood flood-color="#1C2A48" flood-opacity="0.22" result="col1"/>
+      <feComposite in="col1" in2="blur1" operator="in" result="sh1"/>
+      <feOffset in="SourceAlpha" dx="0" dy="5" result="off2"/>
+      <feGaussianBlur in="off2" stdDeviation="4" result="blur2"/>
+      <feFlood flood-color="#1C2A48" flood-opacity="0.18" result="col2"/>
+      <feComposite in="col2" in2="blur2" operator="in" result="sh2"/>
+      <feMerge>
+        <feMergeNode in="sh1"/>
+        <feMergeNode in="sh2"/>
+      </feMerge>
+    </filter>
+    <filter id="feInterShadow" x="-25%" y="-25%" width="150%" height="160%">
+      <feOffset in="SourceAlpha" dx="0" dy="4" result="off"/>
+      <feGaussianBlur in="off" stdDeviation="5" result="blur"/>
+      <feFlood flood-color="#0E1422" flood-opacity="0.24" result="col"/>
+      <feComposite in="col" in2="blur" operator="in"/>
+    </filter>
+    <path id="fMonolith" d="M240,268L512,268A26,26 0 0 1 538,294L538,340A26,26 0 0 1 512,366L338,366A20,20 0 0 0 318,386L318,730A26,26 0 0 1 292,756L240,756A26,26 0 0 1 214,730L214,294A26,26 0 0 1 240,268Z"/>
+    <path id="eCArc" d="M737.73,634L814.31,634A12,12 0 0 0 826.17,623.83A156,156 0 1 0 787.02,705.38A18,18 0 0 0 784.08,678.48L745.91,651.75A18,18 0 0 0 723.14,653.48A74,74 0 1 1 737.73,634Z"/>
+    <path id="fCrossbar" d="M288,472L472,472A22,22 0 0 1 494,494L494,538A22,22 0 0 1 472,560L288,560A22,22 0 0 1 266,538L266,494A22,22 0 0 1 288,472Z"/>
+    <path id="eCrossbar" d="M610,558L822.24,558A156,156 0 0 1 826.17,623.83A12,12 0 0 1 814.31,634L610,634A20,20 0 0 1 590,614L590,578A20,20 0 0 1 610,558Z"/>
+    <clipPath id="clipSquircle">
+      <rect x="64" y="64" width="896" height="896" rx="201.6"/>
+    </clipPath>
+    <clipPath id="clipPrimary">
+      <use href="#fMonolith"/>
+      <use href="#eCArc"/>
+    </clipPath>
+    <clipPath id="clipFMonolith"><use href="#fMonolith"/></clipPath>
+    <clipPath id="clipECArc"><use href="#eCArc"/></clipPath>
+    <clipPath id="clipFCrossbar"><use href="#fCrossbar"/></clipPath>
+    <clipPath id="clipECrossbar"><use href="#eCrossbar"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#clipSquircle)">
+    <rect x="64" y="64" width="896" height="896" fill="url(#feCeramicPearlBg)"/>
+    <rect x="64" y="64" width="896" height="896" fill="url(#feStudioGlow)"/>
+
+    <g transform="translate(512 512) scale(0.875) translate(-512 -512)">
+      <g filter="url(#feDualElevation)">
+        <use href="#fMonolith" fill="#1C2A48"/>
+        <use href="#eCArc" fill="#1C2A48"/>
+        <use href="#fCrossbar" fill="#1C2A48"/>
+        <use href="#eCrossbar" fill="#1C2A48"/>
+      </g>
+
+      <use href="#fMonolith" fill="url(#fePrimarySmoked)"/>
+      <use href="#fMonolith" fill="none" stroke="url(#feSpecularRim)" stroke-width="4.8" stroke-linejoin="round" clip-path="url(#clipFMonolith)"/>
+
+      <use href="#eCArc" fill="url(#fePrimarySmoked)"/>
+      <use href="#eCArc" fill="none" stroke="url(#feSpecularRim)" stroke-width="4.8" stroke-linejoin="round" clip-path="url(#clipECArc)"/>
+
+      <g clip-path="url(#clipPrimary)" filter="url(#feInterShadow)">
+        <use href="#fCrossbar" fill="#0E1422"/>
+        <use href="#eCrossbar" fill="#0E1422"/>
+      </g>
+
+      <use href="#fCrossbar" fill="url(#feSecondarySmoked)"/>
+      <use href="#fCrossbar" fill="none" stroke="url(#feSpecularRim)" stroke-width="4.8" stroke-linejoin="round" clip-path="url(#clipFCrossbar)"/>
+
+      <use href="#eCrossbar" fill="url(#feSecondarySmoked)"/>
+      <use href="#eCrossbar" fill="none" stroke="url(#feSpecularRim)" stroke-width="4.8" stroke-linejoin="round" clip-path="url(#clipECrossbar)"/>
+    </g>
+
+    <rect x="64" y="64" width="896" height="896" rx="201.6" fill="none" stroke="url(#feSquircleRim)" stroke-width="3.6"/>
+  </g>
+</svg>

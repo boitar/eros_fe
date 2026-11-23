@@ -3,6 +3,7 @@ import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/index.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 
 class SearchSettingPage extends StatelessWidget {
   const SearchSettingPage({super.key});
@@ -13,17 +14,20 @@ class SearchSettingPage extends StatelessWidget {
       title: L10n.of(context).search,
       child: CustomScrollView(slivers: [
         SliverSafeArea(
-          sliver: SliverCupertinoListSection.listInsetGrouped(children: [
-            EhCupertinoListTile(
-              title: Text(L10n.of(context).quick_search),
-              trailing: const CupertinoListTileChevron(),
-              onTap: () async {
-                await Get.toNamed(
-                  EHRoutes.quickSearch,
-                  id: detailNavigatorId,
-                );
-              },
-            ),
+          sliver: MultiSliver(children: [
+            const SliverSettingCategoryHero(route: EHRoutes.searchSetting),
+            SliverCupertinoListSection.listInsetGrouped(children: [
+              EhCupertinoListTile(
+                title: Text(L10n.of(context).quick_search),
+                trailing: const CupertinoListTileChevron(),
+                onTap: () async {
+                  await Get.toNamed(
+                    EHRoutes.quickSearch,
+                    id: detailNavigatorId,
+                  );
+                },
+              ),
+            ]),
           ]),
         ),
       ]),

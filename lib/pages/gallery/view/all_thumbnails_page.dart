@@ -99,7 +99,7 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
                               CupertinoButton(
                                 padding: const EdgeInsets.all(0),
                                 minSize: 38,
-                                child: const Icon(
+                                child: const EhSvgIcon(
                                   CupertinoIcons.arrow_up_circle,
                                   size: 26,
                                 ),
@@ -111,7 +111,7 @@ class _AllThumbnailsPageState extends State<AllThumbnailsPage> {
                             CupertinoButton(
                               padding: const EdgeInsets.all(0),
                               minSize: 38,
-                              child: const Icon(
+                              child: const EhSvgIcon(
                                 CupertinoIcons.arrow_uturn_down_circle,
                                 size: 26,
                               ),

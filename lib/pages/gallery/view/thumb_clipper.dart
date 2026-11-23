@@ -29,7 +29,7 @@ class ThumbImageClipper extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.hasError) {
-              return const Center(child: Icon(Icons.error, color: Colors.red));
+              return const Center(child: EhSvgIcon(Icons.error, color: Colors.red));
             } else {
               final ui.Image uiImage = snapshot.data!;
               return Container(

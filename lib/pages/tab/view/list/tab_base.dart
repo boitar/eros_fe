@@ -578,7 +578,7 @@ class EndIndicator extends StatelessWidget {
                 onTap: loadDataMore,
                 child: Column(
                   children: <Widget>[
-                    const Icon(
+                    const EhSvgIcon(
                       Icons.error,
                       size: 40,
                       color: CupertinoColors.systemRed,

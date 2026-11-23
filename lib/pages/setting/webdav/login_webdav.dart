@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:sliver_tools/sliver_tools.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 const TextStyle kTextStyle = TextStyle(
   fontSize: 18,
@@ -33,7 +34,7 @@ class LoginWebDAV extends GetView<WebdavController> {
               children: [
                 const Padding(
                   padding: EdgeInsets.only(top: 50, bottom: 30),
-                  child: FaIcon(
+                  child: EhSvgFaIcon(
                     FontAwesomeIcons.cloud,
                     size: 120,
                     color: CupertinoColors.activeBlue,
@@ -83,14 +84,14 @@ class LoginWebDAV extends GetView<WebdavController> {
                       children: [
                         const Spacer(),
                         GestureDetector(
-                          child: const FaIcon(
+                          child: const EhSvgFaIcon(
                             FontAwesomeIcons.clipboard,
                             size: 30,
                           ).paddingOnly(bottom: 30, right: 28, top: 8),
                           onTap: controller.readFromClipboard,
                         ),
                         GestureDetector(
-                          child: FaIcon(controller.obscurePasswd
+                          child: EhSvgFaIcon(controller.obscurePasswd
                                   ? FontAwesomeIcons.eyeSlash
                                   : FontAwesomeIcons.eye)
                               .paddingOnly(bottom: 30, right: 28, top: 8),

@@ -31,6 +31,9 @@ import flutter_downloader
         if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosAppearance") {
             ErosAppearancePlugin.register(with: registrar)
         }
+        if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosAppIcon") {
+            ErosAppIconPlugin.register(with: registrar)
+        }
         if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ErosLiquidGlass") {
             ErosLiquidGlassPlugin.register(with: registrar)
         }

@@ -712,7 +712,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
                 padding: const EdgeInsets.all(0),
                 child: Semantics(
                   label: '搜索',
-                  child: const Icon(
+                  child: const EhSvgIcon(
                     // FontAwesomeIcons.magnifyingGlass,
                     CupertinoIcons.search,
                     size: 28,
@@ -742,7 +742,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
                       //   FontAwesomeIcons.arrowDownWideShort,
                       //   size: 20,
                       // ),
-                      const Icon(CupertinoIcons.sort_down, size: 28),
+                      const EhSvgIcon(CupertinoIcons.sort_down, size: 28),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -765,7 +765,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
                     padding: const EdgeInsets.all(0),
                     child: Semantics(
                       label: '回到顶部',
-                      child: const Icon(
+                      child: const EhSvgIcon(
                         CupertinoIcons.arrow_up_circle,
                         size: 28,
                       ),
@@ -783,7 +783,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
                 padding: const EdgeInsets.all(0),
                 child: Semantics(
                   label: '跳转/搜寻',
-                  child: const Icon(
+                  child: const EhSvgIcon(
                     CupertinoIcons.arrow_uturn_down_circle,
                     size: 28,
                   ),
@@ -936,7 +936,7 @@ class FavoriteTabBar extends StatelessWidget {
                                             )
                                           : Semantics(
                                               label: '刷新',
-                                              child: const FaIcon(
+                                              child: const EhSvgFaIcon(
                                                 FontAwesomeIcons.rotateRight,
                                                 size: 20,
                                               ),
@@ -964,7 +964,7 @@ class FavoriteTabBar extends StatelessWidget {
                               padding: const EdgeInsets.all(0),
                               child: Semantics(
                                 label: '选择收藏夹',
-                                child: const FaIcon(
+                                child: const EhSvgFaIcon(
                                   FontAwesomeIcons.bars,
                                   size: 20,
                                 ),

@@ -360,7 +360,7 @@ class _SearchImagePageState extends State<SearchImagePage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          EhSvgIcon(
             CupertinoIcons.photo_on_rectangle,
             size: 44,
             color: palette.text3.resolveFrom(context),
@@ -449,7 +449,7 @@ class _SearchImagePageState extends State<SearchImagePage> {
                 hasScrollBody: false,
                 child: Container(
                   alignment: Alignment.center,
-                  child: FaIcon(
+                  child: EhSvgFaIcon(
                     FontAwesomeIcons.hippo,
                     size: 72,
                     color: CupertinoDynamicColor.resolve(
@@ -513,7 +513,7 @@ class _PickerCard extends StatelessWidget {
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      Icon(
+                      EhSvgIcon(
                         CupertinoIcons.photo,
                         size: 40,
                         color: EhPalette.accent.resolveFrom(context),
@@ -528,7 +528,7 @@ class _PickerCard extends StatelessWidget {
                           ),
                           child: const Padding(
                             padding: EdgeInsets.all(2),
-                            child: Icon(
+                            child: EhSvgIcon(
                               CupertinoIcons.plus,
                               size: 13,
                               color: CupertinoColors.white,
@@ -581,7 +581,7 @@ class _PickerCard extends StatelessWidget {
                 errorBuilder: (context, _, _) => Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    EhSvgIcon(
                       CupertinoIcons.photo,
                       size: 36,
                       color: palette.text3.resolveFrom(context),
@@ -701,7 +701,7 @@ class _ImageSummaryBar extends StatelessWidget {
                               fit: BoxFit.cover,
                               errorBuilder: (context, _, _) => ColoredBox(
                                 color: palette.fill.resolveFrom(context),
-                                child: Icon(
+                                child: EhSvgIcon(
                                   CupertinoIcons.photo,
                                   size: 18,
                                   color: palette.text3.resolveFrom(context),

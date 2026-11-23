@@ -26,7 +26,7 @@ class LogPage extends GetView<LogService> {
         padding: const EdgeInsets.all(0),
         minSize: 40,
         onPressed: controller.removeAll,
-        child: const Icon(
+        child: const EhSvgIcon(
           CupertinoIcons.trash,
           size: 24,
         ),

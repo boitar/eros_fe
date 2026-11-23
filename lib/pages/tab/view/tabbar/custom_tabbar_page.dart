@@ -391,20 +391,6 @@ class _CustomTabbarListState extends State<CustomTabbarList>
                   color: ehTheme.palette.hairline.resolveFrom(context),
                 ),
               ),
-              IgnorePointer(child: ValueListenableBuilder<double>(
-                valueListenable: _nativeEdgeProgress,
-                builder: (_, progress, _) => SizedBox(
-                  height: 16,
-                  child: DecoratedBox(
-                    key: const ValueKey('desktop-gallery-scroll-edge'),
-                    decoration: BoxDecoration(gradient: LinearGradient(
-                      begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                      colors: [surface.withValues(alpha: progress), surface.withValues(alpha: 0)],
-                    )),
-                    child: const SizedBox.expand(),
-                  ),
-                ),
-              )),
             ]),
           ),
         ]),
@@ -824,7 +810,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
               padding: const EdgeInsets.all(0),
               child: Semantics(
                 label: '搜索',
-                child: const Icon(CupertinoIcons.search, size: 28),
+                child: const EhSvgIcon(CupertinoIcons.search, size: 28),
               ),
               onPressed: () {
                 NavigatorUtil.goSearchPage();
@@ -839,7 +825,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
                   padding: const EdgeInsets.all(0),
                   child: Semantics(
                     label: '回到顶部',
-                    child: const Icon(CupertinoIcons.arrow_up_circle, size: 28),
+                    child: const EhSvgIcon(CupertinoIcons.arrow_up_circle, size: 28),
                   ),
                   onPressed: () {
                     controller.jumpToTop();
@@ -854,7 +840,7 @@ class _CustomTabbarListState extends State<CustomTabbarList>
               padding: const EdgeInsets.all(0),
               child: Semantics(
                 label: '跳转/搜寻',
-                child: const Icon(
+                child: const EhSvgIcon(
                   CupertinoIcons.arrow_uturn_down_circle,
                   size: 28,
                 ),
@@ -1069,7 +1055,7 @@ class CustomTabBar extends StatelessWidget {
                             onPressed: controller.pressedBar,
                             child: Semantics(
                               label: '分组管理',
-                              child: const FaIcon(
+                              child: const EhSvgFaIcon(
                                 FontAwesomeIcons.bars,
                                 size: 20,
                               ),

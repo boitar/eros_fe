@@ -19,6 +19,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// A small, local control in the transparent Glass Rail.
 class LiquidGlassRailAction {
@@ -662,7 +663,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                   padding: EdgeInsetsDirectional.only(start: android ? 13 : 14),
                   child: Row(
                     children: <Widget>[
-                      Icon(
+                      EhSvgIcon(
                         CupertinoIcons.search,
                         size: android ? 17 : 20,
                         color: iconColor,
@@ -706,7 +707,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                   width: height,
                   height: height,
                   child: Center(
-                    child: Icon(
+                    child: EhSvgIcon(
                       trailing.icon,
                       size: android ? 19 : 22,
                       color: CupertinoDynamicColor.resolve(
@@ -1087,7 +1088,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
                             width: slotWidth,
                             height: height,
                             child: Center(
-                              child: Icon(
+                              child: EhSvgIcon(
                                 actions[index].icon,
                                 size: iconSize,
                                 color: CupertinoDynamicColor.resolve(
@@ -1139,7 +1140,7 @@ class _LiquidGlassRailState extends State<LiquidGlassRail> {
             action.onPressed();
           },
           child: Center(
-            child: Icon(action.icon, size: iconSize, color: color),
+            child: EhSvgIcon(action.icon, size: iconSize, color: color),
           ),
         ),
       ),

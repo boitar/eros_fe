@@ -470,7 +470,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
           child: CupertinoButton(
             padding: buttonPadding,
             minimumSize: const Size(minSize, minSize),
-            child: const FaIcon(FontAwesomeIcons.play, size: iconSize),
+            child: const EhSvgFaIcon(FontAwesomeIcons.play, size: iconSize),
             onPressed: () => controller.resumeGalleryDownload(galleryTask.gid),
           ),
         ),
@@ -484,7 +484,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minSize: minSize,
-          child: const FaIcon(
+          child: const EhSvgFaIcon(
             FontAwesomeIcons.pause,
             size: iconSize,
           ),
@@ -500,7 +500,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minSize: minSize,
-          child: const FaIcon(
+          child: const EhSvgFaIcon(
             FontAwesomeIcons.check,
             size: iconSize,
           ),
@@ -514,7 +514,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minSize: minSize,
-          child: const FaIcon(
+          child: const EhSvgFaIcon(
             FontAwesomeIcons.play,
             size: iconSize,
           ),
@@ -527,7 +527,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       TaskStatus.failed: CupertinoButton(
         padding: buttonPadding,
         minSize: minSize,
-        child: const FaIcon(
+        child: const EhSvgFaIcon(
           FontAwesomeIcons.play,
           size: iconSize,
         ),
@@ -539,7 +539,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       TaskStatus.canceled: CupertinoButton(
         padding: buttonPadding,
         minSize: minSize,
-        child: const FaIcon(
+        child: const EhSvgFaIcon(
           FontAwesomeIcons.redo,
           size: iconSize,
         ),
@@ -553,7 +553,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         child: CupertinoButton(
           padding: buttonPadding,
           minimumSize: const Size(minSize, minSize),
-          child: const FaIcon(
+          child: const EhSvgFaIcon(
             FontAwesomeIcons.pause,
             size: iconSize,
           ),
@@ -726,7 +726,7 @@ class _DownloadItemCoverImageState extends State<DownloadItemCoverImage> {
     return Container(
       alignment: Alignment.center,
       color: ehTheme.palette.fill.resolveFrom(context),
-      child: Icon(
+      child: EhSvgIcon(
         CupertinoIcons.photo,
         color: ehTheme.palette.text2.resolveFrom(context),
       ),

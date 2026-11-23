@@ -2,6 +2,7 @@ import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Inset content on the form's glass surface, without another blur layer.
 class FavoriteFormGroup extends StatelessWidget {
@@ -155,7 +156,7 @@ class _FavoriteNoteFieldState extends State<FavoriteNoteField> {
               prefix: Padding(
                 padding: const EdgeInsetsDirectional.only(start: 14),
                 child: ExcludeSemantics(
-                  child: Icon(CupertinoIcons.pencil,
+                  child: EhSvgIcon(CupertinoIcons.pencil,
                       size: 17,
                       color: EhPopupTextStyles.secondary(context).color),
                 ),

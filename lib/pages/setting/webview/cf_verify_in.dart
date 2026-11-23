@@ -499,7 +499,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            Icon(
+                            EhSvgIcon(
                               CupertinoIcons.lock_fill,
                               size: 13,
                               color: palette.text2.resolveFrom(context),
@@ -561,7 +561,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
             CupertinoButton(
               padding: const EdgeInsets.all(12),
               onPressed: () => Navigator.of(context).maybePop(),
-              child: Icon(
+              child: EhSvgIcon(
                 CupertinoIcons.xmark,
                 size: 21,
                 color: palette.text1.resolveFrom(context),
@@ -582,7 +582,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
                   ),
                   Row(
                     children: <Widget>[
-                      Icon(
+                      EhSvgIcon(
                         CupertinoIcons.lock_fill,
                         size: 11,
                         color: palette.text2.resolveFrom(context),
@@ -607,7 +607,7 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
             CupertinoButton(
               padding: const EdgeInsets.all(12),
               onPressed: () => _controller?.reload(),
-              child: Icon(
+              child: EhSvgIcon(
                 CupertinoIcons.refresh,
                 size: 20,
                 color: palette.text1.resolveFrom(context),

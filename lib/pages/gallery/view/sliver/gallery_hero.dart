@@ -769,7 +769,7 @@ class _FavoriteCircle extends StatelessWidget {
         onLongPress: favorites.isLoading ? null : () => favorites.longTapFav(),
         child: favorites.isLoading
             ? const CupertinoActivityIndicator()
-            : Icon(
+            : EhSvgIcon(
                 isFav ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
                 size: 23,
                 color: isFav
@@ -802,7 +802,7 @@ class _DownloadCircle extends StatelessWidget {
         return _RoundAction(
           docked: docked,
           label: l10n.downloaded,
-          child: Icon(CupertinoIcons.checkmark_alt,
+          child: EhSvgIcon(CupertinoIcons.checkmark_alt,
               size: 23,
               color: CupertinoDynamicColor.resolve(EhPalette.accent, context)),
         );
@@ -815,7 +815,7 @@ class _DownloadCircle extends StatelessWidget {
           onTap: () => status == TaskStatus.running
               ? _downloads.galleryTaskPaused(gid)
               : _downloads.galleryTaskResume(gid),
-          child: Icon(CupertinoIcons.pause_fill, size: 20, color: text1),
+          child: EhSvgIcon(CupertinoIcons.pause_fill, size: 20, color: text1),
         );
       }
       if (status == TaskStatus.paused) {
@@ -824,14 +824,14 @@ class _DownloadCircle extends StatelessWidget {
           label: l10n.paused,
           progress: state.downloadProcess / 100,
           onTap: () => _downloads.galleryTaskResume(gid),
-          child: Icon(CupertinoIcons.play_fill, size: 20, color: text1),
+          child: EhSvgIcon(CupertinoIcons.play_fill, size: 20, color: text1),
         );
       }
       return _RoundAction(
           docked: docked,
         label: l10n.p_Download,
         onTap: () => controller.downloadGallery(context),
-        child: Icon(CupertinoIcons.arrow_down_to_line, size: 22, color: text1),
+        child: EhSvgIcon(CupertinoIcons.arrow_down_to_line, size: 22, color: text1),
       );
     });
   }

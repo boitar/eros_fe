@@ -248,7 +248,7 @@ class _LogViewPageState extends State<LogViewPage> {
             CupertinoButton(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               onPressed: toggleAutoScroll,
-              child: Icon(
+              child: EhSvgIcon(
                 _autoScroll
                     ? CupertinoIcons.arrow_down_circle_fill
                     : CupertinoIcons.arrow_down_circle,
@@ -258,7 +258,7 @@ class _LogViewPageState extends State<LogViewPage> {
             CupertinoButton(
               padding: const EdgeInsets.only(right: 12),
               onPressed: share,
-              child: const Icon(
+              child: const EhSvgIcon(
                 CupertinoIcons.share,
                 size: 26,
               ),

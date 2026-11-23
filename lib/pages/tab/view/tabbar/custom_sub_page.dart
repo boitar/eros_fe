@@ -157,7 +157,7 @@ class _SubListViewState<T extends CustomSubListController>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FaIcon(
+                EhSvgFaIcon(
                   FontAwesomeIcons.hippo,
                   size: 100,
                   color: CupertinoDynamicColor.resolve(

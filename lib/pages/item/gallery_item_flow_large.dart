@@ -16,6 +16,7 @@ import 'cover_ratio.dart';
 import 'gallery_card_title.dart';
 import 'gallery_item.dart';
 import 'item_base.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Card corner. Chips on the cover sit at inset `i` with radius `16 − i`,
 /// so every nested corner shares the card's centre of curvature.
@@ -568,7 +569,7 @@ class _FavoriteBadge extends StatelessWidget {
           color: EhPalette.scrim,
           shape: CircleBorder(),
         ),
-        child: Icon(CupertinoIcons.heart_fill, size: 12, color: legible),
+        child: EhSvgIcon(CupertinoIcons.heart_fill, size: 12, color: legible),
       );
     });
   }
