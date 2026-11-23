@@ -29,6 +29,7 @@ export 'widget/animated.dart';
 export 'widget/cupertino/list_tile.dart';
 export 'widget/cupertino/sliver_list_section.dart';
 export 'widget/eh_dark_cupertino_theme.dart';
+export 'widget/eh_svg_icon.dart';
 export 'widget/emoji_text.dart';
 export 'widget/image/eh_cached_network_image.dart';
 export 'widget/image/eh_network_image.dart';

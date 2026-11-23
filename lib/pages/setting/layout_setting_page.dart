@@ -1,19 +1,21 @@
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/controller/user_controller.dart';
+import 'package:eros_fe/common/service/app_icon_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
-import 'package:eros_fe/pages/login/controller/login_controller.dart';
 import 'package:eros_fe/pages/setting/card_size_preview.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:eros_fe/pages/tab/view/list/card_size.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/desktop_browse_style.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -113,7 +115,14 @@ class LayoutSettingPage extends StatelessWidget {
     return SettingScaffold(
       title: L10n.of(context).appearance_and_layout,
       child: CustomScrollView(slivers: [
-        SliverSafeArea(sliver: LayoutSettingList()),
+        SliverSafeArea(
+          sliver: MultiSliver(
+            children: [
+              const SliverSettingCategoryHero(route: EHRoutes.layoutSetting),
+              LayoutSettingList(),
+            ],
+          ),
+        ),
       ]),
     );
   }
@@ -126,7 +135,6 @@ class LayoutSettingList extends StatelessWidget {
   final UserController userController = Get.find();
   final TagTransController transController = Get.find();
   final LocaleService localeService = Get.find();
-  final LoginController loginController = Get.put(LoginController());
 
   @override
   Widget build(BuildContext context) {
@@ -153,6 +161,11 @@ class LayoutSettingList extends StatelessWidget {
               },
             );
           }),
+        ),
+
+        _AppIconSelectorTile(
+          key: const ValueKey<String>('setting-app-icon-selector'),
+          settings: _ehSettingService,
         ),
 
         if (context.isTablet) _buildTableLayoutItem(context),
@@ -539,4 +552,188 @@ Widget _buildTagLimitItem(BuildContext context) {
       onValueChanged: (val) => ehSettingService.listViewTagLimit = val,
     );
   });
+}
+
+class _AppIconSelectorTile extends StatelessWidget {
+  const _AppIconSelectorTile({super.key, required this.settings});
+
+  final EhSettingService settings;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool zh = Localizations.maybeLocaleOf(context)?.languageCode == 'zh';
+    return EhCupertinoListTile(
+      padding: const EdgeInsetsDirectional.fromSTEB(16.0, 12.0, 16.0, 12.0),
+      title: Text(zh ? '应用图标' : 'App Icon'),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 10.0),
+        child: Obx(() {
+          final EhAppIconStyle current = settings.appIconStyle;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: <Widget>[
+                  _AppIconOptionChip(
+                    key: const ValueKey<String>('app-icon-option-auto'),
+                    logoStyle: EhFeLogoStyle.adaptiveSplit,
+                    label: zh ? '自适应' : 'Auto',
+                    selected: current == EhAppIconStyle.auto,
+                    onTap: () {
+                      vibrateUtil.selection();
+                      settings.setAppIconStyle(EhAppIconStyle.auto);
+                    },
+                  ),
+                  _AppIconOptionChip(
+                    key: const ValueKey<String>('app-icon-option-light'),
+                    logoStyle: EhFeLogoStyle.lightGlass,
+                    label: zh ? '凝脂白' : 'Light',
+                    selected: current == EhAppIconStyle.light,
+                    onTap: () {
+                      vibrateUtil.selection();
+                      settings.setAppIconStyle(EhAppIconStyle.light);
+                    },
+                  ),
+                  _AppIconOptionChip(
+                    key: const ValueKey<String>('app-icon-option-dark'),
+                    logoStyle: EhFeLogoStyle.darkGlass,
+                    label: zh ? '曜石黑' : 'Dark',
+                    selected: current == EhAppIconStyle.dark,
+                    onTap: () {
+                      vibrateUtil.selection();
+                      settings.setAppIconStyle(EhAppIconStyle.dark);
+                    },
+                  ),
+                  _AppIconOptionChip(
+                    key: const ValueKey<String>('app-icon-option-purple'),
+                    logoStyle: EhFeLogoStyle.brandSquircle,
+                    label: zh ? '紫韵经典' : 'Classic Purple',
+                    selected: current == EhAppIconStyle.purple,
+                    onTap: () {
+                      vibrateUtil.selection();
+                      settings.setAppIconStyle(EhAppIconStyle.purple);
+                    },
+                  ),
+                ],
+              ),
+              if (current == EhAppIconStyle.auto)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    zh ? '跟随系统浅色与深色外观' : 'Follows system appearance',
+                    style: TextStyle(
+                      fontSize: 12.0,
+                      color: ehTheme.palette.text2.resolveFrom(context),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _AppIconOptionChip extends StatefulWidget {
+  const _AppIconOptionChip({
+    super.key,
+    required this.logoStyle,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final EhFeLogoStyle logoStyle;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  State<_AppIconOptionChip> createState() => _AppIconOptionChipState();
+}
+
+class _AppIconOptionChipState extends State<_AppIconOptionChip> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ehTheme.palette;
+    final bool contrast = MediaQuery.highContrastOf(context);
+    final bool selected = widget.selected;
+    final Color baseFill = selected
+        ? EhPalette.accentSoft.resolveFrom(context)
+        : palette.fill.resolveFrom(context);
+    final Color interactiveFill = _pressed
+        ? Color.alphaBlend(DesktopBrowseStyle.capsulePressed(context), baseFill)
+        : (_hovered
+            ? Color.alphaBlend(
+                DesktopBrowseStyle.capsuleHover(context),
+                baseFill,
+              )
+            : baseFill);
+    final Color borderColor = selected
+        ? EhPalette.accent
+            .resolveFrom(context)
+            .withValues(alpha: contrast ? 1.0 : 0.72)
+        : palette.hairline.resolveFrom(context);
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: widget.label,
+      onTap: widget.onTap,
+      excludeSemantics: true,
+      child: MouseRegion(
+        cursor: DesktopBrowseStyle.interactionCursor,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() {
+          _hovered = false;
+          _pressed = false;
+        }),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: DesktopBrowseStyle.motion(context, 180),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.fromLTRB(8.0, 7.0, 12.0, 7.0),
+            decoration: BoxDecoration(
+              color: interactiveFill,
+              borderRadius: BorderRadius.circular(14.0),
+              border: Border.all(
+                color: borderColor,
+                width: selected ? 1.5 : 1.0,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                EhFeAppLogo(size: 32.0, style: widget.logoStyle),
+                const SizedBox(width: 8.0),
+                Flexible(
+                  child: Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      color: selected
+                          ? palette.text1.resolveFrom(context)
+                          : palette.text2.resolveFrom(context),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

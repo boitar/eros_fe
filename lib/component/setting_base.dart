@@ -84,7 +84,7 @@ class BarsItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(
+                const EhSvgIcon(
                   CupertinoIcons.bars,
                   color: CupertinoColors.systemGrey,
                 ),
@@ -228,7 +228,7 @@ class _SelectorSettingItemState extends State<SelectorSettingItem> {
                       ],
                     ),
                   ),
-                  const Icon(
+                  const EhSvgIcon(
                     CupertinoIcons.forward,
                     color: CupertinoColors.systemGrey,
                   ),
@@ -541,7 +541,7 @@ class _TextSwitchItemState extends State<TextSwitchItem> {
                       value: _switchValue,
                     ),
                     if (widget.onTap != null)
-                      const Icon(
+                      const EhSvgIcon(
                         CupertinoIcons.forward,
                         color: CupertinoColors.systemGrey,
                       ),

@@ -6,6 +6,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:oktoast/oktoast.dart' as oktoast;
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 void showToast(
   String msg, {
@@ -74,7 +75,7 @@ void show509Toast() {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const FaIcon(
+              const EhSvgFaIcon(
                 // LineIcons.toriiGate,
                 FontAwesomeIcons.fill,
                 size: 80,
@@ -115,7 +116,7 @@ void show429Toast() {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const FaIcon(
+              const EhSvgFaIcon(
                 // LineIcons.toriiGate,
                 FontAwesomeIcons.roadBarrier,
                 size: 80,
@@ -182,7 +183,7 @@ void showActionToast(String msg, {IconData? icon, VoidCallback? onPressed}) {
                   ),
                   CupertinoButton(
                     minSize: 20,
-                    child: Icon(
+                    child: EhSvgIcon(
                       icon,
                       size: 18,
                     ),

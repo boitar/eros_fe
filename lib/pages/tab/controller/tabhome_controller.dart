@@ -19,7 +19,7 @@ import '../../../common/service/layout_service.dart';
 import '../comm.dart';
 import '../view/setting_page.dart';
 
-const double kIconSize = 24.0;
+const double kIconSize = 22.0;
 final TabPages tabPages = TabPages();
 
 class TabPages {
@@ -63,7 +63,7 @@ class TabPages {
   };
 
   Map<String, Widget> get tabIcons => iconDatas
-      .map((key, value) => MapEntry(key, FaIcon(value, size: kIconSize)));
+      .map((key, value) => MapEntry(key, EhSvgFaIcon(value, size: kIconSize)));
 
   Map<String, String> get tabTitles => titlesOf(
       Get.key.currentContext ?? Get.find<TabHomeController>().tContext);
@@ -307,10 +307,17 @@ class TabHomeController extends GetxController {
   }
 
   List<BottomNavigationBarItem> get listBottomNavigationBarItem => _showTabs
-      .map((e) => BottomNavigationBarItem(
-            icon: tabPages.tabIcons[e]!,
-            label: tabPages.tabTitles[e],
-          ))
+      .map(
+        (e) => BottomNavigationBarItem(
+          icon: e == EHRoutes.favorite
+              ? const EhSvgIcon(CupertinoIcons.heart, size: kIconSize)
+              : tabPages.tabIcons[e]!,
+          activeIcon: e == EHRoutes.favorite
+              ? EhSvgFaIcon(FontAwesomeIcons.solidHeart, size: kIconSize)
+              : null,
+          label: tabPages.tabTitles[e],
+        ),
+      )
       .toList();
 
   List<LiquidGlassTabItem> get liquidGlassTabItems => _showTabs.map((route) {

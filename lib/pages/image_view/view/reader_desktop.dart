@@ -20,6 +20,7 @@ import '../controller/view_controller.dart';
 import '../controller/view_state.dart';
 import 'reader_layout.dart';
 import 'view_widget.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// macOS and Windows read like a desktop app: a toolbar with the layout,
 /// direction and fullscreen controls, a thumbnail sidebar, page buttons at
@@ -393,7 +394,7 @@ class _BarButtonState extends State<_BarButton> {
               color: fill,
               borderRadius: BorderRadius.circular(widget.glass ? size / 2 : 7),
             ),
-            child: Icon(
+            child: EhSvgIcon(
               widget.icon,
               size: 18,
               color: !enabled
@@ -495,7 +496,7 @@ class _LayoutSegments extends StatelessWidget {
                       borderRadius: BorderRadius.circular(radius),
                     ),
                     child: compact
-                        ? Icon(icons[entry.key], size: 17, color: _kText)
+                        ? EhSvgIcon(icons[entry.key], size: 17, color: _kText)
                         : Text(
                             entry.value,
                             style: TextStyle(
@@ -769,18 +770,18 @@ class _ReaderMoreMenuState extends State<_ReaderMoreMenu> {
       onClose: () => _setOpen(false),
       menuChildren: [
         CupertinoMenuItem(
-          leading: const Icon(CupertinoIcons.arrow_down_to_line),
+          leading: const EhSvgIcon(CupertinoIcons.arrow_down_to_line),
           onPressed: () => controller.tapSave(context),
           child: Text(l10n.save_current_image),
         ),
         CupertinoMenuItem(
-          leading: const Icon(CupertinoIcons.share),
+          leading: const EhSvgIcon(CupertinoIcons.share),
           onPressed: () => controller.tapShare(context),
           child: Text(l10n.share_image),
         ),
         if (widget.compact) ...[
           CupertinoMenuItem(
-            leading: const Icon(CupertinoIcons.arrow_left_right),
+            leading: const EhSvgIcon(CupertinoIcons.arrow_left_right),
             onPressed: state.viewMode == ViewMode.topToBottom
                 ? null
                 : () => toggleDesktopReaderDirection(controller),
@@ -792,7 +793,7 @@ class _ReaderMoreMenuState extends State<_ReaderMoreMenu> {
           GetBuilder<ViewExtController>(
             id: idAutoReadIcon,
             builder: (logic) => CupertinoMenuItem(
-              leading: Icon(
+              leading: EhSvgIcon(
                 logic.vState.autoRead
                     ? CupertinoIcons.checkmark
                     : CupertinoIcons.timer,
@@ -803,13 +804,13 @@ class _ReaderMoreMenuState extends State<_ReaderMoreMenu> {
           ),
           if (desktopReaderCanFullscreen)
             CupertinoMenuItem(
-              leading: const Icon(CupertinoIcons.fullscreen),
+              leading: const EhSvgIcon(CupertinoIcons.fullscreen),
               onPressed: MacOSWindowChrome.toggleFullscreen,
               child: Text(l10n.fullscreen),
             ),
         ],
         CupertinoMenuItem(
-          leading: const Icon(CupertinoIcons.settings),
+          leading: const EhSvgIcon(CupertinoIcons.settings),
           onPressed: () => _openReadSettings(controller),
           child: Text(l10n.read_setting),
         ),
@@ -983,7 +984,7 @@ class _PageButton extends GetView<ViewExtController> {
         forward != (controller.vState.viewMode == ViewMode.rightToLeft);
     final label = next ? l10n.reader_next_page : l10n.reader_previous_page;
     final double size = glass ? 44 : 40;
-    final icon = Icon(
+    final icon = EhSvgIcon(
       forward ? CupertinoIcons.chevron_right : CupertinoIcons.chevron_left,
       size: 18,
       color: _kText,

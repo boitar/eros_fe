@@ -15,6 +15,7 @@ import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 bool get _mac => PlatformCapabilities.hostPlatform == TargetPlatform.macOS;
 
@@ -598,20 +599,24 @@ class _MenuRowState extends State<_MenuRow> {
             key: ValueKey<String>('desktop-menu-${entry.label}'),
             behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.of(context).pop(entry),
-            child: Container(
+            child: AnimatedContainer(
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 150),
+              curve: Curves.easeOutQuart,
               constraints: const BoxConstraints(minHeight: 32),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: ShapeDecoration(
                 color: _hovered || _focused
                     ? (dark ? const Color(0x1FFFFFFF) : const Color(0x1214161C))
-                    : const Color(0x00000000),
+                    : (dark ? const Color(0x00FFFFFF) : const Color(0x0014161C)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(widget.glass ? 9 : 6),
                 ),
               ),
               child: Row(
                 children: <Widget>[
-                  Icon(
+                  EhSvgIcon(
                     entry.icon,
                     size: 16,
                     color: entry.destructive
@@ -637,7 +642,7 @@ class _MenuRowState extends State<_MenuRow> {
                   if (entry.selected)
                     Padding(
                       padding: const EdgeInsets.only(left: 10),
-                      child: Icon(
+                      child: EhSvgIcon(
                         CupertinoIcons.check_mark,
                         size: 14,
                         color: foreground,
@@ -672,7 +677,7 @@ class _ShortcutLabel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         if (parts.first.isNotEmpty) Text(parts.first, style: style),
-        Icon(CupertinoIcons.return_icon, size: 13, color: color),
+        EhSvgIcon(CupertinoIcons.return_icon, size: 13, color: color),
         if (parts.last.isNotEmpty) Text(parts.last, style: style),
       ],
     );
@@ -695,8 +700,8 @@ class DesktopQuickActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = L10n.of(context);
     final gap = axis == Axis.horizontal
-        ? const SizedBox(width: 6)
-        : const SizedBox(height: 6);
+        ? const SizedBox(width: 5)
+        : const SizedBox(height: 5);
     return Flex(
       direction: axis,
       mainAxisSize: MainAxisSize.min,
@@ -713,6 +718,7 @@ class DesktopQuickActions extends StatelessWidget {
                 ? l10n.change_to_favorites
                 : l10n.add_to_favorites,
             icon: item.isFav ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+            active: item.isFav,
             onTap: () => DesktopGalleryActions.favorite(item),
           ),
         ),
@@ -733,11 +739,13 @@ class _QuickButton extends StatefulWidget {
     required this.label,
     required this.icon,
     required this.onTap,
+    this.active = false,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback onTap;
+  final bool active;
 
   @override
   State<_QuickButton> createState() => _QuickButtonState();
@@ -745,32 +753,90 @@ class _QuickButton extends StatefulWidget {
 
 class _QuickButtonState extends State<_QuickButton> {
   bool _hovered = false;
+  bool _pressed = false;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: widget.label,
-    excludeSemantics: true,
-    onTap: widget.onTap,
-    child: MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        key: ValueKey<String>('desktop-quick-${widget.label}'),
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _hovered ? const Color(0xE614151A) : const Color(0xB814151A),
+  Widget build(BuildContext context) {
+    final bool disableAnimations = MediaQuery.disableAnimationsOf(context);
+    return Semantics(
+      button: true,
+      label: widget.label,
+      excludeSemantics: true,
+      onTap: widget.onTap,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() {
+          _hovered = false;
+          _pressed = false;
+        }),
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) {
+            if (!_pressed) {
+              setState(() => _pressed = true);
+            }
+          },
+          onPointerUp: (_) {
+            if (_pressed) {
+              setState(() => _pressed = false);
+            }
+          },
+          onPointerCancel: (_) {
+            if (_pressed) {
+              setState(() => _pressed = false);
+            }
+          },
+          child: GestureDetector(
+            key: ValueKey<String>('desktop-quick-${widget.label}'),
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            child: AnimatedScale(
+              scale: (!disableAnimations && _pressed) ? 0.94 : 1.0,
+              duration: disableAnimations
+                  ? Duration.zero
+                  : const Duration(milliseconds: 140),
+              curve: Curves.easeOutCubic,
+              child: AnimatedContainer(
+                duration: disableAnimations
+                    ? Duration.zero
+                    : const Duration(milliseconds: 185),
+                curve: Curves.easeOutQuart,
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _hovered
+                      ? const Color(0xEB16181E)
+                      : const Color(0xBA16181E),
+                  border: Border.all(
+                    color: _hovered
+                        ? const Color(0x48FFFFFF)
+                        : const Color(0x26FFFFFF),
+                    width: 0.75,
+                  ),
+                  boxShadow: const <BoxShadow>[
+                    BoxShadow(
+                      color: Color(0x36000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: EhSvgIcon(
+                  widget.icon,
+                  size: 14.5,
+                  strokeWidth: 1.65,
+                  color: widget.active
+                      ? const Color(0xFFFF5A76)
+                      : CupertinoColors.white,
+                ),
+              ),
+            ),
           ),
-          child: Icon(widget.icon, size: 15, color: CupertinoColors.white),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

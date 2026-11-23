@@ -602,7 +602,7 @@ class _Filecont extends StatelessWidget {
             ),
           ),
         ),
-        Icon(
+        EhSvgIcon(
           Icons.panorama,
           size: 13,
           color: ehTheme.palette.text2.resolveFrom(context),

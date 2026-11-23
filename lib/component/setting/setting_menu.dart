@@ -4,6 +4,7 @@ import 'package:eros_fe/utils/vibrate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// One choice in a setting's pull-down menu.
 @immutable
@@ -179,7 +180,7 @@ class SettingMenuButtonState<T> extends State<SettingMenuButton<T>> {
         for (final option in widget.options)
           CupertinoMenuItem(
             leading: option.value == widget.selected
-                ? const Icon(CupertinoIcons.checkmark_alt)
+                ? const EhSvgIcon(CupertinoIcons.checkmark_alt)
                 : null,
             onPressed: () => _pick(option.value),
             subtitle: option.subtitle == null ? null : Text(option.subtitle!),
@@ -197,7 +198,7 @@ class SettingMenuButtonState<T> extends State<SettingMenuButton<T>> {
               child: Padding(
                 padding: const EdgeInsetsDirectional.only(start: 5),
                 // Inline widgets already scale with the text.
-                child: Icon(
+                child: EhSvgIcon(
                   CupertinoIcons.chevron_up_chevron_down,
                   size: 14,
                   color: valueColor,

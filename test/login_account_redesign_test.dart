@@ -1,0 +1,321 @@
+import 'dart:io';
+
+import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/common/controller/user_controller.dart';
+import 'package:eros_fe/common/parser/user_profile_parser.dart';
+import 'package:eros_fe/common/service/auth_session_service.dart';
+import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/component/exception/error.dart';
+import 'package:eros_fe/models/index.dart';
+import 'package:eros_fe/network/app_dio/exception.dart';
+import 'package:eros_fe/pages/login/controller/login_controller.dart';
+import 'package:eros_fe/pages/login/view/login_page.dart';
+import 'package:eros_fe/pages/login/widget/login_material_chrome.dart';
+import 'package:eros_fe/utils/cf_verification.dart';
+import 'package:eros_fe/widget/auth_expiry_top_banner.dart';
+import 'package:eros_fe/widget/flutter_glass.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class _TestSettings extends GetxService implements EhSettingService {
+  _TestSettings({bool initialGlass = true}) : _glass = initialGlass.obs;
+  final RxBool _glass;
+  final Rx<GlassMaterial> _material = GlassMaterial.liquid.obs;
+  final RxBool _siteEx = false.obs;
+  final RxBool _pureDark = false.obs;
+
+  @override
+  bool get liquidGlass => _glass.value;
+  @override
+  set liquidGlass(bool value) => _glass.value = value;
+
+  @override
+  GlassMaterial get glassMaterial => _material.value;
+  @override
+  set glassMaterial(GlassMaterial value) => _material.value = value;
+
+  @override
+  bool get liquidGlassMaterial => glassMaterial.isLiquid;
+
+  @override
+  bool get isPureDarkTheme => false;
+
+  @override
+  RxBool get pureDarkThemeObs => _pureDark;
+
+  @override
+  RxBool get isSiteEx => _siteEx;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeUserController extends GetxController implements UserController {
+  @override
+  final Rx<User> user = const User(
+    username: 'miyuu',
+    nickName: 'miyuu',
+    memberId: '123456',
+    passHash: '0123456789abcdef0123456789abcdef',
+    igneous: 'a1b2c3d4e5f60718',
+  ).obs;
+
+  @override
+  bool get isLogin =>
+      (user.value.memberId?.isNotEmpty ?? false) &&
+      (user.value.passHash?.isNotEmpty ?? false);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    Get.reset();
+    Get.put<EhSettingService>(_TestSettings(), permanent: true);
+    Get.put<ThemeService>(ThemeService(), permanent: true);
+  });
+
+  tearDown(() {
+    PlatformCapabilities.debugHostPlatformOverride = null;
+    FlutterGlassRuntime.debugAvailable = null;
+    Get.reset();
+  });
+
+  group('ExitTraceInfo & Cloudflare detection', () {
+    test('parses Cloudflare trace and flags Asian exit nodes', () {
+      final jp = ExitTraceInfo.tryParse(
+        'fl=448f588\nh=forums.e-hentai.org\nloc=JP\ncolo=NRT\nwarp=off\n',
+        nowMs: 1700000000000,
+      );
+      expect(jp, isNotNull);
+      expect(jp!.isAsianRegion, isTrue);
+      expect(jp.displayLabel(zh: true), '日本 · 东京');
+      expect(jp.compactWithColo(zh: true), '日本 · 东京（NRT）');
+
+      final us = ExitTraceInfo.tryParse(
+        'loc=US\ncolo=LAX\n',
+        nowMs: 1700000000000,
+      );
+      expect(us, isNotNull);
+      expect(us!.isAsianRegion, isFalse);
+      expect(us.displayLabel(zh: true), '美国 · 洛杉矶');
+    });
+
+    test('recognizes cf-mitigated header and CloudflareChallengeException', () {
+      expect(isCloudflareMitigatedHeader('challenge'), isTrue);
+      expect(isCloudflareMitigatedHeader('none'), isFalse);
+      expect(isCfBlockedError(CloudflareChallengeException()), isTrue);
+    });
+
+    test('CfVerification distinguishes mystery igneous from real token', () {
+      final denied = CfVerification(
+        <Cookie>[
+          Cookie('ipb_member_id', '123456'),
+          Cookie('ipb_pass_hash', '0123456789abcdef0123456789abcdef'),
+          Cookie('igneous', 'mystery'),
+          Cookie('cf_clearance', 'cf_token'),
+        ],
+        'TestUA/1.0',
+        exVisited: true,
+      );
+      expect(denied.hasLoginSession, isTrue);
+      expect(denied.isComplete, isTrue);
+      expect(denied.hasValidIgneous, isFalse);
+
+      final granted = CfVerification(
+        <Cookie>[
+          Cookie('ipb_member_id', '123456'),
+          Cookie('ipb_pass_hash', '0123456789abcdef0123456789abcdef'),
+          Cookie('igneous', 'a1b2c3d4e5f60718'),
+        ],
+        'TestUA/1.0',
+      );
+      expect(granted.hasValidIgneous, isTrue);
+    });
+  });
+
+  group('30-day countdown & in-app top banner cooldown', () {
+    test('transitions across valid -> expiring -> expired and respects 24h cooldown', () {
+      DateTime fakeNow = DateTime(2026, 11, 1, 12, 0);
+      final service = AuthSessionService(
+        clock: () => fakeNow,
+        traceProbe: () async => const ExitTraceInfo(
+          countryCode: 'US',
+          colo: 'LAX',
+          fetchedAtMs: 1,
+        ),
+      );
+      service.onInit();
+
+      service.recordAuthSuccess(
+        memberId: '987654',
+        method: AuthMethodKind.password,
+        hasExAccess: true,
+        verifiedCf: true,
+      );
+
+      expect(service.snapshot.value.remainingDaysAt(fakeNow), 30);
+      expect(
+        service.snapshot.value.statusAt(fakeNow),
+        AuthCountdownStatus.valid,
+      );
+      expect(service.shouldShowStartupBanner(isLoggedIn: true), isFalse);
+
+      fakeNow = DateTime(2026, 11, 29, 13, 0);
+      service.resetSessionBannerFlag();
+      expect(service.snapshot.value.remainingDaysAt(fakeNow), 2);
+      expect(
+        service.snapshot.value.statusAt(fakeNow),
+        AuthCountdownStatus.expiring,
+      );
+      expect(service.shouldShowStartupBanner(isLoggedIn: true), isTrue);
+
+      service.dismissStartupBannerForCooldown();
+      service.resetSessionBannerFlag();
+      fakeNow = DateTime(2026, 11, 30, 1, 0);
+      expect(service.shouldShowStartupBanner(isLoggedIn: true), isFalse);
+
+      fakeNow = DateTime(2026, 11, 30, 14, 0);
+      expect(service.shouldShowStartupBanner(isLoggedIn: true), isTrue);
+
+      fakeNow = DateTime(2026, 12, 3, 12, 0);
+      service.resetSessionBannerFlag();
+      expect(service.snapshot.value.remainingDaysAt(fakeNow), 0);
+      expect(
+        service.snapshot.value.statusAt(fakeNow),
+        AuthCountdownStatus.expired,
+      );
+    });
+
+    test('parses Cookie clipboard formats accurately', () {
+      const sampleIg = 'a1b2c3d4e5f60718';
+      final kv = LoginController.parseCookieFromText(
+        'ipb_member_id=7654321; ipb_pass_hash=fedcba9876543210fedcba9876543210; igneous=$sampleIg',
+      );
+      expect(kv['ipb_member_id'], '7654321');
+      expect(kv['ipb_pass_hash'], 'fedcba9876543210fedcba9876543210');
+      expect(kv['igneous'], sampleIg);
+    });
+
+    testWidgets('slides down in-app top banner when session is expiring',
+        (tester) async {
+      DateTime fakeNow = DateTime(2026, 11, 1, 10, 0);
+      Get.put<UserController>(_FakeUserController(), permanent: true);
+      final authService = Get.put<AuthSessionService>(
+        AuthSessionService(clock: () => fakeNow, traceProbe: () async => null),
+        permanent: true,
+      );
+      authService.recordAuthSuccess(
+        memberId: '123456',
+        method: AuthMethodKind.password,
+        hasExAccess: true,
+      );
+      // Advance 28 days so 2 days remain (<= 3 days threshold)
+      fakeNow = DateTime(2026, 11, 29, 12, 0);
+      authService.resetSessionBannerFlag();
+
+      await tester.pumpWidget(
+        const CupertinoApp(
+          locale: Locale('zh', 'CN'),
+          supportedLocales: <Locale>[Locale('zh', 'CN'), Locale('en', 'US')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: AuthExpiryTopBannerHost(
+            launchDelay: Duration(milliseconds: 50),
+            autoHideDuration: Duration(seconds: 2),
+            child: CupertinoPageScaffold(child: SizedBox.expand()),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 80));
+      await tester.pump(const Duration(milliseconds: 350));
+
+      expect(
+        find.byKey(const ValueKey<String>('auth-expiry-top-banner')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('2 天后到期'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('auth-expiry-banner-action')),
+        findsOneWidget,
+      );
+
+      // Auto-hides cleanly after duration
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('auth-expiry-top-banner')),
+        findsNothing,
+      );
+    });
+  });
+
+  group('Three-state material & cross-platform widgets', () {
+    for (final materialMode in <({bool enabled, GlassMaterial mat})>[
+      (enabled: true, mat: GlassMaterial.liquid),
+      (enabled: true, mat: GlassMaterial.frosted),
+      (enabled: false, mat: GlassMaterial.frosted),
+    ]) {
+      testWidgets(
+        'renders LoginFloatingMaterial & CoverMosaicCurtain in enabled=${materialMode.enabled} ${materialMode.mat}',
+        (tester) async {
+          PlatformCapabilities.debugHostPlatformOverride =
+              TargetPlatform.android;
+          FlutterGlassRuntime.debugAvailable = false;
+          final settings = Get.find<EhSettingService>();
+          settings.liquidGlass = materialMode.enabled;
+          settings.glassMaterial = materialMode.mat;
+
+          await tester.pumpWidget(
+            GlassCapabilityScope(
+              child: GlassPreference(
+                enabled: materialMode.enabled,
+                material: materialMode.mat,
+                child: CupertinoApp(
+                  home: CupertinoPageScaffold(
+                    child: Stack(
+                      children: <Widget>[
+                        const SizedBox(
+                          height: 240,
+                          width: 360,
+                          child: CoverMosaicCurtain(columns: 3),
+                        ),
+                        LoginFloatingCircleButton(
+                          icon: CupertinoIcons.chevron_back,
+                          onPressed: () {},
+                        ),
+                        LoginTintedActionPill(
+                          label: '重新认证',
+                          onPressed: () {},
+                        ),
+                        const LoginStepChainCard(
+                          states: <LoginStepState>[
+                            LoginStepState.done,
+                            LoginStepState.running,
+                            LoginStepState.waiting,
+                            LoginStepState.waiting,
+                          ],
+                          metas: <String?>['LAX · 120 ms', null, null, null],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pump();
+          expect(find.text('重新认证'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  });
+}

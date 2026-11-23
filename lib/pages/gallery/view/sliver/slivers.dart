@@ -449,8 +449,8 @@ class _ChapterBoxState extends State<ChapterBox> {
     );
 
     Widget _icon = AnimatedCrossFade(
-      firstChild: const Icon(CupertinoIcons.chevron_down),
-      secondChild: const Icon(CupertinoIcons.chevron_up),
+      firstChild: const EhSvgIcon(CupertinoIcons.chevron_down),
+      secondChild: const EhSvgIcon(CupertinoIcons.chevron_up),
       crossFadeState:
           showFull ? CrossFadeState.showSecond : CrossFadeState.showFirst,
       duration: const Duration(milliseconds: 300),
@@ -540,8 +540,8 @@ class _ChapterGridViewState extends State<ChapterGridView> {
     // logger.d('context.width ${context.width}');
 
     Widget _icon = AnimatedCrossFade(
-      firstChild: const Icon(CupertinoIcons.chevron_down),
-      secondChild: const Icon(CupertinoIcons.chevron_up),
+      firstChild: const EhSvgIcon(CupertinoIcons.chevron_down),
+      secondChild: const EhSvgIcon(CupertinoIcons.chevron_up),
       crossFadeState:
           showFull ? CrossFadeState.showSecond : CrossFadeState.showFirst,
       duration: const Duration(milliseconds: 300),

@@ -2,10 +2,26 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:eros_fe/common/parser/user_profile_parser.dart';
 import 'package:eros_fe/utils/logger.dart';
 
 import 'exception.dart';
 import 'http_transformer.dart';
+
+bool _isResponseCloudflareChallenge(Response<dynamic>? response) {
+  if (response == null) {
+    return false;
+  }
+  final mitigated = response.headers.value('cf-mitigated');
+  if (isCloudflareMitigatedHeader(mitigated)) {
+    return true;
+  }
+  final body = response.data;
+  if (body is String && isCloudflareChallenge(body)) {
+    return true;
+  }
+  return false;
+}
 
 class DioHttpResponse<T> {
   DioHttpResponse._internal({this.ok = false});
@@ -41,6 +57,16 @@ FutureOr<DioHttpResponse> handleResponse(Response? response,
   // 返回值异常
   if (response == null) {
     return DioHttpResponse.failureFromError();
+  }
+
+  // Cloudflare 挑战优先识别
+  if (_isResponseCloudflareChallenge(response)) {
+    return DioHttpResponse.failureFromError(
+      CloudflareChallengeException(
+        code: response.statusCode,
+        data: response.data,
+      ),
+    );
   }
 
   // token失效
@@ -95,6 +121,12 @@ HttpException _parseException(Exception error, {dynamic data}) {
         return BadServiceException(message: error.message);
       default:
         try {
+          if (_isResponseCloudflareChallenge(error.response)) {
+            return CloudflareChallengeException(
+              code: error.response?.statusCode,
+              data: data ?? error.response?.data,
+            );
+          }
           int? errCode = error.response?.statusCode;
           switch (errCode) {
             case 400:

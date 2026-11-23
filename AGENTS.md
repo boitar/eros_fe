@@ -42,8 +42,9 @@
 ## 打包约定
 
 - iOS 应用的 Bundle ID 固定为 `cn.honjow.fehv`，开发、模拟器、Release 构建及交付 IPA 均使用此标识；工程配置、打包脚本与 UI 测试中的应用标识须保持一致。
-- 新建并维护本机打包记录表 `打包记录.md`。该文件不加入 Git、不提交、不推送；每次迭代实际打包后追加一行，至少记录包名（含 `.ipa` 扩展名）、日期和打包串号。日期使用 `YYYYMMDD`，按 Asia/Shanghai 记录。
-- 默认打包产物为无签名 IPA。开始打包前先读取 `打包记录.md`，沿用已有记录的文件名格式、版本信息和串号规则；默认不得覆盖已有包。用户明确要求沿用串号重打时，先备份原包，再替换交付包，并在打包记录中注明重打原因及备份位置。没有可参考记录时，使用 `Eros-FE_<version>-unsigned_<YYYYMMDD>_<打包串号>[-<构建来源>].ipa` 作为默认格式，实际构建来源后缀按需保留。
+- 新建并维护本机打包记录表 `打包记录.md`。该文件不加入 Git、不提交、不推送；每次迭代实际打包后追加记录，至少记录包名（含扩展名）、日期和打包串号。日期使用 `YYYYMMDD`，按 Asia/Shanghai 记录。
+- **同一版本同次迭代的多端包共用同一个打包串号**：同一迭代产出的 iOS（`.ipa`）、Android（`.apk`）、macOS（`.dmg`）和 Windows（`.zip` / `.exe`）安装包必须使用相同的 `<打包串号>`（仅打包其中部分平台时同次迭代内也共用该串号），通过平台标识与扩展名区分，严禁在单次迭代内按平台拆分成多个连续串号；只有进入下一次新迭代或重打新批次时，串号才在上一轮串号基础上 `+1`。
+- 默认 iOS 打包产物为无签名 IPA。开始打包前先读取 `打包记录.md`，沿用已有记录的文件名格式、版本信息和串号规则；默认不得覆盖已有包。用户明确要求沿用串号重打同平台包时，先备份原包，再替换交付包，并在打包记录中注明重打原因及备份位置。没有可参考记录时，使用 `Eros-FE_<version>-unsigned_<YYYYMMDD>_<打包串号>[-<构建来源>].ipa` 作为默认格式，实际构建来源后缀按需保留。
 - 打包完成后，先确保项目根目录下的 `ipa/` 目录存在，再将 IPA 包体从构建输出移动到该目录；移动完成后以目标目录中的文件为准补写打包记录，并核对包名、日期和打包串号。
 - Android APK 与桌面端安装包（Windows `.exe`、macOS `.dmg`）不再放入 `ipa/`，统一放到 `/Volumes/nulre/DevCaches/release/eros_fe/`（先确保目录存在）；同样以目标目录中的文件为准补写打包记录。`ipa/` 只存放 iOS IPA。
 - 每次完成 Desktop 端（macOS / Windows）改造并构建后，默认直接将最新版本安装/更新到本机 Mac mini（`/Applications/fehviewer.app`）和 Windows 主机（`MIYUU`，通过 `~/.ssh/eros_windows_build.conf` 连接，若地址变更再核对 1Password 条目 `Eros FE - Windows SSH 构建机 - MIYUU`）；Windows 端禁止安装到 C 盘，改为按版本在 `D:\AI\eros_fe\` 下新建独立版本子目录（例如 `D:\AI\eros_fe\Eros-FE_<version>_<YYYYMMDD>_<打包串号>[-<描述>]\`，保留既有版本目录），并将开始菜单快捷方式 `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Eros-FE.lnk` 指向最新版 `fehviewer.exe`，无需等待用户手动安装；两端安装并核验完成后直接通知用户。

@@ -61,7 +61,7 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
                       controller.reorderable = false;
                       Navigator.maybePop(context);
                     },
-                    child: const Icon(CupertinoIcons.chevron_back, size: 16),
+                    child: const EhSvgIcon(CupertinoIcons.chevron_back, size: 16),
                   ),
                 ],
                 badge: Obx(
@@ -116,7 +116,7 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
                             radius: 8,
                             padding: const EdgeInsets.all(6),
                             onPressed: controller.syncProfiles,
-                            child: const Icon(
+                            child: const EhSvgIcon(
                               CupertinoIcons.arrow_2_circlepath,
                               size: 15,
                             ),
@@ -132,7 +132,7 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
                             radius: 8,
                             padding: const EdgeInsets.all(6),
                             onPressed: () => controller.reorderable = true,
-                            child: const Icon(
+                            child: const EhSvgIcon(
                               CupertinoIcons.arrow_up_arrow_down,
                               size: 15,
                             ),
@@ -165,7 +165,7 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            EhSvgIcon(
                               CupertinoIcons.folder,
                               size: 28,
                               color: palette.text3.resolveFrom(context),
@@ -346,7 +346,7 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
     Widget buildReorderableItem(CustomProfile element, {bool isLast = false}) {
       Widget _tile({Key? key}) => EhCupertinoListTile(
         key: key,
-        trailing: const Icon(CupertinoIcons.bars),
+        trailing: const EhSvgIcon(CupertinoIcons.bars),
         title: Text(element.name),
       );
 
@@ -414,7 +414,7 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
                   minSize: 40,
                   padding: EdgeInsets.zero,
                   onPressed: controller.syncProfiles,
-                  child: const Icon(
+                  child: const EhSvgIcon(
                     CupertinoIcons.arrow_2_circlepath,
                     size: 22,
                   ),
@@ -425,7 +425,7 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
                   minSize: 40,
                   padding: EdgeInsets.zero,
                   onPressed: () => controller.reorderable = !reorderable,
-                  child: Icon(
+                  child: EhSvgIcon(
                     reorderable
                         ? CupertinoIcons.checkmark
                         : CupertinoIcons.arrow_up_arrow_down,
@@ -438,7 +438,7 @@ class CustomProfilesPage extends GetView<CustomTabbarController> {
                   minSize: 40,
                   padding: EdgeInsets.zero,
                   onPressed: controller.toEditPage,
-                  child: const Icon(CupertinoIcons.add, size: 22),
+                  child: const EhSvgIcon(CupertinoIcons.add, size: 22),
                 ),
             ],
           );
@@ -673,7 +673,7 @@ class _DesktopGroupCardState extends State<_DesktopGroupCard> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           alignment: Alignment.center,
-                          child: Icon(
+                          child: EhSvgIcon(
                             widget.reorderable
                                 ? CupertinoIcons.line_horizontal_3
                                 : _iconFor(widget.profile.listType),
@@ -771,7 +771,7 @@ class _DesktopGroupCardState extends State<_DesktopGroupCard> {
                                 radius: 7,
                                 padding: const EdgeInsets.all(4),
                                 onPressed: widget.onMoveUp,
-                                child: const Icon(
+                                child: const EhSvgIcon(
                                   CupertinoIcons.chevron_up,
                                   size: 13,
                                 ),
@@ -786,7 +786,7 @@ class _DesktopGroupCardState extends State<_DesktopGroupCard> {
                                 radius: 7,
                                 padding: const EdgeInsets.all(4),
                                 onPressed: widget.onMoveDown,
-                                child: const Icon(
+                                child: const EhSvgIcon(
                                   CupertinoIcons.chevron_down,
                                   size: 13,
                                 ),
@@ -806,7 +806,7 @@ class _DesktopGroupCardState extends State<_DesktopGroupCard> {
                                 radius: 7,
                                 padding: const EdgeInsets.all(5),
                                 onPressed: widget.onEdit,
-                                child: const Icon(
+                                child: const EhSvgIcon(
                                   CupertinoIcons.pencil,
                                   size: 14,
                                 ),
@@ -821,7 +821,7 @@ class _DesktopGroupCardState extends State<_DesktopGroupCard> {
                                 radius: 7,
                                 padding: const EdgeInsets.all(5),
                                 onPressed: widget.onDelete,
-                                child: Icon(
+                                child: EhSvgIcon(
                                   CupertinoIcons.trash,
                                   size: 14,
                                   color: CupertinoDynamicColor.resolve(
@@ -833,7 +833,7 @@ class _DesktopGroupCardState extends State<_DesktopGroupCard> {
                             ],
                           )
                         else
-                          Icon(
+                          EhSvgIcon(
                             CupertinoIcons.chevron_right,
                             size: 13,
                             color: palette.text3.resolveFrom(context),
@@ -954,7 +954,7 @@ class _DesktopGhostAddButtonState extends State<_DesktopGhostAddButton> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                EhSvgIcon(
                   CupertinoIcons.add,
                   size: 14,
                   color: palette.text2.resolveFrom(context),

@@ -36,6 +36,15 @@ class BadRequestException extends HttpException {
       : super(message, code, data);
 }
 
+/// Cloudflare 人机验证挑战拦截（响应头 `cf-mitigated: challenge` 或挑战页面）
+class CloudflareChallengeException extends BadRequestException {
+  CloudflareChallengeException({
+    String? message = 'Cloudflare verification required',
+    int? code = 403,
+    dynamic data,
+  }) : super(message: message, code: code, data: data);
+}
+
 /// 服务端响应错误
 class BadServiceException extends HttpException {
   BadServiceException({String? message, int? code}) : super(message, code);

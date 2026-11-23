@@ -570,7 +570,12 @@ final class LiquidGlassCategoryViewFactory: NSObject, FlutterPlatformViewFactory
 
 private final class ErosCategoryButton: UIButton {
     override func contentRect(forBounds bounds: CGRect) -> CGRect {
-        bounds.insetBy(dx: 10, dy: 0)
+        guard !bounds.isNull, !bounds.isInfinite,
+              bounds.width.isFinite, bounds.height.isFinite,
+              bounds.width > 20, bounds.height > 0 else {
+            return .zero
+        }
+        return bounds.insetBy(dx: 10, dy: 0)
     }
 }
 
@@ -722,6 +727,8 @@ private final class LiquidGlassCategoryCore: NSObject,
                 viewId: Int64, arguments: [String: Any]) {
         activeViewId = viewId
         activeChannel = channel
+        pageProgress = nil
+        settleLens()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         root.removeFromSuperview()
@@ -736,6 +743,8 @@ private final class LiquidGlassCategoryCore: NSObject,
         if activeViewId == viewId {
             activeChannel = nil
             activeViewId = -1
+            pageProgress = nil
+            settleLens()
         }
         if root.superview === hostView {
             root.removeFromSuperview()
@@ -912,12 +921,19 @@ private final class LiquidGlassCategoryCore: NSObject,
         }
         fill.layer.cornerRadius = max(0, root.bounds.height / 2 - lensInset)
         if !lensMoving {
-            fill.frame = selectionFrame(previewIndex)
-            fill.isHidden = !titles.indices.contains(previewIndex)
-            lens.frame = fill.frame
+            let target = selectionFrame(previewIndex)
+            if titles.indices.contains(previewIndex), !target.isEmpty, hasUsableBounds {
+                fill.isHidden = false
+                fill.frame = target
+                lens.frame = target
+            } else {
+                fill.isHidden = true
+                fill.frame = .zero
+                lens.frame = .zero
+            }
             lens.layer.cornerRadius = fill.layer.cornerRadius
         }
-        if let _ = pageProgress { updateProgress() }
+        if pageProgress != nil && hasUsableBounds { updateProgress() }
         if (needsReveal || sizeChanged), buttons.indices.contains(selectedIndex), root.bounds.width > 0 {
             reveal(selectedIndex, animated: revealAnimated && !sizeChanged)
             needsReveal = false
@@ -958,18 +974,45 @@ private final class LiquidGlassCategoryCore: NSObject,
         }
     }
 
+    private var hasUsableBounds: Bool {
+        isFiniteRect(root.bounds) && root.bounds.width > 0 && root.bounds.height > lensInset * 2
+    }
+
+    private func isFiniteRect(_ rect: CGRect) -> Bool {
+        !rect.isNull && !rect.isInfinite
+            && rect.origin.x.isFinite && rect.origin.y.isFinite
+            && rect.width.isFinite && rect.height.isFinite
+    }
+
     private func updateProgress() {
-        guard let progress = pageProgress, !buttons.isEmpty else { return }
+        guard let progress = pageProgress,
+              progress.isFinite,
+              !buttons.isEmpty,
+              hasUsableBounds else {
+            fill.isHidden = true
+            return
+        }
         let page = min(CGFloat(buttons.count - 1), max(0, progress))
         let lower = Int(floor(page)), upper = Int(ceil(page))
         let t = page - CGFloat(lower)
         let a = selectionFrame(lower), b = selectionFrame(upper)
+        guard isFiniteRect(a), isFiniteRect(b), !a.isEmpty, !b.isEmpty else {
+            fill.isHidden = true
+            return
+        }
+        let x = a.minX + (b.minX - a.minX) * t
+        let y = a.minY
+        let w = a.width + (b.width - a.width) * t
+        let h = a.height
+        guard x.isFinite, y.isFinite, w.isFinite, h.isFinite, w >= 0, h >= 0 else {
+            fill.isHidden = true
+            return
+        }
         // A swipe moves the content, not the control: the pill follows it
         // flat, without lifting.
         if lensMoving { settleLens() }
         fill.isHidden = false
-        fill.frame = CGRect(x: a.minX + (b.minX - a.minX) * t, y: a.minY,
-                            width: a.width + (b.width - a.width) * t, height: a.height)
+        fill.frame = CGRect(x: x, y: y, width: w, height: h)
     }
 
     /// Scrolls [index] clear of the edge fades, centring it when it has to
@@ -991,7 +1034,11 @@ private final class LiquidGlassCategoryCore: NSObject,
 
     /// The lens a little larger than the pill, filling the track's padding.
     private func lifted(_ rect: CGRect) -> CGRect {
-        rect.insetBy(dx: -max(4, rect.width * 0.06), dy: -lensInset)
+        guard isFiniteRect(rect), !rect.isEmpty else {
+            return .zero
+        }
+        let expanded = rect.insetBy(dx: -max(4, rect.width * 0.06), dy: -lensInset)
+        return (isFiniteRect(expanded) && !expanded.isEmpty) ? expanded : .zero
     }
 
     private func settleLens() {
@@ -1010,7 +1057,14 @@ private final class LiquidGlassCategoryCore: NSObject,
 
     private func selectionFrame(_ index: Int) -> CGRect {
         guard buttons.indices.contains(index) else { return .zero }
-        return buttons[index].frame.insetBy(dx: lensInset, dy: lensInset)
+        let frame = buttons[index].frame
+        guard isFiniteRect(frame),
+              frame.width > lensInset * 2,
+              frame.height > lensInset * 2 else {
+            return .zero
+        }
+        let inset = frame.insetBy(dx: lensInset, dy: lensInset)
+        return (isFiniteRect(inset) && !inset.isEmpty) ? inset : .zero
     }
 
     /// Every label keeps one colour and weight; the pill marks the
@@ -1038,9 +1092,16 @@ private final class LiquidGlassCategoryCore: NSObject,
         let shown = titles.indices.contains(index)
         let target = selectionFrame(index)
         settleLens()
-        guard animated, shown, let start, start != lifted(target),
+        guard shown, isFiniteRect(target), !target.isEmpty else {
+            fill.isHidden = true
+            fill.frame = .zero
+            lens.frame = .zero
+            return
+        }
+        guard animated, let start, isFiniteRect(start), !start.isEmpty,
+              start != lifted(target),
               !UIAccessibility.isReduceMotionEnabled else {
-            fill.isHidden = !shown
+            fill.isHidden = false
             fill.frame = target
             lens.frame = target
             return

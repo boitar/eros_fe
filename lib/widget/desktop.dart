@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:window_size/window_size.dart';
 
 import 'sys_title.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class Desktop extends StatelessWidget {
   const Desktop({super.key, required this.child});
@@ -205,7 +206,7 @@ class WindowButtons extends StatelessWidget {
             colors: isDark ? darkButtonColors : buttonColors,
             padding: EdgeInsets.zero,
             iconBuilder: (buttonContext) {
-              return Icon(FluentIcons.line_horizontal_1_20_regular,
+              return EhSvgIcon(FluentIcons.line_horizontal_1_20_regular,
                   size: 16, color: buttonContext.iconColor);
             },
             onPressed: () => appWindow.minimize()),
@@ -216,14 +217,14 @@ class WindowButtons extends StatelessWidget {
               final maximizeIcon = appWindow.isMaximized
                   ? FluentIcons.square_multiple_16_regular
                   : FluentIcons.maximize_16_regular;
-              return Icon(maximizeIcon,
+              return EhSvgIcon(maximizeIcon,
                   size: 16, color: buttonContext.iconColor);
             },
             onPressed: () => appWindow.maximizeOrRestore()),
         WindowButton(
             colors: isDark ? darkCloseButtonColors : closeButtonColors,
             padding: EdgeInsets.zero,
-            iconBuilder: (buttonContext) => Icon(FluentIcons.dismiss_16_regular,
+            iconBuilder: (buttonContext) => EhSvgIcon(FluentIcons.dismiss_16_regular,
                 size: 16, color: buttonContext.iconColor),
             onPressed: () => appWindow.close()),
       ],

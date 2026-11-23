@@ -275,7 +275,7 @@ class DownloadArchiverItem extends GetView<DownloadViewController> {
             ? DownloadItemCoverImage(url: coverUrl, cardType: true)
             : Container(
                 color: CupertinoColors.systemGrey5,
-                child: Icon(
+                child: EhSvgIcon(
                   CupertinoIcons.arrow_down_circle,
                   color: CupertinoDynamicColor.resolve(
                     CupertinoColors.systemBackground,
@@ -321,14 +321,14 @@ class TaskActionButton extends GetView<DownloadViewController> {
           child: !Platform.isIOS
               ? CupertinoButton(
                   padding: const EdgeInsets.all(0),
-                  child: const FaIcon(FontAwesomeIcons.pause, size: 18),
+                  child: const EhSvgFaIcon(FontAwesomeIcons.pause, size: 18),
                   onPressed: () {
                     controller.pauseArchiverDownload(taskId: _taskInfo.taskId);
                   },
                 )
               : CupertinoButton(
                   padding: const EdgeInsets.all(0),
-                  child: const FaIcon(FontAwesomeIcons.stop, size: 18),
+                  child: const EhSvgFaIcon(FontAwesomeIcons.stop, size: 18),
                   onPressed: () {
                     controller.cancelArchiverDownload(taskId: _taskInfo.taskId);
                   },
@@ -342,7 +342,7 @@ class TaskActionButton extends GetView<DownloadViewController> {
           ),
           child: CupertinoButton(
             padding: const EdgeInsets.all(0),
-            child: const FaIcon(FontAwesomeIcons.check, size: 18),
+            child: const EhSvgFaIcon(FontAwesomeIcons.check, size: 18),
             onPressed: () {},
           ),
         );
@@ -354,7 +354,7 @@ class TaskActionButton extends GetView<DownloadViewController> {
           ),
           child: CupertinoButton(
             padding: const EdgeInsets.all(0),
-            child: const FaIcon(FontAwesomeIcons.play, size: 18),
+            child: const EhSvgFaIcon(FontAwesomeIcons.play, size: 18),
             onPressed: () {
               controller.resumeArchiverDownload(index);
             },
@@ -368,7 +368,7 @@ class TaskActionButton extends GetView<DownloadViewController> {
           ),
           child: CupertinoButton(
             padding: const EdgeInsets.all(0),
-            child: const FaIcon(FontAwesomeIcons.arrowRotateLeft, size: 18),
+            child: const EhSvgFaIcon(FontAwesomeIcons.arrowRotateLeft, size: 18),
             onPressed: () {
               controller.retryArchiverDownload(index);
             },
@@ -378,7 +378,7 @@ class TaskActionButton extends GetView<DownloadViewController> {
         // 取消状态 显示重试按钮。按下重试任务
         return CupertinoButton(
           padding: const EdgeInsets.all(0),
-          child: const FaIcon(FontAwesomeIcons.arrowRotateLeft, size: 18),
+          child: const EhSvgFaIcon(FontAwesomeIcons.arrowRotateLeft, size: 18),
           onPressed: () {
             controller.retryArchiverDownload(index);
           },

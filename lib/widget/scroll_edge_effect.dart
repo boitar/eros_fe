@@ -46,21 +46,21 @@ class SoftEdgeCurve {
     0,
   ], maxSigma: 0);
 
-  /// For hosts without a reliable blur (Android): an airy monotone fade that
-  /// preserves translucent colour glow beneath floating glass pills while
-  /// keeping the status bar and chrome legible.
+  /// For hosts without a reliable blur (Android): keeps the status bar and
+  /// floating bar title zone opaque above scrolled rows while feathering
+  /// smoothly into the list content over the tail.
   static const SoftEdgeCurve withoutBlur = SoftEdgeCurve(<double>[
-    0.88,
-    0.72,
-    0.44,
-    0.14,
+    1.0,
+    0.98,
+    0.90,
+    0.34,
     0,
   ], maxSigma: 0);
   static const SoftEdgeCurve withoutBlurDark = SoftEdgeCurve(<double>[
-    0.90,
-    0.74,
-    0.46,
-    0.16,
+    1.0,
+    0.98,
+    0.92,
+    0.36,
     0,
   ], maxSigma: 0);
   static const SoftEdgeCurve mediaWithoutBlur = SoftEdgeCurve(<double>[

@@ -344,11 +344,26 @@ class UserLoginTransformer extends HttpTransformer {
 
   @override
   FutureOr<DioHttpResponse<User>> parse(Response<dynamic> response) async {
+    final mitigated = response.headers.value('cf-mitigated');
+    final bodyStr = response.data is String ? response.data as String : '';
+    if ((mitigated != null &&
+            mitigated.toLowerCase().contains('challenge')) ||
+        isCloudflareChallenge(bodyStr)) {
+      return DioHttpResponse<User>.failureFromError(
+        CloudflareChallengeException(
+          code: response.statusCode,
+          data: response.data,
+        ),
+      );
+    }
+
     final List<String> setcookie = response.headers['set-cookie'] ?? [];
     logger.d('setcookie: $setcookie');
 
-    late final List<Cookie> _cookies;
-    if (setcookie.length > 1) {
+    final List<Cookie> _cookies;
+    if (setcookie.isEmpty) {
+      _cookies = const <Cookie>[];
+    } else if (setcookie.length > 1) {
       _cookies =
           setcookie.map((str) => Cookie.fromSetCookieValue(str)).toList();
     } else {
@@ -371,10 +386,31 @@ class UserLoginTransformer extends HttpTransformer {
       cookieMap[cookie.name] = cookie.value;
     }
 
+    final memberId = cookieMap['ipb_member_id']?.trim();
+    final passHash = cookieMap['ipb_pass_hash']?.trim();
+    if (memberId == null ||
+        memberId.isEmpty ||
+        memberId == '0' ||
+        passHash == null ||
+        passHash.isEmpty) {
+      return DioHttpResponse<User>.failureFromError(
+        BadRequestException(
+          message: 'Invalid username or password',
+          code: 401,
+        ),
+      );
+    }
+
+    final rawIgneous = cookieMap['igneous'];
+    final cleanIgneous =
+        (rawIgneous != null && rawIgneous.isNotEmpty && rawIgneous != 'mystery')
+            ? rawIgneous
+            : null;
+
     final User user = kDefUser.copyWith(
-      memberId: cookieMap['ipb_member_id']?.oN,
-      passHash: cookieMap['ipb_pass_hash']?.oN,
-      igneous: cookieMap['igneous']?.oN,
+      memberId: memberId.oN,
+      passHash: passHash.oN,
+      igneous: cleanIgneous?.oN,
       hathPerks: cookieMap['hath_perks']?.oN,
       sk: cookieMap['sk']?.oN,
     );

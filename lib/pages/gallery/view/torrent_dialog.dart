@@ -12,6 +12,7 @@ import 'package:eros_fe/widget/eh_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Data and actions for the torrent sheet: [TorrentController] in the app,
 /// fixture data in debug preview and tests.
@@ -397,7 +398,7 @@ class _TorrentSheetState extends State<_TorrentSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 28, color: palette.text2.resolveFrom(context)),
+          EhSvgIcon(icon, size: 28, color: palette.text2.resolveFrom(context)),
           const SizedBox(height: 12),
           Text(
             text,
@@ -443,7 +444,7 @@ class _TorrentSheetState extends State<_TorrentSheet> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 13.5, color: palette.text2.resolveFrom(context)),
+              EhSvgIcon(icon, size: 13.5, color: palette.text2.resolveFrom(context)),
               const SizedBox(width: 4),
               Text(value, style: digits),
             ],

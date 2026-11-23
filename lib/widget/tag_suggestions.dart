@@ -6,6 +6,7 @@ import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/store/db/entity/tag_translat.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Card decoration of the secondary pages, matching the gallery cards.
 BoxDecoration ehCardDecoration(BuildContext context, {double radius = 16}) {
@@ -232,7 +233,7 @@ class TagSuggestionTile extends StatelessWidget {
                         color: EhPalette.accentSoft.resolveFrom(context),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(CupertinoIcons.plus, size: 15, color: accent),
+                      child: EhSvgIcon(CupertinoIcons.plus, size: 15, color: accent),
                     ),
                   ],
                 ),

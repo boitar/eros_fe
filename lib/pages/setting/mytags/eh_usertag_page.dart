@@ -259,7 +259,7 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
             secondChild: CupertinoButton(
               padding: const EdgeInsets.all(0),
               minSize: 40,
-              child: const Icon(
+              child: const EhSvgIcon(
                 CupertinoIcons.trash,
                 size: 26,
               ),
@@ -294,7 +294,7 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
         CupertinoButton(
           padding: const EdgeInsets.all(0),
           minSize: 40,
-          child: const Icon(
+          child: const EhSvgIcon(
             // FontAwesomeIcons.penRuler,
             CupertinoIcons.pencil_ellipsis_rectangle,
             size: 28,
@@ -304,7 +304,7 @@ class _EhUserTagsPageState extends State<EhUserTagsPage> {
         CupertinoButton(
           padding: const EdgeInsets.all(0),
           minSize: 40,
-          child: const Icon(
+          child: const EhSvgIcon(
             // FontAwesomeIcons.magnifyingGlass,
             CupertinoIcons.search,
             size: 28,
@@ -489,7 +489,7 @@ class _ListViewEhMyTagsState extends State<ListViewEhMyTags> {
   }) {
     return EhCupertinoListTile(
       title: Text(usertag.title),
-      leading: const FaIcon(FontAwesomeIcons.tag),
+      leading: const EhSvgFaIcon(FontAwesomeIcons.tag),
       subtitle: isTagTranslat ? Text(usertag.translate ?? '') : null,
       onTap: () async => tapAddUserTagItem(usertag),
     );
@@ -515,7 +515,7 @@ class _ListViewEhMyTagsState extends State<ListViewEhMyTags> {
 
     return Container(
       margin: const EdgeInsets.only(right: 10),
-      child: FaIcon(
+      child: EhSvgFaIcon(
         iconData,
         size: 24,
         color: iconColor,

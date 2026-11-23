@@ -307,7 +307,7 @@ void main() {
           ),
         ]),
       );
-      expect(find.byType(CupertinoListTileChevron), findsOneWidget);
+      expect(find.bySubtype<CupertinoListTileChevron>(), findsOneWidget);
       await tester.tap(find.text('Double Page'));
       await tester.pumpAndSettle();
       expect(find.text('Model A preview'), findsOneWidget);
@@ -605,7 +605,7 @@ void main() {
         final l10n = L10n.current;
         expect(find.byType(AndroidSettingGroup), findsWidgets);
         expect(find.byType(SliverCupertinoListSection), findsNothing);
-        expect(find.byType(CupertinoListTileChevron), findsNothing);
+        expect(find.bySubtype<CupertinoListTileChevron>(), findsNothing);
 
         await tester.scrollUntilVisible(find.text(l10n.setting_site), 200);
         final site = tester.getRect(find.text(l10n.setting_site));

@@ -224,7 +224,7 @@ class _CommentPageState extends State<CommentPage>
               padding: EdgeInsets.zero,
               minSize: 32,
               onPressed: controller.pressCancel,
-              child: Icon(
+              child: EhSvgIcon(
                 CupertinoIcons.xmark_circle_fill,
                 size: 22,
                 semanticLabel: L10n.of(context).cancel,
@@ -332,7 +332,7 @@ class _CommentPageState extends State<CommentPage>
                   : CupertinoDynamicColor.resolve(
                       CupertinoColors.tertiarySystemFill, context),
             ),
-            child: Icon(
+            child: EhSvgIcon(
               confirming ? CupertinoIcons.checkmark : CupertinoIcons.arrow_up,
               size: 18,
               semanticLabel: confirming

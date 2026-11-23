@@ -6,10 +6,13 @@ import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/appkit_glass.dart';
 import 'package:eros_fe/widget/canvas_grain.dart';
+import 'package:eros_fe/widget/cupertino/sliver_list_section.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 import 'package:eros_fe/widget/scroll_edge_effect.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -92,19 +95,45 @@ class _SettingScaffoldState extends State<SettingScaffold> {
     final split = context
         .dependOnInheritedWidgetOfExactType<BrowsePaneScope>()
         ?.split;
+    final bool splitPane =
+        (split ?? false) &&
+        PlatformCapabilities.hostPlatform != TargetPlatform.android;
+    final bool rootPane = isDesktopSettingPaneRoot(
+      ModalRoute.of(context),
+      split: split,
+    );
     final bool nativeBar =
         widget.nativeChrome && NativeNavigationScope.isEnabled(context);
-    final Widget child = CanvasGrain(child: widget.child);
+    final Color? splitCanvas = splitPane
+        ? ehTheme.palette.canvas.resolveFrom(context)
+        : null;
+    final Widget themedChild = splitCanvas == null
+        ? widget.child
+        : CupertinoTheme(
+            data: CupertinoTheme.of(
+              context,
+            ).copyWith(scaffoldBackgroundColor: splitCanvas),
+            child: widget.child,
+          );
+    final Widget child = CanvasGrain(child: themedChild);
+    final Widget body = NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: child,
+    );
     final Widget page = nativeBar
         ? CupertinoPageScaffold(
+            backgroundColor: splitCanvas,
             child: NativeSingleBarEdge(
               bars: widget.nativeBars,
               foreground: widget.nativeForeground,
               child: child,
             ),
           )
+        : (rootPane && widget.trailing == null)
+        ? CupertinoPageScaffold(backgroundColor: splitCanvas, child: body)
         : SettingGlassBar.observe(
             () => CupertinoPageScaffold(
+              backgroundColor: splitCanvas,
               navigationBar: SettingGlassBar.isActive
                   ? SettingGlassBar(
                       title: widget.title,
@@ -112,20 +141,14 @@ class _SettingScaffoldState extends State<SettingScaffold> {
                       trailing: widget.trailing,
                     )
                   : CupertinoNavigationBar(
-                      automaticallyImplyLeading: !isDesktopSettingPaneRoot(
-                        ModalRoute.of(context),
-                        split: split,
-                      ),
+                      automaticallyImplyLeading: !rootPane,
                       padding: widget.trailing == null
                           ? null
                           : const EdgeInsetsDirectional.only(end: 8),
                       middle: Text(widget.title),
                       trailing: widget.trailing,
                     ),
-              child: NotificationListener<ScrollNotification>(
-                onNotification: _onScroll,
-                child: child,
-              ),
+              child: body,
             ),
           );
     if (!widget.nativeChrome) {
@@ -286,7 +309,7 @@ class SettingGlassBar extends StatelessWidget
                         label: CupertinoLocalizations.of(context)
                             .backButtonLabel,
                         onPressed: () => Navigator.maybePop(context),
-                        child: Icon(
+                        child: EhSvgIcon(
                           CupertinoIcons.chevron_back,
                           size: 24,
                           color: iconColor,
@@ -466,6 +489,184 @@ class _GlassCapsule extends StatelessWidget {
               child: Center(widthFactor: 1, child: child),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// iOS 27 split-view detail header card: 24px continuous-corner white card
+/// displaying the category's monochrome SVG badge, title, and overview.
+class SettingCategoryHeroCard extends StatelessWidget {
+  const SettingCategoryHeroCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ehTheme.palette;
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final text1 = palette.text1.resolveFrom(context);
+    final text2 = palette.text2.resolveFrom(context);
+
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: palette.surface.resolveFrom(context),
+        shape: RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(kInsetGroupedSectionRadius),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: dark
+                    ? const Color(0xFF262830)
+                    : const Color(0xFFF2F2F7),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: palette.hairline.resolveFrom(context),
+                ),
+              ),
+              alignment: Alignment.center,
+              child: EhSvgIcon(icon, size: 25, color: text1),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+                color: text1,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              description,
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.45,
+                color: text2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Inserts a [SettingCategoryHeroCard] at the top of a desktop split-pane
+/// settings category page. Single-column mobile pages collapse to empty.
+class SliverSettingCategoryHero extends StatelessWidget {
+  const SliverSettingCategoryHero({
+    super.key,
+    required this.route,
+    this.forceVisible = false,
+  });
+
+  final String route;
+  final bool forceVisible;
+
+  @override
+  Widget build(BuildContext context) {
+    final split = context
+        .dependOnInheritedWidgetOfExactType<BrowsePaneScope>()
+        ?.split;
+    final show =
+        forceVisible ||
+        isDesktopSettingPaneRoot(ModalRoute.of(context), split: split);
+    if (!show) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    final l10n = L10n.of(context);
+    final zh = Localizations.localeOf(context).languageCode == 'zh';
+    final (IconData icon, String title, String description) = switch (route) {
+      EHRoutes.layoutSetting => (
+        CupertinoIcons.square_grid_2x2,
+        l10n.appearance_and_layout,
+        zh
+            ? '管理画廊列表排布密度、浅色/深色/纯黑主题、Liquid Glass 材质质感与标签显示偏好。'
+            : 'Customize gallery layout density, Light/Dark/OLED themes, Liquid Glass materials, and tag display preferences.',
+      ),
+      EHRoutes.readSetting => (
+        CupertinoIcons.book,
+        l10n.read,
+        zh
+            ? '自定义阅读翻页方向、双页智能拼接、预加载页数与屏幕控制选项，适配桌面与触控操作。'
+            : 'Configure reading direction, double-page spread pairing, preloading, and viewer controls.',
+      ),
+      EHRoutes.searchSetting => (
+        CupertinoIcons.search,
+        l10n.search,
+        zh
+            ? '配置快速搜索条目、常用检索组合与搜索过滤习惯。'
+            : 'Manage quick search presets, saved queries, and search filtering shortcuts.',
+      ),
+      EHRoutes.ehSetting => (
+        CupertinoIcons.globe,
+        l10n.setting_site,
+        zh
+            ? '切换 E-Hentai 与 ExHentai 访问站点、同步个人标签组（MyTags）与站点内偏好配置。'
+            : 'Switch between E-Hentai and ExHentai, sync MyTags, and manage site preferences.',
+      ),
+      EHRoutes.downloadSetting => (
+        CupertinoIcons.arrow_down_to_line,
+        l10n.download,
+        zh
+            ? '设置本地下载存储目录、并发任务数、原图下载策略与媒体库扫描选项。'
+            : 'Configure download directory, concurrent task limits, original image behavior, and storage options.',
+      ),
+      EHRoutes.securitySetting => (
+        CupertinoIcons.shield,
+        l10n.security,
+        zh
+            ? '配置应用启动锁定保护、生物识别验证与隐私防窥选项。'
+            : 'Configure auto-lock timeout, biometric authentication, and privacy safeguards.',
+      ),
+      EHRoutes.advancedSetting => (
+        CupertinoIcons.slider_horizontal_3,
+        l10n.advanced,
+        zh
+            ? '调整应用语言、屏蔽规则、网络域名前置与代理、WebDAV 同步及缓存清理。'
+            : 'Adjust app language, content blockers, network proxy/DoH, WebDAV sync, and cache storage.',
+      ),
+      EHRoutes.about => (
+        CupertinoIcons.info_circle,
+        l10n.about,
+        zh
+            ? '查看客户端版本构建信息、检查更新与开源组件许可协议。'
+            : 'View client version details, check for updates, and inspect open-source licenses.',
+      ),
+      _ => (
+        CupertinoIcons.settings,
+        l10n.tab_setting,
+        zh ? '自定义应用偏好设置。' : 'Customize application preferences.',
+      ),
+    };
+
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      sliver: SliverToBoxAdapter(
+        child: SettingCategoryHeroCard(
+          icon: icon,
+          title: title,
+          description: description,
         ),
       ),
     );

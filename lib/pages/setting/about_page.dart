@@ -82,6 +82,7 @@ class AboutPage extends StatelessWidget {
           // ),
           SliverSafeArea(
             sliver: MultiSliver(children: [
+              const SliverSettingCategoryHero(route: EHRoutes.about),
               SliverCupertinoListSection.insetGrouped(
                 hasLeading: false,
                 additionalDividerMargin: 6,

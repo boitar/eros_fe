@@ -69,7 +69,7 @@ class ListViewFavorite extends StatelessWidget {
         final Favcat _favcat = favCatList[index];
         return EhCupertinoListTile(
           title: Text(_favcat.favTitle),
-          leading: Icon(
+          leading: EhSvgIcon(
             CupertinoIcons.heart_fill,
             color: ThemeColors.favColor[_favcat.favId],
           ),

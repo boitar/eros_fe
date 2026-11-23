@@ -38,9 +38,8 @@ class _UserItem extends State<UserItem> {
 
     void _tapItem() {
       if (_userController.isLogin) {
-        _userController.showLogOutDialog(context);
+        Get.toNamed(EHRoutes.accountSession);
       } else {
-        // NavigatorUtil.jump(context, EHRoutes.login, rootNavigator: true);
         Get.toNamed(EHRoutes.login);
       }
     }
@@ -144,7 +143,7 @@ class UserWidget extends GetView<UserController> {
     return GestureDetector(
       onTap: () {
         if (controller.isLogin) {
-          controller.showLogOutDialog(context);
+          Get.toNamed(EHRoutes.accountSession);
         } else {
           Get.toNamed(EHRoutes.login);
         }

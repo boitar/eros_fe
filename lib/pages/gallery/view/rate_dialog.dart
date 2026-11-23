@@ -13,6 +13,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 double _snap(double value) => ((value * 2).round() / 2).clamp(0.5, 5.0);
 
@@ -175,7 +176,7 @@ class _RateSheetState extends State<_RateSheet> {
               itemSize: 40,
               itemPadding: const EdgeInsets.symmetric(horizontal: 4),
               unratedColor: ehTheme.palette.fillPressed.resolveFrom(context),
-              itemBuilder: (_, _) => Icon(
+              itemBuilder: (_, _) => EhSvgIcon(
                 CupertinoIcons.star_fill,
                 color: EhPalette.star.resolveFrom(context),
               ),

@@ -76,7 +76,7 @@ class ListViewTagTranslate extends StatelessWidget {
                     CupertinoButton(
                       padding: const EdgeInsets.all(0),
                       onPressed: _forceUpdateTranslate,
-                      child: const Icon(CupertinoIcons.refresh),
+                      child: const EhSvgIcon(CupertinoIcons.refresh),
                     ),
                     CupertinoSwitch(
                       value: _ehSettingService.isTagTranslate,

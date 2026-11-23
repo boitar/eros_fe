@@ -221,7 +221,7 @@ class _CustomProfileSettingPageState extends State<CustomProfileSettingPage> {
         minSize: 40,
         padding: EdgeInsets.zero,
         onPressed: _save,
-        child: const Icon(CupertinoIcons.checkmark, size: 22),
+        child: const EhSvgIcon(CupertinoIcons.checkmark, size: 22),
       ),
       child: CustomScrollView(
         slivers: [
@@ -267,7 +267,7 @@ class _CustomProfileSettingPageState extends State<CustomProfileSettingPage> {
                     radius: 8,
                     padding: const EdgeInsets.all(6),
                     onPressed: () => Navigator.of(context).maybePop(),
-                    child: const Icon(CupertinoIcons.chevron_back, size: 16),
+                    child: const EhSvgIcon(CupertinoIcons.chevron_back, size: 16),
                   ),
               ],
               trailing: [
@@ -279,7 +279,7 @@ class _CustomProfileSettingPageState extends State<CustomProfileSettingPage> {
                     radius: 8,
                     padding: const EdgeInsets.all(6),
                     onPressed: _confirmDelete,
-                    child: Icon(
+                    child: EhSvgIcon(
                       CupertinoIcons.trash,
                       size: 15,
                       color: CupertinoDynamicColor.resolve(
@@ -422,7 +422,7 @@ class _CustomProfileSettingPageState extends State<CustomProfileSettingPage> {
                                             ),
                                           ),
                                           const SizedBox(width: 6),
-                                          Icon(
+                                          EhSvgIcon(
                                             CupertinoIcons
                                                 .chevron_up_chevron_down,
                                             size: 12,
@@ -1589,7 +1589,7 @@ class _DesktopSearchKeywordRow extends StatelessWidget {
               radius: 6,
               padding: const EdgeInsets.all(4),
               onPressed: onRemove,
-              child: Icon(
+              child: EhSvgIcon(
                 CupertinoIcons.xmark,
                 size: 13,
                 color: palette.text3.resolveFrom(context),
@@ -1638,7 +1638,7 @@ class _DesktopSearchAddRowState extends State<_DesktopSearchAddRow> {
               : const Color(0x00000000),
           child: Row(
             children: [
-              Icon(CupertinoIcons.add, size: 14, color: accent),
+              EhSvgIcon(CupertinoIcons.add, size: 14, color: accent),
               const SizedBox(width: 6),
               Text(
                 widget.label,

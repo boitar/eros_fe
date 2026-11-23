@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class SettingItems extends StatefulWidget {
   const SettingItems({
@@ -67,7 +68,7 @@ class _SettingItems extends State<SettingItems> {
                   children: <Widget>[
                     Container(
 //                    padding: const EdgeInsets.fromLTRB(0, 8, 8, 8),
-                      child: FaIcon(
+                      child: EhSvgFaIcon(
                         widget.icon,
                         size: 26.0,
                         color: CupertinoColors.systemGrey,
@@ -78,7 +79,7 @@ class _SettingItems extends State<SettingItems> {
                       child: Text(widget.text),
                     ),
                     const Spacer(),
-                    const Icon(
+                    const EhSvgIcon(
                       CupertinoIcons.forward,
                       color: CupertinoColors.systemGrey,
                     ),

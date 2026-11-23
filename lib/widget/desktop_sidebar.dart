@@ -3,11 +3,11 @@ import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/desktop_ui_preferences.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
-import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/route/routes.dart';
 import 'package:eros_fe/widget/desktop_browse_style.dart';
 import 'package:eros_fe/widget/desktop_control.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -64,6 +64,7 @@ class DesktopSidebar extends StatelessWidget {
     this.libraryLabel = '',
     this.groupsLabel = '',
     this.groups = const [],
+    this.groupSummary,
     this.onGroupTap,
     this.onGroupContext,
     this.onManageGroups,
@@ -78,6 +79,7 @@ class DesktopSidebar extends StatelessWidget {
   final VoidCallback onSearch;
   final String browseLabel, libraryLabel, groupsLabel;
   final List<DesktopSidebarGroup> groups;
+  final String? groupSummary;
   final ValueChanged<int>? onGroupTap;
   final void Function(int, Offset)? onGroupContext;
   final ValueChanged<Offset>? onManageGroups;
@@ -112,6 +114,7 @@ class DesktopSidebar extends StatelessWidget {
     final prefs = preferences ?? DesktopUiPreferences.instance;
     final palette = ehTheme.palette;
     final l10n = L10n.of(context);
+    final bool dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
     final browse = <int>[], library = <int>[];
     int? setting;
     for (var i = 0; i < routes.length; i++) {
@@ -129,9 +132,22 @@ class DesktopSidebar extends StatelessWidget {
       label: items[index].label ?? '',
       selected: index == currentIndex,
       onTap: () => onTap(index),
+      shortcut: routes[index] == EHRoutes.setting
+          ? (PlatformCapabilities.hostPlatform == TargetPlatform.macOS
+              ? '⌘,'
+              : 'Ctrl+,')
+          : null,
     );
-    String? summary(List<int> indices) =>
-        indices.contains(currentIndex) ? items[currentIndex].label : null;
+    String? summary(List<int> indices) => indices.contains(currentIndex)
+        ? items[currentIndex].label
+        : (indices == browse && indices.isNotEmpty
+            ? items[indices.first].label
+            : null);
+    final bool browseActive = browse.contains(currentIndex);
+    final bool libraryActive = library.contains(currentIndex);
+    final String? activeGroupTitle =
+        groups.where((g) => g.selected).firstOrNull?.title ?? groupSummary;
+    final bool groupsActive = groups.any((g) => g.selected);
     final content = Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       child: IconTheme.merge(
@@ -177,24 +193,38 @@ class DesktopSidebar extends StatelessWidget {
                     key: const ValueKey('desktop-hide-sidebar'),
                     label: l10n.desktop_hide_sidebar,
                     minSize: 30,
-                    radius: 8,
+                    radius: 999,
+                    hoverColor: DesktopBrowseStyle.capsuleHover(context),
                     onPressed: () => prefs.showSidebar(false),
                     padding: const EdgeInsets.all(6),
-                    child: const Icon(CupertinoIcons.sidebar_left, size: 17),
+                    child: const EhSvgIcon(CupertinoIcons.sidebar_left, size: 16),
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.only(bottom: 8),
               child: DesktopControl(
                 key: const ValueKey('desktop-sidebar-search'),
                 label: searchLabel,
+                radius: 999,
+                minSize: 34,
+                tooltip: false,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                idleColor: dark
+                    ? const Color(0x10FFFFFF)
+                    : const Color(0xFFF3F4F7),
+                hoverColor: DesktopBrowseStyle.capsuleHover(context),
+                pressedColor: DesktopBrowseStyle.capsulePressed(context),
                 onPressed: onSearch,
                 child: Row(
                   children: [
-                    const Icon(CupertinoIcons.search, size: 15),
-                    const SizedBox(width: 6),
+                    EhSvgIcon(
+                      CupertinoIcons.search,
+                      size: 14,
+                      color: palette.text2.resolveFrom(context),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         searchLabel,
@@ -204,13 +234,26 @@ class DesktopSidebar extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text(
-                      PlatformCapabilities.hostPlatform == TargetPlatform.macOS
-                          ? '⌘F'
-                          : 'Ctrl+F',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: palette.text2.resolveFrom(context),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: palette.surface.resolveFrom(context),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: palette.hairline.resolveFrom(context),
+                        ),
+                      ),
+                      child: Text(
+                        PlatformCapabilities.hostPlatform == TargetPlatform.macOS
+                            ? '⌘F'
+                            : 'Ctrl+F',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: palette.text2.resolveFrom(context),
+                        ),
                       ),
                     ),
                   ],
@@ -226,6 +269,7 @@ class DesktopSidebar extends StatelessWidget {
                       id: 'browse',
                       title: browseLabel,
                       summary: summary(browse),
+                      summaryActive: browseActive,
                       preferences: prefs,
                       child: Column(
                         children: [for (final i in browse) destination(i)],
@@ -236,6 +280,7 @@ class DesktopSidebar extends StatelessWidget {
                       id: 'library',
                       title: libraryLabel,
                       summary: summary(library),
+                      summaryActive: libraryActive,
                       preferences: prefs,
                       child: Column(
                         children: [for (final i in library) destination(i)],
@@ -245,7 +290,8 @@ class DesktopSidebar extends StatelessWidget {
                     id: 'groups',
                     title: groupsLabel,
                     preferences: prefs,
-                    summary: groups.where((g) => g.selected).firstOrNull?.title,
+                    summary: activeGroupTitle,
+                    summaryActive: groupsActive,
                     onSecondaryTapDown: onManageGroups == null
                         ? null
                         : (d) => onManageGroups!(d.globalPosition),
@@ -254,7 +300,7 @@ class DesktopSidebar extends StatelessWidget {
                       children: [
                         if (groups.isEmpty)
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+                            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
                             child: Text(
                               l10n.desktop_no_groups,
                               style: TextStyle(
@@ -274,13 +320,13 @@ class DesktopSidebar extends StatelessWidget {
                               dimension: 16,
                               child: Center(
                                 child: Container(
-                                  width: 6,
-                                  height: 6,
+                                  width: 5.5,
+                                  height: 5.5,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: groups[i].selected
-                                        ? EhPalette.accent.resolveFrom(context)
-                                        : palette.text2.resolveFrom(context),
+                                        ? palette.text1.resolveFrom(context)
+                                        : palette.text3.resolveFrom(context),
                                   ),
                                 ),
                               ),
@@ -349,7 +395,7 @@ class DesktopSidebar extends StatelessWidget {
   }
 }
 
-class _SidebarRow extends StatelessWidget {
+class _SidebarRow extends StatefulWidget {
   const _SidebarRow({
     super.key,
     required this.icon,
@@ -357,40 +403,97 @@ class _SidebarRow extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.onSecondaryTapDown,
+    this.shortcut,
   });
   final Widget icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
   final GestureTapDownCallback? onSecondaryTapDown;
+  final String? shortcut;
+
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 1),
-    child: DesktopControl(
-      label: label,
-      selected: selected,
-      onPressed: onTap,
-      onSecondaryTapDown: onSecondaryTapDown,
-      child: Row(
-        children: [
-          SizedBox.square(dimension: 16, child: FittedBox(child: icon)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: ehTheme.palette.text1.resolveFrom(context),
+  State<_SidebarRow> createState() => _SidebarRowState();
+}
+
+class _SidebarRowState extends State<_SidebarRow> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ehTheme.palette;
+    final text1 = palette.text1.resolveFrom(context);
+    final text2 = palette.text2.resolveFrom(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: MouseRegion(
+        opaque: false,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: DesktopControl(
+          label: widget.label,
+          selected: widget.selected,
+          tooltip: false,
+          radius: 999,
+          minSize: 34,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          selectedColor: DesktopBrowseStyle.capsuleSelected(context),
+          selectedHoverColor: DesktopBrowseStyle.capsuleSelectedHover(context),
+          hoverColor: DesktopBrowseStyle.capsuleHover(context),
+          pressedColor: DesktopBrowseStyle.capsulePressed(context),
+          onPressed: widget.onTap,
+          onSecondaryTapDown: widget.onSecondaryTapDown,
+          child: Row(
+            children: [
+              SizedBox.square(
+                dimension: 16,
+                child: FittedBox(
+                  child: TweenAnimationBuilder<Color?>(
+                    tween: ColorTween(
+                      end: (widget.selected || _hovered) ? text1 : text2,
+                    ),
+                    duration: DesktopBrowseStyle.motion(context, 185),
+                    curve: Curves.easeOutCubic,
+                    child: widget.icon,
+                    builder: (context, iconColor, child) => IconTheme.merge(
+                      data: IconThemeData(color: iconColor),
+                      child: child!,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: widget.selected
+                        ? FontWeight.w600
+                        : FontWeight.w400,
+                    color: text1,
+                  ),
+                ),
+              ),
+              if (widget.shortcut != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: Text(
+                    widget.shortcut!,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: text2.withValues(alpha: .75),
+                    ),
+                  ),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class DesktopSidebarSection extends StatefulWidget {
@@ -401,10 +504,12 @@ class DesktopSidebarSection extends StatefulWidget {
     required this.preferences,
     required this.child,
     this.summary,
+    this.summaryActive = false,
     this.onSecondaryTapDown,
   });
   final String id, title;
   final String? summary;
+  final bool summaryActive;
   final DesktopUiPreferences preferences;
   final Widget child;
   final GestureTapDownCallback? onSecondaryTapDown;
@@ -433,7 +538,9 @@ class _DesktopSidebarSectionState extends State<DesktopSidebarSection> {
     listenable: widget.preferences,
     builder: (context, _) {
       final expanded = widget.preferences.isExpanded(widget.id);
-      final color = ehTheme.palette.text2.resolveFrom(context);
+      final palette = ehTheme.palette;
+      final text1 = palette.text1.resolveFrom(context);
+      final text2 = palette.text2.resolveFrom(context);
       return Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Column(
@@ -444,39 +551,62 @@ class _DesktopSidebarSectionState extends State<DesktopSidebarSection> {
               label: widget.title,
               focusNode: _header,
               expanded: expanded,
+              radius: 999,
+              minSize: 32,
+              hoverColor: DesktopBrowseStyle.capsuleHover(context),
               onPressed: _toggle,
               onSecondaryTapDown: widget.onSecondaryTapDown,
               tooltip: false,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
                       widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w600,
-                        color: color,
+                        color: text2,
                       ),
                     ),
                   ),
-                  if (!expanded && widget.summary != null)
-                    Flexible(
+                  if (!expanded &&
+                      widget.summary != null &&
+                      widget.summary!.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 96),
                       child: Text(
                         widget.summary!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11, color: color),
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: widget.summaryActive
+                              ? FontWeight.w500
+                              : FontWeight.w400,
+                          color: widget.summaryActive ? text1 : text2,
+                        ),
                       ),
                     ),
-                  const SizedBox(width: 4),
-                  AnimatedRotation(
-                    turns: expanded ? .25 : 0,
-                    duration: DesktopBrowseStyle.motion(context, 180),
-                    child: Icon(
-                      CupertinoIcons.chevron_right,
-                      size: 12,
-                      color: color,
+                  ],
+                  const SizedBox(width: 6),
+                  SizedBox.square(
+                    dimension: 14,
+                    child: Center(
+                      child: AnimatedRotation(
+                        turns: expanded ? .25 : 0,
+                        duration: DesktopBrowseStyle.motion(context, 180),
+                        child: EhSvgIcon(
+                          CupertinoIcons.chevron_right,
+                          size: 12,
+                          strokeWidth: 2.1,
+                          color: text2,
+                        ),
+                      ),
                     ),
                   ),
                 ],

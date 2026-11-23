@@ -25,7 +25,6 @@
             />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
             <intent-filter android:autoVerify="true" tools:targetApi="m">
@@ -43,6 +42,62 @@
                 <data android:pathPrefix="/" />
             </intent-filter>
         </activity>
+
+        <activity-alias
+                android:name=".LauncherMonochrome"
+                android:enabled="true"
+                android:exported="true"
+                android:label="Eros-FE"
+                android:icon="@mipmap/ic_launcher"
+                android:roundIcon="@mipmap/ic_launcher_round"
+                android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+                android:name=".LauncherLight"
+                android:enabled="false"
+                android:exported="true"
+                android:label="Eros-FE"
+                android:icon="@mipmap/ic_launcher_light"
+                android:roundIcon="@mipmap/ic_launcher_light_round"
+                android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+                android:name=".LauncherDark"
+                android:enabled="false"
+                android:exported="true"
+                android:label="Eros-FE"
+                android:icon="@mipmap/ic_launcher_dark"
+                android:roundIcon="@mipmap/ic_launcher_dark_round"
+                android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+                android:name=".LauncherPurple"
+                android:enabled="false"
+                android:exported="true"
+                android:label="Eros-FE"
+                android:icon="@mipmap/ic_launcher_purple"
+                android:roundIcon="@mipmap/ic_launcher_purple_round"
+                android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

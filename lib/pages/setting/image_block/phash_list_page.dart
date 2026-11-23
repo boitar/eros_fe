@@ -22,7 +22,7 @@ class PHashImageListPage extends GetView<ImageBlockController> {
       trailing: CupertinoButton(
         padding: const EdgeInsets.all(0),
         minSize: 40,
-        child: const Icon(
+        child: const EhSvgIcon(
           CupertinoIcons.trash,
           size: 24,
         ),
@@ -106,7 +106,7 @@ class ImageHideItem extends StatelessWidget {
             // 清除按钮
             onPressed: onDelete,
             // 清除按钮
-            child: const Icon(
+            child: const EhSvgIcon(
               CupertinoIcons.xmark_circle,
               color: CupertinoColors.systemRed,
               size: 26,

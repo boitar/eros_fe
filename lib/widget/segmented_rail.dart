@@ -8,6 +8,7 @@ import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Segment widths of a rail. Segments are equal when they fit, short ones are
 /// raised to a common width when a long label needs more room, and the rail
@@ -339,7 +340,7 @@ class _SegmentedRailState extends State<SegmentedRail> {
                     BorderRadius.circular(SegmentedRail.accessorySize / 2),
                 followSystemTransparency: widget.followSystemTransparency,
                 child: Center(
-                  child: Icon(
+                  child: EhSvgIcon(
                     action.icon,
                     size: 20,
                     color: CupertinoDynamicColor.resolve(

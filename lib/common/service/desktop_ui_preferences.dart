@@ -17,6 +17,7 @@ class DesktopUiPreferences extends ChangeNotifier {
   bool sidebarVisible = true;
   final Set<String> collapsed = {};
   double? splitRatio;
+  double? settingSplitRatio;
   double? legacyProportion;
   Future<void> _pending = Future.value();
 
@@ -34,6 +35,13 @@ class DesktopUiPreferences extends ChangeNotifier {
         final ratio = data['splitRatio'];
         if (ratio is num && ratio.isFinite && ratio > 0 && ratio < 1) {
           splitRatio = ratio.toDouble();
+        }
+        final settingRatio = data['settingSplitRatio'];
+        if (settingRatio is num &&
+            settingRatio.isFinite &&
+            settingRatio > 0 &&
+            settingRatio < 1) {
+          settingSplitRatio = settingRatio.toDouble();
         }
       }
       if (value == null && Hive.isBoxOpen(configBox)) {
@@ -70,12 +78,18 @@ class DesktopUiPreferences extends ChangeNotifier {
     _save();
   }
 
+  void setSettingSplitRatio(double? ratio) {
+    settingSplitRatio = ratio;
+    _save();
+  }
+
   void _save() {
     notifyListeners();
     final value = jsonEncode({
       'sidebarVisible': sidebarVisible,
       'collapsed': collapsed.toList(),
       'splitRatio': splitRatio,
+      'settingSplitRatio': settingSplitRatio,
     });
     _pending = _pending
         .then((_) async {

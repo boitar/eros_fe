@@ -298,7 +298,7 @@ class _ArchiverSheetState extends State<_ArchiverSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null)
-            Icon(icon, size: 28, color: palette.text2.resolveFrom(context))
+            EhSvgIcon(icon, size: 28, color: palette.text2.resolveFrom(context))
           else
             const CupertinoActivityIndicator(radius: 11),
           const SizedBox(height: 12),
@@ -485,7 +485,7 @@ class _LocalRow extends StatelessWidget {
                   color: EhPalette.accentSoft.resolveFrom(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(option.icon, size: 17, color: accent),
+                child: EhSvgIcon(option.icon, size: 17, color: accent),
               ),
               const SizedBox(width: 12),
               Expanded(

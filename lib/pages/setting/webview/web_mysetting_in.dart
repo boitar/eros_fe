@@ -16,6 +16,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
 import 'eh_webview.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class InWebMySetting extends StatelessWidget {
   const InWebMySetting({super.key});
@@ -64,14 +65,14 @@ class InWebMySetting extends StatelessWidget {
           CupertinoButton(
             padding: const EdgeInsets.all(0),
             onPressed: reload,
-            child: const FaIcon(FontAwesomeIcons.rotateRight,
+            child: const EhSvgFaIcon(FontAwesomeIcons.rotateRight,
               size: 22,
             ),
           ),
           CupertinoButton(
             padding: const EdgeInsets.all(0),
             onPressed: save,
-            child: const FaIcon(FontAwesomeIcons.circleCheck,
+            child: const EhSvgFaIcon(FontAwesomeIcons.circleCheck,
               size: 22,
             ),
           ),

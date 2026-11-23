@@ -19,6 +19,7 @@ import 'package:get/get.dart';
 import 'package:keframe/keframe.dart';
 
 import '../comm.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class HistoryTab extends StatefulWidget {
   const HistoryTab({super.key});
@@ -102,7 +103,7 @@ class _HistoryTabState extends State<HistoryTab> {
                   minSize: 40,
                   child: isRefresh
                       ? const CupertinoActivityIndicator(radius: 10)
-                      : const Icon(CupertinoIcons.arrow_clockwise, size: 24),
+                      : const EhSvgIcon(CupertinoIcons.arrow_clockwise, size: 24),
                   onPressed: () async {
                     setState(() {
                       isRefresh = true;
@@ -122,7 +123,7 @@ class _HistoryTabState extends State<HistoryTab> {
           CupertinoButton(
             minSize: 40,
             padding: const EdgeInsets.all(0),
-            child: const FaIcon(
+            child: const EhSvgFaIcon(
               FontAwesomeIcons.solidTrashCan,
               size: 20,
             ),

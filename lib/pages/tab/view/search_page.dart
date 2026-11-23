@@ -365,7 +365,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                                 Navigator.of(context).maybePop();
                               },
                               child: Center(
-                                child: Icon(
+                                child: EhSvgIcon(
                                   CupertinoIcons.chevron_back,
                                   size: 22,
                                   color: palette.text1.resolveFrom(context),
@@ -830,7 +830,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FaIcon(
+                EhSvgFaIcon(
                   FontAwesomeIcons.hippo,
                   size: 100,
                   color: CupertinoDynamicColor.resolve(
@@ -910,7 +910,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         button: true,
         excludeSemantics: true,
         onTap: onPressed,
-        child: Icon(data, size: 20, color: color),
+        child: EhSvgIcon(data, size: 20, color: color),
       ),
     );
 
@@ -1031,7 +1031,7 @@ class SearchTextFieldIn extends StatelessWidget {
             prefix: ExcludeSemantics(
               child: Padding(
                 padding: const EdgeInsetsDirectional.only(start: 13, end: 2),
-                child: Icon(CupertinoIcons.search, size: 18, color: iconColor),
+                child: EhSvgIcon(CupertinoIcons.search, size: 18, color: iconColor),
               ),
             ),
             suffix: GetBuilder<SearchPageController>(
@@ -1062,7 +1062,7 @@ class SearchTextFieldIn extends StatelessWidget {
                                   color: EhPalette.accent.resolveFrom(context),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
+                                child: EhSvgIcon(
                                   CupertinoIcons.arrow_right,
                                   size: 15,
                                   color: EhPalette.onAccent.resolveFrom(
@@ -1070,7 +1070,7 @@ class SearchTextFieldIn extends StatelessWidget {
                                   ),
                                 ),
                               )
-                            : Icon(icon, size: 19, color: iconColor),
+                            : EhSvgIcon(icon, size: 19, color: iconColor),
                       ),
                     ),
                   ),
@@ -1163,7 +1163,7 @@ class _DesktopRefreshButtonState extends State<_DesktopRefreshButton> {
           child: Center(
             child: _busy
                 ? const CupertinoActivityIndicator(radius: 8)
-                : Icon(
+                : EhSvgIcon(
                     CupertinoIcons.arrow_clockwise,
                     size: 18,
                     color: widget.color,
@@ -1201,7 +1201,7 @@ class _SearchForRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(CupertinoIcons.search, size: 18, color: accent),
+              EhSvgIcon(CupertinoIcons.search, size: 18, color: accent),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1274,7 +1274,7 @@ class _QuickSearchRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
+                  EhSvgIcon(
                     CupertinoIcons.arrow_up_left,
                     size: 16,
                     color: palette.text2.resolveFrom(context),

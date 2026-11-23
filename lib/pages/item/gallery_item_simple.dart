@@ -14,6 +14,7 @@ import 'package:get/get.dart';
 
 import 'gallery_card_title.dart';
 import 'item_base.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 const double kCoverImageWidth = 90.0;
 const double kItemHeight = 134.0;
@@ -238,7 +239,7 @@ class GalleryItemSimpleWidget extends StatelessWidget {
             ),
           ),
         ),
-        Icon(
+        EhSvgIcon(
           Icons.panorama,
           size: 12,
           color: ehTheme.palette.text2.resolveFrom(Get.context!),

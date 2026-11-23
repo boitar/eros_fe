@@ -22,7 +22,14 @@ class ReadSettingPage extends StatelessWidget {
     return SettingScaffold(
       title: L10n.of(context).read_setting,
       child: CustomScrollView(slivers: [
-        SliverSafeArea(sliver: ReadSettingList()),
+        SliverSafeArea(
+          sliver: MultiSliver(
+            children: [
+              const SliverSettingCategoryHero(route: EHRoutes.readSetting),
+              ReadSettingList(),
+            ],
+          ),
+        ),
       ]),
     );
   }

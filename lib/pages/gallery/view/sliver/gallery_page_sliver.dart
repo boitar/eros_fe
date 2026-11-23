@@ -338,7 +338,7 @@ class _GallerySliverPageState extends State<GallerySliverPage> {
                           radius: 12,
                         )
                       : const MouseRegionClick(
-                          child: Icon(
+                          child: EhSvgIcon(
                             CupertinoIcons.arrow_clockwise,
                             size: 24,
                           ),
@@ -362,7 +362,7 @@ class _GallerySliverPageState extends State<GallerySliverPage> {
               padding: const EdgeInsets.all(0),
               minSize: 40,
               child: const MouseRegionClick(
-                child: Icon(CupertinoIcons.tags, size: 24),
+                child: EhSvgIcon(CupertinoIcons.tags, size: 24),
               ),
               onPressed: () {
                 _controller.addTag();
@@ -374,7 +374,7 @@ class _GallerySliverPageState extends State<GallerySliverPage> {
                   padding: const EdgeInsets.all(0),
                   minSize: 38,
                   child: const MouseRegionClick(
-                    child: Icon(CupertinoIcons.share, size: 26),
+                    child: EhSvgIcon(CupertinoIcons.share, size: 26),
                   ),
                   onPressed: () async {
                     final currentProvider = _controller.gState.galleryProvider;

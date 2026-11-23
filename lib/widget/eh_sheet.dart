@@ -10,6 +10,7 @@ import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Strengths of the sheet material, tuned for text legibility.
 ///
@@ -491,7 +492,7 @@ class EhSheetOptionRow extends StatelessWidget {
                       : palette.fill.resolveFrom(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
+                child: EhSvgIcon(
                   icon,
                   size: 17,
                   color: selected ? accent : palette.text2.resolveFrom(context),
@@ -510,14 +511,14 @@ class EhSheetOptionRow extends StatelessWidget {
               ),
               if (selected) ...[
                 const SizedBox(width: 8),
-                Icon(
+                EhSvgIcon(
                   CupertinoIcons.checkmark_circle_fill,
                   size: 20,
                   color: accent,
                 ),
               ] else if (showChevron && enabled) ...[
                 const SizedBox(width: 8),
-                Icon(
+                EhSvgIcon(
                   CupertinoIcons.chevron_forward,
                   size: 14,
                   color: palette.text3.resolveFrom(context),

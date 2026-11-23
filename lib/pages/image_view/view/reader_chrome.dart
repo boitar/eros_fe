@@ -16,6 +16,7 @@ import 'package:get/get.dart';
 import '../common.dart';
 import '../controller/view_controller.dart';
 import 'view_widget.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Intervals offered directly in the auto page turn menu, in milliseconds.
 const List<int> kReaderAutoReadIntervals = <int>[1000, 2000, 3000, 5000, 10000];
@@ -347,7 +348,7 @@ Widget _glassIconButton({
         },
         child: SizedBox.square(
           dimension: kTopBarButtonHeight + 4,
-          child: Icon(icon, size: 22, color: _kGlassReaderIcon),
+          child: EhSvgIcon(icon, size: 22, color: _kGlassReaderIcon),
         ),
       ),
     );

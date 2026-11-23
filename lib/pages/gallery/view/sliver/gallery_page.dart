@@ -628,7 +628,7 @@ class GalleryNavigationBar extends StatelessWidget {
               onPressed: () => Get.offNamed<void>(EHRoutes.home),
               child: Semantics(
                 label: L10n.of(context).tab_gallery,
-                child: const Icon(CupertinoIcons.house),
+                child: const EhSvgIcon(CupertinoIcons.house),
               ),
             )
           : null,
@@ -692,7 +692,7 @@ class GalleryNavigationBar extends StatelessWidget {
                     child: isRefresh
                         ? const CupertinoActivityIndicator(radius: 12)
                         : const MouseRegionClick(
-                            child: Icon(
+                            child: EhSvgIcon(
                               CupertinoIcons.arrow_clockwise,
                               size: 24,
                             ),
@@ -719,7 +719,7 @@ class GalleryNavigationBar extends StatelessWidget {
               child: MouseRegionClick(
                 child: Semantics(
                   label: L10n.of(context).more_actions,
-                  child: const Icon(CupertinoIcons.ellipsis_circle, size: 26),
+                  child: const EhSvgIcon(CupertinoIcons.ellipsis_circle, size: 26),
                 ),
               ),
               onPressed: () => showGalleryMoreSheet(
@@ -734,7 +734,7 @@ class GalleryNavigationBar extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 4),
                   minSize: 38,
                   child: const MouseRegionClick(
-                    child: Icon(CupertinoIcons.share, size: 26),
+                    child: EhSvgIcon(CupertinoIcons.share, size: 26),
                   ),
                   onPressed: () async {
                     // Read the state at tap time. The navigation bar itself
@@ -1139,7 +1139,7 @@ class GalleryFloatingNavigation extends StatelessWidget {
           onPressed: action,
           child: Semantics(
             label: label,
-            child: Icon(
+            child: EhSvgIcon(
               icon,
               size: 22,
               color: action == null

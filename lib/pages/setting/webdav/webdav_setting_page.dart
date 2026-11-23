@@ -51,7 +51,7 @@ class WebDavSetting extends GetView<WebdavController> {
             : CupertinoButton(
                 minSize: 40,
                 padding: const EdgeInsets.all(0),
-                child: const Icon(
+                child: const EhSvgIcon(
                   CupertinoIcons.person_add,
                   size: 26,
                 ),

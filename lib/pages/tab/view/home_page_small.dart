@@ -204,8 +204,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
 
     Widget sidebar(
       List<DesktopSidebarGroup> groups,
-      ValueChanged<int>? onGroupTap,
-    ) => DesktopSidebar(
+      ValueChanged<int>? onGroupTap, {
+      String? groupSummary,
+    }) => DesktopSidebar(
       routes: controller.visibleTabRoutes,
       items: tabBar.items,
       currentIndex: tabBar.currentIndex,
@@ -216,6 +217,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
       libraryLabel: l10n.sidebar_library,
       groupsLabel: l10n.group,
       groups: groups,
+      groupSummary: groupSummary,
       onGroupTap: onGroupTap,
       preferences: _desktopPreferences,
       recentReading: DesktopRecentReading(
@@ -273,6 +275,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
     return Obx(() {
       final onGallery = controller.currRoute == EHRoutes.gallery;
       final profiles = groups.profilesShow;
+      final selectedGroupName = profiles.isNotEmpty
+          ? profiles[groups.index.clamp(0, profiles.length - 1)].name
+          : null;
       return sidebar(
         <DesktopSidebarGroup>[
           for (var index = 0; index < profiles.length; index++)
@@ -289,6 +294,7 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
           }
           groups.selectPage(index);
         },
+        groupSummary: selectedGroupName,
       );
     });
   }
@@ -616,7 +622,9 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
                     left: source.contentRect.left,
                     width: AdaptiveBrowseLayout.primaryPaneWidth(
                       source.contentRect.width,
-                      Get.find<LayoutServices>().sideProportion,
+                      Get.find<LayoutServices>().sideProportionFor(
+                        controller.navigationIdentity,
+                      ),
                     ),
                     child: MediaQuery.withNoTextScaling(child: tabBar),
                   ),

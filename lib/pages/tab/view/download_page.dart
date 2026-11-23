@@ -24,6 +24,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 const Color _kDefaultNavBarBorderColor = Color(0x4D000000);
 
@@ -213,7 +214,7 @@ class _DownloadTabState extends State<DownloadTab> {
                       minimumSize: const Size(40, 40),
                       padding: const EdgeInsets.all(0),
                       onPressed: _showExportDialog,
-                      child: const Icon(
+                      child: const EhSvgIcon(
                         CupertinoIcons.arrow_up_arrow_down_square_fill,
                         size: 28,
                       ),
@@ -251,7 +252,7 @@ class _DownloadTabState extends State<DownloadTab> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(FontAwesomeIcons.squareShareNodes)
+                  const EhSvgFaIcon(FontAwesomeIcons.squareShareNodes)
                       .paddingOnly(right: 8),
                   const Text('Share '),
                 ],
@@ -265,7 +266,7 @@ class _DownloadTabState extends State<DownloadTab> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(FontAwesomeIcons.fileArrowUp)
+                  const EhSvgFaIcon(FontAwesomeIcons.fileArrowUp)
                       .paddingOnly(right: 8),
                   const Text('Export'),
                 ],
@@ -279,7 +280,7 @@ class _DownloadTabState extends State<DownloadTab> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(FontAwesomeIcons.fileArrowDown)
+                  const EhSvgFaIcon(FontAwesomeIcons.fileArrowDown)
                       .paddingOnly(right: 8),
                   const Text('Import'),
                 ],

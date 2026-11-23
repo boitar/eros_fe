@@ -12,6 +12,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:sliver_tools/sliver_tools.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 class CustomHostsPage extends StatelessWidget {
   const CustomHostsPage({Key? key}) : super(key: key);
@@ -56,7 +57,7 @@ class CustomHostsPage extends StatelessWidget {
     return CupertinoButton(
         minSize: 40,
         padding: const EdgeInsets.only(right: 20),
-        child: const FaIcon(
+        child: const EhSvgFaIcon(
           FontAwesomeIcons.plusCircle,
           size: 20,
         ),

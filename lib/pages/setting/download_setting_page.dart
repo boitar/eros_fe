@@ -17,7 +17,14 @@ class DownloadSettingPage extends StatelessWidget {
     return SettingScaffold(
       title: L10n.of(context).download,
       child: CustomScrollView(slivers: [
-        SliverSafeArea(sliver: DownloadSetting()),
+        SliverSafeArea(
+          sliver: MultiSliver(
+            children: [
+              const SliverSettingCategoryHero(route: EHRoutes.downloadSetting),
+              DownloadSetting(),
+            ],
+          ),
+        ),
       ]),
     );
   }
@@ -64,7 +71,7 @@ class DownloadSetting extends StatelessWidget {
                     trailing: CupertinoButton(
                       padding: const EdgeInsets.all(0),
                       minSize: 14,
-                      child: const Icon(CupertinoIcons.refresh),
+                      child: const EhSvgIcon(CupertinoIcons.refresh),
                       onPressed: () async => ehSettingService.downloadLocatino =
                           await defDownloadPath,
                     ),

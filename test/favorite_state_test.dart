@@ -105,12 +105,12 @@ void main() {
         child: Obx(() => FavoriteIcon(category: controller.favCat))));
     favoriteStates.setAccount('card-account-b');
     await tester.pump();
-    expect(find.byType(FaIcon), findsNothing);
+    expect(find.bySubtype<FaIcon>(), findsNothing);
     favoriteStates.commit('42', '3', 'Account B folder');
     await tester.pump();
     expect(controller.favCat, '3');
     expect(controller.galleryProvider.favTitle, 'Account B folder');
-    expect(tester.widget<FaIcon>(find.byType(FaIcon)).color,
+    expect(tester.widget<FaIcon>(find.bySubtype<FaIcon>()).color,
         ThemeColors.favColor['3']);
   });
 
@@ -141,26 +141,26 @@ void main() {
         textDirection: TextDirection.ltr,
         child: Obx(() => FavoriteIcon(category: controller.favCat)));
     await tester.pumpWidget(card());
-    expect(find.byType(FaIcon), findsNothing);
+    expect(find.bySubtype<FaIcon>(), findsNothing);
     for (var category = 0; category < 10; category++) {
       favoriteStates.commit('42', '$category', 'custom $category');
       await tester.pump();
-      expect(tester.widget<FaIcon>(find.byType(FaIcon)).color,
+      expect(tester.widget<FaIcon>(find.bySubtype<FaIcon>()).color,
           ThemeColors.favColor['$category']);
       expect(controller.galleryProvider.favcat, '$category');
       // Re-entering/rebuilding with the original pre-favorite provider.
       controller = GalleryItemController(galleryProvider: initial)..onInit();
       await tester.pumpWidget(card());
-      expect(tester.widget<FaIcon>(find.byType(FaIcon)).color,
+      expect(tester.widget<FaIcon>(find.bySubtype<FaIcon>()).color,
           ThemeColors.favColor['$category']);
     }
     favoriteStates.commit('42', '', '');
     await tester.pump();
-    expect(find.byType(FaIcon), findsNothing);
+    expect(find.bySubtype<FaIcon>(), findsNothing);
     favoriteStates.commit('42', '1', 'red');
     await tester.pump();
     favoriteStates.setAccount('signed-out');
     await tester.pump();
-    expect(find.byType(FaIcon), findsNothing);
+    expect(find.bySubtype<FaIcon>(), findsNothing);
   });
 }

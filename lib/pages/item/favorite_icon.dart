@@ -1,4 +1,5 @@
 import 'package:eros_fe/const/theme_colors.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -14,6 +15,10 @@ class FavoriteIcon extends StatelessWidget {
     if (color == null) {
       return const SizedBox.shrink();
     }
-    return FaIcon(FontAwesomeIcons.solidHeart, color: color, size: size);
+    return EhSvgFaIcon(
+      FontAwesomeIcons.solidHeart,
+      color: color,
+      size: size,
+    );
   }
 }

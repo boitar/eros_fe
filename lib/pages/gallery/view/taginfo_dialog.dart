@@ -32,7 +32,7 @@ Future<void> showTagInfoDialog(
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const FaIcon(FontAwesomeIcons.thumbsUp).paddingOnly(right: 8),
+              const EhSvgFaIcon(FontAwesomeIcons.thumbsUp).paddingOnly(right: 8),
               if (showActionText) Text(L10n.of(Get.context!).tag_vote_up),
             ],
           ),
@@ -45,7 +45,7 @@ Future<void> showTagInfoDialog(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const FaIcon(FontAwesomeIcons.thumbsDown).paddingOnly(right: 8),
+                const EhSvgFaIcon(FontAwesomeIcons.thumbsDown).paddingOnly(right: 8),
                 if (showActionText) Text(L10n.of(Get.context!).tag_vote_down),
               ],
             ),
@@ -60,7 +60,7 @@ Future<void> showTagInfoDialog(
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const FaIcon(FontAwesomeIcons.arrowRotateLeft)
+              const EhSvgFaIcon(FontAwesomeIcons.arrowRotateLeft)
                   .paddingOnly(right: 8),
               if (showActionText) Text(L10n.of(Get.context!).tag_withdraw_vote),
             ],
@@ -77,7 +77,7 @@ Future<void> showTagInfoDialog(
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const FaIcon(FontAwesomeIcons.arrowRotateLeft)
+              const EhSvgFaIcon(FontAwesomeIcons.arrowRotateLeft)
                   .paddingOnly(right: 8),
               if (showActionText) Text(L10n.of(Get.context!).tag_withdraw_vote),
             ],
@@ -158,7 +158,7 @@ Future<void> showTagInfoDialog(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(FontAwesomeIcons.tags).paddingOnly(right: 8),
+                  const EhSvgFaIcon(FontAwesomeIcons.tags).paddingOnly(right: 8),
                   if (showActionText)
                     Text(L10n.of(Get.context!).tag_add_to_mytag),
                 ],
@@ -208,7 +208,7 @@ class _TagDialogViewState extends State<TagDialogView> {
             if (snapshot.hasError) {
               return CupertinoButton(
                 padding: const EdgeInsets.all(0),
-                child: const Icon(
+                child: const EhSvgIcon(
                   Icons.refresh,
                   size: 30,
                   color: Colors.red,

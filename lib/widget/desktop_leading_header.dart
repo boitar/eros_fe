@@ -8,6 +8,7 @@ import 'package:eros_fe/widget/desktop_browse_style.dart';
 import 'package:eros_fe/widget/desktop_control.dart';
 import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// The leftmost content pane owns the restore button when the sidebar is
 /// hidden, including a single-column detail route. The navigator stays mounted.
@@ -59,7 +60,7 @@ class DesktopLeadingHeader extends StatelessWidget {
                       radius: 8,
                       onPressed: onShowSidebar,
                       padding: const EdgeInsets.all(6),
-                      child: const Icon(CupertinoIcons.sidebar_left, size: 17),
+                      child: const EhSvgIcon(CupertinoIcons.sidebar_left, size: 17),
                     ),
                     Expanded(
                       child: mac

@@ -58,7 +58,7 @@ class QuickSearchListPage extends StatelessWidget {
           CupertinoButton(
             minSize: 40,
             padding: const EdgeInsets.all(0),
-            child: const FaIcon(
+            child: const EhSvgFaIcon(
               FontAwesomeIcons.solidTrashCan,
               size: 20,
             ),
@@ -70,7 +70,7 @@ class QuickSearchListPage extends StatelessWidget {
             minSize: 40,
             padding: const EdgeInsets.all(0),
             onPressed: () => _showFile(context),
-            child: const FaIcon(
+            child: const EhSvgFaIcon(
               FontAwesomeIcons.solidFileLines,
               size: 20,
             ),
@@ -80,7 +80,7 @@ class QuickSearchListPage extends StatelessWidget {
               minSize: 40,
               padding: const EdgeInsets.all(0),
               onPressed: quickSearchController.syncQuickSearch,
-              child: const FaIcon(
+              child: const EhSvgFaIcon(
                 FontAwesomeIcons.arrowsRotate,
                 size: 20,
               ),
@@ -134,7 +134,7 @@ class QuickSearchListPage extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(FontAwesomeIcons.share).paddingOnly(right: 4),
+                  const EhSvgFaIcon(FontAwesomeIcons.share).paddingOnly(right: 4),
                   const Text('Share'),
                 ],
               ),
@@ -143,7 +143,7 @@ class QuickSearchListPage extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(FontAwesomeIcons.fileExport)
+                  const EhSvgFaIcon(FontAwesomeIcons.fileExport)
                       .paddingOnly(right: 4),
                   const Text('Export'),
                 ],
@@ -162,7 +162,7 @@ class QuickSearchListPage extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(FontAwesomeIcons.fileImport)
+                  const EhSvgFaIcon(FontAwesomeIcons.fileImport)
                       .paddingOnly(right: 4),
                   const Text('Import'),
                 ],

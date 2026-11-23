@@ -207,7 +207,7 @@ Future<void> showGalleryMoreSheet(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Icon(action.icon, size: 20),
+                  EhSvgIcon(action.icon, size: 20),
                   const SizedBox(width: 8),
                   Text(action.title),
                 ],

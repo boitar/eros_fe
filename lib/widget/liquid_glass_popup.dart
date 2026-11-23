@@ -8,6 +8,7 @@ import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 bool get liquidGlassPopupsEnabled =>
     (GlassMode.resolve(enabled: true).forComponent(flutterImplemented: true) !=
@@ -81,7 +82,7 @@ class EhActionSheetAction extends StatelessWidget {
             children: [
               Expanded(child: child),
               const SizedBox(width: 16),
-              ExcludeSemantics(child: Icon(icon, size: 20)),
+              ExcludeSemantics(child: EhSvgIcon(icon, size: 20)),
             ],
           ),
         ),
@@ -676,7 +677,7 @@ class _PopupButton extends StatelessWidget {
                     if (action is EhActionSheetAction) ...[
                       const SizedBox(width: 16),
                       ExcludeSemantics(
-                        child: Icon(
+                        child: EhSvgIcon(
                           (action as EhActionSheetAction).icon,
                           size: 20,
                           color: destructive

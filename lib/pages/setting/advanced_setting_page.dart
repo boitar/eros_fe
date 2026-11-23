@@ -22,9 +22,16 @@ class AdvancedSettingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SettingScaffold(
       title: L10n.of(context).advanced,
-      child: const CustomScrollView(
+      child: CustomScrollView(
         slivers: [
-          SliverSafeArea(sliver: ListViewAdvancedSetting()),
+          SliverSafeArea(
+            sliver: MultiSliver(
+              children: const [
+                SliverSettingCategoryHero(route: EHRoutes.advancedSetting),
+                ListViewAdvancedSetting(),
+              ],
+            ),
+          ),
         ],
       ),
     );

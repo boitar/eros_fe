@@ -53,7 +53,7 @@ class EhMyTagsPage extends GetView<EhMyTagsController> {
           CupertinoButton(
             padding: const EdgeInsets.all(0),
             minSize: 40,
-            child: const FaIcon(
+            child: const EhSvgFaIcon(
               FontAwesomeIcons.earthAmericas,
               size: 22,
             ),
@@ -62,7 +62,7 @@ class EhMyTagsPage extends GetView<EhMyTagsController> {
           CupertinoButton(
             padding: const EdgeInsets.all(0),
             minSize: 40,
-            child: const Icon(
+            child: const EhSvgIcon(
               CupertinoIcons.plus_circle,
               size: 28,
             ),

@@ -521,7 +521,7 @@ class TopCommentEx extends StatelessWidget {
         if ((comments?.length ?? 0) > max)
           const Padding(
             padding: EdgeInsets.only(top: 8.0),
-            child: FaIcon(FontAwesomeIcons.ellipsis),
+            child: EhSvgFaIcon(FontAwesomeIcons.ellipsis),
           ),
       ],
     );
@@ -979,7 +979,7 @@ class TextBtn extends StatelessWidget {
                 child: CupertinoButton(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   onPressed: onTap,
-                  child: FaIcon(
+                  child: EhSvgFaIcon(
                     iconData,
                     size: iconSize ?? 28,
                     // color: CupertinoColors.systemGrey3,

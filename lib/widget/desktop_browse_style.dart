@@ -1,8 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 /// Geometry shared by the macOS and Windows browsing shells. Mobile pane
 /// budgets deliberately remain in AdaptiveEnvironmentSnapshot.
@@ -17,6 +20,7 @@ abstract final class DesktopBrowseStyle {
   static const minimumListWidth = 400.0;
   static const minimumDetailWidth = 440.0;
   static const defaultRatio = .44;
+  static const defaultSettingRatio = .34;
 
   static double get paneRadius =>
       PlatformCapabilities.hostPlatform == TargetPlatform.windows
@@ -37,6 +41,70 @@ abstract final class DesktopBrowseStyle {
       palette.fill.resolveFrom(context).withValues(alpha: .55),
       palette.surface.resolveFrom(context),
     );
+  }
+
+  /// macOS uses the standard arrow cursor for sidebar/list navigation controls;
+  /// Windows keeps the hand pointer where expected.
+  static SystemMouseCursor get interactionCursor =>
+      PlatformCapabilities.hostPlatform == TargetPlatform.macOS
+      ? SystemMouseCursors.basic
+      : SystemMouseCursors.click;
+
+  /// iOS 27 stadium capsule selection fill for desktop sidebar & settings master rows.
+  static Color capsuleSelected(BuildContext context) {
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    if (!dark) {
+      return const Color(0xFFE4E6EC);
+    }
+    final pureBlack =
+        Get.isRegistered<EhSettingService>() &&
+        Get.find<EhSettingService>().isPureDarkTheme;
+    return pureBlack ? const Color(0xFF24262C) : const Color(0xFF2C2E35);
+  }
+
+  /// Gently emphasized stadium fill when hovering an already-selected item.
+  static Color capsuleSelectedHover(BuildContext context) {
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    if (!dark) {
+      return const Color(0xFFDEE0E7);
+    }
+    final pureBlack =
+        Get.isRegistered<EhSettingService>() &&
+        Get.find<EhSettingService>().isPureDarkTheme;
+    return pureBlack ? const Color(0xFF292B32) : const Color(0xFF32343C);
+  }
+
+  /// Active press feedback for desktop stadium capsules.
+  static Color capsulePressed(BuildContext context) {
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    return dark ? const Color(0x1CFFFFFF) : const Color(0x1614161C);
+  }
+
+  /// Active press feedback when pressing an already-selected stadium capsule.
+  static Color capsuleSelectedPressed(BuildContext context) {
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    return Color.alphaBlend(
+      dark ? const Color(0x10FFFFFF) : const Color(0x0C14161C),
+      capsuleSelected(context),
+    );
+  }
+
+  /// iOS 27 stadium capsule hover/idle pill fill with calm translucent satin contrast.
+  static Color capsuleHover(BuildContext context) {
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    return dark ? const Color(0x12FFFFFF) : const Color(0x0D14161C);
+  }
+
+  /// Subtle list-row hover fill for settings detail tiles on desktop.
+  static Color listRowHover(BuildContext context) {
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    return dark ? const Color(0x0CFFFFFF) : const Color(0x0914161C);
+  }
+
+  /// Subtle list-row press fill for settings detail tiles on desktop.
+  static Color listRowPressed(BuildContext context) {
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    return dark ? const Color(0x16FFFFFF) : const Color(0x1114161C);
   }
 
   static const List<BoxShadow> lightPaneShadows = <BoxShadow>[
@@ -65,16 +133,23 @@ abstract final class DesktopBrowseStyle {
   static double listWidth(double width, double ratio) {
     final space = math.max(0.0, width - inset * 2);
     if (space < minimumListWidth + minimumDetailWidth) return space;
-    return (space * ratio.clamp(0.0, 1.0)).clamp(
-      minimumListWidth,
-      space - minimumDetailWidth,
-    );
+    return (space * ratio.clamp(0.0, 1.0).toDouble())
+        .clamp(minimumListWidth, space - minimumDetailWidth)
+        .toDouble();
   }
+
+  static const Curve hoverEnterCurve = Curves.easeOutQuart;
+  static const Curve hoverExitCurve = Curves.easeOutCubic;
 
   static Duration motion(BuildContext context, int milliseconds) =>
       MediaQuery.disableAnimationsOf(context)
       ? Duration.zero
       : Duration(milliseconds: milliseconds);
+
+  static Duration hoverDuration(
+    BuildContext context, {
+    required bool entering,
+  }) => motion(context, entering ? 185 : 230);
 }
 
 /// One persistent content shell, including its toolbar, empty and error states.
@@ -104,7 +179,7 @@ class DesktopPaneSurface extends StatelessWidget {
               : surface)
         : (sidebar
               ? Color.alphaBlend(
-                  const Color(0xFFF6F7FA).withValues(alpha: .94),
+                  const Color(0xFFFBFBFD).withValues(alpha: .96),
                   surface,
                 )
               : surface);

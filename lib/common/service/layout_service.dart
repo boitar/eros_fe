@@ -105,17 +105,48 @@ class LayoutServices extends GetxService {
   double get sideProportion => _sideProportion.value;
   set sideProportion(double val) => _sideProportion.value = val;
 
+  final _settingSideProportion = 0.0.obs;
+  double get settingSideProportion => _settingSideProportion.value;
+  set settingSideProportion(double val) =>
+      _settingSideProportion.value = val.clamp(0.0, 1.0).toDouble();
+
+  static bool isSettingStack(String? stackId) =>
+      stackId == EHRoutes.setting || stackId == 'safe:${EHRoutes.setting}';
+
+  double sideProportionFor(String? stackId) =>
+      isSettingStack(stackId) ? settingSideProportion : sideProportion;
+
+  void setSideProportionFor(String? stackId, double val) {
+    if (isSettingStack(stackId)) {
+      settingSideProportion = val;
+    } else {
+      sideProportion = val.clamp(0.0, 1.0).toDouble();
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
 
     _ehLayout = hiveHelper.getEhLayout();
     sideProportion = _ehLayout.sideProportion ?? 0.0;
+    settingSideProportion = (_ehLayout.settingSideProportion ?? 0.0)
+        .clamp(0.0, 1.0)
+        .toDouble();
 
     debounce<double>(
       _sideProportion,
       (double val) {
         _ehLayout = _ehLayout.copyWith(sideProportion: val.oN);
+        hiveHelper.setEhLayout(_ehLayout);
+      },
+      time: const Duration(milliseconds: 3000),
+    );
+
+    debounce<double>(
+      _settingSideProportion,
+      (double val) {
+        _ehLayout = _ehLayout.copyWith(settingSideProportion: val.oN);
         hiveHelper.setEhLayout(_ehLayout);
       },
       time: const Duration(milliseconds: 3000),
