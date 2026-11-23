@@ -355,6 +355,8 @@ class _TabHomeSmallState extends State<TabHomeSmall> {
       selectedTabId: route,
       fallbackTitle: titles[route] ?? route,
       backTitle: L10n.of(context).back,
+      moreTitle: L10n.of(context).more_actions,
+      cancelTitle: L10n.of(context).cancel,
       canGoBack:
           (Get.key.currentState?.canPop() ?? false) ||
           (Get.nestedKey(primaryNavigatorId)?.currentState?.canPop() ??

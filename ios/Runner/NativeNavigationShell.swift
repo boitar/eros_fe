@@ -81,9 +81,14 @@ final class ErosNativeNavigationShell: UITabBarController,
     // Keep one controller/engine alive even while its view moves between hosts.
     let flutterViewController: FlutterViewController
     private let navigationChannel: FlutterMethodChannel
+    private static let moreSlotId = "__more__"
     private var hosts: [String: NativeTabHostController] = [:]
     private var navigationControllers: [String: UINavigationController] = [:]
     private var routes = ["__pending__"]
+    private var overflowDescriptors: [NativeTabDescriptor] = []
+    private var moreTitle = "More"
+    private var cancelTitle = "Cancel"
+    private weak var overflowSheet: UIAlertController?
     private weak var flutterHost: NativeTabHostController?
     private var lastState: [String: Any] = [:]
     private var applyingState = false
@@ -115,7 +120,17 @@ final class ErosNativeNavigationShell: UITabBarController,
         hosts["__pending__"] = host
         navigationControllers["__pending__"] = navigation
         setViewControllers([navigation], animated: false)
+        customizableViewControllers = []
         moveFlutter(to: host)
+    }
+
+    private var usesDuoVerticalBar: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone
+            && traitCollection.verticalBarEdge != .unspecified
+    }
+
+    private var usesCompactFiveTabLimit: Bool {
+        !usesDuoVerticalBar && traitCollection.horizontalSizeClass == .compact
     }
 
     @available(*, unavailable)
@@ -131,30 +146,69 @@ final class ErosNativeNavigationShell: UITabBarController,
         // selected tab monochrome and let the glass lens mark selection.
         view.tintColor = .label
         // The bar items move into the vertical bar, but a title keeps a
-        // horizontal band that pushes the panes down; refresh on axis changes.
+        // horizontal band that pushes the panes down; refresh on axis and
+        // size-class changes before UIKit can synthesize a More tab.
         registerForTraitChanges(
             UITraitCollection.systemTraitsAffectingVerticalBarEdge
+                + [UITraitHorizontalSizeClass.self]
         ) { (self: Self, _: UITraitCollection) in
             guard !self.lastState.isEmpty else { return }
-            self.updateNavigationChrome(self.lastState)
+            self.overflowSheet?.dismiss(animated: false)
+            self.applyNavigationState(self.lastState)
         }
     }
 
     func applyNavigationState(_ state: [String: Any]) {
         dispatchPrecondition(condition: .onQueue(.main))
-        let descriptors = (state["tabs"] as? [[String: Any]] ?? [])
+        let rawDescriptors = (state["tabs"] as? [[String: Any]] ?? [])
             .compactMap(NativeTabDescriptor.init)
         // Ignore partial/early publications instead of destroying live tabs.
-        guard !descriptors.isEmpty,
-              Set(descriptors.map(\.id)).count == descriptors.count else {
+        guard !rawDescriptors.isEmpty,
+              Set(rawDescriptors.map(\.id)).count == rawDescriptors.count else {
             return
+        }
+        if let label = state["moreTitle"] as? String, !label.isEmpty {
+            moreTitle = label
+        }
+        if let label = state["cancelTitle"] as? String, !label.isEmpty {
+            cancelTitle = label
+        }
+        // History is always available in the page action bar on iPhone Duo;
+        // exclude it from the 5-slot vertical side bar so Settings never
+        // overflows into UIKit's More controller.
+        let effectiveDescriptors: [NativeTabDescriptor]
+        if usesDuoVerticalBar {
+            let filtered = rawDescriptors.filter { $0.id != "/history" }
+            effectiveDescriptors = filtered.isEmpty ? rawDescriptors : filtered
+        } else {
+            effectiveDescriptors = rawDescriptors
+        }
+        // Compact non-sidebar bars also cap at five slots. Own the fifth slot
+        // ourselves instead of letting UIKit synthesize a More controller that
+        // conflicts with our single-FlutterViewController host architecture.
+        let descriptors: [NativeTabDescriptor]
+        if usesCompactFiveTabLimit && effectiveDescriptors.count > 5 {
+            overflowDescriptors = Array(effectiveDescriptors.dropFirst(4))
+            descriptors = Array(effectiveDescriptors.prefix(4)) + [
+                NativeTabDescriptor(
+                    id: Self.moreSlotId,
+                    title: moreTitle,
+                    symbol: "ellipsis"
+                )
+            ]
+        } else {
+            overflowDescriptors = []
+            descriptors = effectiveDescriptors
         }
         lastState = state
         applyingState = true
         defer { applyingState = false }
         let newRoutes = descriptors.map(\.id)
-        let selectedRoute = state["selectedTabId"] as? String ?? newRoutes[0]
-        let index = newRoutes.firstIndex(of: selectedRoute) ?? 0
+        let selectedRoute = state["selectedTabId"] as? String ?? effectiveDescriptors[0].id
+        let activeSlotId = overflowDescriptors.contains(where: { $0.id == selectedRoute })
+            ? Self.moreSlotId
+            : selectedRoute
+        let index = newRoutes.firstIndex(of: activeSlotId) ?? 0
 
         if routes == ["__pending__"] {
             let firstRoute = newRoutes[index]
@@ -181,6 +235,7 @@ final class ErosNativeNavigationShell: UITabBarController,
                 newRoutes.compactMap { navigationControllers[$0] },
                 animated: false
             )
+            customizableViewControllers = []
         }
         routes = newRoutes
         selectedIndex = index
@@ -394,13 +449,65 @@ final class ErosNativeNavigationShell: UITabBarController,
         _ tabBarController: UITabBarController,
         shouldSelect viewController: UIViewController
     ) -> Bool {
-        guard !applyingState,
-              let index = viewControllers?.firstIndex(of: viewController),
-              index < routes.count,
-              let host = hosts[routes[index]] else { return false }
+        guard !applyingState else { return false }
+        if viewController === moreNavigationController {
+            let fallback = overflowDescriptors.isEmpty
+                ? Array(
+                    (lastState["tabs"] as? [[String: Any]] ?? [])
+                        .compactMap(NativeTabDescriptor.init)
+                        .dropFirst(4)
+                )
+                : overflowDescriptors
+            if !fallback.isEmpty {
+                presentOverflowMenu(for: fallback)
+            }
+            return false
+        }
+        guard let index = viewControllers?.firstIndex(of: viewController),
+              index < routes.count else { return false }
+        let route = routes[index]
+        if route == Self.moreSlotId {
+            if !overflowDescriptors.isEmpty {
+                presentOverflowMenu(for: overflowDescriptors)
+            }
+            return false
+        }
+        guard let host = hosts[route] else { return false }
         // Detach before UIKit starts forwarding the tab's disappearance.
         moveFlutter(to: host)
         return true
+    }
+
+    private func presentOverflowMenu(for descriptors: [NativeTabDescriptor]) {
+        guard presentedViewController == nil else { return }
+        let sheet = UIAlertController(
+            title: nil,
+            message: nil,
+            preferredStyle: .actionSheet
+        )
+        let activeRoute = lastState["selectedTabId"] as? String
+        for descriptor in descriptors {
+            let title = descriptor.id == activeRoute
+                ? "✓ \(descriptor.title)"
+                : descriptor.title
+            sheet.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                self?.navigationChannel.invokeMethod("selectTab", arguments: descriptor.id)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: cancelTitle, style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            let anchorView = tabBar.window != nil ? tabBar : view!
+            popover.sourceView = anchorView
+            popover.sourceRect = CGRect(
+                x: max(0, anchorView.bounds.maxX - 44),
+                y: max(0, anchorView.bounds.midY - 22),
+                width: 44,
+                height: 44
+            )
+            popover.permittedArrowDirections = [.down, .right, .left, .up]
+        }
+        overflowSheet = sheet
+        present(sheet, animated: true)
     }
 
     func tabBarController(
@@ -570,6 +677,12 @@ private struct NativeTabDescriptor {
     let id: String
     let title: String
     let symbol: String
+
+    init(id: String, title: String, symbol: String) {
+        self.id = id
+        self.title = title
+        self.symbol = symbol
+    }
 
     init?(_ value: [String: Any]) {
         guard let id = value["id"] as? String, !id.isEmpty else { return nil }

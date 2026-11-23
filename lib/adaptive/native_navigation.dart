@@ -30,6 +30,8 @@ class NativeNavigationState {
     this.animateBars = false,
     this.ownBar = false,
     this.backTitle = 'Back',
+    this.moreTitle = 'More',
+    this.cancelTitle = 'Cancel',
   });
 
   NativeNavigationState.withChrome(
@@ -41,6 +43,8 @@ class NativeNavigationState {
     this.canGoBack = false,
     this.visible = true,
     this.backTitle = 'Back',
+    this.moreTitle = 'More',
+    this.cancelTitle = 'Cancel',
   })  : title = chrome?.title ?? fallbackTitle,
         actions = chrome?.actions ?? const <NativeNavigationAction>[],
         toolbarActions =
@@ -71,6 +75,8 @@ class NativeNavigationState {
   /// The page draws its own bar; see [NativePageChrome.ownBar].
   final bool ownBar;
   final String backTitle;
+  final String moreTitle;
+  final String cancelTitle;
 
   /// Finds an enabled action by id among bar items, toolbar items and menus.
   NativeNavigationAction? actionWithId(String id) =>
@@ -96,6 +102,8 @@ class NativeNavigationState {
         'animateBars': animateBars,
         'ownBar': ownBar,
         'backTitle': backTitle,
+        'moreTitle': moreTitle,
+        'cancelTitle': cancelTitle,
       };
 }
 

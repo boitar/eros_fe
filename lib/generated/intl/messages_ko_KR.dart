@@ -748,6 +748,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_favorite": MessageLookupByLibrary.simpleMessage("즐겨찾기"),
     "tab_gallery": MessageLookupByLibrary.simpleMessage("갤러리"),
     "tab_history": MessageLookupByLibrary.simpleMessage("방문 기록"),
+    "tab_history_duo_sidebar_note": MessageLookupByLibrary.simpleMessage(
+      "기록 탭은 iPhone Duo 사이드바에 표시되지 않으며 페이지 상단 동작 막대에서 열 수 있습니다.",
+    ),
     "tab_popular": MessageLookupByLibrary.simpleMessage("인기"),
     "tab_setting": MessageLookupByLibrary.simpleMessage("설정"),
     "tab_sort": MessageLookupByLibrary.simpleMessage("길게 누르고 끌어서 정렬"),
