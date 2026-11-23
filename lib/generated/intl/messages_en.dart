@@ -898,6 +898,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_favorite": MessageLookupByLibrary.simpleMessage("Favorites"),
     "tab_gallery": MessageLookupByLibrary.simpleMessage("Gallery"),
     "tab_history": MessageLookupByLibrary.simpleMessage("History"),
+    "tab_history_duo_sidebar_note": MessageLookupByLibrary.simpleMessage(
+      "The History tab is not shown in the iPhone Duo side bar; access History from the page action bar instead.",
+    ),
     "tab_popular": MessageLookupByLibrary.simpleMessage("Popular"),
     "tab_setting": MessageLookupByLibrary.simpleMessage("Settings"),
     "tab_sort": MessageLookupByLibrary.simpleMessage(

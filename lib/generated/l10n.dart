@@ -5382,6 +5382,16 @@ class L10n {
       args: [],
     );
   }
+
+  /// `The History tab is not shown in the iPhone Duo side bar; access History from the page action bar instead.`
+  String get tab_history_duo_sidebar_note {
+    return Intl.message(
+      'The History tab is not shown in the iPhone Duo side bar; access History from the page action bar instead.',
+      name: 'tab_history_duo_sidebar_note',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

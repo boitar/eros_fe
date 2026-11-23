@@ -940,6 +940,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_favorite": MessageLookupByLibrary.simpleMessage("Избранное"),
     "tab_gallery": MessageLookupByLibrary.simpleMessage("Галерея"),
     "tab_history": MessageLookupByLibrary.simpleMessage("История"),
+    "tab_history_duo_sidebar_note": MessageLookupByLibrary.simpleMessage(
+      "Вкладка «История» не отображается на боковой панели iPhone Duo; открыть историю можно через панель действий страницы.",
+    ),
     "tab_popular": MessageLookupByLibrary.simpleMessage("Популярное"),
     "tab_setting": MessageLookupByLibrary.simpleMessage("Настройки"),
     "tab_sort": MessageLookupByLibrary.simpleMessage(

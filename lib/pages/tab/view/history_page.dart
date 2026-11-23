@@ -30,25 +30,50 @@ class HistoryTab extends StatefulWidget {
 class _HistoryTabState extends State<HistoryTab> {
   final controller = Get.find<HistoryViewController>();
   final EhTabController ehTabController = EhTabController();
+  final GlobalKey<SliverAnimatedListState> _sliverAnimatedListKey =
+      GlobalKey<SliverAnimatedListState>();
+  bool _registeredAsRootTab = false;
   static const Key _firstCardKey = ValueKey<String>('history-first-card');
 
   @override
   void initState() {
     super.initState();
 
+    HistoryViewController.registerAnimatedListKey(
+      controller,
+      _sliverAnimatedListKey,
+    );
     ehTabController.hasScrollClientsCall = () =>
         mounted &&
         (PrimaryScrollController.maybeOf(context)?.hasClients ?? false);
     ehTabController.scrollToTopCall = () => controller.scrollToTop(context);
     ehTabController.scrollToTopRefreshCall =
         () => controller.scrollToTopRefresh(context);
-    if (controller.heroTag != null) {
-      tabPages.scrollControllerMap[controller.heroTag!] = ehTabController;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final isTab = ModalRoute.of(context)?.isFirst ?? true;
+    final heroTag = controller.heroTag;
+    if (heroTag != null && isTab && !_registeredAsRootTab) {
+      tabPages.scrollControllerMap[heroTag] = ehTabController;
+      _registeredAsRootTab = true;
     }
   }
 
   @override
   void dispose() {
+    HistoryViewController.unregisterAnimatedListKey(
+      controller,
+      _sliverAnimatedListKey,
+    );
+    final heroTag = controller.heroTag;
+    if (_registeredAsRootTab &&
+        heroTag != null &&
+        identical(tabPages.scrollControllerMap[heroTag], ehTabController)) {
+      tabPages.scrollControllerMap.remove(heroTag);
+    }
     ehTabController.dispose();
     super.dispose();
   }
@@ -144,7 +169,7 @@ class _HistoryTabState extends State<HistoryTab> {
                 sliver: getGallerySliverList(
                   logic.histories,
                   controller.heroTag,
-                  key: controller.sliverAnimatedListKey,
+                  key: _sliverAnimatedListKey,
                   firstCardKey: nativeBar ? _firstCardKey : null,
                   contentTopGap: nativeBar
                       ? NativeTopTabHeader.contentGapFor(context)

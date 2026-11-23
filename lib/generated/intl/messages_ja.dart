@@ -694,6 +694,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_favorite": MessageLookupByLibrary.simpleMessage("お気に入り"),
     "tab_gallery": MessageLookupByLibrary.simpleMessage("ギャラリー"),
     "tab_history": MessageLookupByLibrary.simpleMessage("閲覧履歴"),
+    "tab_history_duo_sidebar_note": MessageLookupByLibrary.simpleMessage(
+      "「履歴」タブは iPhone Duo のサイドバーには表示されません。ページ上部のアクションバーから開けます。",
+    ),
     "tab_popular": MessageLookupByLibrary.simpleMessage("人気"),
     "tab_setting": MessageLookupByLibrary.simpleMessage("設定"),
     "tab_sort": MessageLookupByLibrary.simpleMessage("長押しで並べ替え"),

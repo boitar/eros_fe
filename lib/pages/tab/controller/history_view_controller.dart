@@ -11,6 +11,66 @@ import 'package:get/get.dart';
 class HistoryViewController extends DefaultTabViewController {
   final HistoryController historyController = Get.find();
 
+  static final Expando<Set<GlobalKey<SliverAnimatedListState>>>
+      _animatedListKeysByController =
+      Expando<Set<GlobalKey<SliverAnimatedListState>>>(
+        'HistoryViewController.animatedListKeys',
+      );
+
+  static void registerAnimatedListKey(
+    HistoryViewController controller,
+    GlobalKey<SliverAnimatedListState> key,
+  ) {
+    final keys = _animatedListKeysByController[controller] ??=
+        <GlobalKey<SliverAnimatedListState>>{};
+    keys.add(key);
+  }
+
+  static void unregisterAnimatedListKey(
+    HistoryViewController controller,
+    GlobalKey<SliverAnimatedListState> key,
+  ) {
+    _animatedListKeysByController[controller]?.remove(key);
+  }
+
+  static Iterable<SliverAnimatedListState> _attachedAnimatedListStates(
+    HistoryViewController controller,
+  ) sync* {
+    final seen = <SliverAnimatedListState>{};
+    final keys = _animatedListKeysByController[controller];
+    if (keys != null) {
+      for (final key in keys) {
+        final state = key.currentState;
+        if (state != null && seen.add(state)) {
+          yield state;
+        }
+      }
+    }
+    final fallback = controller.sliverAnimatedListKey.currentState;
+    if (fallback != null && seen.add(fallback)) {
+      yield fallback;
+    }
+  }
+
+  static void insertAnimatedListItem(
+    HistoryViewController controller,
+    int index,
+  ) {
+    for (final state in _attachedAnimatedListStates(controller)) {
+      state.insertItem(index);
+    }
+  }
+
+  static void removeAnimatedListItem(
+    HistoryViewController controller,
+    int index,
+    AnimatedRemovedItemBuilder builder,
+  ) {
+    for (final state in _attachedAnimatedListStates(controller)) {
+      state.removeItem(index, builder);
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();

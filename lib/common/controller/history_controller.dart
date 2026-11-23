@@ -93,7 +93,8 @@ class HistoryController extends GetxController {
       histories.removeAt(curIndex);
       if (curIndex > 0 && isListView) {
         // removeItem 动画
-        hisViewController.sliverAnimatedListKey.currentState?.removeItem(
+        HistoryViewController.removeAnimatedListItem(
+          hisViewController,
           curIndex,
           (context, Animation<double> animation) =>
               buildDelGallerySliverListItem(item, curIndex, animation),
@@ -103,7 +104,7 @@ class HistoryController extends GetxController {
       _histories.add(item);
       if (curIndex > 0 && isListView) {
         // insertItem 动画
-        hisViewController.sliverAnimatedListKey.currentState?.insertItem(0);
+        HistoryViewController.insertAnimatedListItem(hisViewController, 0);
       }
 
       await _historyStorage.addHistoryAsync(item);
@@ -111,7 +112,8 @@ class HistoryController extends GetxController {
       _histories.add(item);
       final insertIndex = histories.indexOf(item);
       if (isListView) {
-        hisViewController.sliverAnimatedListKey.currentState?.insertItem(
+        HistoryViewController.insertAnimatedListItem(
+          hisViewController,
           insertIndex,
         );
       }
@@ -146,7 +148,8 @@ class HistoryController extends GetxController {
       final item = histories[index];
       histories.removeAt(index);
       if (isListView) {
-        hisViewController.sliverAnimatedListKey.currentState?.removeItem(
+        HistoryViewController.removeAnimatedListItem(
+          hisViewController,
           index,
           (context, Animation<double> animation) =>
               buildDelGallerySliverListItem(item, index, animation),

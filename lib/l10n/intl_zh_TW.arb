@@ -651,5 +651,6 @@
   "desktop_read_unavailable": "無法開啟作品，請檢查來源後重試。",
   "desktop_untitled": "未命名作品",
   "desktop_view_details": "查看詳情",
-  "desktop_mode_sync_failed": "顯示方式已儲存在本機，同步失敗，請檢查連線。"
+  "desktop_mode_sync_failed": "顯示方式已儲存在本機，同步失敗，請檢查連線。",
+  "tab_history_duo_sidebar_note": "「歷史」欄位不會顯示在 iPhone Duo 側邊欄中，可從頁面頂部操作列進入。"
 }
