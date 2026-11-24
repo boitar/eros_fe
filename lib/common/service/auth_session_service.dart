@@ -679,6 +679,10 @@ class AuthStrings {
   String get troubleLink => zh ? '一直过不去？' : 'Stuck on verification?';
   String get webLoginTroubleLink =>
       zh ? '登录遇到问题？' : 'Trouble signing in?';
+  String get webLoginCookieCleanupFailed => zh
+      ? '无法清理旧登录状态，网页登录页面尚未打开。请重试。'
+      : 'Could not clear the previous sign-in, so the page was not opened. Please retry.';
+  String get retryCookieCleanup => zh ? '重试清理' : 'Retry cleanup';
   String get clearWebDataAndReload => zh ? '清除站点数据并刷新' : 'Clear site data & reload';
 
   String welcomeUser(String name) => zh ? '欢迎，$name' : 'Welcome, $name';

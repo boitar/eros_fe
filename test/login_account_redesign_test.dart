@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
@@ -56,6 +57,10 @@ class _TestSettings extends GetxService implements EhSettingService {
 }
 
 class _FakeUserController extends GetxController implements UserController {
+  _FakeUserController({this.loggedIn = true});
+
+  final bool loggedIn;
+
   @override
   final Rx<User> user = const User(
     username: 'miyuu',
@@ -67,6 +72,7 @@ class _FakeUserController extends GetxController implements UserController {
 
   @override
   bool get isLogin =>
+      loggedIn &&
       (user.value.memberId?.isNotEmpty ?? false) &&
       (user.value.passHash?.isNotEmpty ?? false);
 
@@ -598,6 +604,163 @@ void main() {
           find.byKey(const ValueKey<String>('web-auth-bottom-dock')),
           findsNothing,
         );
+      },
+    );
+
+    testWidgets(
+      'manual Web Sign-in waits for stale-cookie cleanup before loading the page',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        Get.put<UserController>(
+          _FakeUserController(loggedIn: false),
+          permanent: true,
+        );
+        Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+
+        final cleanup = Completer<void>();
+        await tester.pumpWidget(
+          CupertinoApp(
+            locale: const Locale('zh', 'CN'),
+            supportedLocales: const <Locale>[Locale('zh', 'CN')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: CfVerifyWebView(
+              interactiveWebLogin: true,
+              debugCookieCleanup: () => cleanup.future,
+              debugWebViewBuilder: (_) => const ColoredBox(
+                key: ValueKey<String>('mock-webview-after-cleanup'),
+                color: Color(0xFFFFFFFF),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(
+          find.byKey(const ValueKey<String>('mock-webview-after-cleanup')),
+          findsNothing,
+        );
+        await tester.pump(const Duration(milliseconds: 600));
+        expect(
+          find.byKey(const ValueKey<String>('mock-webview-after-cleanup')),
+          findsNothing,
+        );
+
+        cleanup.complete();
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey<String>('mock-webview-after-cleanup')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'manual Web Sign-in stays closed after cleanup failure and retries cleanup',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        Get.put<UserController>(
+          _FakeUserController(loggedIn: false),
+          permanent: true,
+        );
+        Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+
+        var cleanupCalls = 0;
+        Future<void> cleanup() async {
+          cleanupCalls++;
+          if (cleanupCalls == 1) {
+            throw StateError('cleanup failed');
+          }
+        }
+
+        await tester.pumpWidget(
+          CupertinoApp(
+            locale: const Locale('zh', 'CN'),
+            supportedLocales: const <Locale>[Locale('zh', 'CN')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: CfVerifyWebView(
+              interactiveWebLogin: true,
+              debugCookieCleanup: cleanup,
+              debugWebViewBuilder: (_) => const ColoredBox(
+                key: ValueKey<String>('mock-webview-after-cleanup'),
+                color: Color(0xFFFFFFFF),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(cleanupCalls, 1);
+        expect(
+          find.byKey(const ValueKey<String>('web-auth-cookie-cleanup-error')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('mock-webview-after-cleanup')),
+          findsNothing,
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('web-auth-cookie-cleanup-retry')),
+        );
+        await tester.pump();
+
+        expect(cleanupCalls, 2);
+        expect(
+          find.byKey(const ValueKey<String>('mock-webview-after-cleanup')),
+          findsOneWidget,
+        );
+      },
+    );
+  });
+
+  group('LoginController verification window recovery', () {
+    test(
+      'both verification entry points reset the busy flag after an error',
+      () async {
+        Get.put<UserController>(_FakeUserController(), permanent: true);
+
+        Future<CfVerification?> failToOpen({
+          required String? username,
+          required String? password,
+          required bool interactiveWebLogin,
+          required bool acquireExSession,
+        }) async {
+          throw StateError('route push failed');
+        }
+
+        final controller = LoginController(verificationOpener: failToOpen);
+
+        await controller.handOnWeblogin();
+        expect(controller.verifyWindowOpen, isFalse);
+        expect(controller.inlineError, isNotEmpty);
+
+        await controller.continueWithCfBrowser();
+        expect(controller.verifyWindowOpen, isFalse);
+        expect(controller.inlineError, isNotEmpty);
+
+        controller.onClose();
       },
     );
   });

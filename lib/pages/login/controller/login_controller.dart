@@ -9,6 +9,7 @@ import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/login/view/login_cookie.dart';
 import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
+import 'package:eros_fe/utils/cf_verification.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -18,6 +19,13 @@ const TextStyle kTextStyle = TextStyle(
   textBaseline: TextBaseline.alphabetic,
   height: 1.25,
 );
+
+typedef CfVerificationOpener = Future<CfVerification?> Function({
+  required String? username,
+  required String? password,
+  required bool interactiveWebLogin,
+  required bool acquireExSession,
+});
 
 /// 登录视图阶段
 enum LoginFlowPhase {
@@ -45,6 +53,24 @@ enum LoginStepState {
 }
 
 class LoginController extends GetxController {
+  LoginController({CfVerificationOpener? verificationOpener})
+      : _verificationOpener = verificationOpener ?? _defaultVerificationOpener;
+
+  static Future<CfVerification?> _defaultVerificationOpener({
+    required String? username,
+    required String? password,
+    required bool interactiveWebLogin,
+    required bool acquireExSession,
+  }) =>
+      openCfVerification(
+        username: username,
+        password: password,
+        interactiveWebLogin: interactiveWebLogin,
+        acquireExSession: acquireExSession,
+      );
+
+  final CfVerificationOpener _verificationOpener;
+
   final FocusNode nodePwd = FocusNode();
   final FocusNode nodeHash = FocusNode();
   final FocusNode nodeIgneous = FocusNode();
@@ -126,6 +152,36 @@ class LoginController extends GetxController {
     if (inlineError != null) {
       inlineError = null;
       update();
+    }
+  }
+
+  Future<CfVerification?> _openVerificationWindow({
+    required String? username,
+    required String? password,
+    required bool interactiveWebLogin,
+    required bool acquireExSession,
+    required bool zh,
+  }) async {
+    verifyWindowOpen = true;
+    update();
+    try {
+      return await _verificationOpener(
+        username: username,
+        password: password,
+        interactiveWebLogin: interactiveWebLogin,
+        acquireExSession: acquireExSession,
+      );
+    } catch (error, stackTrace) {
+      logger.e('open web verification window error: $error\n$stackTrace');
+      inlineError = zh
+          ? '无法打开验证窗口，请重试。'
+          : 'Could not open the verification window. Please try again.';
+      return null;
+    } finally {
+      verifyWindowOpen = false;
+      if (!isClosed) {
+        update();
+      }
     }
   }
 
@@ -243,15 +299,13 @@ class LoginController extends GetxController {
     final zh =
         Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
 
-    verifyWindowOpen = true;
-    update();
-    final verification = await openCfVerification(
+    final verification = await _openVerificationWindow(
       username: username.isNotEmpty ? username : null,
       password: password.isNotEmpty ? password : null,
       interactiveWebLogin: username.isEmpty || password.isEmpty,
       acquireExSession: true,
+      zh: zh,
     );
-    verifyWindowOpen = false;
 
     if (_cancelled) {
       return;
@@ -401,29 +455,42 @@ class LoginController extends GetxController {
     loadingLogin = true;
     update();
 
-    await authService.probeExitRegion();
     bool hasEx = false;
     try {
-      await clearExHentaiCookies();
-      await getExIgneous();
-      await _syncIgneousFromCookieJar();
-      hasEx = _currentUserHasValidIgneous();
-    } catch (e) {
-      if (isCfBlockedError(e)) {
-        final verification = await openCfVerification(acquireExSession: true);
-        if (verification != null) {
-          await applyCfVerification(verification);
-          hasEx = verification.hasValidIgneous || _currentUserHasValidIgneous();
+      await authService.probeExitRegion();
+      try {
+        await clearExHentaiCookies();
+        await getExIgneous();
+        await _syncIgneousFromCookieJar();
+        hasEx = _currentUserHasValidIgneous();
+      } catch (e) {
+        if (isCfBlockedError(e)) {
+          final zh =
+              Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
+          final verification = await _openVerificationWindow(
+            username: null,
+            password: null,
+            interactiveWebLogin: false,
+            acquireExSession: true,
+            zh: zh,
+          );
+          if (verification != null) {
+            await applyCfVerification(verification);
+            hasEx =
+                verification.hasValidIgneous || _currentUserHasValidIgneous();
+          }
         }
       }
+    } finally {
+      loadingLogin = false;
+      authService.recordExRetryResult(hasExAccess: hasEx);
+      if (hasEx) {
+        phase = LoginFlowPhase.success;
+      }
+      if (!isClosed) {
+        update();
+      }
     }
-
-    loadingLogin = false;
-    authService.recordExRetryResult(hasExAccess: hasEx);
-    if (hasEx) {
-      phase = LoginFlowPhase.success;
-    }
-    update();
   }
 
   /// 完成登录页闭环返回上一页
@@ -522,14 +589,13 @@ class LoginController extends GetxController {
         Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
     _cancelled = false;
     inlineError = null;
-    verifyWindowOpen = true;
-    update();
-
-    final verification = await openCfVerification(
+    final verification = await _openVerificationWindow(
+      username: null,
+      password: null,
       interactiveWebLogin: true,
       acquireExSession: true,
+      zh: zh,
     );
-    verifyWindowOpen = false;
 
     if (_cancelled) {
       return;

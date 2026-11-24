@@ -204,6 +204,7 @@ class CfVerifyWebView extends StatefulWidget {
     this.acquireExSession = true,
     this.inDesktopDialog = false,
     @visibleForTesting this.debugWebViewBuilder,
+    @visibleForTesting this.debugCookieCleanup,
   });
 
   static const kVerifyUrl = 'https://forums.e-hentai.org/index.php';
@@ -226,6 +227,7 @@ class CfVerifyWebView extends StatefulWidget {
   final bool acquireExSession;
   final bool inDesktopDialog;
   final WidgetBuilder? debugWebViewBuilder;
+  final Future<void> Function()? debugCookieCleanup;
 
   bool get hasAutoCredentials =>
       (username?.isNotEmpty ?? false) && (password?.isNotEmpty ?? false);
@@ -254,6 +256,8 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
   InAppWebViewController? _controller;
 
   bool _cookieReady = true;
+  bool _cookieCleanupFailed = false;
+  bool _cookieCleanupRunning = false;
   bool _finishing = false;
   bool _done = false;
   bool _submittedCredentials = false;
@@ -273,10 +277,12 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
   @override
   void initState() {
     super.initState();
-    if (widget.debugWebViewBuilder == null &&
+    if ((widget.debugWebViewBuilder == null ||
+            widget.debugCookieCleanup != null) &&
         widget.flowMode == CfWebFlowMode.interactiveWebLogin &&
         !_isAppCurrentlyLoggedIn()) {
       _cookieReady = false;
+      _cookieCleanupRunning = true;
       unawaited(_pruneStaleLoginCookiesBeforeInteractiveSignIn());
     }
   }
@@ -305,7 +311,10 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
       ('https://exhentai.org/', '.exhentai.org'),
     ];
     try {
-      await Future<void>(() async {
+      final debugCookieCleanup = widget.debugCookieCleanup;
+      if (debugCookieCleanup != null) {
+        await debugCookieCleanup();
+      } else {
         for (final (rawUrl, domain) in siteOrigins) {
           final webUri = WebUri(rawUrl);
           for (final key in staleKeys) {
@@ -314,16 +323,41 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
               name: key,
               domain: domain,
             );
+            if (!mounted) {
+              return;
+            }
           }
         }
-      }).timeout(const Duration(milliseconds: 450));
-    } catch (_) {
-      // 忽略个别平台或测试环境下的超时与平台通道差异
-    } finally {
-      if (mounted) {
-        setState(() => _cookieReady = true);
       }
+    } catch (error) {
+      logger.e('clear stale web login cookies error: $error');
+      if (mounted) {
+        setState(() {
+          _cookieCleanupFailed = true;
+          _cookieCleanupRunning = false;
+        });
+      }
+      return;
     }
+    if (mounted) {
+      setState(() {
+        _cookieReady = true;
+        _cookieCleanupFailed = false;
+        _cookieCleanupRunning = false;
+      });
+    }
+  }
+
+  void _retryStaleLoginCookieCleanup() {
+    if (!mounted || _cookieCleanupRunning || !_cookieCleanupFailed) {
+      return;
+    }
+    setState(() {
+      _cookieReady = false;
+      _cookieCleanupFailed = false;
+      _cookieCleanupRunning = true;
+    });
+    unawaited(_pruneStaleLoginCookiesBeforeInteractiveSignIn());
   }
 
   Future<void> _refreshCanGoBack() async {
@@ -597,7 +631,16 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
 
   Widget _buildWebViewSurface(BuildContext context) {
     if (widget.debugWebViewBuilder != null) {
+      if (_cookieCleanupFailed) {
+        return _buildCookieCleanupFailure(context);
+      }
+      if (!_cookieReady) {
+        return const Center(child: CupertinoActivityIndicator());
+      }
       return widget.debugWebViewBuilder!(context);
+    }
+    if (_cookieCleanupFailed) {
+      return _buildCookieCleanupFailure(context);
     }
     if (!_cookieReady) {
       return const Center(child: CupertinoActivityIndicator());
@@ -628,6 +671,36 @@ class _CfVerifyWebViewState extends State<CfVerifyWebView> {
         await _refreshCanGoBack();
         await _onPageReady(uri);
       },
+    );
+  }
+
+  Widget _buildCookieCleanupFailure(BuildContext context) {
+    final strings = AuthStrings.of(context);
+    final palette = ehTheme.palette;
+    return ColoredBox(
+      key: const ValueKey<String>('web-auth-cookie-cleanup-error'),
+      color: palette.canvas.resolveFrom(context),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                strings.webLoginCookieCleanupFailed,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: palette.text1.resolveFrom(context)),
+              ),
+              const SizedBox(height: 12),
+              CupertinoButton(
+                key: const ValueKey<String>('web-auth-cookie-cleanup-retry'),
+                onPressed: _retryStaleLoginCookieCleanup,
+                child: Text(strings.retryCookieCleanup),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
