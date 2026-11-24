@@ -424,7 +424,8 @@ class LoginPage extends GetView<LoginController> {
         const SizedBox(height: 18),
         if (isDesktop) ...<Widget>[
           _SecondaryActionButton(
-            icon: CupertinoIcons.lock_shield,
+            key: const ValueKey<String>('login-web-button'),
+            icon: CupertinoIcons.globe,
             label: strings.webSignIn,
             isAndroid: false,
             isDesktop: true,
@@ -432,7 +433,8 @@ class LoginPage extends GetView<LoginController> {
           ),
           const SizedBox(height: 8),
           _SecondaryActionButton(
-            icon: CupertinoIcons. doc_on_clipboard,
+            key: const ValueKey<String>('login-cookie-button'),
+            icon: CupertinoIcons.doc_on_clipboard,
             label: strings.useCookieSignIn,
             isAndroid: false,
             isDesktop: true,
@@ -1432,6 +1434,7 @@ class _PrimaryLoginButton extends StatelessWidget {
 
 class _SecondaryActionButton extends StatelessWidget {
   const _SecondaryActionButton({
+    super.key,
     required this.label,
     required this.onPressed,
     required this.isAndroid,

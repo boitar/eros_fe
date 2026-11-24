@@ -9,6 +9,7 @@ import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/login/view/login_cookie.dart';
 import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
+import 'package:eros_fe/utils/cf_verification.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -18,6 +19,13 @@ const TextStyle kTextStyle = TextStyle(
   textBaseline: TextBaseline.alphabetic,
   height: 1.25,
 );
+
+typedef CfVerificationOpener = Future<CfVerification?> Function({
+  required String? username,
+  required String? password,
+  required bool interactiveWebLogin,
+  required bool acquireExSession,
+});
 
 /// 登录视图阶段
 enum LoginFlowPhase {
@@ -45,6 +53,24 @@ enum LoginStepState {
 }
 
 class LoginController extends GetxController {
+  LoginController({CfVerificationOpener? verificationOpener})
+      : _verificationOpener = verificationOpener ?? _defaultVerificationOpener;
+
+  static Future<CfVerification?> _defaultVerificationOpener({
+    required String? username,
+    required String? password,
+    required bool interactiveWebLogin,
+    required bool acquireExSession,
+  }) =>
+      openCfVerification(
+        username: username,
+        password: password,
+        interactiveWebLogin: interactiveWebLogin,
+        acquireExSession: acquireExSession,
+      );
+
+  final CfVerificationOpener _verificationOpener;
+
   final FocusNode nodePwd = FocusNode();
   final FocusNode nodeHash = FocusNode();
   final FocusNode nodeIgneous = FocusNode();
@@ -129,6 +155,36 @@ class LoginController extends GetxController {
     }
   }
 
+  Future<CfVerification?> _openVerificationWindow({
+    required String? username,
+    required String? password,
+    required bool interactiveWebLogin,
+    required bool acquireExSession,
+    required bool zh,
+  }) async {
+    verifyWindowOpen = true;
+    update();
+    try {
+      return await _verificationOpener(
+        username: username,
+        password: password,
+        interactiveWebLogin: interactiveWebLogin,
+        acquireExSession: acquireExSession,
+      );
+    } catch (error, stackTrace) {
+      logger.e('open web verification window error: $error\n$stackTrace');
+      inlineError = zh
+          ? '无法打开验证窗口，请重试。'
+          : 'Could not open the verification window. Please try again.';
+      return null;
+    } finally {
+      verifyWindowOpen = false;
+      if (!isClosed) {
+        update();
+      }
+    }
+  }
+
   void switchObscure() {
     obscurePasswd = !obscurePasswd;
     update();
@@ -146,7 +202,7 @@ class LoginController extends GetxController {
     final username = (overrideUsername ?? usernameController.text).trim();
     final password = passwdController.text;
     final zh =
-        (Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true);
+        Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
 
     if (username.isEmpty || password.isEmpty) {
       inlineError = zh ? '请输入用户名和密码' : 'Please enter username and password';
@@ -241,17 +297,15 @@ class LoginController extends GetxController {
     final username = (overrideUsername ?? usernameController.text).trim();
     final password = passwdController.text;
     final zh =
-        (Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true);
+        Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
 
-    verifyWindowOpen = true;
-    update();
-    final verification = await openCfVerification(
+    final verification = await _openVerificationWindow(
       username: username.isNotEmpty ? username : null,
       password: password.isNotEmpty ? password : null,
       interactiveWebLogin: username.isEmpty || password.isEmpty,
       acquireExSession: true,
+      zh: zh,
     );
-    verifyWindowOpen = false;
 
     if (_cancelled) {
       return;
@@ -401,29 +455,42 @@ class LoginController extends GetxController {
     loadingLogin = true;
     update();
 
-    await authService.probeExitRegion();
     bool hasEx = false;
     try {
-      await clearExHentaiCookies();
-      await getExIgneous();
-      await _syncIgneousFromCookieJar();
-      hasEx = _currentUserHasValidIgneous();
-    } catch (e) {
-      if (isCfBlockedError(e)) {
-        final verification = await openCfVerification(acquireExSession: true);
-        if (verification != null) {
-          await applyCfVerification(verification);
-          hasEx = verification.hasValidIgneous || _currentUserHasValidIgneous();
+      await authService.probeExitRegion();
+      try {
+        await clearExHentaiCookies();
+        await getExIgneous();
+        await _syncIgneousFromCookieJar();
+        hasEx = _currentUserHasValidIgneous();
+      } catch (e) {
+        if (isCfBlockedError(e)) {
+          final zh =
+              Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
+          final verification = await _openVerificationWindow(
+            username: null,
+            password: null,
+            interactiveWebLogin: false,
+            acquireExSession: true,
+            zh: zh,
+          );
+          if (verification != null) {
+            await applyCfVerification(verification);
+            hasEx =
+                verification.hasValidIgneous || _currentUserHasValidIgneous();
+          }
         }
       }
+    } finally {
+      loadingLogin = false;
+      authService.recordExRetryResult(hasExAccess: hasEx);
+      if (hasEx) {
+        phase = LoginFlowPhase.success;
+      }
+      if (!isClosed) {
+        update();
+      }
     }
-
-    loadingLogin = false;
-    authService.recordExRetryResult(hasExAccess: hasEx);
-    if (hasEx) {
-      phase = LoginFlowPhase.success;
-    }
-    update();
   }
 
   /// 完成登录页闭环返回上一页
@@ -441,7 +508,7 @@ class LoginController extends GetxController {
     final passHash = hashController.text.trim();
     final igneousInput = igneousController.text.trim();
     final zh =
-        (Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true);
+        Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
 
     if (memberId.isEmpty || passHash.isEmpty) {
       showToast(
@@ -515,13 +582,26 @@ class LoginController extends GetxController {
 
   /// 应用内网页登录（移动端与桌面端均可用）
   Future<void> handOnWeblogin({bool closeParentOnSuccess = true}) async {
+    if (verifyWindowOpen || loadingLogin) {
+      return;
+    }
     final zh =
-        (Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true);
-    final verification = await openCfVerification(
+        Get.locale?.languageCode.toLowerCase().startsWith('zh') ?? true;
+    _cancelled = false;
+    inlineError = null;
+    final verification = await _openVerificationWindow(
+      username: null,
+      password: null,
       interactiveWebLogin: true,
       acquireExSession: true,
+      zh: zh,
     );
+
+    if (_cancelled) {
+      return;
+    }
     if (verification == null || !verification.hasLoginSession) {
+      update();
       return;
     }
 
@@ -536,24 +616,25 @@ class LoginController extends GetxController {
       );
     }
 
-    final hasEx =
-        verification.hasValidIgneous || _currentUserHasValidIgneous();
-    authService.recordAuthSuccess(
+    loadingLogin = true;
+    lastAuthMethod = AuthMethodKind.web;
+    lastVerifiedCf = verification.isComplete;
+    phase = LoginFlowPhase.authenticating;
+    _resetSteps();
+    stepStates[0] = LoginStepState.done;
+    stepMetas[0] = verification.isComplete ? 'CF ✓' : null;
+    stepStates[1] = LoginStepState.done;
+    update();
+
+    await _runExHandshakeAndProfileSync(
       memberId: memberId,
       method: AuthMethodKind.web,
-      hasExAccess: hasEx,
       verifiedCf: verification.isComplete,
+      alreadyHasExFromBrowser: verification.hasValidIgneous,
+      skipExNetworkBecauseBrowserTried: verification.exVisited,
       zh: zh,
+      closeOnComplete: !closeParentOnSuccess,
     );
-
-    asyncGetUserInfo(memberId: memberId, interactive: false)
-        .catchError((Object _) {});
-    Api.selEhProfile();
-
-    if (closeParentOnSuccess) {
-      phase = hasEx ? LoginFlowPhase.success : LoginFlowPhase.exDenied;
-      update();
-    }
   }
 
   /// [interactive] 为 false 时失败只抛出，不弹提示也不引导验证

@@ -655,14 +655,34 @@ class AuthStrings {
   String get verifyBrowserTitle => zh ? '安全验证' : 'Security Check';
   String get trackStepVerify => zh ? '完成验证' : 'Complete check';
   String get trackStepAutoLogin => zh ? '自动登录' : 'Auto sign-in';
+  String get trackStepForumSignIn => zh ? '登录论坛' : 'Forum sign-in';
+  String get trackStepSyncEx => zh ? '获取里站权限' : 'EX access';
+  String get trackStepRefreshAccess => zh ? '刷新权限' : 'Refresh access';
   String get trackStepReturn => zh ? '返回' : 'Return';
+  String get trackStepFinishReturn => zh ? '完成返回' : 'Done';
+  String get trackStepCloseWindow => zh ? '关闭窗口' : 'Close';
   String get dockHintVerify => zh
       ? '点一下页面中的验证框；通过后会自动提交账号并返回，无需手动点完成。'
       : 'Complete the checkbox above; sign-in and return happen automatically.';
+  String get dockHintAutoLoginStep2 => zh
+      ? '验证已通过，正在自动提交账号并同步里站权限…'
+      : 'Verification passed. Signing in and syncing EX access…';
+  String get dockHintWebLoginStep1 => zh
+      ? '请在页面中登录 E-Hentai 论坛（若出现人机验证请先勾选）；登录成功后将自动同步里站权限并返回。'
+      : 'Sign in on the forum page above (complete any check if prompted); EX access will sync and return automatically.';
+  String get dockHintWebLoginStep2 => zh
+      ? '已检测到论坛登录态，正在自动同步里站 EX 访问权限…'
+      : 'Forum sign-in detected. Syncing EX inner-site access…';
   String get dockHintCfOnly => zh
       ? '完成人机验证后将自动保存验证凭据并返回。'
       : 'Once verified, clearance cookies are saved automatically.';
   String get troubleLink => zh ? '一直过不去？' : 'Stuck on verification?';
+  String get webLoginTroubleLink =>
+      zh ? '登录遇到问题？' : 'Trouble signing in?';
+  String get webLoginCookieCleanupFailed => zh
+      ? '无法清理旧登录状态，网页登录页面尚未打开。请重试。'
+      : 'Could not clear the previous sign-in, so the page was not opened. Please retry.';
+  String get retryCookieCleanup => zh ? '重试清理' : 'Retry cleanup';
   String get clearWebDataAndReload => zh ? '清除站点数据并刷新' : 'Clear site data & reload';
 
   String welcomeUser(String name) => zh ? '欢迎，$name' : 'Welcome, $name';
