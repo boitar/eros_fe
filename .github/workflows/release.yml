@@ -202,6 +202,7 @@ jobs:
           POD_GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          flutter precache --${{ matrix.target }}
           cd "${{ matrix.target }}"
           attempt=1
           while [ "$attempt" -le 3 ]; do
@@ -264,7 +265,7 @@ jobs:
             # Daily push preview: fast arm64-v8a debug-signed APK ready for direct install.
             ANDROID_ONLY_ARM64=true flutter build apk --release --target-platform android-arm64 --no-pub
             shopt -s nullglob
-            apks=(build/app/outputs/apk/release/*arm64-v8a*-release.apk)
+            apks=(build/app/outputs/apk/release/*-release.apk)
             if [ ${#apks[@]} -ne 1 ]; then
               echo "Expected 1 arm64-v8a APK, found ${#apks[@]}:" >&2
               ls -la build/app/outputs/apk/release/ >&2

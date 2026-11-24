@@ -79,6 +79,7 @@ jobs:
           POD_GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          flutter precache --ios
           cd ios
           attempt=1
           while [ "$attempt" -le 3 ]; do

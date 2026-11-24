@@ -58,15 +58,11 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         archivesBaseName = "Eros-FE_$versionName+$versionCode"
-        splits {
-            abi {
-                enable true
-                reset()
-                if (System.getenv("ANDROID_ONLY_ARM64") == "true") {
-                    universalApk false
-                    //noinspection ChromeOsAbiSupport
-                    include "arm64-v8a"
-                } else {
+        if (System.getenv("ANDROID_ONLY_ARM64") != "true") {
+            splits {
+                abi {
+                    enable true
+                    reset()
                     universalApk true
                     //noinspection ChromeOsAbiSupport
                     include "armeabi-v7a", "arm64-v8a", "x86_64"
