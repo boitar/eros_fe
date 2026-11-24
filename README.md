@@ -5,9 +5,9 @@ An unofficial E-Hentai app built with Flutter. This repository is a personal for
 [erosTeam/eros_fe](https://github.com/erosTeam/eros_fe). The `custom` branch redesigns the main
 screens with Liquid Glass navigation and fixes downloads, favorites, sharing, history, avatars,
 haptics and Cloudflare verification. It started on iOS/iPadOS and iPhone Duo; **the new UI now also
-supports Android and desktop (macOS)**. A Windows build is in progress and will follow in a few days.
+supports Android and desktop (macOS and Windows)**.
 
-The current version is `1.11.0+569`. The iOS Bundle ID is `cn.honjow.fehv`.
+The current version is `1.11.1+570`. The iOS Bundle ID is `cn.honjow.fehv`.
 
 ## Screenshots
 
@@ -92,6 +92,14 @@ The native vertical bars sit on the right edge.
   shell and the older glass top bar (one hidden tab opens directly; several open a picker).
 
 ## Changelog
+
+### 2026-11-24: v1.11.1, web sign-in reliability
+
+Tag: `v1.11.1` ([release](https://github.com/boitar/eros_fe/releases/tag/v1.11.1)).
+
+- Wait for stale sign-in cookies to be cleared before loading the sign-in page. If cleanup fails, show a retry instead of opening the page with stale state.
+- Let users retry when opening a verification window fails, and release the busy state when retrying Ex access ends.
+- Distinguish web sign-in from security verification, and fix WebView layout and controls across platforms ([#7](https://github.com/boitar/eros_fe/pull/7)).
 
 ### 2026-11-24: v1.11.0, cross-platform login, sidebar and settings redesign
 

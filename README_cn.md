@@ -3,9 +3,9 @@
 
 一个使用 Flutter 编写的非官方 E-Hentai 客户端。本仓库是 [erosTeam/eros_fe](https://github.com/erosTeam/eros_fe)
 的个人 fork，`custom` 分支重做主要界面并接入液态玻璃导航，修复下载、收藏、分享、历史、头像、触感与 Cloudflare 验证等问题。
-最初面向 iOS／iPadOS 与 iPhone Duo，**新版 UI 现已支持 Android 与桌面端（macOS）**；Windows 版正在打包，预计过几天发布。
+最初面向 iOS／iPadOS 与 iPhone Duo，**新版 UI 现已支持 Android 与桌面端（macOS 和 Windows）**。
 
-当前版本 `1.11.0+569`，iOS Bundle ID 为 `cn.honjow.fehv`。
+当前版本 `1.11.1+570`，iOS Bundle ID 为 `cn.honjow.fehv`。
 
 ## 应用截图
 
@@ -64,6 +64,14 @@
 - 隐藏栏目入口：底栏隐藏的栏目在 iOS 27.1 原生导航与旧版玻璃顶栏中都按实际设置显示入口（1 项直接打开，多项弹出选择面板）。
 
 ## 更新记录
+
+### 2026-11-24：v1.11.1，网页登录修复
+
+Tag：`v1.11.1`（[Release](https://github.com/boitar/eros_fe/releases/tag/v1.11.1)）。
+
+- 清理完旧登录 Cookie 再打开登录页；清理失败时显示重试，避免用旧登录状态继续加载。
+- 验证窗口打开失败后可重新点击，里站访问重试结束后也会恢复按钮状态。
+- 区分「网页登录」与「安全验证」，修正跨平台内置浏览器的布局和交互（[#7](https://github.com/boitar/eros_fe/pull/7)）。
 
 ### 2026-11-24：v1.11.0，跨平台登录、侧栏与设置界面重设计
 
