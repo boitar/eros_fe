@@ -1,133 +1,99 @@
-name: Build Release
+name: Build & Release
 
 on:
   push:
     branches:
-      - 'master'
+      - 'custom'
     tags:
-      - v*
+      - 'v*'
       - '!v*ios'
       - '!v*apk'
       - '!v*mac'
       - '!v*win'
       - '!v*.bot'
       - '!v*.linux'
+  workflow_dispatch:
+    inputs:
+      android_all_abis:
+        description: 'Build all Android ABIs + universal APK (default: arm64-v8a only)'
+        type: boolean
+        default: false
+
+permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 env:
   PACKAGE_NAME: Eros-FE
+  FLUTTER_VERSION: '3.47.1'
+  FLUTTER_CHANNEL: 'stable'
+  # flutter/flutter#191575: windowing _Rect crashes during macOS AOT on 3.47.1.
+  # Return to the shared stable version once verified with a stable release that includes the fix.
+  MACOS_FLUTTER_COMMIT: 'a1a503eac850e6e3218c200a5eafc3d26ef4ed6f'
+  XCODE_PATH: /Applications/Xcode_27.1.app
 
 jobs:
-  Build_and_upload:
-    name: Build releases
+  Build:
+    name: Build (${{ matrix.target }})
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
-        target: ["android", "ios", "macos", "windows"]
-        flutter_version: ["3.47.1"]
-        flutter_channel: ["stable"]
         include:
           - target: android
             os: ubuntu-latest
-            artifact_name: release-apk
-            artifact_path: build/app/outputs/apk/release/Eros-FE*.apk
           - target: ios
             os: xcode-27
-            artifact_name: release-ios
-            artifact_path: build/**/Eros-FE*.ipa
           - target: macos
-            os: macos-15
-            artifact_name: release-mac
-            artifact_path: build/macos/Eros-FE*.zip
+            os: xcode-27
           - target: windows
             os: windows-2022
-            artifact_name: release-windows
-            artifact_path: build/windows/Eros-FE*.zip
-
     runs-on: ${{ matrix.os }}
-    env:
-      GIT_CRYPT_KEY: ${{ secrets.ENCODED_GIT_CRYPT }}
-      ENCODED_KEYSTORE: ${{ secrets.ENCODED_KEYSTORE }}
-    outputs:
-      publish_release: ${{ steps.release_policy.outputs.enabled }}
+    timeout-minutes: 90
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: 'recursive'
 
-      # Get app version
-      - name: Get app version
-        id: get_version
+      - name: Resolve build metadata
         shell: bash
         run: |
-          app_version=$(head -n 5 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2)
-          echo "app_version=${app_version}" >> $GITHUB_ENV
+          set -euo pipefail
+          app_version=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}' | tr -d '\r')
+          if [ -z "$app_version" ]; then
+            echo "Failed to read version from pubspec.yaml" >&2
+            exit 1
+          fi
+          is_tag_release="false"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            is_tag_release="true"
+          fi
+          android_only_arm64="true"
+          if [ "$is_tag_release" = "true" ] || [ "${{ inputs.android_all_abis }}" = "true" ]; then
+            android_only_arm64="false"
+          fi
+          build_date=$(TZ=Asia/Shanghai date +%Y%m%d)
+          short_sha="${GITHUB_SHA::9}"
+          {
+            echo "app_version=${app_version}"
+            echo "is_tag_release=${is_tag_release}"
+            echo "android_only_arm64=${android_only_arm64}"
+            echo "build_date=${build_date}"
+            echo "short_sha=${short_sha}"
+          } >> "$GITHUB_ENV"
+          echo "Version: ${app_version} | Tag release: ${is_tag_release} | Android arm64-only: ${android_only_arm64}"
 
-      - name: show version
-        run: echo ${{ env.app_version }}
-
-      - name: Release publishing policy
-        id: release_policy
-        shell: bash
-        run: echo "enabled=${{ env.GIT_CRYPT_KEY != '' && env.ENCODED_KEYSTORE != '' }}" >> "$GITHUB_OUTPUT"
-
-#      - name: Cache Pods (build macos)
-#        uses: actions/cache@v3
-#        if: matrix.target == 'macos'
-#        with:
-#          path: |
-#            macos/Pods
-#          key: ${{ runner.os }}-pods-${{ hashFiles('macos/Podfile.lock') }}
-#          restore-keys: |
-#            ${{ runner.os }}-pods-
-
-#      - name: Cache Pods (build ios)
-#        uses: actions/cache@v3
-#        if: matrix.target == 'ios'
-#        with:
-#          path: |
-#            ios/Pods
-#          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
-#          restore-keys: |
-#            ${{ runner.os }}-pods-
-
-      # git-crypt unlock
-      - name: Unlock secrets (MacOS)
-        if: runner.os == 'macOS' && env.GIT_CRYPT_KEY != ''
-        run: |
-          brew install git-crypt
-          echo $GIT_CRYPT_KEY | base64 -d -o grypt.key
-          git-crypt unlock grypt.key
-        env:
-          GIT_CRYPT_KEY: ${{ secrets.ENCODED_GIT_CRYPT }}
-
-      - name: Unlock secrets (Linux)
-        if: runner.os == 'Linux' && env.GIT_CRYPT_KEY != ''
-        uses: sliteteam/github-action-git-crypt-unlock@1.3.0
-        env:
-          GIT_CRYPT_KEY: ${{ secrets.ENCODED_GIT_CRYPT }}
-
-      - name: Unlock secrets (Windows)
-        if: runner.os == 'Windows' && env.GIT_CRYPT_KEY != ''
-        run: |
-          Invoke-WebRequest -Uri https://github.com/AGWA/git-crypt/releases/download/0.7.0/git-crypt-0.7.0-x86_64.exe -OutFile git-crypt.exe
-          echo "${{ secrets.ENCODED_GIT_CRYPT }}" | openssl base64 -d -out git-crypt.key
-          .\git-crypt.exe unlock .\git-crypt.key
-
-      - name: Use sample FeConfig (no git-crypt key)
-        if: env.GIT_CRYPT_KEY == ''
-        shell: bash
-        run: cp lib/config/config.dart.sample lib/config/config.dart
-
-      - name: Use placeholder Android Firebase config
-        if: matrix.target == 'android' && env.GIT_CRYPT_KEY == ''
+      - name: Prepare secretless fork config
         shell: bash
         run: |
-          python3 - <<'PY'
+          set -euo pipefail
+          cp lib/config/config.dart.sample lib/config/config.dart
+          if [ "${{ matrix.target }}" = "android" ]; then
+            python3 - <<'PY'
           import json
           from pathlib import Path
           config = {
@@ -143,266 +109,499 @@ jobs:
           }
           Path("android/app/google-services.json").write_text(json.dumps(config))
           PY
+          fi
+          if [ "${{ matrix.target }}" = "ios" ] || [ "${{ matrix.target }}" = "macos" ]; then
+            echo "FLUTTER_XCODE_EXCLUDED_SOURCE_FILE_NAMES=GoogleService-Info.plist" >> "$GITHUB_ENV"
+          fi
 
-      - name: Exclude encrypted Apple Firebase config
-        if: (matrix.target == 'ios' || matrix.target == 'macos') && env.GIT_CRYPT_KEY == ''
-        run: echo "FLUTTER_XCODE_EXCLUDED_SOURCE_FILE_NAMES=GoogleService-Info.plist" >> "$GITHUB_ENV"
-
-      - name: Select Xcode (iOS)
-        if: matrix.target == 'ios'
-        run: |
-          sudo xcode-select -s /Applications/Xcode_27.1.app
-          xcodebuild -version
-
-      - name: Decode keystore
-        if: matrix.target == 'android' && env.ENCODED_KEYSTORE != ''
-        run: |
-          echo $ENCODED_KEYSTORE | base64 -di > android/app/keystore.jks
-        env:
-          ENCODED_KEYSTORE: ${{ secrets.ENCODED_KEYSTORE }}
-
-      - name: Validate Android signing inputs
-        if: matrix.target == 'android' && env.ENCODED_KEYSTORE != ''
+      - name: Select Xcode (Apple targets)
+        if: matrix.target == 'ios' || matrix.target == 'macos'
         shell: bash
         run: |
-          test -s android/app/keystore.jks
-          test -n "$KEYSTORE_PASSWORD"
-          test -n "$KEY_ALIAS"
-          test -n "$KEY_PASSWORD"
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          set -euo pipefail
+          sudo xcode-select -s "$XCODE_PATH"
+          xcodebuild -version
 
-      # 安装 JDK
       - name: Setup Java JDK (Android)
         if: matrix.target == 'android'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: 'zulu'
           java-version: '17'
-#          cache: gradle
 
-      # 安装 Flutter
-      - name: Flutter action
+      - name: Setup Flutter (Android / iOS / Windows)
         if: matrix.target != 'macos'
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: ${{ matrix.flutter_version }}
-          channel: ${{ matrix.flutter_channel }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          architecture: ${{ runner.arch == 'ARM64' && 'arm64' || 'x64' }}
+          cache: true
 
-      # flutter/flutter#191575: windowing _Rect crashes during macOS AOT on 3.47.1.
-      # Return to the shared stable version once a stable release includes the fix.
-      - name: Install pinned Flutter for macOS
+      - name: Cache pinned Flutter SDK (macOS)
+        if: matrix.target == 'macos'
+        id: cache_macos_flutter
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/flutter-sdk-macos
+          key: macos-flutter-sdk-${{ runner.arch }}-${{ env.MACOS_FLUTTER_COMMIT }}
+
+      - name: Install pinned Flutter SDK (macOS)
         if: matrix.target == 'macos'
         shell: bash
         run: |
           set -euo pipefail
-          sdk_dir="$RUNNER_TEMP/flutter-sdk"
-          git init "$sdk_dir"
-          git -C "$sdk_dir" remote add origin https://github.com/flutter/flutter.git
-          git -C "$sdk_dir" fetch --depth=1 origin a1a503eac850e6e3218c200a5eafc3d26ef4ed6f
-          git -C "$sdk_dir" checkout --detach FETCH_HEAD
+          sdk_dir="$RUNNER_TEMP/flutter-sdk-macos"
+          if [ ! -x "$sdk_dir/bin/flutter" ]; then
+            rm -rf "$sdk_dir"
+            git init "$sdk_dir"
+            git -C "$sdk_dir" remote add origin https://github.com/flutter/flutter.git
+            git -C "$sdk_dir" fetch --depth=1 origin "$MACOS_FLUTTER_COMMIT"
+            git -C "$sdk_dir" checkout --detach FETCH_HEAD
+          fi
+          # Shallow detached clone has no tags, which makes Flutter report 0.0.0-unknown
+          # and fail pubspec.yaml's `flutter: '>=3.47.0'` check. Tag HEAD locally to match.
+          git -C "$sdk_dir" tag -f 3.51.0 HEAD
+          rm -f "$sdk_dir/bin/cache/flutter.version.json"
           echo "$sdk_dir/bin" >> "$GITHUB_PATH"
 
-      - name: Flutter version
-        run: flutter --version
-
-      - name: Disable Swift Package Manager
-        if: matrix.target == 'ios' || matrix.target == 'macos'
-        run: flutter config --no-enable-swift-package-manager
-
-      - name: Build resolve Swift dependencies
-        if: matrix.target == 'macos'
-        run: xcodebuild -resolvePackageDependencies -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release
-
-#      - name: replace cronet_http
-#        if: matrix.target == 'macos'
-#        shell: bash
-#        run: |
-#          brew install gnu-sed
-#          export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
-#          which sed
-#          which gsed
-#          gsed -i "s,#cronet_http: ^0.2.1,cronet_http: ^0.2.1,g" pubspec.yaml
-#          grep cronet_http pubspec.yaml
-#          git stash
-
-      - name: ios disable impeller
-        if: matrix.target == 'ios' && matrix.suffix == '-canvas'
+      - name: Configure Flutter
+        shell: bash
         run: |
-          sed -i '' '/FLTEnableImpeller/{n; s/true/false/;}' ios/Runner/Info.plist
-
-      # - name: ios update dependencies
-      #   if: matrix.target == 'ios'
-      #   run: |
-      #     sed -i '' 's/flutter_inappwebview: .*/flutter_inappwebview: ^6.1.5/' pubspec.yaml
+          set -euo pipefail
+          flutter --version
+          if [ "${{ matrix.target }}" = "ios" ] || [ "${{ matrix.target }}" = "macos" ]; then
+            flutter config --no-enable-swift-package-manager
+          fi
 
       - name: Flutter pub get
+        shell: bash
         run: |
+          set -euo pipefail
           git config --global core.longpaths true
-          flutter pub get
+          flutter pub get --enforce-lockfile
 
-      - name: Test download paths
+      - name: Run unit test (Linux)
+        if: matrix.target == 'android'
+        shell: bash
         run: flutter test --no-pub test/download_file_path_test.dart
+
+      - name: Cache CocoaPods (Apple targets)
+        if: matrix.target == 'ios' || matrix.target == 'macos'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: cocoapods-${{ matrix.target }}-${{ matrix.target == 'ios' && hashFiles('ios/Podfile.lock') || hashFiles('macos/Podfile.lock') }}
+          restore-keys: |
+            cocoapods-${{ matrix.target }}-
+
+      - name: Pod install (Apple targets)
+        if: matrix.target == 'ios' || matrix.target == 'macos'
+        shell: bash
+        env:
+          POD_GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd "${{ matrix.target }}"
+          attempt=1
+          while [ "$attempt" -le 3 ]; do
+            # Pass read-only token via per-command env only (never written to ~/.gitconfig)
+            if GIT_TERMINAL_PROMPT=0 \
+               GIT_CONFIG_COUNT=1 \
+               GIT_CONFIG_KEY_0="url.https://x-access-token:${POD_GH_TOKEN}@github.com/.insteadOf" \
+               GIT_CONFIG_VALUE_0="https://github.com/" \
+               pod install; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "pod install failed after 3 attempts" >&2
+              exit 1
+            fi
+            sleep_sec=$((attempt * 15))
+            echo "pod install failed (attempt ${attempt}/3), retrying in ${sleep_sec}s..."
+            sleep "$sleep_sec"
+            attempt=$((attempt + 1))
+          done
 
       - name: Fix system_network_proxy Windows registrant
         if: matrix.target == 'windows'
         shell: bash
         run: |
-          if [ "${{ matrix.target }}" = "windows" ]; then
-            sed -i.bak 's|#include <system_network_proxy_windows/none.h>|#include <system_network_proxy_windows/system_network_proxy_windows_plugin.h>|' windows/flutter/generated_plugin_registrant.cc
-            sed -i.bak 's/noneRegisterWithRegistrar/SystemNetworkProxyWindowsPluginRegisterWithRegistrar/' windows/flutter/generated_plugin_registrant.cc
-            sed -i.bak 's/GetRegistrarForPlugin("none")/GetRegistrarForPlugin("SystemNetworkProxyWindowsPlugin")/' windows/flutter/generated_plugin_registrant.cc
+          set -euo pipefail
+          reg="windows/flutter/generated_plugin_registrant.cc"
+          if grep -q 'system_network_proxy_windows/none.h' "$reg"; then
+            sed -i.bak 's|#include <system_network_proxy_windows/none.h>|#include <system_network_proxy_windows/system_network_proxy_windows_plugin.h>|' "$reg"
+            sed -i.bak 's/noneRegisterWithRegistrar/SystemNetworkProxyWindowsPluginRegisterWithRegistrar/' "$reg"
+            sed -i.bak 's/GetRegistrarForPlugin("none")/GetRegistrarForPlugin("SystemNetworkProxyWindowsPlugin")/' "$reg"
+            rm -f "${reg}.bak"
           fi
 
-      # 打包 apk
-      - name: Collect Apks
-        if: matrix.target == 'android'
-        run: flutter build apk --release --no-pub
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD}}
-
-      - name: Verify signed APKs
+      # ---------- Android ----------
+      - name: Build Android APK(s)
         if: matrix.target == 'android'
         shell: bash
         run: |
+          set -euo pipefail
+          out_dir="build/ci-output"
+          mkdir -p "$out_dir"
+          build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
+
+          if [ "$is_tag_release" = "true" ]; then
+            # Tag release: build unsigned APKs here (zero secrets in build job);
+            # isolated Sign_and_publish job handles 16KB alignment + release signing.
+            ANDROID_UNSIGNED_RELEASE=true flutter build apk --release --no-pub
+            shopt -s nullglob
+            apks=(build/app/outputs/apk/release/*-release-unsigned.apk)
+            if [ ${#apks[@]} -ne 4 ]; then
+              echo "Expected 4 unsigned release APKs, found ${#apks[@]}:" >&2
+              ls -la build/app/outputs/apk/release/ >&2
+              exit 1
+            fi
+            for apk in "${apks[@]}"; do
+              cp "$apk" "$out_dir/"
+            done
+          elif [ "$android_only_arm64" = "true" ]; then
+            # Daily push preview: fast arm64-v8a debug-signed APK ready for direct install.
+            ANDROID_ONLY_ARM64=true flutter build apk --release --target-platform android-arm64 --no-pub
+            shopt -s nullglob
+            apks=(build/app/outputs/apk/release/*arm64-v8a*-release.apk)
+            if [ ${#apks[@]} -ne 1 ]; then
+              echo "Expected 1 arm64-v8a APK, found ${#apks[@]}:" >&2
+              ls -la build/app/outputs/apk/release/ >&2
+              exit 1
+            fi
+            "$build_tools/apksigner" verify --verbose "${apks[0]}"
+            target_name="${PACKAGE_NAME}_${app_version}-android-arm64-v8a-debug_${build_date}_ci${GITHUB_RUN_NUMBER}.apk"
+            cp "${apks[0]}" "${out_dir}/${target_name}"
+          else
+            # Manual workflow_dispatch with all ABIs (non-tag): debug-signed all 4 APKs.
+            flutter build apk --release --no-pub
+            shopt -s nullglob
+            apks=(build/app/outputs/apk/release/*-release.apk)
+            if [ ${#apks[@]} -ne 4 ]; then
+              echo "Expected 4 release APKs, found ${#apks[@]}:" >&2
+              ls -la build/app/outputs/apk/release/ >&2
+              exit 1
+            fi
+            for apk in "${apks[@]}"; do
+              "$build_tools/apksigner" verify --verbose "$apk"
+              base="$(basename "$apk")"
+              cp "$apk" "${out_dir}/${base%.apk}_${build_date}_ci${GITHUB_RUN_NUMBER}.apk"
+            done
+          fi
+          ls -lh "$out_dir"
+
+      # ---------- iOS ----------
+      - name: Build iOS unsigned IPA
+        if: matrix.target == 'ios'
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build ios --release --no-codesign --no-pub
+          app_src=$(ls -d build/ios/iphoneos/*.app)
+          rm -f "$app_src/GoogleService-Info.plist" "$app_src/embedded.mobileprovision"
+          sh scripts/thin-payload.sh "$app_src"
+
+          out_dir="build/ci-output"
+          mkdir -p "$out_dir"
+          if [ "$is_tag_release" = "true" ]; then
+            ipa_name="${PACKAGE_NAME}_${app_version}-unsigned.ipa"
+          else
+            ipa_name="${PACKAGE_NAME}_${app_version}-unsigned_${build_date}_ci${GITHUB_RUN_NUMBER}.ipa"
+          fi
+
+          rm -rf build/Payload
+          mkdir -p build/Payload
+          ditto "$app_src" "build/Payload/$(basename "$app_src")"
+          (
+            cd build
+            zip -qry9 "ci-output/${ipa_name}" Payload
+          )
+
+          app_dir=$(ls -d build/Payload/*.app)
+          bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_dir/Info.plist")
+          echo "iOS App: $app_dir | Bundle ID: $bundle_id"
+          test "$bundle_id" = "cn.honjow.fehv"
+          test ! -e "$app_dir/GoogleService-Info.plist"
+          test ! -e "$app_dir/embedded.mobileprovision"
+          ipa_size=$(stat -f%z "${out_dir}/${ipa_name}")
+          if [ "$ipa_size" -lt 10000000 ]; then
+            echo "IPA too small: ${ipa_size} bytes" >&2
+            exit 1
+          fi
+          unzip -tq "${out_dir}/${ipa_name}"
+          ls -lh "${out_dir}/${ipa_name}"
+
+      # ---------- macOS ----------
+      - name: Build macOS ad-hoc DMG
+        if: matrix.target == 'macos'
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build macos --release --no-pub
+          app_src="build/macos/Build/Products/Release/fehviewer.app"
+          test -d "$app_src"
+
+          staging="build/macos/dmg_staging"
+          rm -rf "$staging"
+          mkdir -p "$staging"
+          app_dst="${staging}/fehviewer.app"
+          ditto "$app_src" "$app_dst"
+
+          # Ensure encrypted GoogleService-Info.plist is never bundled
+          rm -f "$app_dst/Contents/Resources/GoogleService-Info.plist"
+          test -f "$app_dst/Contents/Resources/AppIcon.icns"
+          test -f "$app_dst/Contents/Resources/Assets.car"
+
+          # Ad-hoc sign nested Mach-O binaries/frameworks first, then main bundle with entitlements
+          if [ -d "$app_dst/Contents/Frameworks" ]; then
+            while IFS= read -r f; do
+              if file -b "$f" | grep -q "Mach-O"; then
+                codesign --force --sign - "$f"
+              fi
+            done < <(find "$app_dst/Contents/Frameworks" -type f)
+            while IFS= read -r fw; do
+              codesign --force --sign - "$fw"
+            done < <(find "$app_dst/Contents/Frameworks" -maxdepth 2 -name "*.framework" -type d)
+          fi
+          codesign --force --sign - --entitlements macos/Runner/Release.entitlements "$app_dst"
+          codesign --verify --deep --strict --verbose=2 "$app_dst"
+
+          ln -s /Applications "${staging}/Applications"
+
+          out_dir="build/ci-output"
+          mkdir -p "$out_dir"
+          if [ "$is_tag_release" = "true" ]; then
+            dmg_name="${PACKAGE_NAME}_${app_version}-macos-adhoc.dmg"
+          else
+            dmg_name="${PACKAGE_NAME}_${app_version}-macos-adhoc_${build_date}_ci${GITHUB_RUN_NUMBER}.dmg"
+          fi
+          dmg_path="${out_dir}/${dmg_name}"
+          rm -f "$dmg_path"
+          hdiutil create -volname "Eros-FE" -srcfolder "$staging" -ov -format UDZO "$dmg_path"
+          hdiutil verify "$dmg_path"
+          ls -lh "$dmg_path"
+
+      # ---------- Windows ----------
+      - name: Build Windows portable ZIP
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          flutter build windows --release --no-pub
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $srcDir = "build\windows\x64\runner\Release"
+          $destDir = "build\windows\$($env:PACKAGE_NAME)"
+          $outDir = "build\ci-output"
+          if (Test-Path $destDir) { Remove-Item -Recurse -Force $destDir }
+          New-Item -Path $destDir -ItemType Directory -Force | Out-Null
+          New-Item -Path $outDir -ItemType Directory -Force | Out-Null
+
+          Copy-Item "$srcDir\*" -Destination $destDir -Recurse -Force
+          Copy-Item -Filter "*.dll" -Path "windows\*" -Destination $destDir -Force
+
+          # Bundle MSVC CRT DLLs when present on runner so portable ZIP runs on clean Windows hosts
+          $vcRedistRoots = @(
+            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC",
+            "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC"
+          )
+          foreach ($root in $vcRedistRoots) {
+            if (Test-Path $root) {
+              $crtDir = Get-ChildItem -Path $root -Directory |
+                Sort-Object Name -Descending |
+                ForEach-Object { Join-Path $_.FullName "x64\Microsoft.VC143.CRT" } |
+                Where-Object { Test-Path $_ } |
+                Select-Object -First 1
+              if ($crtDir) {
+                foreach ($dll in @("vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll")) {
+                  $dllPath = Join-Path $crtDir $dll
+                  if (Test-Path $dllPath) {
+                    Copy-Item $dllPath -Destination $destDir -Force
+                  }
+                }
+                break
+              }
+            }
+          }
+
+          if (-not (Test-Path (Join-Path $destDir "fehviewer.exe"))) {
+            throw "fehviewer.exe missing from staging directory"
+          }
+          if (-not (Test-Path (Join-Path $destDir "sqlite3.dll"))) {
+            throw "sqlite3.dll missing from staging directory"
+          }
+
+          if ($env:is_tag_release -eq "true") {
+            $zipName = "$($env:PACKAGE_NAME)_$($env:app_version)-windows-x64-portable.zip"
+          } else {
+            $zipName = "$($env:PACKAGE_NAME)_$($env:app_version)-windows-x64-portable_$($env:build_date)_ci$($env:GITHUB_RUN_NUMBER).zip"
+          }
+          $zipPath = Join-Path $outDir $zipName
+          Compress-Archive -Path $destDir -DestinationPath $zipPath -Force
+          Get-Item $zipPath | Select-Object Name, Length
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.is_tag_release == 'true' && format('release-{0}', matrix.target) || format('preview-{0}-ci{1}', matrix.target, github.run_number) }}
+          path: build/ci-output/*
+          if-no-files-found: error
+          retention-days: ${{ env.is_tag_release == 'true' && 7 || 14 }}
+          compression-level: 0
+
+  Sign_and_publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    name: Sign Android & Publish Release
+    needs: Build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout (shallow, for pubspec/changelog only)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Java JDK (for apksigner)
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: /tmp/release-artifacts
+
+      - name: Sign & 16KB-align Android APKs (isolated from build tools)
+        shell: bash
+        env:
+          ENCODED_KEYSTORE: ${{ secrets.ENCODED_KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for var in ENCODED_KEYSTORE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!var:-}" ]; then
+              echo "Missing required release environment secret: ${var}" >&2
+              exit 1
+            fi
+          done
+
+          app_version=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}' | tr -d '\r')
+          echo "app_version=${app_version}" >> "$GITHUB_ENV"
+
+          build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
+          ks_file="$(mktemp /tmp/android-signing-XXXXXX.p12)"
+          chmod 600 "$ks_file"
+          cleanup() {
+            if [ -f "$ks_file" ]; then
+              shred -u "$ks_file" 2>/dev/null || rm -f "$ks_file"
+            fi
+          }
+          trap cleanup EXIT
+
+          printf '%s' "$ENCODED_KEYSTORE" | base64 -d > "$ks_file"
+          test -s "$ks_file"
+
+          stage_dir="/tmp/release-final"
+          mkdir -p "$stage_dir"
+
           shopt -s nullglob
-          apks=(build/app/outputs/apk/release/*-release.apk)
-          if [ ${#apks[@]} -eq 0 ]; then
-            echo "No signed release APKs found"
+          unsigned_apks=(/tmp/release-artifacts/release-android/*-release-unsigned.apk)
+          if [ ${#unsigned_apks[@]} -ne 4 ]; then
+            echo "Expected 4 unsigned APKs, found ${#unsigned_apks[@]}" >&2
+            ls -la /tmp/release-artifacts/release-android/ >&2
             exit 1
           fi
 
-          build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
-          for apk in "${apks[@]}"; do
-            "$build_tools/apksigner" verify --verbose "$apk"
+          for unsigned_apk in "${unsigned_apks[@]}"; do
+            base="$(basename "$unsigned_apk")"
+            case "$base" in
+              *-arm64-v8a-release-unsigned.apk)   abi="arm64-v8a" ;;
+              *-armeabi-v7a-release-unsigned.apk) abi="armeabi-v7a" ;;
+              *-x86_64-release-unsigned.apk)      abi="x86_64" ;;
+              *-universal-release-unsigned.apk)   abi="universal" ;;
+              *)
+                echo "Unexpected APK filename: $base" >&2
+                exit 1
+                ;;
+            esac
+            aligned_apk="/tmp/${abi}-aligned.apk"
+            signed_apk="${stage_dir}/${PACKAGE_NAME}_${app_version}-android-${abi}-signed.apk"
+
+            "$build_tools/zipalign" -P 16 -f 4 "$unsigned_apk" "$aligned_apk"
+            "$build_tools/apksigner" sign \
+              --ks "$ks_file" \
+              --ks-key-alias "$KEY_ALIAS" \
+              --ks-pass env:KEYSTORE_PASSWORD \
+              --key-pass env:KEY_PASSWORD \
+              --out "$signed_apk" \
+              "$aligned_apk"
+            rm -f "$aligned_apk"
+
+            "$build_tools/zipalign" -c -P 16 4 "$signed_apk"
+            "$build_tools/apksigner" verify --verbose --print-certs "$signed_apk"
           done
 
-      - name: Remove unsigned APKs
-        if: matrix.target == 'android'
-        run: rm -f build/app/outputs/apk/release/*-unsigned.apk
+          # Copy iOS, macOS, and Windows release artifacts into final staging directory
+          cp /tmp/release-artifacts/release-ios/*.ipa "$stage_dir/"
+          cp /tmp/release-artifacts/release-macos/*.dmg "$stage_dir/"
+          cp /tmp/release-artifacts/release-windows/*.zip "$stage_dir/"
 
-      # 打包 ipa
-      - name: Build ios app
-        if: matrix.target == 'ios'
-        run: |
-          sed -i '' 's/dev2.cn.honjow.fehv/cn.honjow.fehv/g' 'ios/Runner.xcodeproj/project.pbxproj'
-          rm ios/Podfile.lock
-          cd ios && pod update && pod install --repo-update && cd ..
-          flutter build ios --release --no-codesign --no-pub
+          # Generate SHA-256 checksums for all release assets
+          (
+            cd "$stage_dir"
+            sha256sum *.apk *.ipa *.dmg *.zip > SHA256SUMS.txt
+            cat SHA256SUMS.txt
+          )
+          ls -lh "$stage_dir"
 
-      # - name: upload-symbols
-      #   if: matrix.target == 'ios'
-      #   run: find build/ios/Release-iphoneos -name "*.dSYM" | xargs -I \{\} ios/Pods/FirebaseCrashlytics/upload-symbols -gsp ios/Runner/GoogleService-Info.plist -p ios \{\}
-
-      - name: Thin app
-        if: matrix.target == 'ios'
-        run: sh scripts/thin-payload.sh build/ios/iphoneos/*.app
-
-      - name: Build ipa file
-        if: matrix.target == 'ios'
-        run: |
-          cd build
-          mkdir -p Payload
-          mv ios/iphoneos/*.app Payload
-          zip -9 ${{ env.PACKAGE_NAME }}${{ matrix.suffix }}_${{ env.app_version }}.ipa -r Payload
-
-      # 打包 mac
-      - name: Build mac app
-        if: matrix.target == 'macos'
-        run: |
-          cd macos && pod update && pod install && cd ..
-          flutter build macos --release --no-pub
-          APP_PATH=build/macos/Build/Products/Release/fehviewer.app
-          cp -a $APP_PATH ./build
-          cd build && zip -qroy macos/${{ env.PACKAGE_NAME }}_${{ env.app_version }}_macos.zip fehviewer.app
-
-      - name: Build windows
-        if: matrix.target == 'windows'
-        run: |
-          flutter build windows --release --no-pub
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $DestDir = "build\windows\${{ env.PACKAGE_NAME }}"
-          $SrcDir = "build\windows\x64\runner\Release"
-          New-Item -Path $DestDir -ItemType Directory
-          Copy-Item $SrcDir\* -Recurse $DestDir
-          Copy-Item -Filter *.dll -Path windows\* -Destination $DestDir -Force
-          Compress-Archive $DestDir build\windows\${{ env.PACKAGE_NAME }}_${{ env.app_version }}_windows.zip
-
-      - name: Publish Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_path }}
-          if-no-files-found: error
-
-  Publish_releases:
-    if: needs.Build_and_upload.outputs.publish_release == 'true' && startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta') && !contains(github.ref, 'alpha') && !contains(github.ref, 'rc')
-    name: Publish releases
-    needs: Build_and_upload
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - run: mkdir /tmp/artifacts
-      - name: Download all Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/artifacts
-
-      - run: ls -R /tmp/artifacts
-
-      # Get app version
-      - name: Get app version
-        id: get_version
+      - name: Create or update GitHub Release
         shell: bash
-        run: |
-          app_version=$(head -n 5 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2)
-          echo "app_version=${app_version}" >> $GITHUB_ENV
-
-      - name: Remove old unsigned APK assets
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
         run: |
-          tag="${{ github.ref_name }}"
-          if ! gh release view "$tag" >/dev/null 2>&1; then
-            exit 0
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          tag_lower="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
+          stage_dir="/tmp/release-final"
+
+          is_prerelease="false"
+          if [[ "$tag_lower" == *nightly* || "$tag_lower" == *pre* || "$tag_lower" == *beta* || "$tag_lower" == *alpha* || "$tag_lower" == *rc* ]]; then
+            is_prerelease="true"
           fi
 
-          assets="$(gh release view "$tag" --json assets --jq '.assets[].name' | grep -E -- '-release-unsigned\.apk$' || true)"
-          if [ -z "$assets" ]; then
-            exit 0
+          shopt -s nullglob
+          assets=("$stage_dir"/*.apk "$stage_dir"/*.ipa "$stage_dir"/*.dmg "$stage_dir"/*.zip "$stage_dir"/SHA256SUMS.txt)
+          if [ ${#assets[@]} -ne 8 ]; then
+            echo "Expected 8 release assets (4 APK + IPA + DMG + ZIP + SHA256SUMS), found ${#assets[@]}" >&2
+            printf '%s\n' "${assets[@]}" >&2
+            exit 1
           fi
 
-          while IFS= read -r asset; do
-            gh release delete-asset "$tag" "$asset" --yes
-          done <<< "$assets"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release ${tag} already exists; uploading/replacing assets only (preserving body)."
+            gh release upload "$tag" "${assets[@]}" --clobber
+          else
+            create_args=("$tag" "${assets[@]}" --title "$tag")
 
-      - name: Upload to release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "/tmp/artifacts/release-apk/*.apk,/tmp/artifacts/release-ios*/*.ipa,/tmp/artifacts/release-*/*.zip"
-          tag: ${{ github.ref_name }}
-          bodyFile: changelog/v${{ env.app_version }}.md
-          prerelease: contains(github.ref, 'pre')
-          allowUpdates: true
-          artifactErrorsFailBuild: true
-          replacesArtifacts: true
+            if [ -f "changelog/${tag}.md" ]; then
+              create_args+=(--notes-file "changelog/${tag}.md")
+            elif [ -f "changelog/v${app_version}.md" ]; then
+              create_args+=(--notes-file "changelog/v${app_version}.md")
+            else
+              create_args+=(--generate-notes)
+            fi
 
-#      - name: Post release notes
-#        run: |
-#          changelog=$(cat changelog/v${{ env.app_version }}.md)
-#          curl 'https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage' \
-#          --header 'Content-Type: application/x-www-form-urlencoded' \
-#          -d parse_mode=markdown \
-#          -d chat_id=${{ secrets.TELEGRAM_CHANNEL_ID }} \
-#          --data-urlencode text="[Eros-FE_${{ github.ref_name }}](https://github.com/honjow/FEhViewer/releases/tag/${{ github.ref_name }})
-#          $changelog" \
-#          -d disable_web_page_preview=true
+            if [ "$is_prerelease" = "true" ]; then
+              # Nightly / pre-release tags publish immediately as Pre-release (will not become Latest)
+              create_args+=(--prerelease)
+            else
+              # Stable tags create a Draft Release for final release-note review before clicking Publish
+              create_args+=(--draft)
+            fi
+
+            gh release create "${create_args[@]}"
+          fi

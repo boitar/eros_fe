@@ -1,31 +1,33 @@
-name: Custom iOS Unsigned IPA
+name: Custom iOS Unsigned IPA (Manual)
 
-# fork 专用：custom 分支推送或手动触发时构建无签名 IPA。
-# fork 没有 git-crypt 密钥，加密的 FeConfig 用 config.dart.sample 代替，与本地打包一致。
+# 手动单打 iOS 无签名 IPA 的快捷流水线。
+# 日常 custom 分支推送已统一由 release.yml（Build & Release）构建四端测试包（IPA + arm64-v8a APK + macOS DMG + Windows ZIP），
+# 这里保留 workflow_dispatch 以便需要单独快速构建 iOS IPA 时手动触发，避免与 release.yml 重复构建。
 on:
-  push:
-    branches:
-      - 'custom'
   workflow_dispatch:
 
+permissions: {}
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   PACKAGE_NAME: Eros-FE
   FLUTTER_VERSION: '3.47.1'
-  # 原生代码使用 iOS 27.1 SDK API，需要 Xcode 27.1+（仅 xcode-27 预览镜像提供）
+  # 原生代码使用 iOS 27.1 SDK API，需要 Xcode 27.1+（仅 xcode-27 镜像提供）
   XCODE_PATH: /Applications/Xcode_27.1.app
 
 jobs:
   build_ios_unsigned:
     name: Build unsigned IPA
+    permissions:
+      contents: read
     runs-on: xcode-27
     timeout-minutes: 90
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: 'recursive'
 
@@ -37,7 +39,8 @@ jobs:
       - name: Get app version
         shell: bash
         run: |
-          app_version=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')
+          set -euo pipefail
+          app_version=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}' | tr -d '\r')
           echo "app_version=${app_version}" >> "$GITHUB_ENV"
           echo "build_date=$(TZ=Asia/Shanghai date +%Y%m%d)" >> "$GITHUB_ENV"
           echo "short_sha=${GITHUB_SHA::9}" >> "$GITHUB_ENV"
@@ -46,7 +49,7 @@ jobs:
         run: cp lib/config/config.dart.sample lib/config/config.dart
 
       - name: Flutter action
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -59,11 +62,42 @@ jobs:
           flutter config --no-enable-swift-package-manager
 
       - name: Flutter pub get
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
-      # 沿用 Podfile.lock，保持与本地构建的 Pod 版本一致
+      - name: Cache CocoaPods
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: cocoapods-ios-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            cocoapods-ios-
+
+      # 沿用 Podfile.lock，保持与本地构建的 Pod 版本一致；带重试与单命令只读 token 避免 GitHub 匿名限流
       - name: Pod install
-        run: cd ios && pod install
+        shell: bash
+        env:
+          POD_GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd ios
+          attempt=1
+          while [ "$attempt" -le 3 ]; do
+            if GIT_TERMINAL_PROMPT=0 \
+               GIT_CONFIG_COUNT=1 \
+               GIT_CONFIG_KEY_0="url.https://x-access-token:${POD_GH_TOKEN}@github.com/.insteadOf" \
+               GIT_CONFIG_VALUE_0="https://github.com/" \
+               pod install; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "pod install failed after 3 attempts" >&2
+              exit 1
+            fi
+            sleep_sec=$((attempt * 15))
+            echo "pod install failed (attempt ${attempt}/3), retrying in ${sleep_sec}s..."
+            sleep "$sleep_sec"
+            attempt=$((attempt + 1))
+          done
 
       # GoogleService-Info.plist 仍是 git-crypt 密文，Release 需排除（项目未初始化 Firebase）
       - name: Build ios app
@@ -72,13 +106,19 @@ jobs:
         run: flutter build ios --release --no-codesign --no-pub
 
       - name: Thin app
-        run: sh scripts/thin-payload.sh build/ios/iphoneos/*.app
+        run: |
+          set -euo pipefail
+          app_src=$(ls -d build/ios/iphoneos/*.app)
+          rm -f "$app_src/GoogleService-Info.plist" "$app_src/embedded.mobileprovision"
+          sh scripts/thin-payload.sh "$app_src"
 
       - name: Build ipa file
         shell: bash
         run: |
+          set -euo pipefail
           ipa_name="${PACKAGE_NAME}_${app_version}-unsigned_${build_date}_ci${GITHUB_RUN_NUMBER}-custom.ipa"
           cd build
+          rm -rf Payload
           mkdir -p Payload
           mv ios/iphoneos/*.app Payload/
           zip -qry9 "$ipa_name" Payload
@@ -86,19 +126,23 @@ jobs:
           bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_dir/Info.plist")
           echo "App: $app_dir  Bundle ID: $bundle_id"
           test "$bundle_id" = "cn.honjow.fehv"
+          test ! -e "$app_dir/GoogleService-Info.plist"
+          test ! -e "$app_dir/embedded.mobileprovision"
           ipa_size=$(stat -f%z "$ipa_name")
           if [ "$ipa_size" -lt 10000000 ]; then
             echo "IPA too small: $ipa_size bytes"
             exit 1
           fi
+          unzip -tq "$ipa_name"
           ls -lh "$ipa_name"
           shasum -a 256 "$ipa_name"
           echo "ipa_name=${ipa_name}" >> "$GITHUB_ENV"
 
       - name: Publish Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.PACKAGE_NAME }}_${{ env.app_version }}-unsigned_ci${{ github.run_number }}-${{ env.short_sha }}
           path: build/${{ env.ipa_name }}
           if-no-files-found: error
+          retention-days: 14
           compression-level: 0

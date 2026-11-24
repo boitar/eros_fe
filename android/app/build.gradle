@@ -62,9 +62,15 @@ android {
             abi {
                 enable true
                 reset()
-                universalApk true
-                //noinspection ChromeOsAbiSupport
-                include "armeabi-v7a", "arm64-v8a", "x86_64"
+                if (System.getenv("ANDROID_ONLY_ARM64") == "true") {
+                    universalApk false
+                    //noinspection ChromeOsAbiSupport
+                    include "arm64-v8a"
+                } else {
+                    universalApk true
+                    //noinspection ChromeOsAbiSupport
+                    include "armeabi-v7a", "arm64-v8a", "x86_64"
+                }
             }
         }
     }
@@ -93,7 +99,7 @@ android {
         release {
             if (signingConfigs.release.storePassword != null){
                 signingConfig signingConfigs.release
-            } else {
+            } else if (System.getenv("ANDROID_UNSIGNED_RELEASE") != "true") {
                 signingConfig signingConfigs.debug
             }
             minifyEnabled true
