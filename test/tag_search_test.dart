@@ -25,6 +25,10 @@ void main() {
   test('formats group and uploader searches', () {
     expect(formatSimpleSearch('group:circle name'), 'group:"circle name\$"');
     expect(formatSimpleSearch('uploader:"user name"'), 'uploader:"user name"');
+    expect(
+      formatSimpleSearch('uploader:user "alias" name'),
+      r'uploader:"user \"alias\" name"',
+    );
   });
 
   test('leaves empty and unrecognised searches unchanged', () {

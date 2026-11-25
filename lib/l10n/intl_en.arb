@@ -708,5 +708,18 @@
   "incremental_update_completed_locally": "Updated to #{gid} locally ({reused} pages reused)",
   "incremental_update_saf_inplace_unsupported": "SAF storage does not support local reuse or in-place upgrade; all pages will be downloaded as a new task.",
   "incremental_update_applying": "Applying update…",
-  "incremental_update_start_saf_full": "Download as new task · {count} pages"
+  "incremental_update_start_saf_full": "Download as new task · {count} pages",
+  "gallery_info_section_titles": "Titles",
+  "gallery_info_section_details": "Details",
+  "gallery_info_section_identifiers": "Identifiers & Links",
+  "gallery_info_category": "Category",
+  "gallery_info_posted": "Posted",
+  "gallery_info_favorite_status": "Favorite",
+  "gallery_info_visible": "Visible",
+  "gallery_info_expunged": "Expunged",
+  "gallery_info_gallery_url": "Gallery URL",
+  "gallery_info_cover_url": "Cover URL",
+  "gallery_info_open_browser": "Open in browser",
+  "gallery_info_open_browser_failed": "Could not open link in browser",
+  "gallery_info_rating_votes": "{count, plural, one{{count} rating} other{{count} ratings}}"
 }

@@ -708,5 +708,18 @@
   "incremental_update_completed_locally": "已本地升级至 #{gid}（全部复用 {reused} 页）",
   "incremental_update_saf_inplace_unsupported": "SAF 存储暂不支持本地文件复用或原位升级，将以新任务方式完整下载。",
   "incremental_update_applying": "正在应用更新…",
-  "incremental_update_start_saf_full": "新建任务完整下载 · 拉取 {count} 页"
+  "incremental_update_start_saf_full": "新建任务完整下载 · 拉取 {count} 页",
+  "gallery_info_section_titles": "标题",
+  "gallery_info_section_details": "画廊属性",
+  "gallery_info_section_identifiers": "标识与链接",
+  "gallery_info_category": "分类",
+  "gallery_info_posted": "发布时间",
+  "gallery_info_favorite_status": "收藏状态",
+  "gallery_info_visible": "可见性",
+  "gallery_info_expunged": "已删除",
+  "gallery_info_gallery_url": "画廊链接",
+  "gallery_info_cover_url": "封面链接",
+  "gallery_info_open_browser": "浏览器打开",
+  "gallery_info_open_browser_failed": "无法在浏览器中打开链接",
+  "gallery_info_rating_votes": "{count} 人评分"
 }

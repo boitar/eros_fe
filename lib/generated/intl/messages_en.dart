@@ -39,58 +39,61 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m8(gid) => "Parent #${gid}";
 
-  static String m9(count) => "${count} newer versions";
+  static String m9(count) =>
+      "${Intl.plural(count, one: '${count} rating', other: '${count} ratings')}";
 
-  static String m10(date) => "Updated ${date}";
+  static String m10(count) => "${count} newer versions";
 
-  static String m11(gid, reused) =>
+  static String m11(date) => "Updated ${date}";
+
+  static String m12(gid, reused) =>
       "Updated to #${gid} locally (${reused} pages reused)";
 
-  static String m12(gid) =>
+  static String m13(gid) =>
       "Reuse unchanged local images, update task to #${gid}, and map reading position.";
 
-  static String m13(gid) =>
+  static String m14(gid) =>
       "Create a new folder for #${gid} with reused images while keeping the old version.";
 
-  static String m14(count) => "Fetch ${count} pages";
+  static String m15(count) => "Fetch ${count} pages";
 
-  static String m15(count) => "Upgrade in place · Fetch ${count} pages";
+  static String m16(count) => "Upgrade in place · Fetch ${count} pages";
 
-  static String m16(count) => "Create new task · Fetch ${count} pages";
+  static String m17(count) => "Create new task · Fetch ${count} pages";
 
-  static String m17(count) => "Download as new task · ${count} pages";
+  static String m18(count) => "Download as new task · ${count} pages";
 
-  static String m18(reused, fetch) =>
+  static String m19(reused, fetch) =>
       "Incremental update started (reused ${reused}, fetching ${fetch})";
 
-  static String m19(modelName) => "Model ${modelName}";
+  static String m20(modelName) => "Model ${modelName}";
 
-  static String m20(count) => "${count} pages";
+  static String m21(count) => "${count} pages";
 
-  static String m21(seconds) => "${seconds} s";
+  static String m22(seconds) => "${seconds} s";
 
-  static String m22(page, total) => "Page ${page} of ${total}";
+  static String m23(page, total) => "Page ${page} of ${total}";
 
-  static String m23(rating) => "${rating} ⭐";
+  static String m24(rating) => "${rating} ⭐";
 
-  static String m24(tag) => "Add ${tag}";
+  static String m25(tag) => "Add ${tag}";
 
-  static String m25(count) => "${count} pages";
+  static String m26(count) => "${count} pages";
 
-  static String m26(avg, count) => "Avg ${avg} · ${count} ratings";
+  static String m27(avg, count) => "Avg ${avg} · ${count} ratings";
 
-  static String m27(text) => "Search “${text}”";
+  static String m28(text) => "Search “${text}”";
 
-  static String m28(count) => "${count} added · separate with commas";
+  static String m29(count) => "${count} added · separate with commas";
 
-  static String m29(count, per) => "${count} pages · ${per} per page";
+  static String m30(count, per) => "${count} pages · ${per} per page";
 
-  static String m30(count) => "Torrents · ${count}";
+  static String m31(count) => "Torrents · ${count}";
 
-  static String m31(tagNamespace) =>
+  static String m32(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m32(version) => "Update to ${version}";
+  static String m33(version) => "Update to ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -440,6 +443,33 @@ class MessageLookup extends MessageLookupByLibrary {
       "Has parent",
     ),
     "gallery_info": MessageLookupByLibrary.simpleMessage("Gallery info"),
+    "gallery_info_category": MessageLookupByLibrary.simpleMessage("Category"),
+    "gallery_info_cover_url": MessageLookupByLibrary.simpleMessage("Cover URL"),
+    "gallery_info_expunged": MessageLookupByLibrary.simpleMessage("Expunged"),
+    "gallery_info_favorite_status": MessageLookupByLibrary.simpleMessage(
+      "Favorite",
+    ),
+    "gallery_info_gallery_url": MessageLookupByLibrary.simpleMessage(
+      "Gallery URL",
+    ),
+    "gallery_info_open_browser": MessageLookupByLibrary.simpleMessage(
+      "Open in browser",
+    ),
+    "gallery_info_open_browser_failed": MessageLookupByLibrary.simpleMessage(
+      "Could not open link in browser",
+    ),
+    "gallery_info_posted": MessageLookupByLibrary.simpleMessage("Posted"),
+    "gallery_info_rating_votes": m9,
+    "gallery_info_section_details": MessageLookupByLibrary.simpleMessage(
+      "Details",
+    ),
+    "gallery_info_section_identifiers": MessageLookupByLibrary.simpleMessage(
+      "Identifiers & Links",
+    ),
+    "gallery_info_section_titles": MessageLookupByLibrary.simpleMessage(
+      "Titles",
+    ),
+    "gallery_info_visible": MessageLookupByLibrary.simpleMessage("Visible"),
     "gallery_latest_version": MessageLookupByLibrary.simpleMessage("Latest"),
     "gallery_lineage": MessageLookupByLibrary.simpleMessage("Version Lineage"),
     "gallery_lineage_tap_hint": MessageLookupByLibrary.simpleMessage(
@@ -449,7 +479,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_metadata_copy_hint": MessageLookupByLibrary.simpleMessage(
       "Tap to copy",
     ),
-    "gallery_newer_version_count": m9,
+    "gallery_newer_version_count": m10,
     "gallery_newer_version_single": MessageLookupByLibrary.simpleMessage(
       "Newer version available",
     ),
@@ -468,7 +498,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Unavailable",
     ),
     "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage("Updatable"),
-    "gallery_updated_on": m10,
+    "gallery_updated_on": m11,
     "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage(
       "View lineage",
     ),
@@ -552,7 +582,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
       "Analyzing page differences...",
     ),
-    "incremental_update_completed_locally": m11,
+    "incremental_update_completed_locally": m12,
     "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
       "Incremental update downloaded gallery",
     ),
@@ -562,18 +592,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
       "Upgrade in place & keep progress",
     ),
-    "incremental_update_mode_inplace_desc": m12,
+    "incremental_update_mode_inplace_desc": m13,
     "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
       "Download as new task (keep old)",
     ),
-    "incremental_update_mode_new_desc": m13,
+    "incremental_update_mode_new_desc": m14,
     "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
       "Update mode",
     ),
     "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage(
       "Newer",
     ),
-    "incremental_update_only_download": m14,
+    "incremental_update_only_download": m15,
     "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
       "Recommended",
     ),
@@ -585,13 +615,13 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage(
           "SAF storage does not support local reuse or in-place upgrade; all pages will be downloaded as a new task.",
         ),
-    "incremental_update_start_inplace": m15,
-    "incremental_update_start_new": m16,
+    "incremental_update_start_inplace": m16,
+    "incremental_update_start_new": m17,
     "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
       "Complete update locally (0 pages to fetch)",
     ),
-    "incremental_update_start_saf_full": m17,
-    "incremental_update_started": m18,
+    "incremental_update_start_saf_full": m18,
+    "incremental_update_started": m19,
     "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
       "Reuse unchanged local images",
     ),
@@ -670,7 +700,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("Sign in on the Web"),
     "max_history": MessageLookupByLibrary.simpleMessage("Maximum History"),
     "min": MessageLookupByLibrary.simpleMessage("min"),
-    "model": m19,
+    "model": m20,
     "more_actions": MessageLookupByLibrary.simpleMessage("More"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("More Thumbnails"),
     "multi_download": MessageLookupByLibrary.simpleMessage("Multi download"),
@@ -727,7 +757,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("Rate"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("Similar"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("Torrent"),
-    "page_count": m20,
+    "page_count": m21,
     "page_range": MessageLookupByLibrary.simpleMessage("Page range"),
     "page_range_error": MessageLookupByLibrary.simpleMessage(
       "Page range error",
@@ -785,10 +815,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage(
       "Fill screen in portrait",
     ),
-    "reader_interval_seconds": m21,
+    "reader_interval_seconds": m22,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("Next page"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("Page Layout"),
-    "reader_page_of": m22,
+    "reader_page_of": m23,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage(
       "Previous page",
     ),
@@ -865,7 +895,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "s_and": MessageLookupByLibrary.simpleMessage("and"),
     "s_pages": MessageLookupByLibrary.simpleMessage("pages"),
-    "s_stars": m23,
+    "s_stars": m24,
     "save": MessageLookupByLibrary.simpleMessage("Save"),
     "save_current_image": MessageLookupByLibrary.simpleMessage(
       "Save current image",
@@ -932,7 +962,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage(
       "Add to quick searches",
     ),
-    "sp_add_tag": m24,
+    "sp_add_tag": m25,
     "sp_all": MessageLookupByLibrary.simpleMessage("All"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("All favorites"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage(
@@ -982,7 +1012,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("Last"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("Next"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("Prev"),
-    "sp_page_total": m25,
+    "sp_page_total": m26,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage(
       "Tap to choose an image",
     ),
@@ -990,12 +1020,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Quick searches",
     ),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Submit rating"),
-    "sp_rating_summary": m26,
+    "sp_rating_summary": m27,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Recent"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("Reset"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("Retry"),
-    "sp_search_for": m27,
+    "sp_search_for": m28,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "Search titles, tags or paste a link",
     ),
@@ -1012,14 +1042,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("Similarity scan"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("Search"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("Suggestions"),
-    "sp_tags_added": m28,
+    "sp_tags_added": m29,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "e.g. female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage(
       "Go to preview page",
     ),
-    "sp_thumbs_per_page": m29,
+    "sp_thumbs_per_page": m30,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("Done"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage(
       "Download torrent",
@@ -1030,7 +1060,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("Share magnet"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("Peers"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("Seeds"),
-    "sp_torrent_title": m30,
+    "sp_torrent_title": m31,
     "sp_translate": MessageLookupByLibrary.simpleMessage("Translate"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage(
       "Split, set by divider",
@@ -1064,7 +1094,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("Tabbar setting"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-    "tagNamespace": m31,
+    "tagNamespace": m32,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("Add to Mytags"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default Color",
@@ -1331,7 +1361,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "If you want to exclude certain namespaces from a default tag search, you can check those abover. Note that this does not prevent galleries with tags in these namespaces from appearing, it just makes it so that when searching tags, it will forego those namespaces.",
     ),
     "unlimited": MessageLookupByLibrary.simpleMessage("Unlimited"),
-    "update_to_version": m32,
+    "update_to_version": m33,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
     "uploader": MessageLookupByLibrary.simpleMessage("Uploader"),
     "user_login": MessageLookupByLibrary.simpleMessage("User Sign"),

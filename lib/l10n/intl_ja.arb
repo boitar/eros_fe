@@ -708,5 +708,18 @@
   "incremental_update_completed_locally": "#{gid} へローカル更新完了（{reused} ページ再利用）",
   "incremental_update_saf_inplace_unsupported": "SAF ストレージはローカル再利用・上書き更新に未対応のため、新規タスクとして全ページ取得します。",
   "incremental_update_applying": "更新を適用中…",
-  "incremental_update_start_saf_full": "新規タスクで全件取得 · {count} ページ"
+  "incremental_update_start_saf_full": "新規タスクで全件取得 · {count} ページ",
+  "gallery_info_section_titles": "タイトル",
+  "gallery_info_section_details": "詳細情報",
+  "gallery_info_section_identifiers": "識別子とリンク",
+  "gallery_info_category": "カテゴリ",
+  "gallery_info_posted": "投稿日時",
+  "gallery_info_favorite_status": "お気に入り",
+  "gallery_info_visible": "公開状態",
+  "gallery_info_expunged": "削除済み",
+  "gallery_info_gallery_url": "ギャラリー URL",
+  "gallery_info_cover_url": "カバー URL",
+  "gallery_info_open_browser": "ブラウザで開く",
+  "gallery_info_open_browser_failed": "ブラウザでリンクを開けませんでした",
+  "gallery_info_rating_votes": "{count} 件の評価"
 }

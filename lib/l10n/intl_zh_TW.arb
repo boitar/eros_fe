@@ -708,5 +708,18 @@
   "incremental_update_completed_locally": "已本機升級至 #{gid}（全部複用 {reused} 頁）",
   "incremental_update_saf_inplace_unsupported": "SAF 儲存空間暫不支援本機檔案複用或原位升級，將以新任務方式完整下載。",
   "incremental_update_applying": "正在套用更新…",
-  "incremental_update_start_saf_full": "新建任務完整下載 · 拉取 {count} 頁"
+  "incremental_update_start_saf_full": "新建任務完整下載 · 拉取 {count} 頁",
+  "gallery_info_section_titles": "標題",
+  "gallery_info_section_details": "畫廊屬性",
+  "gallery_info_section_identifiers": "識別與連結",
+  "gallery_info_category": "分類",
+  "gallery_info_posted": "發布時間",
+  "gallery_info_favorite_status": "收藏狀態",
+  "gallery_info_visible": "可見性",
+  "gallery_info_expunged": "已刪除",
+  "gallery_info_gallery_url": "畫廊連結",
+  "gallery_info_cover_url": "封面連結",
+  "gallery_info_open_browser": "在瀏覽器開啟",
+  "gallery_info_open_browser_failed": "無法在瀏覽器中開啟連結",
+  "gallery_info_rating_votes": "{count} 人評分"
 }

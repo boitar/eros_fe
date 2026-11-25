@@ -5951,6 +5951,138 @@ class L10n {
       args: [count],
     );
   }
+
+  /// `Titles`
+  String get gallery_info_section_titles {
+    return Intl.message(
+      'Titles',
+      name: 'gallery_info_section_titles',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Details`
+  String get gallery_info_section_details {
+    return Intl.message(
+      'Details',
+      name: 'gallery_info_section_details',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Identifiers & Links`
+  String get gallery_info_section_identifiers {
+    return Intl.message(
+      'Identifiers & Links',
+      name: 'gallery_info_section_identifiers',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Category`
+  String get gallery_info_category {
+    return Intl.message(
+      'Category',
+      name: 'gallery_info_category',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Posted`
+  String get gallery_info_posted {
+    return Intl.message(
+      'Posted',
+      name: 'gallery_info_posted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Favorite`
+  String get gallery_info_favorite_status {
+    return Intl.message(
+      'Favorite',
+      name: 'gallery_info_favorite_status',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Visible`
+  String get gallery_info_visible {
+    return Intl.message(
+      'Visible',
+      name: 'gallery_info_visible',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Expunged`
+  String get gallery_info_expunged {
+    return Intl.message(
+      'Expunged',
+      name: 'gallery_info_expunged',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Gallery URL`
+  String get gallery_info_gallery_url {
+    return Intl.message(
+      'Gallery URL',
+      name: 'gallery_info_gallery_url',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cover URL`
+  String get gallery_info_cover_url {
+    return Intl.message(
+      'Cover URL',
+      name: 'gallery_info_cover_url',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open in browser`
+  String get gallery_info_open_browser {
+    return Intl.message(
+      'Open in browser',
+      name: 'gallery_info_open_browser',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not open link in browser`
+  String get gallery_info_open_browser_failed {
+    return Intl.message(
+      'Could not open link in browser',
+      name: 'gallery_info_open_browser_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count, plural, one{{count} rating} other{{count} ratings}}`
+  String gallery_info_rating_votes(num count) {
+    return Intl.plural(
+      count,
+      one: '$count rating',
+      other: '$count ratings',
+      name: 'gallery_info_rating_votes',
+      desc: '',
+      args: [count],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

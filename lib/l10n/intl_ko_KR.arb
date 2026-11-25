@@ -708,5 +708,18 @@
   "incremental_update_completed_locally": "#{gid}로 로컬 업데이트 완료 ({reused}쪽 재사용)",
   "incremental_update_saf_inplace_unsupported": "SAF 저장소는 로컬 파일 재사용 및 제자리 업데이트를 지원하지 않아 새 작업으로 전체 다운로드합니다.",
   "incremental_update_applying": "업데이트 적용 중…",
-  "incremental_update_start_saf_full": "새 작업으로 전체 다운로드 · {count}쪽"
+  "incremental_update_start_saf_full": "새 작업으로 전체 다운로드 · {count}쪽",
+  "gallery_info_section_titles": "제목",
+  "gallery_info_section_details": "갤러리 속성",
+  "gallery_info_section_identifiers": "식별자 및 링크",
+  "gallery_info_category": "카테고리",
+  "gallery_info_posted": "게시일",
+  "gallery_info_favorite_status": "즐겨찾기",
+  "gallery_info_visible": "표시 상태",
+  "gallery_info_expunged": "삭제됨",
+  "gallery_info_gallery_url": "갤러리 URL",
+  "gallery_info_cover_url": "표지 URL",
+  "gallery_info_open_browser": "브라우저에서 열기",
+  "gallery_info_open_browser_failed": "브라우저에서 링크를 열 수 없습니다",
+  "gallery_info_rating_votes": "평가 {count}건"
 }
