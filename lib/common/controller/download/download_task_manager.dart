@@ -53,19 +53,28 @@ class TaskStatus {
 }
 
 class DownloadTaskManager {
-  DownloadTaskManager(this.dState,
-      {StorageAdapter? storageAdapter, IsarHelper? taskStore})
-      : storageAdapter = storageAdapter ?? StorageAdapter(taskStore: taskStore),
-        taskStore = taskStore ?? isarHelper;
+  DownloadTaskManager(
+    this.dState, {
+    StorageAdapter? storageAdapter,
+    IsarHelper? taskStore,
+    Map<int, Lock>? taskLocks,
+  })  : storageAdapter = storageAdapter ?? StorageAdapter(taskStore: taskStore),
+        taskStore = taskStore ?? isarHelper,
+        _taskLocks = taskLocks ?? <int, Lock>{};
   static const int _reconcileConcurrency = 4;
 
   final DownloadState dState;
   CacheController get cacheController => Get.find();
   final IsarHelper taskStore;
   final StorageAdapter storageAdapter;
-  final Map<int, Lock> _taskLocks = <int, Lock>{};
+  final Map<int, Lock> _taskLocks;
 
   Lock _lockFor(int gid) => _taskLocks.putIfAbsent(gid, () => Lock());
+
+  /// Serializes metadata/file operations for [gid] against task reconciliation
+  /// and completion `.info` writes.
+  Future<T> runWithTaskLock<T>(int gid, Future<T> Function() action) =>
+      _lockFor(gid).synchronized(action);
 
   Future<void> _invoke(Function callback,
       [List<Object?> args = const []]) async {
@@ -212,8 +221,11 @@ class DownloadTaskManager {
       dState.claimedImageFiles.remove(gid);
       dState.unavailableGalleryFiles.remove(gid);
       await taskStore.removeImageTask(gid);
-      await cacheController.clearDioCache(
-          path: '${Api.getBaseUrl()}${galleryTask.url}');
+      final rawTaskUrl = galleryTask.url ?? '';
+      final cachePath = rawTaskUrl.startsWith('http')
+          ? rawTaskUrl
+          : '${Api.getBaseUrl()}$rawTaskUrl';
+      await cacheController.clearDioCache(path: cachePath);
 
       final reTask = galleryTask.copyWith(
         completCount: 0,
@@ -366,10 +378,22 @@ class DownloadTaskManager {
     dState.errInfoMap[gid] = unavailableFilesMessage;
   }
 
-  Future<GalleryTask> _reconcileTask(GalleryTask task) {
-    return _lockFor(task.gid).synchronized(() => _reconcileTaskLockedSafely(
-          dState.galleryTaskMap[task.gid] ?? task,
-        ));
+  Future<GalleryTask> _reconcileTask(
+    GalleryTask task, {
+    bool writeInfoFile = false,
+  }) {
+    return _lockFor(task.gid).synchronized(() async {
+      final reconciled = await _reconcileTaskLockedSafely(
+        dState.galleryTaskMap[task.gid] ?? task,
+      );
+      if (writeInfoFile) {
+        dState.galleryTaskMap[reconciled.gid] = reconciled;
+        if (!dState.unavailableGalleryFiles.contains(reconciled.gid)) {
+          await storageAdapter.writeTaskInfoFile(reconciled);
+        }
+      }
+      return reconciled;
+    });
   }
 
   Future<GalleryTask> _reconcileTaskLockedSafely(GalleryTask task) async {
@@ -481,8 +505,11 @@ class DownloadTaskManager {
     return nextTask;
   }
 
-  Future<GalleryTask> reconcileGalleryTask(GalleryTask task) {
-    return _reconcileTask(task);
+  Future<GalleryTask> reconcileGalleryTask(
+    GalleryTask task, {
+    bool writeInfoFile = false,
+  }) {
+    return _reconcileTask(task, writeInfoFile: writeInfoFile);
   }
 
   Future<String?> _resolveCoverImage(

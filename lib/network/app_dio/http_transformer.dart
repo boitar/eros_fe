@@ -147,7 +147,10 @@ class GalleryHttpTransformer extends HttpTransformer {
   FutureOr<DioHttpResponse<GalleryProvider>> parse(
       Response<dynamic> response) async {
     final html = response.data as String;
-    final GalleryProvider provider = await parseGalleryDetail(html);
+    final GalleryProvider provider = await parseGalleryDetail(
+      html,
+      baseUri: response.realUri,
+    );
     return DioHttpResponse<GalleryProvider>.success(provider);
   }
 }

@@ -124,6 +124,7 @@ class GalleryCacheController extends GetxController {
     String gid,
     int index, {
     bool saveToStore = false,
+    bool onlyIfUnset = false,
   }) async {
     if (gid.isEmpty) {
       logger.e('gid is empty');
@@ -131,8 +132,14 @@ class GalleryCacheController extends GetxController {
     }
     final GalleryCache? _ori = await listenGalleryCache(gid, sync: false).first;
     logger.t('_ori ${_ori?.toJson()}');
+    // Re-read synchronously right before mutating so concurrent writes during
+    // the await above cannot be clobbered when onlyIfUnset is true.
+    final GalleryCache? _latest = gCacheMap[gid] ?? hiveHelper.getCache(gid) ?? _ori;
+    if (onlyIfUnset && (_latest?.lastIndex ?? 0) > 0) {
+      return;
+    }
     final _time = DateTime.now().millisecondsSinceEpoch;
-    if (_ori == null) {
+    if (_latest == null) {
       final _newCache = GalleryCache(gid: gid, lastIndex: index, time: _time);
       logger.d('_newCache ${_newCache.toJson()}');
       gCacheMap[gid] = _newCache;
@@ -142,7 +149,7 @@ class GalleryCacheController extends GetxController {
       }
     } else {
       final _newCache =
-          _ori.copyWith(lastIndex: index.oN, time: _time.oN, gid: gid.oN);
+          _latest.copyWith(lastIndex: index.oN, time: _time.oN, gid: gid.oN);
       gCacheMap[gid] = _newCache;
       if (saveToStore) {
         hiveHelper.saveCache(_newCache);

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:eros_fe/common/controller/download/gallery_update_service.dart';
 import 'package:eros_fe/component/quene_task/quene_task.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
@@ -61,4 +62,8 @@ class DownloadState {
 
   // 画廊任务额外信息 - 新增
   final Map<int, Map<String, dynamic>> galleryTaskExtraInfo = {};
+
+  // 正在执行增量更新的画廊复用页统计
+  final RxMap<int, GalleryIncrementalProgress> incrementalProgressMap =
+      <int, GalleryIncrementalProgress>{}.obs;
 }

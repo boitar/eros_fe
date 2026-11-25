@@ -17,6 +17,7 @@ import 'package:eros_fe/network/app_dio/pdio.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/gallery/gallery_repository.dart';
 import 'package:eros_fe/pages/gallery/view/const.dart';
+import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -207,6 +208,17 @@ class GalleryPageController extends GetxController
       if (fetchedGalleryProvider != null) {
         gState.galleryProvider =
             gState.galleryProvider?.copyWithAll(fetchedGalleryProvider);
+        final current = gState.galleryProvider;
+        final gidInt = int.tryParse(current?.gid ?? '');
+        if (current != null &&
+            gidInt != null &&
+            current.hasNewerVersions &&
+            Get.isRegistered<DownloadViewController>()) {
+          Get.find<DownloadViewController>().registerDiscoveredUpdate(
+            gidInt,
+            current.newerVersionsNewestFirst,
+          );
+        }
       }
 
       gState.currentImagePage = 0;

@@ -1,10 +1,14 @@
 import 'package:eros_fe/adaptive/native_navigation.dart';
 import 'package:eros_fe/adaptive/native_top_header.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
+import 'package:eros_fe/common/controller/download/gallery_update_service.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/download_archiver_task_info.dart';
+import 'package:eros_fe/pages/gallery/view/gallery_incremental_update_sheet.dart';
 import 'package:eros_fe/pages/item/download_archiver_item.dart';
 import 'package:eros_fe/pages/item/download_gallery_item.dart';
 import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
@@ -137,6 +141,15 @@ class _DownloadTabState extends State<DownloadTab> {
             title: _title,
             actions: [
               ...Get.find<TabHomeController>().nativeHiddenTabActions,
+              if (currIndex == 0)
+                NativeNavigationAction(
+                  id: 'checkUpdates',
+                  title: L10n.of(context).download_check_updates,
+                  symbol: 'arrow.triangle.2.circlepath',
+                  enabled: !controller.isCheckingUpdates.value,
+                  onPressed: () =>
+                      controller.checkAllGalleryUpdates(context: context),
+                ),
               if (!kReleaseMode)
                 NativeNavigationAction(
                   id: 'export',
@@ -192,6 +205,9 @@ class _DownloadTabState extends State<DownloadTab> {
             followSystemTransparency: settings.liquidGlassMaterial,
             leading: hiddenTabsRailAction(context),
             onSelected: select,
+            onCheckUpdates: currIndex == 0 && !controller.isCheckingUpdates.value
+                ? () => controller.checkAllGalleryUpdates(context: context)
+                : null,
             onExport: !kReleaseMode ? _showExportDialog : null,
           ),
           child: ScrollEdgeProgressListener(
@@ -205,23 +221,41 @@ class _DownloadTabState extends State<DownloadTab> {
         navigationBar: CupertinoNavigationBar(
           padding: const EdgeInsetsDirectional.only(end: 16),
           middle: middle,
-          trailing: !kReleaseMode
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    CupertinoButton(
-                      minimumSize: const Size(40, 40),
-                      padding: const EdgeInsets.all(0),
-                      onPressed: _showExportDialog,
-                      child: const EhSvgIcon(
-                        CupertinoIcons.arrow_up_arrow_down_square_fill,
-                        size: 28,
-                      ),
-                    ),
-                  ],
-                )
-              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (currIndex == 0)
+                CupertinoButton(
+                  minimumSize: const Size(38, 38),
+                  padding: const EdgeInsets.all(0),
+                  onPressed: controller.isCheckingUpdates.value
+                      ? null
+                      : () => controller.checkAllGalleryUpdates(
+                            context: context,
+                          ),
+                  child: Semantics(
+                    label: L10n.of(context).download_check_updates,
+                    child: controller.isCheckingUpdates.value
+                        ? const CupertinoActivityIndicator(radius: 10)
+                        : const EhSvgIcon(
+                            CupertinoIcons.arrow_2_circlepath,
+                            size: 22,
+                          ),
+                  ),
+                ),
+              if (!kReleaseMode)
+                CupertinoButton(
+                  minimumSize: const Size(40, 40),
+                  padding: const EdgeInsets.all(0),
+                  onPressed: _showExportDialog,
+                  child: const EhSvgIcon(
+                    CupertinoIcons.arrow_up_arrow_down_square_fill,
+                    size: 28,
+                  ),
+                ),
+            ],
+          ),
         ),
         child: pages,
       );
@@ -437,6 +471,7 @@ class DownloadGlassHeader extends StatelessWidget {
     this.pageController,
     this.followSystemTransparency = true,
     this.leading,
+    this.onCheckUpdates,
     this.onExport,
   });
 
@@ -450,6 +485,7 @@ class DownloadGlassHeader extends StatelessWidget {
   final PageController? pageController;
   final bool followSystemTransparency;
   final LiquidGlassRailAction? leading;
+  final VoidCallback? onCheckUpdates;
   final VoidCallback? onExport;
 
   @override
@@ -478,6 +514,12 @@ class DownloadGlassHeader extends StatelessWidget {
           ),
         ],
         trailing: [
+          if (onCheckUpdates != null)
+            LiquidGlassRailAction(
+              icon: CupertinoIcons.arrow_2_circlepath,
+              label: L10n.of(context).download_check_updates,
+              onPressed: onCheckUpdates!,
+            ),
           if (onExport != null)
             LiquidGlassRailAction(
               icon: CupertinoIcons.arrow_up_arrow_down,
@@ -489,8 +531,12 @@ class DownloadGlassHeader extends StatelessWidget {
       if (layout == LiquidGlassTopBarLayout.twoRow)
         Positioned(
           top: safeTop,
-          left: leading != null || onExport != null ? 60 : 16,
-          right: leading != null || onExport != null ? 60 : 16,
+          left: leading != null || onExport != null || onCheckUpdates != null
+              ? 60
+              : 16,
+          right: leading != null || onExport != null || onCheckUpdates != null
+              ? 60
+              : 16,
           height: layout.primaryRowHeight,
           child: Center(
             child: Semantics(
@@ -590,24 +636,51 @@ class _DownloadGalleryViewState extends State<DownloadGalleryView>
           // refreshGalleryList 会替换 key，AnimatedList 才会读取任务数量；
           // 后台完整性修复通过对应卡片的 GetBuilder 单独刷新。
           controller.galleryListRevision.value;
+          final checking = controller.isCheckingUpdates.value;
+          final checked = controller.updateCheckCompleted.value;
+          final total = controller.updateCheckTotal.value;
+          final updatesFound = controller.updateInfoMap.length;
+          final showUpdateBanner = checking || updatesFound > 0;
+          final topPadding =
+              context.mediaQueryPadding.top -
+              (NativeNavigationScope.isEnabled(context) ||
+                      (_DownloadGlassContentScope.of(context) &&
+                          PlatformCapabilities.isDesktop)
+                  ? 5
+                  : 0);
           return SafeArea(
             key: const PageStorageKey<String>('download-gallery-list'),
             top: false,
             bottom: false,
-            child: AnimatedList(
-              key: controller.animatedGalleryListKey,
-              padding: EdgeInsets.only(
-                top:
-                    context.mediaQueryPadding.top -
-                    (NativeNavigationScope.isEnabled(context) ||
-                            (_DownloadGlassContentScope.of(context) &&
-                                PlatformCapabilities.isDesktop)
-                        ? 5
-                        : 0),
-                bottom: context.mediaQueryPadding.bottom,
-              ),
-              initialItemCount: controller.galleryTasks.length,
-              itemBuilder: downloadItemBuilder,
+            child: Column(
+              children: <Widget>[
+                if (showUpdateBanner)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      10,
+                      topPadding + 4,
+                      10,
+                      4,
+                    ),
+                    child: _DownloadUpdateStatusBanner(
+                      checking: checking,
+                      checked: checked,
+                      total: total,
+                      updatesFound: updatesFound,
+                    ),
+                  ),
+                Expanded(
+                  child: AnimatedList(
+                    key: controller.animatedGalleryListKey,
+                    padding: EdgeInsets.only(
+                      top: showUpdateBanner ? 4 : topPadding,
+                      bottom: context.mediaQueryPadding.bottom,
+                    ),
+                    initialItemCount: controller.galleryTasks.length,
+                    itemBuilder: downloadItemBuilder,
+                  ),
+                ),
+              ],
             ),
           );
         });
@@ -678,12 +751,24 @@ Widget _downloadItemBuilder(BuildContext context, int taskIndex) {
       final GalleryTask taskInfo = logic.galleryTasks[taskIndex];
       final String? speed = logic.downloadSpeedMap[taskInfo.gid];
       final String? errInfo = logic.errInfoMap[taskInfo.gid];
+      final GalleryUpdateInfo? updateInfo = logic.updateInfoFor(taskInfo.gid);
+      final GalleryIncrementalProgress? incrementalProgress =
+          logic.incrementalProgressFor(taskInfo.gid);
 
       return DownloadGalleryItem(
         galleryTask: taskInfo,
         taskIndex: taskIndex,
         speed: speed,
         errInfo: errInfo,
+        updateInfo: updateInfo,
+        incrementalProgress: incrementalProgress,
+        onTapUpdate: updateInfo == null
+            ? null
+            : () => showGalleryIncrementalUpdateSheet(
+                  context,
+                  oldTask: taskInfo,
+                  newerVersions: updateInfo.newerVersions,
+                ),
       );
     },
   );
@@ -751,4 +836,77 @@ Widget _buildAnimatedListItem(
       child: child,
     ),
   );
+}
+
+class _DownloadUpdateStatusBanner extends StatelessWidget {
+  const _DownloadUpdateStatusBanner({
+    required this.checking,
+    required this.checked,
+    required this.total,
+    required this.updatesFound,
+  });
+
+  final bool checking;
+  final int checked;
+  final int total;
+  final int updatesFound;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
+    final accent = EhPalette.accent.resolveFrom(context);
+    final text1 = ehTheme.palette.text1.resolveFrom(context);
+    final text2 = ehTheme.palette.text2.resolveFrom(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: EhPalette.accentSoft.resolveFrom(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: accent.withValues(alpha: 0.34),
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          if (checking)
+            const CupertinoActivityIndicator(radius: 8)
+          else
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: accent,
+                shape: BoxShape.circle,
+              ),
+            ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              checking
+                  ? '${l10n.download_checking_updates} ($checked/$total)'
+                  : l10n.download_updates_found(updatesFound),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: text1,
+              ),
+            ),
+          ),
+          if (!checking && updatesFound > 0)
+            Text(
+              l10n.download_has_update_badge,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: text2,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

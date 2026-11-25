@@ -13,6 +13,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_fav_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
+import 'package:eros_fe/pages/gallery/view/gallery_incremental_update_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_title_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/rate_dialog.dart';
 import 'package:eros_fe/pages/item/cover_ratio.dart';
@@ -224,6 +225,15 @@ class _GalleryHero extends StatelessWidget {
             const SizedBox(height: 18),
           ],
           _DataStrip(provider: provider, state: state),
+          GalleryLineageWhisper(
+            provider: provider,
+            isDownloadedComplete:
+                state.downloadState == TaskStatus.complete,
+            onTap: () => Get.toNamed(
+              EHRoutes.galleryInfo,
+              id: detailNavigatorId,
+            ),
+          ),
         ],
       );
     });
@@ -799,12 +809,60 @@ class _DownloadCircle extends StatelessWidget {
       final status = state.downloadState;
       final gid = int.tryParse(state.gid) ?? 0;
       if (status == TaskStatus.complete) {
+        final provider = state.galleryProvider;
+        final newerVersions =
+            provider?.newerVersionsNewestFirst ?? const <GalleryNewerVersion>[];
+        final task = _downloads.dState.galleryTaskMap[gid];
+        final canIncrementalUpdate =
+            newerVersions.isNotEmpty && task != null;
         return _RoundAction(
           docked: docked,
-          label: l10n.downloaded,
-          child: EhSvgIcon(CupertinoIcons.checkmark_alt,
-              size: 23,
-              color: CupertinoDynamicColor.resolve(EhPalette.accent, context)),
+          label: canIncrementalUpdate
+              ? l10n.incremental_update_title
+              : l10n.downloaded,
+          onTap: canIncrementalUpdate
+              ? () => showGalleryIncrementalUpdateSheet(
+                    context,
+                    oldTask: task,
+                    newerVersions: newerVersions,
+                  )
+              : null,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: <Widget>[
+              EhSvgIcon(
+                canIncrementalUpdate
+                    ? CupertinoIcons.arrow_down_to_line
+                    : CupertinoIcons.checkmark_alt,
+                size: 23,
+                color: CupertinoDynamicColor.resolve(EhPalette.accent, context),
+              ),
+              if (canIncrementalUpdate)
+                Positioned(
+                  top: -9,
+                  right: -9,
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: CupertinoDynamicColor.resolve(
+                        EhPalette.accent,
+                        context,
+                      ),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: CupertinoDynamicColor.resolve(
+                          ehTheme.palette.canvas,
+                          context,
+                        ),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       }
       if (status == TaskStatus.running || status == TaskStatus.enqueued) {
@@ -834,6 +892,171 @@ class _DownloadCircle extends StatelessWidget {
         child: EhSvgIcon(CupertinoIcons.arrow_down_to_line, size: 22, color: text1),
       );
     });
+  }
+}
+
+/// Single-line, borderless, soft-glow version lineage cue placed directly
+/// below [_DataStrip]. Takes ~28pt so the first rows of tags remain visible
+/// above the fold even on compact viewports such as a folded iPhone Duo.
+class GalleryLineageWhisper extends StatelessWidget {
+  const GalleryLineageWhisper({
+    super.key,
+    required this.provider,
+    required this.isDownloadedComplete,
+    required this.onTap,
+  });
+
+  final GalleryProvider provider;
+  final bool isDownloadedComplete;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final newerVersions = provider.newerVersionsNewestFirst;
+    final hasNewer = newerVersions.isNotEmpty;
+    final hasParent = provider.hasParentLink;
+    if (!hasNewer && !hasParent) {
+      return const SizedBox.shrink();
+    }
+
+    final l10n = L10n.of(context);
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+
+    late final String primaryText;
+    late final String secondaryText;
+    if (hasNewer) {
+      primaryText = newerVersions.length == 1
+          ? l10n.gallery_newer_version_single
+          : l10n.gallery_newer_version_count(newerVersions.length);
+      if (isDownloadedComplete) {
+        secondaryText = l10n.gallery_updatable_hint;
+      } else if (hasParent) {
+        secondaryText = l10n.gallery_has_parent_hint;
+      } else {
+        final date = newerVersions.first.shortDate;
+        secondaryText = date.isNotEmpty
+            ? l10n.gallery_updated_on(date)
+            : l10n.gallery_view_lineage_hint;
+      }
+    } else {
+      final parentGid = provider.parentGid ?? '';
+      primaryText = parentGid.isNotEmpty
+          ? l10n.gallery_from_parent_hint(parentGid)
+          : l10n.gallery_parent;
+      secondaryText = l10n.gallery_view_lineage_hint;
+    }
+
+    // Style A (极简中心柔光): borderless centered radial glow + soft-focus silver-gray text.
+    final Color primaryColor = dark
+        ? const Color(0xDBD2D7E2)
+        : const Color(0xCC4B5263);
+    final Color secondaryColor = dark
+        ? const Color(0xB8B0B6C4)
+        : const Color(0x9E5E6577);
+    final Color chevronColor = dark
+        ? const Color(0x8FBEC4D4)
+        : const Color(0x855E6577);
+    final List<Shadow> glowShadows = dark
+        ? const <Shadow>[
+            Shadow(color: Color(0x73DAE1F5), blurRadius: 8),
+            Shadow(color: Color(0x3D9AA8FF), blurRadius: 18),
+          ]
+        : const <Shadow>[
+            Shadow(color: Color(0x2E4A5BD8), blurRadius: 8),
+            Shadow(color: Color(0x1C4A5BD8), blurRadius: 16),
+          ];
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Semantics(
+        button: true,
+        label: '$primaryText $secondaryText',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: SizedBox(
+            width: double.infinity,
+            child: Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                // Borderless soft radial ambient mist (no side edges, no divider).
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment.center,
+                          radius: 2.2,
+                          colors: dark
+                              ? const <Color>[
+                                  Color(0x1CCAD2EC),
+                                  Color(0x0BA8B2DC),
+                                  Color(0x00000000),
+                                ]
+                              : const <Color>[
+                                  Color(0x124A5BD8),
+                                  Color(0x064A5BD8),
+                                  Color(0x00000000),
+                                ],
+                          stops: const <double>[0.0, 0.45, 0.85],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          primaryText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.2,
+                            color: primaryColor,
+                            shadows: glowShadows,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          secondaryText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0.15,
+                            color: secondaryColor,
+                            shadows: glowShadows,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        CupertinoIcons.chevron_right,
+                        size: 12,
+                        color: chevronColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

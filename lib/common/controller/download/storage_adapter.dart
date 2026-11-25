@@ -124,10 +124,21 @@ class StorageAdapter {
             .map((e) => e.copyWith(imageUrl: ''))
             .toList();
 
-    String jsonImageTaskList = await compute(jsonEncode, imageTaskList);
-    String jsonGalleryTask =
+    await writeTaskInfoFileWithImages(galleryTask, imageTaskList);
+  }
+
+  /// Writes metadata file (default `.info`) using an explicit [imageTaskList].
+  Future<void> writeTaskInfoFileWithImages(
+    GalleryTask galleryTask,
+    List<GalleryImageTask> imageTaskList, {
+    String fileName = '.info',
+  }) async {
+    final sanitizedImages =
+        imageTaskList.map((e) => e.copyWith(imageUrl: '')).toList();
+    final String jsonImageTaskList = await compute(jsonEncode, sanitizedImages);
+    final String jsonGalleryTask =
         await compute(jsonEncode, galleryTask.copyWith(dirPath: ''));
-    logger.t('writeTaskInfoFile:\n$jsonGalleryTask\n$jsonImageTaskList');
+    logger.t('writeTaskInfoFile($fileName):\n$jsonGalleryTask\n$jsonImageTaskList');
 
     final dirPath = galleryTask.realDirPath;
     if (dirPath == null || dirPath.isEmpty) {
@@ -139,18 +150,18 @@ class StorageAdapter {
 
     if (dirPath.isContentUri) {
       // SAF
-      final infoDomFile = await ss.findFile(Uri.parse(dirPath), '.info');
+      final infoDomFile = await ss.findFile(Uri.parse(dirPath), fileName);
       if (infoDomFile?.name != null) {
-        await ss.delete(Uri.parse('$dirPath%2F.info'));
+        await ss.delete(Uri.parse('$dirPath%2F$fileName'));
       }
       await ss.createFileAsBytes(
         Uri.parse(dirPath),
         mimeType: '',
-        displayName: '.info',
+        displayName: fileName,
         bytes: infoBytes,
       );
     } else {
-      final File infoFile = File(path.join(dirPath, '.info'));
+      final File infoFile = File(path.join(dirPath, fileName));
       await infoFile.writeAsString(info);
     }
   }
@@ -246,7 +257,10 @@ class StorageAdapter {
 
   /// 从文件系统恢复下载任务
   Future<void> restoreGalleryTasksWithPath(
-      String currentDownloadPath, Function? loadInfoFileCallback) async {
+    String currentDownloadPath,
+    Function? loadInfoFileCallback, {
+    Set<String> skipDirs = const <String>{},
+  }) async {
     if (loadInfoFileCallback == null) {
       return;
     }
@@ -263,8 +277,29 @@ class StorageAdapter {
           test: (error) => error is PathNotFoundException,
         );
     await for (final fs in entries) {
+      if (fs is! Directory) {
+        continue;
+      }
+      // Skip directories with an in-flight / unreconciled incremental update
+      // or a superseded source directory awaiting retirement.
+      if (File(path.join(fs.path, '.inc_pending.json')).existsSync() ||
+          File(path.join(fs.path, '.inc_retiring.json')).existsSync()) {
+        continue;
+      }
+      if (skipDirs.isNotEmpty) {
+        String resolvedFs;
+        try {
+          resolvedFs = path.canonicalize(await fs.resolveSymbolicLinks());
+        } catch (_) {
+          resolvedFs = path.canonicalize(fs.path);
+        }
+        if (skipDirs.contains(resolvedFs) ||
+            skipDirs.contains(path.canonicalize(fs.path))) {
+          continue;
+        }
+      }
       final infoFile = File(path.join(fs.path, '.info'));
-      if (fs is Directory && infoFile.existsSync()) {
+      if (infoFile.existsSync()) {
         await Function.apply(loadInfoFileCallback, [infoFile, fs.path]);
       }
     }

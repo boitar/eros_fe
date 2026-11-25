@@ -1,12 +1,16 @@
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
+import 'package:dio/dio.dart';
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/archiver_download_controller.dart';
+import 'package:eros_fe/common/controller/download/gallery_update_service.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
+import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/epub/epub_builder.dart';
 import 'package:eros_fe/common/global.dart';
+import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/index.dart';
@@ -58,6 +62,236 @@ class DownloadViewController extends GetxController {
 
   // Rebuild AnimatedList only when the persisted task snapshot is restored.
   final RxInt galleryListRevision = 0.obs;
+
+  /// Update-check state for downloaded galleries.
+  final GalleryUpdateService updateService = GalleryUpdateService();
+  final RxMap<int, GalleryUpdateInfo> updateInfoMap =
+      <int, GalleryUpdateInfo>{}.obs;
+  final RxBool isCheckingUpdates = false.obs;
+  final RxInt updateCheckCompleted = 0.obs;
+  final RxInt updateCheckTotal = 0.obs;
+  CancelToken? _updateCheckCancelToken;
+
+  GalleryUpdateInfo? updateInfoFor(int gid) => updateInfoMap[gid];
+
+  GalleryIncrementalProgress? incrementalProgressFor(int gid) =>
+      _downloadController.dState.incrementalProgressMap[gid];
+
+  int get availableUpdatesCount => updateInfoMap.length;
+
+  /// Records newer versions discovered while browsing a gallery detail page.
+  void registerDiscoveredUpdate(
+    int gid,
+    List<GalleryNewerVersion> newerVersions,
+  ) {
+    final liveTask = galleryTaskMap[gid];
+    if (liveTask == null ||
+        liveTask.status != TaskStatus.complete.value ||
+        filesUnavailable(gid)) {
+      if (updateInfoMap.remove(gid) != null) {
+        update(['${idDownloadGalleryItem}_$gid']);
+      }
+      return;
+    }
+    final availableVersions = newerVersions
+        .where((v) => !galleryTaskMap.containsKey(v.gidInt))
+        .toList();
+    if (availableVersions.isEmpty) {
+      if (updateInfoMap.remove(gid) != null) {
+        update(['${idDownloadGalleryItem}_$gid']);
+      }
+      return;
+    }
+    updateInfoMap[gid] = GalleryUpdateInfo(
+      sourceGid: gid,
+      newerVersions: availableVersions,
+      checkedAt: DateTime.now(),
+    );
+    update(['${idDownloadGalleryItem}_$gid']);
+  }
+
+  void _pruneStaleUpdateEntries() {
+    final activeTasks = galleryTaskMap;
+    final toRemove = <int>[];
+    for (final entry in updateInfoMap.entries) {
+      final task = activeTasks[entry.key];
+      if (task == null ||
+          task.status != TaskStatus.complete.value ||
+          filesUnavailable(entry.key)) {
+        toRemove.add(entry.key);
+        continue;
+      }
+      final availableNewer = entry.value.newerVersions
+          .where((v) => !activeTasks.containsKey(v.gidInt))
+          .toList();
+      if (availableNewer.isEmpty) {
+        toRemove.add(entry.key);
+      } else if (availableNewer.length != entry.value.newerVersions.length) {
+        updateInfoMap[entry.key] = GalleryUpdateInfo(
+          sourceGid: entry.key,
+          newerVersions: availableNewer,
+          checkedAt: entry.value.checkedAt,
+        );
+      }
+    }
+    for (final gid in toRemove) {
+      updateInfoMap.remove(gid);
+      update(['${idDownloadGalleryItem}_$gid']);
+    }
+  }
+
+  /// Checks all completed downloaded galleries for `#gnd` newer versions.
+  Future<GalleryUpdateBatchResult?> checkAllGalleryUpdates({
+    BuildContext? context,
+  }) async {
+    if (isCheckingUpdates.value) {
+      return null;
+    }
+    _pruneStaleUpdateEntries();
+    final targets = galleryTasks
+        .where(
+          (task) =>
+              task.status == TaskStatus.complete.value &&
+              !filesUnavailable(task.gid),
+        )
+        .toList();
+    if (targets.isEmpty) {
+      if (context != null && context.mounted) {
+        showToast(L10n.of(context).download_updates_none);
+      }
+      return const GalleryUpdateBatchResult(
+        checkedCount: 0,
+        failedCount: 0,
+        updates: <int, GalleryUpdateInfo>{},
+      );
+    }
+
+    isCheckingUpdates.value = true;
+    updateCheckCompleted.value = 0;
+    updateCheckTotal.value = targets.length;
+    final cancelToken = CancelToken();
+    _updateCheckCancelToken = cancelToken;
+
+    try {
+      final result = await updateService.checkTasksForUpdates(
+        targets,
+        cancelToken: cancelToken,
+        onProgress: (completed, total) {
+          updateCheckCompleted.value = completed;
+          updateCheckTotal.value = total;
+        },
+      );
+
+      // Publish only confirmed results for tasks that still exist and remain
+      // complete, clearing stale badges for confirmed-up-to-date tasks even
+      // when unrelated tasks in the batch failed.
+      var publishedFound = 0;
+      for (final gid in result.checkedGids) {
+        final liveTask = galleryTaskMap[gid];
+        if (liveTask == null ||
+            liveTask.status != TaskStatus.complete.value ||
+            filesUnavailable(gid)) {
+          updateInfoMap.remove(gid);
+          update(['${idDownloadGalleryItem}_$gid']);
+          continue;
+        }
+        final discovered = result.updates[gid];
+        if (discovered != null) {
+          final availableVersions = discovered.newerVersions
+              .where((v) => !galleryTaskMap.containsKey(v.gidInt))
+              .toList();
+          if (availableVersions.isNotEmpty) {
+            updateInfoMap[gid] = GalleryUpdateInfo(
+              sourceGid: gid,
+              newerVersions: availableVersions,
+              checkedAt: discovered.checkedAt,
+            );
+            publishedFound++;
+          } else {
+            updateInfoMap.remove(gid);
+          }
+        } else {
+          updateInfoMap.remove(gid);
+        }
+        update(['${idDownloadGalleryItem}_$gid']);
+      }
+      _pruneStaleUpdateEntries();
+
+      if (!result.cancelled && context != null && context.mounted) {
+        final l10n = L10n.of(context);
+        if (result.failedCount > 0) {
+          showToast(
+            l10n.download_updates_checked_with_errors(
+              result.checkedCount,
+              publishedFound,
+              result.failedCount,
+            ),
+          );
+        } else if (publishedFound > 0) {
+          showToast(l10n.download_updates_found(publishedFound));
+        } else {
+          showToast(l10n.download_updates_none);
+        }
+      }
+      return result;
+    } finally {
+      if (identical(_updateCheckCancelToken, cancelToken)) {
+        _updateCheckCancelToken = null;
+      }
+      isCheckingUpdates.value = false;
+    }
+  }
+
+  /// Analyzes a single downloaded task against a target newer version.
+  Future<GalleryIncrementalPlan> analyzeIncrementalUpdate({
+    required GalleryTask oldTask,
+    required GalleryNewerVersion targetVersion,
+    CancelToken? cancelToken,
+  }) async {
+    final oldImageTasks = await getImageTasks(oldTask.gid);
+    int? oldReadingIndex;
+    if (Get.isRegistered<GalleryCacheController>()) {
+      final cache = await Get.find<GalleryCacheController>()
+          .listenGalleryCache('${oldTask.gid}', sync: false)
+          .first;
+      oldReadingIndex = cache?.lastIndex;
+    }
+    final targetBaseIsSaf = Get.isRegistered<EhSettingService>() &&
+        Get.find<EhSettingService>().downloadLocatino.isContentUri;
+    return updateService.analyzeIncrementalUpdate(
+      oldTask: oldTask,
+      oldImageTasks: oldImageTasks,
+      targetVersion: targetVersion,
+      oldReadingIndex: oldReadingIndex,
+      targetBaseIsSaf: targetBaseIsSaf,
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// Executes an analyzed incremental update plan and updates pending badges.
+  Future<GalleryIncrementalExecutionResult?> executeIncrementalUpdate(
+    GalleryIncrementalPlan plan, {
+    required GalleryIncrementalUpdateMode mode,
+  }) async {
+    final result = await _downloadController.executeIncrementalUpdate(
+      plan,
+      mode: mode,
+    );
+    if (result != null) {
+      if (mode == GalleryIncrementalUpdateMode.inPlace) {
+        updateInfoMap.remove(plan.oldTask.gid);
+      }
+      _pruneStaleUpdateEntries();
+      update(['${idDownloadGalleryItem}_${plan.oldTask.gid}']);
+    }
+    return result;
+  }
+
+  @override
+  void onClose() {
+    _updateCheckCancelToken?.cancel();
+    super.onClose();
+  }
 
   late String tabTag;
 
@@ -237,6 +471,7 @@ class DownloadViewController extends GetxController {
     bool shouldDeleteContent = true,
   }) {
     final GalleryTask task = galleryTasks[index];
+    updateInfoMap.remove(task.gid);
     _downloadController.removeDownloadGalleryTask(
       gid: task.gid,
       shouldDeleteContent: shouldDeleteContent,

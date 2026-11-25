@@ -5392,6 +5392,565 @@ class L10n {
       args: [],
     );
   }
+
+  /// `Version Lineage`
+  String get gallery_lineage {
+    return Intl.message(
+      'Version Lineage',
+      name: 'gallery_lineage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Metadata`
+  String get gallery_metadata {
+    return Intl.message(
+      'Metadata',
+      name: 'gallery_metadata',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Parent`
+  String get gallery_parent {
+    return Intl.message('Parent', name: 'gallery_parent', desc: '', args: []);
+  }
+
+  /// `None`
+  String get gallery_parent_none {
+    return Intl.message(
+      'None',
+      name: 'gallery_parent_none',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unavailable`
+  String get gallery_parent_unavailable {
+    return Intl.message(
+      'Unavailable',
+      name: 'gallery_parent_unavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Newer Versions`
+  String get gallery_newer_versions {
+    return Intl.message(
+      'Newer Versions',
+      name: 'gallery_newer_versions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Latest`
+  String get gallery_latest_version {
+    return Intl.message(
+      'Latest',
+      name: 'gallery_latest_version',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open Latest Version`
+  String get gallery_open_latest_version {
+    return Intl.message(
+      'Open Latest Version',
+      name: 'gallery_open_latest_version',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open Parent Gallery`
+  String get gallery_open_parent {
+    return Intl.message(
+      'Open Parent Gallery',
+      name: 'gallery_open_parent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} newer versions`
+  String gallery_newer_version_count(Object count) {
+    return Intl.message(
+      '$count newer versions',
+      name: 'gallery_newer_version_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Newer version available`
+  String get gallery_newer_version_single {
+    return Intl.message(
+      'Newer version available',
+      name: 'gallery_newer_version_single',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Has parent`
+  String get gallery_has_parent_hint {
+    return Intl.message(
+      'Has parent',
+      name: 'gallery_has_parent_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Parent #{gid}`
+  String gallery_from_parent_hint(Object gid) {
+    return Intl.message(
+      'Parent #$gid',
+      name: 'gallery_from_parent_hint',
+      desc: '',
+      args: [gid],
+    );
+  }
+
+  /// `View lineage`
+  String get gallery_view_lineage_hint {
+    return Intl.message(
+      'View lineage',
+      name: 'gallery_view_lineage_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Updatable`
+  String get gallery_updatable_hint {
+    return Intl.message(
+      'Updatable',
+      name: 'gallery_updatable_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Updated {date}`
+  String gallery_updated_on(Object date) {
+    return Intl.message(
+      'Updated $date',
+      name: 'gallery_updated_on',
+      desc: '',
+      args: [date],
+    );
+  }
+
+  /// `Tap to open · Long press to copy`
+  String get gallery_lineage_tap_hint {
+    return Intl.message(
+      'Tap to open · Long press to copy',
+      name: 'gallery_lineage_tap_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tap to copy`
+  String get gallery_metadata_copy_hint {
+    return Intl.message(
+      'Tap to copy',
+      name: 'gallery_metadata_copy_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check updates`
+  String get download_check_updates {
+    return Intl.message(
+      'Check updates',
+      name: 'download_check_updates',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checking...`
+  String get download_checking_updates {
+    return Intl.message(
+      'Checking...',
+      name: 'download_checking_updates',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} galleries have newer versions`
+  String download_updates_found(Object count) {
+    return Intl.message(
+      '$count galleries have newer versions',
+      name: 'download_updates_found',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `All downloaded galleries are up to date`
+  String get download_updates_none {
+    return Intl.message(
+      'All downloaded galleries are up to date',
+      name: 'download_updates_none',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Checked {checked} · {found} updates ({failed} failed)`
+  String download_updates_checked_with_errors(
+    Object checked,
+    Object found,
+    Object failed,
+  ) {
+    return Intl.message(
+      'Checked $checked · $found updates ($failed failed)',
+      name: 'download_updates_checked_with_errors',
+      desc: '',
+      args: [checked, found, failed],
+    );
+  }
+
+  /// `Update`
+  String get download_has_update_badge {
+    return Intl.message(
+      'Update',
+      name: 'download_has_update_badge',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Updating`
+  String get download_incremental_updating {
+    return Intl.message(
+      'Updating',
+      name: 'download_incremental_updating',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reused {reused}`
+  String download_incremental_reused_status(Object reused) {
+    return Intl.message(
+      'Reused $reused',
+      name: 'download_incremental_reused_status',
+      desc: '',
+      args: [reused],
+    );
+  }
+
+  /// `Update all`
+  String get download_update_all {
+    return Intl.message(
+      'Update all',
+      name: 'download_update_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Incremental Update`
+  String get incremental_update_title {
+    return Intl.message(
+      'Incremental Update',
+      name: 'incremental_update_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reuse unchanged local images`
+  String get incremental_update_subtitle {
+    return Intl.message(
+      'Reuse unchanged local images',
+      name: 'incremental_update_subtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Incremental update downloaded gallery`
+  String get incremental_update_entry {
+    return Intl.message(
+      'Incremental update downloaded gallery',
+      name: 'incremental_update_entry',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Analyzing page differences...`
+  String get incremental_update_comparing {
+    return Intl.message(
+      'Analyzing page differences...',
+      name: 'incremental_update_comparing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed to analyze newer version`
+  String get incremental_update_compare_failed {
+    return Intl.message(
+      'Failed to analyze newer version',
+      name: 'incremental_update_compare_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Version comparison`
+  String get incremental_update_version_compare {
+    return Intl.message(
+      'Version comparison',
+      name: 'incremental_update_version_compare',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Target version`
+  String get incremental_update_target_version {
+    return Intl.message(
+      'Target version',
+      name: 'incremental_update_target_version',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Local`
+  String get incremental_update_local_tag {
+    return Intl.message(
+      'Local',
+      name: 'incremental_update_local_tag',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Newer`
+  String get incremental_update_newer_tag {
+    return Intl.message(
+      'Newer',
+      name: 'incremental_update_newer_tag',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reused`
+  String get incremental_update_reused {
+    return Intl.message(
+      'Reused',
+      name: 'incremental_update_reused',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Added`
+  String get incremental_update_added {
+    return Intl.message(
+      'Added',
+      name: 'incremental_update_added',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Replaced`
+  String get incremental_update_replaced {
+    return Intl.message(
+      'Replaced',
+      name: 'incremental_update_replaced',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fetch {count} pages`
+  String incremental_update_only_download(Object count) {
+    return Intl.message(
+      'Fetch $count pages',
+      name: 'incremental_update_only_download',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `All pages reused locally`
+  String get incremental_update_all_reused {
+    return Intl.message(
+      'All pages reused locally',
+      name: 'incremental_update_all_reused',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update mode`
+  String get incremental_update_mode_title {
+    return Intl.message(
+      'Update mode',
+      name: 'incremental_update_mode_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Upgrade in place & keep progress`
+  String get incremental_update_mode_inplace {
+    return Intl.message(
+      'Upgrade in place & keep progress',
+      name: 'incremental_update_mode_inplace',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reuse unchanged local images, update task to #{gid}, and map reading position.`
+  String incremental_update_mode_inplace_desc(Object gid) {
+    return Intl.message(
+      'Reuse unchanged local images, update task to #$gid, and map reading position.',
+      name: 'incremental_update_mode_inplace_desc',
+      desc: '',
+      args: [gid],
+    );
+  }
+
+  /// `Download as new task (keep old)`
+  String get incremental_update_mode_new {
+    return Intl.message(
+      'Download as new task (keep old)',
+      name: 'incremental_update_mode_new',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Create a new folder for #{gid} with reused images while keeping the old version.`
+  String incremental_update_mode_new_desc(Object gid) {
+    return Intl.message(
+      'Create a new folder for #$gid with reused images while keeping the old version.',
+      name: 'incremental_update_mode_new_desc',
+      desc: '',
+      args: [gid],
+    );
+  }
+
+  /// `Recommended`
+  String get incremental_update_recommended {
+    return Intl.message(
+      'Recommended',
+      name: 'incremental_update_recommended',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Upgrade in place · Fetch {count} pages`
+  String incremental_update_start_inplace(Object count) {
+    return Intl.message(
+      'Upgrade in place · Fetch $count pages',
+      name: 'incremental_update_start_inplace',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Create new task · Fetch {count} pages`
+  String incremental_update_start_new(Object count) {
+    return Intl.message(
+      'Create new task · Fetch $count pages',
+      name: 'incremental_update_start_new',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Complete update locally (0 pages to fetch)`
+  String get incremental_update_start_reuse_only {
+    return Intl.message(
+      'Complete update locally (0 pages to fetch)',
+      name: 'incremental_update_start_reuse_only',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View newer gallery details`
+  String get incremental_update_view_newer {
+    return Intl.message(
+      'View newer gallery details',
+      name: 'incremental_update_view_newer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Incremental update started (reused {reused}, fetching {fetch})`
+  String incremental_update_started(Object reused, Object fetch) {
+    return Intl.message(
+      'Incremental update started (reused $reused, fetching $fetch)',
+      name: 'incremental_update_started',
+      desc: '',
+      args: [reused, fetch],
+    );
+  }
+
+  /// `Updated to #{gid} locally ({reused} pages reused)`
+  String incremental_update_completed_locally(Object gid, Object reused) {
+    return Intl.message(
+      'Updated to #$gid locally ($reused pages reused)',
+      name: 'incremental_update_completed_locally',
+      desc: '',
+      args: [gid, reused],
+    );
+  }
+
+  /// `SAF storage does not support local reuse or in-place upgrade; all pages will be downloaded as a new task.`
+  String get incremental_update_saf_inplace_unsupported {
+    return Intl.message(
+      'SAF storage does not support local reuse or in-place upgrade; all pages will be downloaded as a new task.',
+      name: 'incremental_update_saf_inplace_unsupported',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Applying update…`
+  String get incremental_update_applying {
+    return Intl.message(
+      'Applying update…',
+      name: 'incremental_update_applying',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Download as new task · {count} pages`
+  String incremental_update_start_saf_full(Object count) {
+    return Intl.message(
+      'Download as new task · $count pages',
+      name: 'incremental_update_start_saf_full',
+      desc: '',
+      args: [count],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

@@ -89,6 +89,96 @@ class DownloadPathManager {
     }
   }
 
+  /// Resolves a persisted download path (including iOS Documents-relative
+  /// `Download/...` paths) into an absolute filesystem path for I/O.
+  String resolveLocalIoDirPath(String persistedDirPath) {
+    if (persistedDirPath.isContentUri || !GetPlatform.isIOS) {
+      return persistedDirPath;
+    }
+    if (path.isAbsolute(persistedDirPath)) {
+      return persistedDirPath;
+    }
+    return path.join(Global.appDocPath, persistedDirPath);
+  }
+
+  /// Allocates an exclusive, empty download directory for [baseDirName] that
+  /// neither collides with [ownedIoDirs] nor overwrites existing files on disk.
+  ///
+  /// Returns `(persistedDirPath, ioDirPath)`.
+  Future<(String, String)> allocateExclusiveGalleryDownloadPath({
+    required String baseDirName,
+    Set<String> ownedIoDirs = const <String>{},
+  }) async {
+    final normalizedOwned = <String>{
+      for (final dir in ownedIoDirs)
+        if (dir.isNotEmpty) ...<String>[
+          dir.isContentUri ? dir : path.canonicalize(dir),
+        ],
+    };
+
+    for (var attempt = 0; attempt < 200; attempt++) {
+      final candidateName =
+          attempt == 0 ? baseDirName : '$baseDirName (${attempt + 1})';
+      late final String persistedPath;
+      late final String ioPath;
+
+      if (ehSettingService.downloadLocatino.isNotEmpty) {
+        persistedPath = path.join(
+          ehSettingService.downloadLocatino,
+          candidateName,
+        );
+        ioPath = persistedPath;
+      } else if (!GetPlatform.isIOS) {
+        persistedPath = path.join(await defDownloadPath, candidateName);
+        ioPath = persistedPath;
+      } else {
+        persistedPath = path.join('Download', candidateName);
+        ioPath = path.join(Global.appDocPath, persistedPath);
+      }
+
+      if (persistedPath.isContentUri) {
+        await checkSafPath(saveDownloadPath: true);
+        final galleryDirUrl =
+            '${ehSettingService.downloadLocatino}%2F$candidateName';
+        if (normalizedOwned.contains(galleryDirUrl)) {
+          continue;
+        }
+        final uri = Uri.parse(galleryDirUrl);
+        final exists = await ss.exists(uri) ?? false;
+        if (exists) {
+          continue;
+        }
+        final parentUri = Uri.parse(ehSettingService.downloadLocatino);
+        final result = await ss.createDirectory(parentUri, candidateName);
+        if (result == null) {
+          showToast('createDirectory failed');
+          throw Exception('createDirectory failed');
+        }
+        final createdUri = result.uri.toString();
+        return (createdUri, createdUri);
+      } else {
+        final canonicalIo = path.canonicalize(ioPath);
+        if (normalizedOwned.contains(canonicalIo)) {
+          continue;
+        }
+        final dir = Directory(ioPath);
+        if (await dir.exists()) {
+          final entries = await dir.list(followLinks: false).take(1).toList();
+          if (entries.isNotEmpty) {
+            continue;
+          }
+        } else {
+          await dir.create(recursive: true);
+        }
+        return (persistedPath, ioPath);
+      }
+    }
+
+    throw StateError(
+      'Unable to allocate an exclusive download directory for $baseDirName',
+    );
+  }
+
   Future<void> updateCustomDownloadPath() async {
     final customDownloadPath = ehSettingService.downloadLocatino;
     logger.d('customDownloadPath:$customDownloadPath');

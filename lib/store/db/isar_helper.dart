@@ -286,6 +286,27 @@ class IsarHelper {
     });
   }
 
+  /// Atomically writes [newTask] + [newImageTasks] and optionally removes
+  /// [removeOldGid] + its image tasks in a single Isar write transaction.
+  Future<void> commitIncrementalUpdateIsolate({
+    required GalleryTask newTask,
+    required List<GalleryImageTask> newImageTasks,
+    int? removeOldGid,
+    String? expectedOldToken,
+    String? expectedOldDirPath,
+  }) async {
+    await compute(
+      iCommitIncrementalUpdate,
+      (
+        newTask,
+        newImageTasks,
+        removeOldGid,
+        expectedOldToken,
+        expectedOldDirPath,
+      ),
+    );
+  }
+
   /// ImageTasks
   Future<List<GalleryImageTask>> findImageTaskAllByGid(int gid) async {
     return await isar.galleryImageTasks

@@ -168,3 +168,54 @@ Future<void> iUpdateGalleryTaskIsolate(
     });
   }
 }
+
+/// Atomically commits an incremental update inside a single Isar writeTxn.
+///
+/// Throws [StateError] without mutating the database if [newTask.gid] already
+/// exists or (for in-place mode) if the expected old task is missing/changed.
+Future<void> iCommitIncrementalUpdate(
+  (
+    GalleryTask,
+    List<GalleryImageTask>,
+    int?,
+    String?,
+    String?,
+  ) para,
+) async {
+  final (
+    newTask,
+    newImageTasks,
+    removeOldGid,
+    expectedOldToken,
+    expectedOldDirPath,
+  ) = para;
+  final isar = await openIsar();
+  isar.writeTxnSync(() {
+    if (isar.galleryTasks.getSync(newTask.gid) != null) {
+      throw StateError('Target download task ${newTask.gid} already exists');
+    }
+    if (removeOldGid != null) {
+      final existingOld = isar.galleryTasks.getSync(removeOldGid);
+      if (existingOld == null) {
+        throw StateError('Source download task $removeOldGid no longer exists');
+      }
+      if (expectedOldToken != null && existingOld.token != expectedOldToken) {
+        throw StateError('Source download task $removeOldGid token changed');
+      }
+      if (expectedOldDirPath != null &&
+          existingOld.dirPath != expectedOldDirPath) {
+        throw StateError('Source download task $removeOldGid directory changed');
+      }
+    }
+
+    if (newImageTasks.isNotEmpty) {
+      isar.galleryImageTasks.putAllByGidSerSync(newImageTasks);
+    }
+    isar.galleryTasks.putSync(newTask);
+
+    if (removeOldGid != null) {
+      isar.galleryImageTasks.where().gidEqualTo(removeOldGid).deleteAllSync();
+      isar.galleryTasks.deleteSync(removeOldGid);
+    }
+  });
+}

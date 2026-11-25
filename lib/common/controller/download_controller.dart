@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -9,8 +10,10 @@ import 'package:eros_fe/common/controller/download/download_path_manager.dart';
 import 'package:eros_fe/common/controller/download/download_task_manager.dart'
     as dtm;
 import 'package:eros_fe/common/controller/download/gallery_slot_manager.dart';
+import 'package:eros_fe/common/controller/download/gallery_update_service.dart';
 import 'package:eros_fe/common/controller/download/image_download_processor.dart';
 import 'package:eros_fe/common/controller/download/storage_adapter.dart';
+import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/component/exception/error.dart';
@@ -27,6 +30,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_storage/shared_storage.dart' as ss;
 import 'package:synchronized/synchronized.dart';
 
 import 'cache_controller.dart';
@@ -71,10 +75,66 @@ class DownloadController extends GetxController {
   late final StorageAdapter storageAdapter;
   late final GallerySlotManager gallerySlotManager;
   final Map<int, Lock> _completionLocks = <int, Lock>{};
+  final Map<int, Lock> _taskLocks = <int, Lock>{};
   final Lock _concurrencyResetLock = Lock();
+  final Lock _transferGateLock = Lock();
+  final Set<int> _reservedGids = <int>{};
+  final Set<String> _reservedIoDirs = <String>{};
+  final Set<String> _unretiredOldDirs = <String>{};
+
+  Future<String> _resolveRealDirKey(String dirPath) async {
+    if (dirPath.isEmpty || dirPath.isContentUri) {
+      return dirPath;
+    }
+    try {
+      return path.canonicalize(await Directory(dirPath).resolveSymbolicLinks());
+    } catch (_) {
+      return path.canonicalize(dirPath);
+    }
+  }
 
   Lock _completionLockFor(int gid) =>
       _completionLocks.putIfAbsent(gid, () => Lock());
+
+  Set<String> _collectOwnedIoDirs() {
+    final owned = <String>{..._reservedIoDirs};
+    for (final task in dState.galleryTaskMap.values) {
+      final real = task.realDirPath;
+      if (real != null && real.isNotEmpty) {
+        owned.add(real.isContentUri ? real : path.canonicalize(real));
+      }
+    }
+    return owned;
+  }
+
+  Future<T> _withOrderedCompletionLocks<T>(
+    List<int> gids,
+    Future<T> Function() action,
+  ) async {
+    final sorted = gids.toSet().toList()..sort();
+    Future<T> run(int index) {
+      if (index >= sorted.length) {
+        return action();
+      }
+      return _completionLockFor(sorted[index])
+          .synchronized(() => run(index + 1));
+    }
+
+    return run(0);
+  }
+
+  Future<void> _evictCoverCache(String? dirPath, String? fileName) async {
+    if (dirPath == null ||
+        dirPath.isEmpty ||
+        dirPath.isContentUri ||
+        fileName == null ||
+        fileName.isEmpty) {
+      return;
+    }
+    try {
+      await FileImage(File(path.join(dirPath, fileName))).evict();
+    } catch (_) {}
+  }
 
   @override
   void onInit() {
@@ -86,8 +146,11 @@ class DownloadController extends GetxController {
     // 初始化委托类
     storageAdapter = StorageAdapter();
     pathManager = DownloadPathManager(ehSettingService);
-    taskManager =
-        dtm.DownloadTaskManager(dState, storageAdapter: storageAdapter);
+    taskManager = dtm.DownloadTaskManager(
+      dState,
+      storageAdapter: storageAdapter,
+      taskLocks: _taskLocks,
+    );
     downloadMonitor = dm.DownloadMonitor(dState);
     imageProcessor = ImageDownloadProcessor(dState, cacheController);
 
@@ -107,9 +170,54 @@ class DownloadController extends GetxController {
     super.onClose();
   }
 
+  Future<Set<String>> _reconcilePendingIncrementalUpdates() async {
+    try {
+      final basePersisted = await pathManager.getGalleryDownloadPath();
+      if (basePersisted.isEmpty || basePersisted.isContentUri) {
+        return const <String>{};
+      }
+      final baseIoDir = pathManager.resolveLocalIoDirPath(basePersisted);
+      final unretired = await reconcilePendingIncrementalUpdates(
+        baseDownloadIoDir: baseIoDir,
+        findTaskByGid: (int gid) => isarHelper.findGalleryTaskByGidIsolate(gid),
+        findAllTasks: () => isarHelper.findAllGalleryTasksIsolate(),
+        withEntryLock:
+            (int newGid, int? oldGid, Future<void> Function() action) =>
+                _withOrderedCompletionLocks<void>(
+                  <int>[newGid, if (oldGid != null) oldGid],
+                  () => taskManager.runWithTaskLock<void>(
+                    newGid,
+                    () => _transferGateLock.synchronized(action),
+                  ),
+                ),
+        isReserved: (int newGid, int? oldGid) async =>
+            _reservedGids.contains(newGid) ||
+            (oldGid != null && _reservedGids.contains(oldGid)),
+        getOwnedIoDirs: () async => _collectOwnedIoDirs(),
+      );
+      await _transferGateLock.synchronized(() async {
+        _unretiredOldDirs.removeWhere((dir) => !Directory(dir).existsSync());
+        _unretiredOldDirs.addAll(unretired);
+      });
+      return await _transferGateLock.synchronized(
+        () => Set<String>.from(_unretiredOldDirs),
+      );
+    } catch (e, stack) {
+      logger.w(
+        'Failed to reconcile pending incremental updates',
+        error: e,
+        stackTrace: stack,
+      );
+      return await _transferGateLock.synchronized(
+        () => Set<String>.from(_unretiredOldDirs),
+      );
+    }
+  }
+
   Future<void> asyncInit() async {
     await pathManager.updateCustomDownloadPath();
     await pathManager.allowMediaScan(ehSettingService.allowMediaScan);
+    await _reconcilePendingIncrementalUpdates();
     await taskManager.initGalleryTasks(
       addGalleryTaskCallback: _addGalleryTask,
       downloadTaskMigrationCallback: downloadTaskMigration,
@@ -151,64 +259,498 @@ class DownloadController extends GetxController {
       gid0 = int.parse(match.group(1)!);
       token0 = match.group(2)!;
     }
+    final resolvedGid = gid ?? gid0;
+    final resolvedToken = token ?? token0;
 
-    // 先查询任务是否已存在
-    final GalleryTask? oriTask =
-        await isarHelper.findGalleryTaskByGidIsolate(gid ?? -1);
-    if (oriTask != null) {
+    final reserved = await _transferGateLock.synchronized(() {
+      if (_reservedGids.contains(resolvedGid)) {
+        return false;
+      }
+      _reservedGids.add(resolvedGid);
+      return true;
+    });
+    if (!reserved) {
       showToast('Download task existed');
-      logger.i('$gid 任务已存在');
-      logger.d('${oriTask.toString()} ');
       return;
     }
 
-    final String galleryDirName = path.join(
-      '$gid - ${path.split(title).join('_').replaceAll(RegExp(r'[/:*"<>|,?]'), '_')}',
-    );
-    String dirPath;
+    String? reservedDirKey;
     try {
-      dirPath = await _getGalleryDownloadPath(dirName: galleryDirName);
-    } catch (err, stack) {
-      logger.e('创建目录失败', error: err, stackTrace: stack);
-      showToast('create Directory error, $err');
-      return;
+      // 先查询任务是否已存在
+      final GalleryTask? oriTask =
+          dState.galleryTaskMap[resolvedGid] ??
+          await isarHelper.findGalleryTaskByGidIsolate(resolvedGid);
+      if (oriTask != null) {
+        showToast('Download task existed');
+        logger.i('$resolvedGid 任务已存在');
+        logger.d('${oriTask.toString()} ');
+        return;
+      }
+
+      final String galleryDirName = path.join(
+        '$resolvedGid - ${path.split(title).join('_').replaceAll(RegExp(r'[/:*"<>|,?]'), '_')}',
+      );
+      String dirPath;
+      try {
+        final ownedDirs = await _transferGateLock.synchronized(
+          _collectOwnedIoDirs,
+        );
+        final (persistedPath, ioPath) =
+            await pathManager.allocateExclusiveGalleryDownloadPath(
+              baseDirName: galleryDirName,
+              ownedIoDirs: ownedDirs,
+            );
+        dirPath = persistedPath;
+        reservedDirKey = ioPath.isContentUri ? ioPath : path.canonicalize(ioPath);
+        await _transferGateLock.synchronized(() {
+          _reservedIoDirs.add(reservedDirKey!);
+        });
+      } catch (err, stack) {
+        logger.e('创建目录失败', error: err, stackTrace: stack);
+        showToast('create Directory error, $err');
+        return;
+      }
+
+      logger.d('downloadPath:$dirPath');
+
+      // 登记主任务表
+      final GalleryTask galleryTask = GalleryTask(
+        gid: resolvedGid,
+        token: resolvedToken,
+        url: url,
+        title: title,
+        fileCount: fileCount,
+        dirPath: dirPath,
+        status: TaskStatus.enqueued.value,
+        addTime: DateTime.now().millisecondsSinceEpoch,
+        coverUrl: coverUrl,
+        rating: rating,
+        category: category,
+        uploader: uploader,
+        downloadOrigImage: downloadOri,
+        showKey: showKey,
+      );
+
+      logger.d('add NewTask ${galleryTask.toString()}');
+      await isarHelper.putGalleryTaskIsolate(galleryTask,
+          replaceOnConflict: false);
+      dState.galleryTaskMap[galleryTask.gid] = galleryTask;
+      downloadViewAnimateListAdd();
+      showToast('${galleryTask.gid} Download task start');
+
+      // 使用_addGalleryTask添加到槽位管理器
+      _addGalleryTask(
+        galleryTask,
+        groupCount: Get.find<GalleryPageController>(tag: pageCtrlTag)
+            .gState
+            .firstPageImage
+            .length,
+      );
+    } finally {
+      await _transferGateLock.synchronized(() {
+        _reservedGids.remove(resolvedGid);
+        if (reservedDirKey != null) {
+          _reservedIoDirs.remove(reservedDirKey);
+        }
+      });
+    }
+  }
+
+  /// Executes an incremental update from an already downloaded gallery to a
+  /// newer version by reusing verified local images and fetching only delta pages.
+  ///
+  /// Both `inPlace` and `newTask` build the new gallery in a brand-new exclusive
+  /// directory and commit via a single Isar transaction so any I/O or DB failure
+  /// leaves the original downloaded gallery completely intact.
+  Future<GalleryIncrementalExecutionResult?> executeIncrementalUpdate(
+    GalleryIncrementalPlan plan, {
+    required GalleryIncrementalUpdateMode mode,
+  }) async {
+    final oldTask = plan.oldTask;
+    final oldGid = oldTask.gid;
+    final newGid = plan.newGid;
+    if (newGid <= 0 || newGid == oldGid || plan.totalNewPages <= 0) {
+      return null;
     }
 
-    logger.d('downloadPath:$dirPath');
+    final gidsToReserve = mode == GalleryIncrementalUpdateMode.inPlace
+        ? <int>{oldGid, newGid}
+        : <int>{newGid};
+    final reserved = await _transferGateLock.synchronized(() {
+      if (gidsToReserve.any(_reservedGids.contains)) {
+        return false;
+      }
+      _reservedGids.addAll(gidsToReserve);
+      return true;
+    });
+    if (!reserved) {
+      showToast('Download task existed');
+      return null;
+    }
 
-    // 登记主任务表
-    final GalleryTask galleryTask = GalleryTask(
-      gid: gid ?? gid0,
-      token: token ?? token0,
-      url: url,
-      title: title,
-      fileCount: fileCount,
-      dirPath: dirPath,
-      status: TaskStatus.enqueued.value,
-      addTime: DateTime.now().millisecondsSinceEpoch,
-      coverUrl: coverUrl,
-      rating: rating,
-      category: category,
-      uploader: uploader,
-      downloadOrigImage: downloadOri,
-      showKey: showKey,
-    );
+    String? reservedDirKey;
+    String? createdTargetIoDir;
+    String? createdTargetSafUri;
+    var committedToDb = false;
 
-    logger.d('add NewTask ${galleryTask.toString()}');
-    await isarHelper.putGalleryTaskIsolate(galleryTask,
-        replaceOnConflict: false);
-    dState.galleryTaskMap[galleryTask.gid] = galleryTask;
-    downloadViewAnimateListAdd();
-    showToast('${galleryTask.gid} Download task start');
+    try {
+      return await _withOrderedCompletionLocks<
+          GalleryIncrementalExecutionResult?>(
+        <int>[oldGid, newGid],
+        () async {
+          final existingTarget =
+              dState.galleryTaskMap[newGid] ??
+              await isarHelper.findGalleryTaskByGidIsolate(newGid);
+          if (existingTarget != null) {
+            showToast('Download task existed');
+            return null;
+          }
 
-    // 使用_addGalleryTask添加到槽位管理器
-    _addGalleryTask(
-      galleryTask,
-      groupCount: Get.find<GalleryPageController>(tag: pageCtrlTag)
-          .gState
-          .firstPageImage
-          .length,
-    );
+          // Re-verify the source task inside the lock before doing any I/O.
+          final currentOldTask =
+              dState.galleryTaskMap[oldGid] ??
+              await isarHelper.findGalleryTaskByGidIsolate(oldGid);
+          if (currentOldTask == null ||
+              currentOldTask.status != TaskStatus.complete.value ||
+              currentOldTask.token != oldTask.token ||
+              currentOldTask.dirPath != oldTask.dirPath) {
+            throw StateError(
+              'Source gallery #$oldGid changed or is no longer complete',
+            );
+          }
+
+          final sourceIoDirPath = currentOldTask.realDirPath;
+          if (sourceIoDirPath == null || sourceIoDirPath.isEmpty) {
+            throw StateError('Source download directory is unavailable');
+          }
+
+          final targetBaseIsSaf = ehSettingService.downloadLocatino.isContentUri;
+          final sourceIsSaf = sourceIoDirPath.isContentUri;
+          final useSafFallback = sourceIsSaf || targetBaseIsSaf;
+
+          if (useSafFallback && mode == GalleryIncrementalUpdateMode.inPlace) {
+            throw UnsupportedError('saf_inplace_unsupported');
+          }
+
+          final targetProvider = plan.targetProvider;
+          final newTitle =
+              (ehSettingService.jpnTitleInGalleryPage &&
+                      (targetProvider.japaneseTitle?.trim().isNotEmpty ??
+                          false))
+                  ? targetProvider.japaneseTitle!.trim()
+                  : (targetProvider.englishTitle?.trim().isNotEmpty ?? false)
+                      ? targetProvider.englishTitle!.trim()
+                      : plan.targetVersion.title;
+          final canonicalUrl = normalizeGalleryUrl(
+            plan.canonicalTargetUrl.isNotEmpty
+                ? plan.canonicalTargetUrl
+                : plan.targetVersion.url,
+            baseUri: extractSiteBaseUri(currentOldTask.url),
+          );
+          final newUrl = canonicalUrl.isNotEmpty
+              ? canonicalUrl
+              : '/g/$newGid/${plan.newToken}/';
+          final newFileCount = plan.totalNewPages;
+          final oldImageTasks = await isarHelper.findImageTaskAllByGidIsolate(
+            oldGid,
+          );
+
+          if (mode == GalleryIncrementalUpdateMode.inPlace) {
+            await taskManager.cancelGalleryWork(
+              oldGid,
+              cancelTimerCallback: _cancelDownloadStateChkTimer,
+            );
+          }
+
+          final baseDirName = path.join(
+            '$newGid - ${path.split(newTitle).join('_').replaceAll(RegExp(r'[/:*"<>|,?]'), '_')}',
+          );
+          final ownedDirs = await _transferGateLock.synchronized(
+            _collectOwnedIoDirs,
+          );
+          final (persistedDirPath, targetIoDirPath) =
+              await pathManager.allocateExclusiveGalleryDownloadPath(
+                baseDirName: baseDirName,
+                ownedIoDirs: ownedDirs,
+              );
+          reservedDirKey = targetIoDirPath.isContentUri
+              ? targetIoDirPath
+              : path.canonicalize(targetIoDirPath);
+          await _transferGateLock.synchronized(() {
+            _reservedIoDirs.add(reservedDirKey!);
+          });
+          if (targetIoDirPath.isContentUri) {
+            createdTargetSafUri = targetIoDirPath;
+          } else {
+            createdTargetIoDir = targetIoDirPath;
+            // Write recovery journal immediately upon directory allocation so
+            // even a kill mid-copy can be cleaned up cleanly on next start.
+            await writePendingIncrementalJournal(
+              targetIoDirPath: targetIoDirPath,
+              newGid: newGid,
+              oldGid: oldGid,
+              oldToken: currentOldTask.token,
+              oldIoDirPath: sourceIoDirPath,
+              mode: mode,
+            );
+          }
+
+          late final List<GalleryImageTask> reusedTasks;
+          String? coverImage;
+
+          if (useSafFallback) {
+            reusedTasks = const <GalleryImageTask>[];
+            coverImage = null;
+          } else {
+            final prepared = await prepareIncrementalLocalFiles(
+              plan: plan,
+              mode: mode,
+              sourceDirPath: sourceIoDirPath,
+              targetDirPath: targetIoDirPath,
+              oldImageTasks: oldImageTasks,
+            );
+            reusedTasks = prepared.reusedImageTasks;
+            coverImage = prepared.coverImage;
+          }
+
+          final reusedCount = reusedTasks.length;
+          final remainingCount = max(0, newFileCount - reusedCount);
+          final completedLocally = newFileCount > 0 && remainingCount == 0;
+          final newTask = GalleryTask(
+            gid: newGid,
+            token: plan.newToken,
+            url: newUrl,
+            title: newTitle,
+            dirPath: persistedDirPath,
+            fileCount: newFileCount,
+            completCount: reusedCount,
+            status: completedLocally
+                ? TaskStatus.complete.value
+                : TaskStatus.enqueued.value,
+            coverImage: coverImage,
+            addTime: mode == GalleryIncrementalUpdateMode.inPlace
+                ? (currentOldTask.addTime ??
+                    DateTime.now().millisecondsSinceEpoch)
+                : DateTime.now().millisecondsSinceEpoch,
+            coverUrl: targetProvider.imgUrl ?? currentOldTask.coverUrl,
+            rating: targetProvider.rating ?? currentOldTask.rating,
+            category: targetProvider.category ?? currentOldTask.category,
+            uploader: targetProvider.uploader ?? currentOldTask.uploader,
+            downloadOrigImage: currentOldTask.downloadOrigImage,
+            showKey: targetProvider.showKey,
+          );
+
+          // Stage metadata under `.info.staging` BEFORE committing Isar so
+          // Restore Download Tasks never imports an uncommitted `.info` file.
+          if (!targetIoDirPath.isContentUri) {
+            await storageAdapter.writeTaskInfoFileWithImages(
+              newTask,
+              reusedTasks,
+              fileName: kIncrementalStagingInfoFileName,
+            );
+          }
+
+          // Single atomic Isar transaction: insert newTask + reused image tasks,
+          // and (for inPlace) delete oldTask + old image tasks together.
+          await isarHelper.commitIncrementalUpdateIsolate(
+            newTask: newTask,
+            newImageTasks: reusedTasks,
+            removeOldGid:
+                mode == GalleryIncrementalUpdateMode.inPlace ? oldGid : null,
+            expectedOldToken: mode == GalleryIncrementalUpdateMode.inPlace
+                ? currentOldTask.token
+                : null,
+            expectedOldDirPath: mode == GalleryIncrementalUpdateMode.inPlace
+                ? currentOldTask.dirPath
+                : null,
+          );
+          committedToDb = true;
+
+          // Publish committed state to in-memory maps FIRST so post-commit
+          // file finalization errors can never leave UI/state diverged from DB.
+          dState.galleryTaskMap[newGid] = newTask;
+          dState.claimedImageFiles[newGid] = <int, String>{
+            for (final t in reusedTasks)
+              if (t.filePath != null && t.filePath!.isNotEmpty)
+                t.ser: t.filePath!,
+          };
+
+          if (mode == GalleryIncrementalUpdateMode.inPlace) {
+            dState.galleryTaskMap.remove(oldGid);
+            dState.claimedImageFiles.remove(oldGid);
+            dState.unavailableGalleryFiles.remove(oldGid);
+            dState.errInfoMap.remove(oldGid);
+            dState.incrementalProgressMap.remove(oldGid);
+          }
+
+          if (completedLocally) {
+            dState.incrementalProgressMap.remove(newGid);
+          } else if (reusedCount > 0) {
+            dState.incrementalProgressMap[newGid] = GalleryIncrementalProgress(
+              gid: newGid,
+              reusedCount: reusedCount,
+              totalCount: newFileCount,
+              mode: mode,
+            );
+          } else {
+            dState.incrementalProgressMap.remove(newGid);
+          }
+          _refreshDownloadGalleryList();
+
+          if (!completedLocally) {
+            _addGalleryTask(
+              newTask,
+              groupCount: plan.firstPageCount,
+              images: plan.targetImages,
+            );
+          }
+
+          // Best-effort post-commit finalization (retains `.inc_pending.json`
+          // for startup/restore retry if any file operation fails).
+          if (targetIoDirPath.isContentUri) {
+            try {
+              await taskManager.runWithTaskLock<void>(
+                newGid,
+                () => storageAdapter.writeTaskInfoFileWithImages(
+                  newTask,
+                  reusedTasks,
+                ),
+              );
+            } catch (e, stack) {
+              logger.w(
+                'Failed to write SAF .info after commit for #$newGid',
+                error: e,
+                stackTrace: stack,
+              );
+            }
+          } else {
+            var finalized = false;
+            try {
+              finalized = await taskManager.runWithTaskLock<bool>(
+                newGid,
+                () => finalizeCommittedIncrementalDirectory(
+                  targetIoDirPath: targetIoDirPath,
+                  retireOldIoDirPath:
+                      mode == GalleryIncrementalUpdateMode.inPlace
+                          ? sourceIoDirPath
+                          : null,
+                  newGid: newGid,
+                  oldGid: oldGid,
+                  oldToken: currentOldTask.token,
+                ),
+              );
+              if (!finalized) {
+                logger.w(
+                  'Incremental file finalization incomplete for #$newGid; '
+                  'pending journal retained for retry',
+                );
+              }
+            } catch (e, stack) {
+              logger.w(
+                'Incremental file finalization threw for #$newGid; '
+                'pending journal retained for retry',
+                error: e,
+                stackTrace: stack,
+              );
+            }
+            if (!finalized &&
+                mode == GalleryIncrementalUpdateMode.inPlace &&
+                !sourceIoDirPath.isContentUri) {
+              // Record failed source retirement BEFORE releasing `_reservedGids`
+              // so a concurrent/subsequent restore cannot re-import old `.info`.
+              final resolvedOld = await _resolveRealDirKey(sourceIoDirPath);
+              await _transferGateLock.synchronized(() {
+                _unretiredOldDirs.add(resolvedOld);
+                _unretiredOldDirs.add(path.canonicalize(sourceIoDirPath));
+              });
+            }
+          }
+
+          if (mode == GalleryIncrementalUpdateMode.inPlace) {
+            await _evictCoverCache(sourceIoDirPath, currentOldTask.coverImage);
+            await _evictCoverCache(targetIoDirPath, coverImage);
+
+            // Best-effort conditional reading progress migration isolated from
+            // task finalization and checked synchronously before writing.
+            if (Get.isRegistered<GalleryCacheController>()) {
+              try {
+                final cacheCtrl = Get.find<GalleryCacheController>();
+                final freshOldCache = await cacheCtrl
+                    .listenGalleryCache('$oldGid', sync: false)
+                    .first;
+                final freshOldIndex = freshOldCache?.lastIndex;
+                if (freshOldIndex != null && freshOldIndex > 0) {
+                  final mappedIndex = mapReadingIndexForIncrementalUpdate(
+                    oldLastIndex: freshOldIndex,
+                    reusedPages: plan.reusedPages,
+                    totalNewPages: newFileCount,
+                  );
+                  if (mappedIndex != null) {
+                    await cacheCtrl.setIndex(
+                      '$newGid',
+                      mappedIndex,
+                      saveToStore: true,
+                      onlyIfUnset: true,
+                    );
+                  }
+                }
+              } catch (e, stack) {
+                logger.w(
+                  'Failed to migrate reading progress from #$oldGid to #$newGid',
+                  error: e,
+                  stackTrace: stack,
+                );
+              }
+            }
+          } else {
+            await _evictCoverCache(targetIoDirPath, coverImage);
+          }
+
+          return GalleryIncrementalExecutionResult(
+            task: newTask,
+            reusedCount: reusedCount,
+            downloadCount: remainingCount,
+            completedLocally: completedLocally,
+          );
+        },
+      );
+    } catch (_) {
+      if (!committedToDb) {
+        if (createdTargetIoDir != null) {
+          try {
+            final dir = Directory(createdTargetIoDir!);
+            if (await dir.exists()) {
+              await dir.delete(recursive: true);
+            }
+          } catch (_) {}
+        }
+        if (createdTargetSafUri != null) {
+          try {
+            final deleted =
+                await ss.delete(Uri.parse(createdTargetSafUri!)) ?? false;
+            if (!deleted) {
+              logger.w(
+                'SAF rollback delete returned false for $createdTargetSafUri',
+              );
+            }
+          } catch (e, stack) {
+            logger.w(
+              'SAF rollback delete failed for $createdTargetSafUri',
+              error: e,
+              stackTrace: stack,
+            );
+          }
+        }
+      }
+      rethrow;
+    } finally {
+      await _transferGateLock.synchronized(() {
+        _reservedGids.removeAll(gidsToReserve);
+        if (reservedDirKey != null) {
+          _reservedIoDirs.remove(reservedDirKey);
+        }
+      });
+    }
   }
 
   void downloadViewAnimateListAdd() {
@@ -237,6 +779,7 @@ class DownloadController extends GetxController {
     }
 
     if (task?.status == TaskStatus.complete.value) {
+      dState.incrementalProgressMap.remove(gid);
       // 清理该画廊的所有重试计数
       imageProcessor.clearGalleryReDownloadCounts(gid);
 
@@ -379,6 +922,7 @@ class DownloadController extends GetxController {
     bool shouldDeleteContent = true,
   }) async {
     await _completionLockFor(gid).synchronized(() async {
+      dState.incrementalProgressMap.remove(gid);
       // 清理该画廊的所有重试计数
       imageProcessor.clearGalleryReDownloadCounts(gid);
 
@@ -656,12 +1200,13 @@ class DownloadController extends GetxController {
   }
 
   Future<void> restoreGalleryTasks({bool init = false}) async {
+    await _reconcilePendingIncrementalUpdates();
     await taskManager.restoreGalleryTasks(
       init: init,
       getDownloadPathCallback: _getGalleryDownloadPath,
       restoreTasksWithPathCallback: restoreGalleryTasksWithPath,
       restoreTasksWithSAFCallback: restoreGalleryTasksWithSAF,
-      onInitCallback: onInit,
+      onInitCallback: asyncInit,
       resetDownloadViewAnimationKeyCallback: resetDownloadViewAnimationKey,
     );
     _refreshDownloadGalleryList();
@@ -676,25 +1221,55 @@ class DownloadController extends GetxController {
 
   // 从当前下载目录恢复下载列表数据
   Future<void> restoreGalleryTasksWithPath(String currentDownloadPath) async {
+    final skipDirs = await _transferGateLock.synchronized(
+      () => Set<String>.from(_unretiredOldDirs),
+    );
     await storageAdapter.restoreGalleryTasksWithPath(
       currentDownloadPath,
       _loadInfoFile,
+      skipDirs: skipDirs,
     );
   }
 
   Future<void> _loadInfoFile(File infoFile, String dirPath) async {
-    await storageAdapter.loadInfoFile(infoFile, dirPath);
+    // Hold `_transferGateLock` across reservation + unretired-dir checks and
+    // DB import so restore cannot race with active or failed-retirement tasks.
+    final resolvedDir = await _resolveRealDirKey(dirPath);
+    final canonicalDir = dirPath.isContentUri ? dirPath : path.canonicalize(dirPath);
+    await _transferGateLock.synchronized(() async {
+      if (_unretiredOldDirs.contains(resolvedDir) ||
+          _unretiredOldDirs.contains(canonicalDir)) {
+        return;
+      }
+      if (!dirPath.isContentUri &&
+          File(path.join(dirPath, kIncrementalRetiringTombstoneFileName))
+              .existsSync()) {
+        return;
+      }
+      try {
+        final firstLine = infoFile
+            .readAsLinesSync()
+            .firstWhere((line) => line.trim().isNotEmpty, orElse: () => '');
+        if (firstLine.isNotEmpty) {
+          final decoded = jsonDecode(firstLine) as Map<String, dynamic>;
+          final gid = decoded['gid'] as int?;
+          if (gid != null && _reservedGids.contains(gid)) {
+            return;
+          }
+        }
+      } catch (_) {}
+      await storageAdapter.loadInfoFile(infoFile, dirPath);
+    });
   }
 
   Future<void> rebuildGalleryTasks() async {
     final tasks = await isarHelper.findAllGalleryTasksIsolate();
 
     for (final originalTask in tasks) {
-      final task = await taskManager.reconcileGalleryTask(originalTask);
-      dState.galleryTaskMap[task.gid] = task;
-      if (!dState.unavailableGalleryFiles.contains(task.gid)) {
-        await storageAdapter.writeTaskInfoFile(task);
-      }
+      await taskManager.reconcileGalleryTask(
+        originalTask,
+        writeInfoFile: true,
+      );
     }
     _refreshDownloadGalleryList();
   }

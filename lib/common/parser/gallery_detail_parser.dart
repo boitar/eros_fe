@@ -224,8 +224,82 @@ Future<List<TagGroup>> parseGalleryTags(Document document) async {
   return _tagGroup;
 }
 
+/// Parses `#gnd` newer versions from a gallery detail HTML document.
+///
+/// E-Hentai renders newer versions as:
+/// `<div id="gnd"><a href=".../g/<gid>/<token>/">Title</a>, added YYYY-MM-DD HH:mm<br></div>`
+List<GalleryNewerVersion> parseGalleryNewerVersions(
+  Document document, {
+  Uri? baseUri,
+}) {
+  final Element? gnd = document.querySelector('#gnd');
+  if (gnd == null) {
+    return const <GalleryNewerVersion>[];
+  }
+
+  final versions = <GalleryNewerVersion>[];
+  final seenGids = <String>{};
+  final datePattern = RegExp(
+    r'(?:added\s+)?(\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2})?)',
+    caseSensitive: false,
+  );
+
+  for (final Element anchor in gnd.querySelectorAll('a[href]')) {
+    final rawHref = anchor.attributes['href']?.trim() ?? '';
+    final resolvedUri = resolveEhGalleryUri(rawHref, baseUri: baseUri);
+    final parsed = parseGalleryGidToken(rawHref, baseUri: baseUri);
+    if (resolvedUri == null || parsed == null) {
+      continue;
+    }
+    final (gid, token) = parsed;
+    if (!seenGids.add(gid)) {
+      continue;
+    }
+
+    String? addedDate;
+    final parent = anchor.parent;
+    if (parent != null) {
+      final nodes = parent.nodes;
+      final index = nodes.indexOf(anchor);
+      if (index >= 0) {
+        final trailing = StringBuffer();
+        for (var i = index + 1; i < nodes.length; i++) {
+          final node = nodes[i];
+          if (node is Element) {
+            final tag = node.localName?.toLowerCase();
+            if (tag == 'a' || tag == 'br' || tag == 'p' || tag == 'div') {
+              break;
+            }
+          }
+          trailing.write(node.text ?? '');
+        }
+        final match = datePattern.firstMatch(trailing.toString());
+        if (match != null) {
+          addedDate = match.group(1)?.trim();
+        }
+      }
+    }
+
+    final title = anchor.text.trim();
+    versions.add(
+      GalleryNewerVersion(
+        gid: gid,
+        token: token,
+        url: resolvedUri.toString(),
+        title: title.isNotEmpty ? title : '#$gid',
+        addedDate: addedDate,
+      ),
+    );
+  }
+
+  return versions;
+}
+
 /// 解析画廊详情数据
-Future<GalleryProvider> parseGalleryDetail(String response) async {
+Future<GalleryProvider> parseGalleryDetail(
+  String response, {
+  Uri? baseUri,
+}) async {
   // 解析响应信息dom
   final Document document = parse(response);
 
@@ -311,16 +385,39 @@ Future<GalleryProvider> parseGalleryDetail(String response) async {
   // print('^^^ $_mapGdt');
 
   final String _parent = _mapGdt['Parent:']?.text.trim() ?? '';
-  final String _parentHref =
+  final String _rawParentHref =
       _mapGdt['Parent:']?.querySelector('a')?.attributes['href'] ?? '';
+  final String _parentHref =
+      resolveEhGalleryUri(_rawParentHref, baseUri: baseUri)?.toString() ?? '';
   final String _visible = _mapGdt['Visible:']?.text.trim() ?? '';
   final String _language = _mapGdt['Language:']?.text.trim() ?? '';
   final String _fileSize = _mapGdt['File Size:']?.text.trim() ?? '';
+  final String _fileCount = RegExp(r'\d+')
+          .firstMatch(_mapGdt['Length:']?.text.trim() ?? '')
+          ?.group(0) ??
+      '';
   final String _postTime = _mapGdt['Posted:']?.text.trim() ?? '';
   final String _favCount = RegExp(r'\d+')
           .firstMatch(_mapGdt['Favorited:']?.text.trim() ?? '')
           ?.group(0) ??
       '';
+
+  final String? _scriptGid =
+      RegExp(r'var\s+gid\s*=\s*(\d+)\s*;').firstMatch(response)?.group(1);
+  final String? _scriptToken = RegExp(
+    r'''var\s+token\s*=\s*["']([0-9a-fA-F]{10})["']\s*;''',
+  ).firstMatch(response)?.group(1)?.toLowerCase();
+  final (String, String)? _baseIdentity =
+      baseUri != null ? parseGalleryGidToken(baseUri.toString()) : null;
+  final String? _resolvedGid = _scriptGid ?? _baseIdentity?.$1;
+  final String? _resolvedToken = _scriptToken ?? _baseIdentity?.$2;
+  final String? _resolvedUrl =
+      (_resolvedGid != null && _resolvedToken != null)
+          ? resolveEhGalleryUri(
+              '/g/$_resolvedGid/$_resolvedToken/',
+              baseUri: baseUri,
+            )?.toString()
+          : null;
 
   final Element? elmCategory = document.querySelector('#gdc > div');
   // 详情页解析 category
@@ -331,11 +428,15 @@ Future<GalleryProvider> parseGalleryDetail(String response) async {
 
   final _galleryComments = parseGalleryComment(document);
   final _chapter = _parseChapter(_galleryComments);
+  final _newerVersions = parseGalleryNewerVersions(document, baseUri: baseUri);
 
   // eventpane
   final _eventpane = document.querySelector('#eventpane')?.text ?? '';
 
   final galleryProvider = GalleryProvider(
+    gid: _resolvedGid,
+    token: _resolvedToken,
+    url: _resolvedUrl,
     imgUrl: _imageUrl,
     imgWidth: _imageWidth,
     imgHeight: _imageHeight,
@@ -358,12 +459,14 @@ Future<GalleryProvider> parseGalleryDetail(String response) async {
     japaneseTitle: _japaneseTitle,
     torrentcount: _torrentCount,
     language: _language,
+    filecount: _fileCount.isNotEmpty ? _fileCount : null,
     filesizeText: _fileSize,
     category: _category,
     uploader: _uploader,
     postTime: _postTime,
     parent: _parent,
     parentHref: _parentHref,
+    newerVersions: _newerVersions.isEmpty ? null : _newerVersions,
     visible: _visible,
   );
 

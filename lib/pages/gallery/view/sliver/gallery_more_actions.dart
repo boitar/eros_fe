@@ -1,3 +1,4 @@
+import 'package:eros_fe/common/controller/download/gallery_update_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
@@ -138,6 +139,32 @@ List<GalleryMoreAction> galleryMoreActions(
         NavigatorUtil.goSearchPageWithParam(simpleSearch: 'title:"$title"');
       },
     ),
+    if (provider?.hasNewerVersions ?? false)
+      GalleryMoreAction(
+        id: 'latestVersion',
+        title: l10n.gallery_open_latest_version,
+        symbol: 'arrow.up.right.circle',
+        icon: CupertinoIcons.arrow_up_right_circle,
+        onPressed: () {
+          final latest = provider?.latestNewerVersion;
+          if (latest != null) {
+            NavigatorUtil.goGalleryPage(url: normalizeGalleryUrl(latest.url));
+          }
+        },
+      ),
+    if (provider?.hasParentLink ?? false)
+      GalleryMoreAction(
+        id: 'parentGallery',
+        title: l10n.gallery_open_parent,
+        symbol: 'arrow.turn.up.left',
+        icon: CupertinoIcons.arrow_turn_up_left,
+        onPressed: () {
+          final parentHref = provider?.parentHref;
+          if (parentHref != null && parentHref.isNotEmpty) {
+            NavigatorUtil.goGalleryPage(url: normalizeGalleryUrl(parentHref));
+          }
+        },
+      ),
     GalleryMoreAction(
       id: 'copyTitle',
       title: l10n.copy_title,

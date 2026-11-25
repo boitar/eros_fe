@@ -110,6 +110,8 @@ extension ExtGalleryProvider on GalleryProvider {
       filesizeText: item.filesizeText?.oN,
       visible: item.visible?.oN,
       parent: item.parent?.oN,
+      parentHref: item.parentHref?.oN,
+      newerVersions: item.newerVersions?.oN,
       ratingFallBack: item.ratingFallBack?.oN,
       numberOfReviews: item.numberOfReviews?.oN,
       postTime: item.postTime?.oN,
@@ -135,6 +137,61 @@ extension ExtGalleryProvider on GalleryProvider {
       expunged: expunged?.oN,
       chapter: item.chapter?.oN,
     );
+  }
+
+  /// Whether [parentHref] points to a valid E-Hentai/ExHentai gallery URL.
+  bool get hasParentLink => parseGalleryGidToken(parentHref) != null;
+
+  /// Parsed parent GID from [parentHref] or [parent] when available.
+  String? get parentGid {
+    final parsed = parseGalleryGidToken(parentHref);
+    if (parsed != null) {
+      return parsed.$1;
+    }
+    final raw = parent?.trim() ?? '';
+    if (raw.isEmpty || raw.toLowerCase() == 'none') {
+      return null;
+    }
+    final digits = RegExp(r'\d+').firstMatch(raw)?.group(0);
+    return digits;
+  }
+
+  /// Whether the gallery has any parsed `#gnd` newer versions.
+  bool get hasNewerVersions => newerVersions?.isNotEmpty ?? false;
+
+  /// Newer versions ordered newest-first with a strict total order:
+  /// items with an added date precede undated items (date descending), then
+  /// numeric gid descending, then original `#gnd` DOM order reversed.
+  List<GalleryNewerVersion> get newerVersionsNewestFirst {
+    final list = newerVersions;
+    if (list == null || list.isEmpty) {
+      return const <GalleryNewerVersion>[];
+    }
+    final indexed = list.asMap().entries.toList();
+    indexed.sort((a, b) {
+      final dateA = a.value.addedDate?.trim() ?? '';
+      final dateB = b.value.addedDate?.trim() ?? '';
+      final hasDateA = dateA.isNotEmpty;
+      final hasDateB = dateB.isNotEmpty;
+      if (hasDateA != hasDateB) {
+        return hasDateA ? -1 : 1;
+      }
+      if (hasDateA && dateA != dateB) {
+        return dateB.compareTo(dateA);
+      }
+      final gidCmp = b.value.gidInt.compareTo(a.value.gidInt);
+      if (gidCmp != 0) {
+        return gidCmp;
+      }
+      // Preserve E-Hentai `#gnd` order (later items in DOM are newer).
+      return b.key.compareTo(a.key);
+    });
+    return indexed.map((e) => e.value).toList(growable: false);
+  }
+
+  GalleryNewerVersion? get latestNewerVersion {
+    final ordered = newerVersionsNewestFirst;
+    return ordered.isEmpty ? null : ordered.first;
   }
 }
 

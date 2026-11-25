@@ -30,34 +30,64 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(site) => "현재 ${site}";
 
-  static String m5(modelName) => "Model ${modelName}";
+  static String m5(reused) => "${reused}쪽 재사용";
 
-  static String m6(count) => "${count}페이지";
+  static String m6(checked, found, failed) =>
+      "${checked}개 확인 · ${found}개 업데이트 (${failed}개 실패)";
 
-  static String m7(seconds) => "${seconds}초";
+  static String m7(count) => "${count}개 갤러리에 새 버전이 있습니다";
 
-  static String m8(page, total) => "${page} / ${total}쪽";
+  static String m8(gid) => "원본 #${gid}";
 
-  static String m9(rating) => "${rating} ⭐";
+  static String m9(count) => "새 버전 ${count}개";
 
-  static String m10(tag) => "${tag} 추가";
+  static String m10(date) => "${date} 수정";
 
-  static String m11(count) => "총 ${count}페이지";
+  static String m11(gid, reused) => "#${gid}로 로컬 업데이트 완료 (${reused}쪽 재사용)";
 
-  static String m12(avg, count) => "평균 ${avg} · ${count}명";
+  static String m12(gid) => "변경되지 않은 이미지를 재사용하고 #${gid}로 업데이트하며 읽기 위치를 매핑합니다.";
 
-  static String m13(text) => "“${text}” 검색";
+  static String m13(gid) => "#${gid} 폴더를 새로 만들어 재사용하며 구버전을 그대로 유지합니다.";
 
-  static String m14(count) => "${count}개 추가됨 · 쉼표로 구분";
+  static String m14(count) => "${count}쪽만 다운로드";
 
-  static String m15(count, per) => "총 ${count}페이지 · 페이지당 ${per}장";
+  static String m15(count) => "제자리 증분 업데이트 · ${count}쪽 받기";
 
-  static String m16(count) => "토렌트 · ${count}개";
+  static String m16(count) => "새 작업으로 받기 · ${count}쪽 받기";
 
-  static String m17(tagNamespace) =>
+  static String m17(count) => "새 작업으로 전체 다운로드 · ${count}쪽";
+
+  static String m18(reused, fetch) =>
+      "증분 업데이트 시작 (재사용 ${reused}, 다운로드 ${fetch})";
+
+  static String m19(modelName) => "Model ${modelName}";
+
+  static String m20(count) => "${count}페이지";
+
+  static String m21(seconds) => "${seconds}초";
+
+  static String m22(page, total) => "${page} / ${total}쪽";
+
+  static String m23(rating) => "${rating} ⭐";
+
+  static String m24(tag) => "${tag} 추가";
+
+  static String m25(count) => "총 ${count}페이지";
+
+  static String m26(avg, count) => "평균 ${avg} · ${count}명";
+
+  static String m27(text) => "“${text}” 검색";
+
+  static String m28(count) => "${count}개 추가됨 · 쉼표로 구분";
+
+  static String m29(count, per) => "총 ${count}페이지 · 페이지당 ${per}장";
+
+  static String m30(count) => "토렌트 · ${count}개";
+
+  static String m31(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m18(version) => "Update to ${version}";
+  static String m32(version) => "Update to ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -260,8 +290,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "Double page model",
     ),
     "download": MessageLookupByLibrary.simpleMessage("다운로드"),
+    "download_check_updates": MessageLookupByLibrary.simpleMessage("업데이트 확인"),
+    "download_checking_updates": MessageLookupByLibrary.simpleMessage("확인 중…"),
     "download_files_unavailable": MessageLookupByLibrary.simpleMessage(
       "파일을 일시적으로 사용할 수 없습니다",
+    ),
+    "download_has_update_badge": MessageLookupByLibrary.simpleMessage("새 버전"),
+    "download_incremental_reused_status": m5,
+    "download_incremental_updating": MessageLookupByLibrary.simpleMessage(
+      "업데이트 중",
     ),
     "download_location": MessageLookupByLibrary.simpleMessage("다운로드 경로"),
     "download_ori_image": MessageLookupByLibrary.simpleMessage(
@@ -269,6 +306,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "download_ori_image_summary": MessageLookupByLibrary.simpleMessage(
       "it is dangerous! You may get 509 error",
+    ),
+    "download_update_all": MessageLookupByLibrary.simpleMessage("모두 업데이트"),
+    "download_updates_checked_with_errors": m6,
+    "download_updates_found": m7,
+    "download_updates_none": MessageLookupByLibrary.simpleMessage(
+      "다운로드한 모든 갤러리가 최신입니다",
     ),
     "downloaded": MessageLookupByLibrary.simpleMessage("다운로드 완료"),
     "downloading": MessageLookupByLibrary.simpleMessage("Downloading"),
@@ -319,7 +362,35 @@ class MessageLookup extends MessageLookupByLibrary {
     "fullscreen": MessageLookupByLibrary.simpleMessage("Fullscreen"),
     "galery_site": MessageLookupByLibrary.simpleMessage("갤러리 사이트"),
     "gallery_comments": MessageLookupByLibrary.simpleMessage("갤러리 댓글"),
+    "gallery_from_parent_hint": m8,
+    "gallery_has_parent_hint": MessageLookupByLibrary.simpleMessage("원본 포함"),
     "gallery_info": MessageLookupByLibrary.simpleMessage("갤러리 정보"),
+    "gallery_latest_version": MessageLookupByLibrary.simpleMessage("최신"),
+    "gallery_lineage": MessageLookupByLibrary.simpleMessage("버전 계보"),
+    "gallery_lineage_tap_hint": MessageLookupByLibrary.simpleMessage(
+      "탭하여 이동 · 길게 눌러 복사",
+    ),
+    "gallery_metadata": MessageLookupByLibrary.simpleMessage("메타데이터"),
+    "gallery_metadata_copy_hint": MessageLookupByLibrary.simpleMessage(
+      "탭하여 복사",
+    ),
+    "gallery_newer_version_count": m9,
+    "gallery_newer_version_single": MessageLookupByLibrary.simpleMessage(
+      "새 버전 있음",
+    ),
+    "gallery_newer_versions": MessageLookupByLibrary.simpleMessage("최신 버전"),
+    "gallery_open_latest_version": MessageLookupByLibrary.simpleMessage(
+      "최신 버전 열기",
+    ),
+    "gallery_open_parent": MessageLookupByLibrary.simpleMessage("원본 갤러리 열기"),
+    "gallery_parent": MessageLookupByLibrary.simpleMessage("원본 갤러리"),
+    "gallery_parent_none": MessageLookupByLibrary.simpleMessage("없음"),
+    "gallery_parent_unavailable": MessageLookupByLibrary.simpleMessage("사용 불가"),
+    "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage(
+      "증분 업데이트 가능",
+    ),
+    "gallery_updated_on": m10,
+    "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage("계보 보기"),
     "glass_effect": MessageLookupByLibrary.simpleMessage("유리 효과"),
     "glass_material": MessageLookupByLibrary.simpleMessage("유리 재질"),
     "glass_material_frosted": MessageLookupByLibrary.simpleMessage("젖빛 유리"),
@@ -381,6 +452,72 @@ class MessageLookup extends MessageLookupByLibrary {
       "Import App Data From Backup File, need restart app",
     ),
     "import_export": MessageLookupByLibrary.simpleMessage("가져오기 및 내보내기"),
+    "incremental_update_added": MessageLookupByLibrary.simpleMessage("추가 페이지"),
+    "incremental_update_all_reused": MessageLookupByLibrary.simpleMessage(
+      "모든 페이지 로컬 재사용",
+    ),
+    "incremental_update_applying": MessageLookupByLibrary.simpleMessage(
+      "업데이트 적용 중…",
+    ),
+    "incremental_update_compare_failed": MessageLookupByLibrary.simpleMessage(
+      "새 버전 분석 실패",
+    ),
+    "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
+      "페이지 차이 분석 중…",
+    ),
+    "incremental_update_completed_locally": m11,
+    "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
+      "다운로드한 갤러리 증분 업데이트",
+    ),
+    "incremental_update_local_tag": MessageLookupByLibrary.simpleMessage("로컬"),
+    "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
+      "제자리 업그레이드 및 읽기 위치 유지",
+    ),
+    "incremental_update_mode_inplace_desc": m12,
+    "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
+      "새 작업으로 다운로드 (구버전 유지)",
+    ),
+    "incremental_update_mode_new_desc": m13,
+    "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
+      "업데이트 방식",
+    ),
+    "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage(
+      "새 버전",
+    ),
+    "incremental_update_only_download": m14,
+    "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
+      "추천",
+    ),
+    "incremental_update_replaced": MessageLookupByLibrary.simpleMessage(
+      "교체 페이지",
+    ),
+    "incremental_update_reused": MessageLookupByLibrary.simpleMessage("재사용"),
+    "incremental_update_saf_inplace_unsupported":
+        MessageLookupByLibrary.simpleMessage(
+          "SAF 저장소는 로컬 파일 재사용 및 제자리 업데이트를 지원하지 않아 새 작업으로 전체 다운로드합니다.",
+        ),
+    "incremental_update_start_inplace": m15,
+    "incremental_update_start_new": m16,
+    "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
+      "로컬에서 즉시 완료 (다운로드 없음)",
+    ),
+    "incremental_update_start_saf_full": m17,
+    "incremental_update_started": m18,
+    "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
+      "변경되지 않은 로컬 이미지 재사용",
+    ),
+    "incremental_update_target_version": MessageLookupByLibrary.simpleMessage(
+      "대상 버전",
+    ),
+    "incremental_update_title": MessageLookupByLibrary.simpleMessage(
+      "갤러리 증분 업데이트",
+    ),
+    "incremental_update_version_compare": MessageLookupByLibrary.simpleMessage(
+      "버전 비교",
+    ),
+    "incremental_update_view_newer": MessageLookupByLibrary.simpleMessage(
+      "새 버전 상세 보기",
+    ),
     "inner_display": MessageLookupByLibrary.simpleMessage("내부 디스플레이"),
     "input_empty": MessageLookupByLibrary.simpleMessage("인풋 비어있음"),
     "input_error": MessageLookupByLibrary.simpleMessage("인풋 에러"),
@@ -442,7 +579,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("웹 로그인"),
     "max_history": MessageLookupByLibrary.simpleMessage("최대 방문 기록"),
     "min": MessageLookupByLibrary.simpleMessage("분"),
-    "model": m5,
+    "model": m19,
     "more_actions": MessageLookupByLibrary.simpleMessage("더 보기"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("미리 보기 더 보기"),
     "multi_download": MessageLookupByLibrary.simpleMessage("다중 다운로드"),
@@ -491,7 +628,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("평가"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("유사"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("토렌트"),
-    "page_count": m6,
+    "page_count": m20,
     "page_range": MessageLookupByLibrary.simpleMessage("페이지 범위"),
     "page_range_error": MessageLookupByLibrary.simpleMessage("페이지 범위 오류"),
     "page_view_type": MessageLookupByLibrary.simpleMessage("Page View Type"),
@@ -539,10 +676,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "가로 모드 전체 화면",
     ),
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("세로 모드 전체 화면"),
-    "reader_interval_seconds": m7,
+    "reader_interval_seconds": m21,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("다음 페이지"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("페이지 레이아웃"),
-    "reader_page_of": m8,
+    "reader_page_of": m22,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage("이전 페이지"),
     "reader_single_page": MessageLookupByLibrary.simpleMessage("단일 페이지"),
     "reader_surface_standard": MessageLookupByLibrary.simpleMessage("표준"),
@@ -607,7 +744,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "s_and": MessageLookupByLibrary.simpleMessage("그리고"),
     "s_pages": MessageLookupByLibrary.simpleMessage("페이지"),
-    "s_stars": m9,
+    "s_stars": m23,
     "save": MessageLookupByLibrary.simpleMessage("Save"),
     "save_current_image": MessageLookupByLibrary.simpleMessage("현재 이미지 저장"),
     "save_into_album": MessageLookupByLibrary.simpleMessage("앨범에 저장"),
@@ -652,7 +789,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "skip": MessageLookupByLibrary.simpleMessage("Skip"),
     "slide_out_page": MessageLookupByLibrary.simpleMessage("Slide Out Page"),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("빠른 검색에 추가"),
-    "sp_add_tag": m10,
+    "sp_add_tag": m24,
     "sp_all": MessageLookupByLibrary.simpleMessage("전체"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("전체 즐겨찾기"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage("원본 아카이브"),
@@ -690,16 +827,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("마지막"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("다음"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("이전"),
-    "sp_page_total": m11,
+    "sp_page_total": m25,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage("탭하여 이미지 선택"),
     "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("빠른 검색 목록"),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("평가 제출"),
-    "sp_rating_summary": m12,
+    "sp_rating_summary": m26,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("최근 검색"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("새로고침"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("초기화"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("다시 시도"),
-    "sp_search_for": m13,
+    "sp_search_for": m27,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "제목, 태그 검색 또는 링크 붙여넣기",
     ),
@@ -714,12 +851,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("유사 검색"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("검색"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("추천"),
-    "sp_tags_added": m14,
+    "sp_tags_added": m28,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "예: female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("미리보기 페이지로"),
-    "sp_thumbs_per_page": m15,
+    "sp_thumbs_per_page": m29,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("완료"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage("토렌트 다운로드"),
     "sp_torrent_empty": MessageLookupByLibrary.simpleMessage(
@@ -728,7 +865,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("마그넷 공유"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("피어"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("시드"),
-    "sp_torrent_title": m16,
+    "sp_torrent_title": m30,
     "sp_translate": MessageLookupByLibrary.simpleMessage("번역"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage(
       "분할 · 구분선에 따름",
@@ -758,7 +895,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("탭바 설정"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-    "tagNamespace": m17,
+    "tagNamespace": m31,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("Add to mytags"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default color",
@@ -1023,7 +1160,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "If you want to exclude certain namespaces from a default tag search, you can check those abover. Note that this does not prevent galleries with tags in these namespaces from appearing, it just makes it so that when searching tags, it will forego those namespaces.",
     ),
     "unlimited": MessageLookupByLibrary.simpleMessage("제한 없음"),
-    "update_to_version": m18,
+    "update_to_version": m32,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
     "uploader": MessageLookupByLibrary.simpleMessage("업로더"),
     "user_login": MessageLookupByLibrary.simpleMessage("로그인"),

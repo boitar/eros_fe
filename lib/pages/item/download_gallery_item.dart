@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:eros_fe/common/controller/download/download_file_path.dart';
+import 'package:eros_fe/common/controller/download/gallery_update_service.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
@@ -91,12 +92,18 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
     required this.taskIndex,
     this.speed,
     this.errInfo,
+    this.updateInfo,
+    this.incrementalProgress,
+    this.onTapUpdate,
   });
 
   final GalleryTask galleryTask;
   final int taskIndex;
   final String? speed;
   final String? errInfo;
+  final GalleryUpdateInfo? updateInfo;
+  final GalleryIncrementalProgress? incrementalProgress;
+  final VoidCallback? onTapUpdate;
 
   @override
   Widget build(BuildContext context) {
@@ -252,16 +259,59 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
 
   // 封面
   Widget _buildCover({bool cardType = false}) {
+    final status = TaskStatus(galleryTask.status ?? 0);
+    final isComplete = status == TaskStatus.complete;
+    final showUpdateBadge = isComplete && updateInfo != null;
+    final showIncrementalBadge = !isComplete && incrementalProgress != null;
+
     return GestureDetector(
       child: Padding(
         padding: const EdgeInsets.only(right: 8.0),
-        child: DownloadItemCoverImage(
-          filePath: buildDownloadFilePath(
-            directoryPath: galleryTask.realDirPath,
-            fileName: galleryTask.coverImage,
-          ),
-          url: galleryTask.coverUrl,
-          cardType: cardType,
+        child: Stack(
+          children: <Widget>[
+            DownloadItemCoverImage(
+              filePath: buildDownloadFilePath(
+                directoryPath: galleryTask.realDirPath,
+                fileName: galleryTask.coverImage,
+              ),
+              url: galleryTask.coverUrl,
+              cardType: cardType,
+            ),
+            if (showUpdateBadge || showIncrementalBadge)
+              Positioned(
+                top: 5,
+                left: 5,
+                child: Builder(
+                  builder: (context) {
+                    final l10n = L10n.of(context);
+                    final bg = showIncrementalBadge
+                        ? const Color(0xFF4CD98B)
+                        : EhPalette.accent.resolveFrom(context);
+                    final fg = EhPalette.onAccent.resolveFrom(context);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: bg,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        showIncrementalBadge
+                            ? l10n.download_incremental_updating
+                            : l10n.download_has_update_badge,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: fg,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
         ),
       ),
       onTap: () async {
@@ -336,21 +386,40 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
                     const Spacer(),
                     // 进度条
                     if (!isComplete)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: (galleryTask.completCount ?? 0) /
-                              galleryTask.fileCount,
-                          backgroundColor: CupertinoDynamicColor.resolve(
-                              CupertinoColors.secondarySystemFill, context),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            CupertinoDynamicColor.resolve(
-                                CupertinoColors.activeBlue, context),
-                          ),
-                        ),
-                      )
+                      _buildProgressIndicator(context)
                     else
-                      _buildRating(galleryTask.rating),
+                      Row(
+                        children: <Widget>[
+                          Expanded(child: _buildRating(galleryTask.rating)),
+                          if (updateInfo != null && onTapUpdate != null)
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: onTapUpdate,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: EhPalette.accentSoft.resolveFrom(
+                                    context,
+                                  ),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  '${L10n.of(context).download_has_update_badge} ›',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: EhPalette.accent.resolveFrom(
+                                      context,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     // 下载速度 下载进度
                     Row(
                       children: [
@@ -379,6 +448,79 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildProgressIndicator(BuildContext context) {
+    final total = math.max(1, galleryTask.fileCount);
+    final completed = (galleryTask.completCount ?? 0).clamp(0, total);
+    final inc = incrementalProgress;
+    if (inc != null && inc.reusedCount > 0) {
+      final reused = inc.reusedCount.clamp(0, total);
+      final delta = math.max(0, completed - reused);
+      final remaining = math.max(0, total - completed);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            L10n.of(context).download_incremental_reused_status(reused),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF4CD98B),
+            ),
+          ),
+          const SizedBox(height: 2),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: SizedBox(
+              height: 5,
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    flex: reused,
+                    child: const ColoredBox(color: Color(0xFF4CD98B)),
+                  ),
+                  if (delta > 0)
+                    Expanded(
+                      flex: delta,
+                      child: ColoredBox(
+                        color: EhPalette.accent.resolveFrom(context),
+                      ),
+                    ),
+                  if (remaining > 0)
+                    Expanded(
+                      flex: remaining,
+                      child: ColoredBox(
+                        color: CupertinoDynamicColor.resolve(
+                          CupertinoColors.secondarySystemFill,
+                          context,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: completed / total,
+        backgroundColor: CupertinoDynamicColor.resolve(
+          CupertinoColors.secondarySystemFill,
+          context,
+        ),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          CupertinoDynamicColor.resolve(CupertinoColors.activeBlue, context),
+        ),
+      ),
     );
   }
 

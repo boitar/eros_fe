@@ -2,6 +2,7 @@ export 'download_archiver_task_info.dart';
 export 'eh_mytag_set.dart';
 export 'local_fav.dart';
 export 'gallery_provider.dart';
+export 'gallery_newer_version.dart';
 export 'eh_config.dart';
 export 'simple_tag.dart';
 export 'block_rule.dart';
