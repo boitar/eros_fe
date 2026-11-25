@@ -36,13 +36,15 @@ class LoginPage extends GetView<LoginController> {
     return CupertinoPageScaffold(
       backgroundColor: palette.canvas.resolveFrom(context),
       resizeToAvoidBottomInset: false,
-      child: GetBuilder<LoginController>(
-        builder: (logic) {
-          if (isWideDesktop) {
-            return _buildDesktopSplitLayout(context, logic);
-          }
-          return _buildMobileCurtainLayout(context, logic);
-        },
+      child: SizedBox.expand(
+        child: GetBuilder<LoginController>(
+          builder: (logic) {
+            if (isWideDesktop) {
+              return _buildDesktopSplitLayout(context, logic);
+            }
+            return _buildMobileCurtainLayout(context, logic);
+          },
+        ),
       ),
     );
   }
@@ -64,14 +66,26 @@ class LoginPage extends GetView<LoginController> {
       LoginFlowPhase.cfRequired => 196.0,
       LoginFlowPhase.success || LoginFlowPhase.exDenied => 168.0,
     };
-    final double sheetTop = keyboardVisible
-        ? math.max(media.padding.top + 58, 96.0)
-        : math.min(baseTopOffset, media.size.height * 0.34);
+    final double minSheetTop = math.max(media.padding.top + 58, 96.0);
+    final double desiredSheetTop = keyboardVisible
+        ? minSheetTop
+        : math.max(
+            minSheetTop,
+            math.min(baseTopOffset, media.size.height * 0.34),
+          );
+    final double maxSheetTop = math.max(0.0, media.size.height - 160.0);
+    final double sheetTop = math.min(desiredSheetTop, maxSheetTop);
+    final bool showBrandMark = logic.phase == LoginFlowPhase.form &&
+        !keyboardVisible &&
+        !_isAndroid &&
+        sheetTop - 68 >= media.padding.top + 52;
 
     return Stack(
+      fit: StackFit.expand,
       children: <Widget>[
         // 1. 顶部封面色块幕布
         Positioned(
+          key: const ValueKey<String>('login-mosaic-curtain'),
           top: 0,
           left: 0,
           right: 0,
@@ -86,48 +100,20 @@ class LoginPage extends GetView<LoginController> {
           ),
         ),
 
-        // 2. 左上角三态材质返回钮 + 右上角浮在幕布上的出口地区胶囊
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-            child: Row(
-              children: <Widget>[
-                LoginFloatingCircleButton(
-                  key: const ValueKey<String>('login-back-button'),
-                  icon: _isAndroid
-                      ? CupertinoIcons.arrow_left
-                      : CupertinoIcons.chevron_back,
-                  onPressed: () {
-                    if (logic.phase == LoginFlowPhase.authenticating ||
-                        logic.phase == LoginFlowPhase.cfRequired) {
-                      logic.cancelActiveFlow();
-                    } else {
-                      Navigator.of(context).maybePop();
-                    }
-                  },
-                ),
-                const Spacer(),
-                _ExitRegionFloatingPill(onWall: true),
-              ],
-            ),
-          ),
-        ),
-
-        // 3. 品牌角标（仅首屏且键盘收起时浮在底板上沿左侧）
-        if (logic.phase == LoginFlowPhase.form &&
-            !keyboardVisible &&
-            !_isAndroid)
+        // 2. 品牌角标（仅首屏且键盘收起时浮在底板上沿左侧）
+        if (showBrandMark)
           AnimatedPositioned(
+            key: const ValueKey<String>('login-brand-mark'),
             duration: const Duration(milliseconds: 240),
             curve: Curves.easeOutCubic,
-            left: 22,
+            left: media.padding.left + 22,
             top: sheetTop - 68,
             child: const _BrandMarkBox(size: 52),
           ),
 
-        // 4. 下半屏大圆角表单底板
+        // 3. 下半屏大圆角表单底板
         AnimatedPositioned(
+          key: const ValueKey<String>('login-form-sheet'),
           duration: const Duration(milliseconds: 240),
           curve: Curves.easeOutCubic,
           left: 0,
@@ -184,6 +170,40 @@ class LoginPage extends GetView<LoginController> {
                     ),
                   ),
                 ),
+              ),
+            ),
+          ),
+        ),
+
+        // 4. 左上角三态材质返回钮 + 右上角浮在幕布上的出口地区胶囊（置顶以确保极矮视口仍可点击返回）
+        Positioned(
+          key: const ValueKey<String>('login-top-bar'),
+          top: 0,
+          left: 0,
+          right: 0,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+              child: Row(
+                children: <Widget>[
+                  LoginFloatingCircleButton(
+                    key: const ValueKey<String>('login-back-button'),
+                    icon: _isAndroid
+                        ? CupertinoIcons.arrow_left
+                        : CupertinoIcons.chevron_back,
+                    onPressed: () {
+                      if (logic.phase == LoginFlowPhase.authenticating ||
+                          logic.phase == LoginFlowPhase.cfRequired) {
+                        logic.cancelActiveFlow();
+                      } else {
+                        Navigator.of(context).maybePop();
+                      }
+                    },
+                  ),
+                  const Spacer(),
+                  const _ExitRegionFloatingPill(onWall: true),
+                ],
               ),
             ),
           ),
