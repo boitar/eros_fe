@@ -17,6 +17,7 @@ import 'package:eros_fe/pages/setting/webview/cf_verify_in.dart';
 import 'package:eros_fe/utils/cf_verification.dart';
 import 'package:eros_fe/widget/auth_expiry_top_banner.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
+import 'package:eros_fe/widget/macos_window_chrome.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -731,6 +732,273 @@ void main() {
           find.byKey(const ValueKey<String>('mock-webview-after-cleanup')),
           findsOneWidget,
         );
+      },
+    );
+  });
+
+  group('LoginPage layout geometry', () {
+    testWidgets(
+      'iOS mobile curtain layout expands to full viewport so form sheet and fields are visible below top bar',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        tester.view.padding = const FakeViewPadding(top: 59, bottom: 34);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+          tester.view.resetPadding();
+          tester.view.resetViewInsets();
+        });
+
+        Get.put<UserController>(
+          _FakeUserController(loggedIn: false),
+          permanent: true,
+        );
+        final authService = Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+        authService.currentExit.value = const ExitTraceInfo(
+          countryCode: 'JP',
+          colo: 'NRT',
+          fetchedAtMs: 1,
+        );
+        Get.put<LoginController>(LoginController());
+
+        await tester.pumpWidget(
+          const GetCupertinoApp(
+            locale: Locale('zh', 'CN'),
+            supportedLocales: <Locale>[Locale('zh', 'CN'), Locale('en', 'US')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: LoginPage(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final topBarRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-top-bar')),
+        );
+        final backButtonRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-back-button')),
+        );
+        final brandRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-brand-mark')),
+        );
+        final formSheetRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-form-sheet')),
+        );
+        final usernameRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-username-field')),
+        );
+        final passwordRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-password-field')),
+        );
+        final submitRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-submit-button')),
+        );
+
+        expect(topBarRect.top, 0.0);
+        expect(backButtonRect.top, greaterThanOrEqualTo(59.0));
+        expect(backButtonRect.bottom, lessThan(120.0));
+        expect(brandRect.top, greaterThan(backButtonRect.bottom));
+        expect(brandRect.bottom, lessThan(formSheetRect.top));
+
+        // Form sheet must occupy the full lower viewport rather than collapsing to 0px
+        expect(formSheetRect.width, 390.0);
+        expect(formSheetRect.top, closeTo(246.0, 0.5));
+        expect(formSheetRect.bottom, 844.0);
+        expect(formSheetRect.height, closeTo(598.0, 0.5));
+
+        expect(usernameRect.height, greaterThan(20.0));
+        expect(passwordRect.height, greaterThan(20.0));
+        expect(submitRect.height, 50.0);
+        expect(submitRect.bottom, lessThanOrEqualTo(844.0));
+        expect(find.text('日本 · 东京'), findsOneWidget);
+        expect(find.text('欢迎回来'), findsOneWidget);
+        expect(find.text('网页登录'), findsOneWidget);
+        expect(find.text('Cookie 登录'), findsOneWidget);
+
+        // Soft keyboard lifts the form sheet without covering the back button
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        await tester.pumpAndSettle();
+
+        final liftedSheetRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-form-sheet')),
+        );
+        expect(liftedSheetRect.top, greaterThan(backButtonRect.bottom));
+        expect(liftedSheetRect.bottom, 844.0);
+        expect(
+          find.byKey(const ValueKey<String>('login-brand-mark')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'Android mobile curtain layout renders full-height form sheet and action buttons',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.android;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(412, 915);
+        tester.view.devicePixelRatio = 1.0;
+        tester.view.padding = const FakeViewPadding(top: 32, bottom: 24);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+          tester.view.resetPadding();
+        });
+
+        Get.put<UserController>(
+          _FakeUserController(loggedIn: false),
+          permanent: true,
+        );
+        Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+        Get.put<LoginController>(LoginController());
+
+        await tester.pumpWidget(
+          const GetCupertinoApp(
+            locale: Locale('zh', 'CN'),
+            supportedLocales: <Locale>[Locale('zh', 'CN')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: LoginPage(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final formSheetRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-form-sheet')),
+        );
+        expect(formSheetRect.width, 412.0);
+        expect(formSheetRect.bottom, 915.0);
+        expect(formSheetRect.height, greaterThan(600.0));
+        expect(
+          find.byKey(const ValueKey<String>('login-username-field')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('login-password-field')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('login-submit-button')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'Desktop narrow window under MacOSWindowContent clears traffic lights and expands without collapsing',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.macOS;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(640, 720);
+        tester.view.devicePixelRatio = 1.0;
+        final prevControls = MacOSWindowChrome.controls.value;
+        MacOSWindowChrome.controls.value = const MacOSWindowControls(
+          bounds: Rect.fromLTWH(20, 18, 54, 14),
+          systemSafeTop: 40,
+        );
+        addTearDown(() {
+          MacOSWindowChrome.controls.value = prevControls;
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+          tester.view.resetPadding();
+        });
+
+        Get.put<UserController>(
+          _FakeUserController(loggedIn: false),
+          permanent: true,
+        );
+        Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+        Get.put<LoginController>(LoginController());
+
+        await tester.pumpWidget(
+          const GetCupertinoApp(
+            locale: Locale('zh', 'CN'),
+            supportedLocales: <Locale>[Locale('zh', 'CN')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: MacOSWindowContent(child: LoginPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final backButtonRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-back-button')),
+        );
+        final formSheetRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-form-sheet')),
+        );
+        expect(
+          backButtonRect.top,
+          greaterThanOrEqualTo(MacOSWindowChrome.controls.value.systemSafeTop),
+        );
+        expect(formSheetRect.width, 640.0);
+        expect(formSheetRect.bottom, 720.0);
+        expect(formSheetRect.height, greaterThan(450.0));
+        expect(
+          find.byKey(const ValueKey<String>('login-submit-button')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'very short viewport clamps sheetTop so the form sheet stays usable instead of collapsing to 0px',
+      (tester) async {
+        PlatformCapabilities.debugHostPlatformOverride = TargetPlatform.iOS;
+        FlutterGlassRuntime.debugAvailable = false;
+        tester.view.physicalSize = const Size(390, 140);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+          tester.view.resetPadding();
+        });
+
+        Get.put<UserController>(
+          _FakeUserController(loggedIn: false),
+          permanent: true,
+        );
+        Get.put<AuthSessionService>(
+          AuthSessionService(traceProbe: () async => null),
+          permanent: true,
+        );
+        Get.put<LoginController>(LoginController());
+
+        await tester.pumpWidget(
+          const GetCupertinoApp(
+            locale: Locale('zh', 'CN'),
+            supportedLocales: <Locale>[Locale('zh', 'CN')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: LoginPage(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final formSheetRect = tester.getRect(
+          find.byKey(const ValueKey<String>('login-form-sheet')),
+        );
+        expect(formSheetRect.height, 140.0);
+        expect(
+          find.byKey(const ValueKey<String>('login-back-button')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('login-brand-mark')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
       },
     );
   });
