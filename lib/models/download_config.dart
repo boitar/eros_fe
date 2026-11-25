@@ -14,6 +14,8 @@ class DownloadConfig {
     this.downloadOrigImageType,
     this.allowMediaScan,
     this.concurrentGalleries,
+    this.iosBackgroundDownload,
+    this.iosBackgroundDownloadNotify,
   });
 
   final int? preloadImage;
@@ -23,6 +25,8 @@ class DownloadConfig {
   final String? downloadOrigImageType;
   final bool? allowMediaScan;
   final int? concurrentGalleries;
+  final bool? iosBackgroundDownload;
+  final bool? iosBackgroundDownloadNotify;
 
   factory DownloadConfig.fromJson(Map<String,dynamic> json) => DownloadConfig(
     preloadImage: json['preloadImage'] != null ? int.tryParse('${json['preloadImage']}') ?? 0 : null,
@@ -31,7 +35,9 @@ class DownloadConfig {
     downloadOrigImage: json['downloadOrigImage'] != null ? bool.tryParse('${json['downloadOrigImage']}', caseSensitive: false) ?? false : null,
     downloadOrigImageType: json['downloadOrigImageType']?.toString(),
     allowMediaScan: json['allowMediaScan'] != null ? bool.tryParse('${json['allowMediaScan']}', caseSensitive: false) ?? false : null,
-    concurrentGalleries: json['concurrentGalleries'] != null ? int.tryParse('${json['concurrentGalleries']}') ?? 0 : null
+    concurrentGalleries: json['concurrentGalleries'] != null ? int.tryParse('${json['concurrentGalleries']}') ?? 0 : null,
+    iosBackgroundDownload: json['iosBackgroundDownload'] != null ? bool.tryParse('${json['iosBackgroundDownload']}', caseSensitive: false) ?? true : null,
+    iosBackgroundDownloadNotify: json['iosBackgroundDownloadNotify'] != null ? bool.tryParse('${json['iosBackgroundDownloadNotify']}', caseSensitive: false) ?? true : null
   );
   
   Map<String, dynamic> toJson() => {
@@ -41,7 +47,9 @@ class DownloadConfig {
     'downloadOrigImage': downloadOrigImage,
     'downloadOrigImageType': downloadOrigImageType,
     'allowMediaScan': allowMediaScan,
-    'concurrentGalleries': concurrentGalleries
+    'concurrentGalleries': concurrentGalleries,
+    'iosBackgroundDownload': iosBackgroundDownload,
+    'iosBackgroundDownloadNotify': iosBackgroundDownloadNotify
   };
 
   DownloadConfig clone() => DownloadConfig(
@@ -51,7 +59,9 @@ class DownloadConfig {
     downloadOrigImage: downloadOrigImage,
     downloadOrigImageType: downloadOrigImageType,
     allowMediaScan: allowMediaScan,
-    concurrentGalleries: concurrentGalleries
+    concurrentGalleries: concurrentGalleries,
+    iosBackgroundDownload: iosBackgroundDownload,
+    iosBackgroundDownloadNotify: iosBackgroundDownloadNotify
   );
 
 
@@ -62,7 +72,9 @@ class DownloadConfig {
     Optional<bool?>? downloadOrigImage,
     Optional<String?>? downloadOrigImageType,
     Optional<bool?>? allowMediaScan,
-    Optional<int?>? concurrentGalleries
+    Optional<int?>? concurrentGalleries,
+    Optional<bool?>? iosBackgroundDownload,
+    Optional<bool?>? iosBackgroundDownloadNotify
   }) => DownloadConfig(
     preloadImage: checkOptional(preloadImage, () => this.preloadImage),
     multiDownload: checkOptional(multiDownload, () => this.multiDownload),
@@ -71,12 +83,14 @@ class DownloadConfig {
     downloadOrigImageType: checkOptional(downloadOrigImageType, () => this.downloadOrigImageType),
     allowMediaScan: checkOptional(allowMediaScan, () => this.allowMediaScan),
     concurrentGalleries: checkOptional(concurrentGalleries, () => this.concurrentGalleries),
+    iosBackgroundDownload: checkOptional(iosBackgroundDownload, () => this.iosBackgroundDownload),
+    iosBackgroundDownloadNotify: checkOptional(iosBackgroundDownloadNotify, () => this.iosBackgroundDownloadNotify),
   );
 
   @override
   bool operator ==(Object other) => identical(this, other)
-    || other is DownloadConfig && preloadImage == other.preloadImage && multiDownload == other.multiDownload && downloadLocation == other.downloadLocation && downloadOrigImage == other.downloadOrigImage && downloadOrigImageType == other.downloadOrigImageType && allowMediaScan == other.allowMediaScan && concurrentGalleries == other.concurrentGalleries;
+    || other is DownloadConfig && preloadImage == other.preloadImage && multiDownload == other.multiDownload && downloadLocation == other.downloadLocation && downloadOrigImage == other.downloadOrigImage && downloadOrigImageType == other.downloadOrigImageType && allowMediaScan == other.allowMediaScan && concurrentGalleries == other.concurrentGalleries && iosBackgroundDownload == other.iosBackgroundDownload && iosBackgroundDownloadNotify == other.iosBackgroundDownloadNotify;
 
   @override
-  int get hashCode => preloadImage.hashCode ^ multiDownload.hashCode ^ downloadLocation.hashCode ^ downloadOrigImage.hashCode ^ downloadOrigImageType.hashCode ^ allowMediaScan.hashCode ^ concurrentGalleries.hashCode;
+  int get hashCode => preloadImage.hashCode ^ multiDownload.hashCode ^ downloadLocation.hashCode ^ downloadOrigImage.hashCode ^ downloadOrigImageType.hashCode ^ allowMediaScan.hashCode ^ concurrentGalleries.hashCode ^ iosBackgroundDownload.hashCode ^ iosBackgroundDownloadNotify.hashCode;
 }

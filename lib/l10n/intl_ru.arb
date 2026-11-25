@@ -708,5 +708,14 @@
   "incremental_update_completed_locally": "Обновлено локально до #{gid} (повторно: {reused} стр.)",
   "incremental_update_saf_inplace_unsupported": "Хранилище SAF не поддерживает локальное копирование и обновление на месте; все страницы будут загружены как новая задача.",
   "incremental_update_applying": "Применение обновления…",
-  "incremental_update_start_saf_full": "Новая задача целиком · {count} стр."
+  "incremental_update_start_saf_full": "Новая задача целиком · {count} стр.",
+  "ios_bg_download": "Фоновая загрузка",
+  "ios_bg_download_subtitle": "Продолжать загрузку галерей в фоне, не прерывая воспроизведение музыки",
+  "ios_bg_download_notify": "Уведомление о завершении",
+  "ios_bg_download_notify_subtitle": "Отправлять локальное уведомление по завершении фоновой загрузки",
+  "ios_bg_download_multi_title": "Загрузка галерей: {count}",
+  "ios_bg_download_progress_pages": "{completed}/{total} стр.",
+  "ios_bg_download_complete_title": "Загрузка завершена",
+  "ios_bg_download_complete_single": "Загрузка «{title}» завершена",
+  "ios_bg_download_complete_multi": "Загрузка {count} галерей завершена"
 }

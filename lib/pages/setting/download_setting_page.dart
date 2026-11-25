@@ -117,6 +117,38 @@ class DownloadSetting extends StatelessWidget {
         //
       ]),
 
+      if (GetPlatform.isIOS)
+        SliverCupertinoListSection.listInsetGrouped(children: [
+          EhCupertinoListTile(
+            title: Text(L10n.of(context).ios_bg_download),
+            subtitle: Text(L10n.of(context).ios_bg_download_subtitle),
+            trailing: Obx(() {
+              return CupertinoSwitch(
+                value: ehSettingService.iosBackgroundDownload,
+                onChanged: (bool value) {
+                  downloadController.setIosBackgroundDownloadEnabled(value);
+                },
+              );
+            }),
+          ),
+          Obx(() {
+            final bgEnabled = ehSettingService.iosBackgroundDownload;
+            return EhCupertinoListTile(
+              title: Text(L10n.of(context).ios_bg_download_notify),
+              subtitle: Text(L10n.of(context).ios_bg_download_notify_subtitle),
+              trailing: CupertinoSwitch(
+                value: bgEnabled && ehSettingService.iosBackgroundDownloadNotify,
+                onChanged: bgEnabled
+                    ? (bool value) {
+                        downloadController
+                            .setIosBackgroundDownloadNotifyEnabled(value);
+                      }
+                    : null,
+              ),
+            );
+          }),
+        ]),
+
       // 数据处理
       SliverCupertinoListSection.listInsetGrouped(children: [
         // 恢复下载任务数据

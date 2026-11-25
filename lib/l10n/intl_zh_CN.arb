@@ -708,5 +708,14 @@
   "incremental_update_completed_locally": "已本地升级至 #{gid}（全部复用 {reused} 页）",
   "incremental_update_saf_inplace_unsupported": "SAF 存储暂不支持本地文件复用或原位升级，将以新任务方式完整下载。",
   "incremental_update_applying": "正在应用更新…",
-  "incremental_update_start_saf_full": "新建任务完整下载 · 拉取 {count} 页"
+  "incremental_update_start_saf_full": "新建任务完整下载 · 拉取 {count} 页",
+  "ios_bg_download": "后台下载",
+  "ios_bg_download_subtitle": "切后台继续下载画廊，不打断音乐播放",
+  "ios_bg_download_notify": "下载完成通知",
+  "ios_bg_download_notify_subtitle": "后台下载完成后发送本地通知提醒",
+  "ios_bg_download_multi_title": "正在下载 {count} 个画廊",
+  "ios_bg_download_progress_pages": "已完成 {completed}/{total} 页",
+  "ios_bg_download_complete_title": "下载完成",
+  "ios_bg_download_complete_single": "《{title}》已下载完成",
+  "ios_bg_download_complete_multi": "已完成 {count} 个画廊的下载"
 }

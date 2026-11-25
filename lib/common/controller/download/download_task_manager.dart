@@ -296,6 +296,7 @@ class DownloadTaskManager {
     int? countComplete,
     String? coverImg,
     bool completeWhenReached = false,
+    void Function(GalleryTask completedTask)? onTaskCompleted,
   }) async {
     return _lockFor(gid).synchronized(() async {
       logger.t('galleryTaskCountUpdate gid:$gid count:$countComplete');
@@ -321,6 +322,11 @@ class DownloadTaskManager {
       );
       dState.curComplete[gid] = nextCount;
       dState.galleryTaskMap[gid] = nextTask;
+      if (shouldComplete) {
+        // Record completion atomically before any async persistence yields so
+        // concurrent completions cannot observe an empty active list early.
+        onTaskCompleted?.call(nextTask);
+      }
       await taskStore.putGalleryTaskIsolate(nextTask);
 
       if (shouldComplete) {

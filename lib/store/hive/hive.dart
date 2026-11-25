@@ -23,6 +23,8 @@ const String profileKey = 'profile';
 const String ehHomeKey = 'eh_home';
 const String viewHistoryMigrationKey = 'viewHistoryMigration';
 const String downloadTaskMigrationKey = 'downloadTaskMigration';
+const String backgroundSuspendedDownloadGidsKey =
+    'backgroundSuspendedDownloadGids';
 
 class HiveHelper {
   HiveHelper();
@@ -223,6 +225,30 @@ class HiveHelper {
 
   Future<void> setDownloadTaskMigration(bool value) async {
     await _configBox.put(downloadTaskMigrationKey, '$value');
+  }
+
+  Set<int> getBackgroundSuspendedDownloadGids() {
+    final raw = _configBox.get(backgroundSuspendedDownloadGidsKey);
+    if (raw == null || raw.isEmpty) {
+      return <int>{};
+    }
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded.map((e) => int.tryParse('$e')).whereType<int>().toSet();
+    } on Object {
+      return <int>{};
+    }
+  }
+
+  Future<void> setBackgroundSuspendedDownloadGids(Set<int> gids) async {
+    if (gids.isEmpty) {
+      await _configBox.delete(backgroundSuspendedDownloadGidsKey);
+      return;
+    }
+    await _configBox.put(
+      backgroundSuspendedDownloadGidsKey,
+      jsonEncode(gids.toList()),
+    );
   }
 
   void putAllArchiverTaskMap(

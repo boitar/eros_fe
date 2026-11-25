@@ -708,5 +708,14 @@
   "incremental_update_completed_locally": "已本機升級至 #{gid}（全部複用 {reused} 頁）",
   "incremental_update_saf_inplace_unsupported": "SAF 儲存空間暫不支援本機檔案複用或原位升級，將以新任務方式完整下載。",
   "incremental_update_applying": "正在套用更新…",
-  "incremental_update_start_saf_full": "新建任務完整下載 · 拉取 {count} 頁"
+  "incremental_update_start_saf_full": "新建任務完整下載 · 拉取 {count} 頁",
+  "ios_bg_download": "背景下載",
+  "ios_bg_download_subtitle": "切換背景繼續下載畫廊，不打斷音樂播放",
+  "ios_bg_download_notify": "下載完成通知",
+  "ios_bg_download_notify_subtitle": "背景下載完成後發送本地通知提醒",
+  "ios_bg_download_multi_title": "正在下載 {count} 個畫廊",
+  "ios_bg_download_progress_pages": "已完成 {completed}/{total} 頁",
+  "ios_bg_download_complete_title": "下載完成",
+  "ios_bg_download_complete_single": "《{title}》已下載完成",
+  "ios_bg_download_complete_multi": "已完成 {count} 個畫廊的下載"
 }

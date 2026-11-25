@@ -708,5 +708,14 @@
   "incremental_update_completed_locally": "Updated to #{gid} locally ({reused} pages reused)",
   "incremental_update_saf_inplace_unsupported": "SAF storage does not support local reuse or in-place upgrade; all pages will be downloaded as a new task.",
   "incremental_update_applying": "Applying update…",
-  "incremental_update_start_saf_full": "Download as new task · {count} pages"
+  "incremental_update_start_saf_full": "Download as new task · {count} pages",
+  "ios_bg_download": "Background download",
+  "ios_bg_download_subtitle": "Keep gallery downloads running in the background without interrupting music playback",
+  "ios_bg_download_notify": "Completion notification",
+  "ios_bg_download_notify_subtitle": "Send a local notification when background downloads finish",
+  "ios_bg_download_multi_title": "Downloading {count} galleries",
+  "ios_bg_download_progress_pages": "{completed}/{total} pages",
+  "ios_bg_download_complete_title": "Download complete",
+  "ios_bg_download_complete_single": "{title} finished downloading",
+  "ios_bg_download_complete_multi": "{count} galleries finished downloading"
 }
