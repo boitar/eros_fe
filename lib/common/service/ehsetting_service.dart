@@ -221,6 +221,17 @@ class EhSettingService extends ProfileService {
   bool get allowMediaScan => _allowMediaScan.value;
   set allowMediaScan(bool val) => _allowMediaScan.value = val;
 
+  // iOS 后台下载保活与实时进度
+  final RxBool _iosBackgroundDownload = true.obs;
+  bool get iosBackgroundDownload => _iosBackgroundDownload.value;
+  set iosBackgroundDownload(bool val) => _iosBackgroundDownload.value = val;
+
+  // iOS 后台下载完成本地通知
+  final RxBool _iosBackgroundDownloadNotify = true.obs;
+  bool get iosBackgroundDownloadNotify => _iosBackgroundDownloadNotify.value;
+  set iosBackgroundDownloadNotify(bool val) =>
+      _iosBackgroundDownloadNotify.value = val;
+
   final RxBool _enableTagTranslateCDN = false.obs;
   bool get enableTagTranslateCDN => _enableTagTranslateCDN.value;
   set enableTagTranslateCDN(bool val) => _enableTagTranslateCDN.value = val;
@@ -1078,6 +1089,20 @@ class EhSettingService extends ProfileService {
     allowMediaScan = downloadConfig.allowMediaScan ?? allowMediaScan;
     everProfile<bool>(_allowMediaScan, (value) {
       downloadConfig = downloadConfig.copyWith(allowMediaScan: value.oN);
+    });
+
+    iosBackgroundDownload =
+        downloadConfig.iosBackgroundDownload ?? iosBackgroundDownload;
+    everProfile<bool>(_iosBackgroundDownload, (value) {
+      downloadConfig =
+          downloadConfig.copyWith(iosBackgroundDownload: value.oN);
+    });
+
+    iosBackgroundDownloadNotify = downloadConfig.iosBackgroundDownloadNotify ??
+        iosBackgroundDownloadNotify;
+    everProfile<bool>(_iosBackgroundDownloadNotify, (value) {
+      downloadConfig =
+          downloadConfig.copyWith(iosBackgroundDownloadNotify: value.oN);
     });
 
     // downloadOrigImage

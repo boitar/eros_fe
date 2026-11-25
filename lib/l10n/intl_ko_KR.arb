@@ -708,5 +708,14 @@
   "incremental_update_completed_locally": "#{gid}로 로컬 업데이트 완료 ({reused}쪽 재사용)",
   "incremental_update_saf_inplace_unsupported": "SAF 저장소는 로컬 파일 재사용 및 제자리 업데이트를 지원하지 않아 새 작업으로 전체 다운로드합니다.",
   "incremental_update_applying": "업데이트 적용 중…",
-  "incremental_update_start_saf_full": "새 작업으로 전체 다운로드 · {count}쪽"
+  "incremental_update_start_saf_full": "새 작업으로 전체 다운로드 · {count}쪽",
+  "ios_bg_download": "백그라운드 다운로드",
+  "ios_bg_download_subtitle": "음악 재생을 방해하지 않고 백그라운드에서 갤러리 다운로드를 계속합니다",
+  "ios_bg_download_notify": "다운로드 완료 알림",
+  "ios_bg_download_notify_subtitle": "백그라운드 다운로드가 완료되면 로컬 알림을 보냅니다",
+  "ios_bg_download_multi_title": "갤러리 {count}개 다운로드 중",
+  "ios_bg_download_progress_pages": "{completed}/{total}페이지 완료",
+  "ios_bg_download_complete_title": "다운로드 완료",
+  "ios_bg_download_complete_single": "「{title}」 다운로드가 완료되었습니다",
+  "ios_bg_download_complete_multi": "갤러리 {count}개의 다운로드가 완료되었습니다"
 }

@@ -5951,6 +5951,96 @@ class L10n {
       args: [count],
     );
   }
+
+  /// `Background download`
+  String get ios_bg_download {
+    return Intl.message(
+      'Background download',
+      name: 'ios_bg_download',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Keep gallery downloads running in the background without interrupting music playback`
+  String get ios_bg_download_subtitle {
+    return Intl.message(
+      'Keep gallery downloads running in the background without interrupting music playback',
+      name: 'ios_bg_download_subtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Completion notification`
+  String get ios_bg_download_notify {
+    return Intl.message(
+      'Completion notification',
+      name: 'ios_bg_download_notify',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Send a local notification when background downloads finish`
+  String get ios_bg_download_notify_subtitle {
+    return Intl.message(
+      'Send a local notification when background downloads finish',
+      name: 'ios_bg_download_notify_subtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Downloading {count} galleries`
+  String ios_bg_download_multi_title(Object count) {
+    return Intl.message(
+      'Downloading $count galleries',
+      name: 'ios_bg_download_multi_title',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{completed}/{total} pages`
+  String ios_bg_download_progress_pages(Object completed, Object total) {
+    return Intl.message(
+      '$completed/$total pages',
+      name: 'ios_bg_download_progress_pages',
+      desc: '',
+      args: [completed, total],
+    );
+  }
+
+  /// `Download complete`
+  String get ios_bg_download_complete_title {
+    return Intl.message(
+      'Download complete',
+      name: 'ios_bg_download_complete_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{title} finished downloading`
+  String ios_bg_download_complete_single(Object title) {
+    return Intl.message(
+      '$title finished downloading',
+      name: 'ios_bg_download_complete_single',
+      desc: '',
+      args: [title],
+    );
+  }
+
+  /// `{count} galleries finished downloading`
+  String ios_bg_download_complete_multi(Object count) {
+    return Intl.message(
+      '$count galleries finished downloading',
+      name: 'ios_bg_download_complete_multi',
+      desc: '',
+      args: [count],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

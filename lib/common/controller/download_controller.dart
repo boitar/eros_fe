@@ -16,6 +16,7 @@ import 'package:eros_fe/common/controller/download/storage_adapter.dart';
 import 'package:eros_fe/common/controller/gallerycache_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/ios_background_download_service.dart';
 import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/component/quene_task/quene_task.dart';
 import 'package:eros_fe/index.dart';
@@ -74,6 +75,7 @@ class DownloadController extends GetxController {
   late final ImageDownloadProcessor imageProcessor;
   late final StorageAdapter storageAdapter;
   late final GallerySlotManager gallerySlotManager;
+  late final IosBackgroundDownloadService iosBackgroundDownloadService;
   final Map<int, Lock> _completionLocks = <int, Lock>{};
   final Map<int, Lock> _taskLocks = <int, Lock>{};
   final Lock _concurrencyResetLock = Lock();
@@ -81,6 +83,12 @@ class DownloadController extends GetxController {
   final Set<int> _reservedGids = <int>{};
   final Set<String> _reservedIoDirs = <String>{};
   final Set<String> _unretiredOldDirs = <String>{};
+  final Set<int> _backgroundSuspendedGids = <int>{};
+  final Map<int, Set<Future<void>>> _inFlightImageFutures =
+      <int, Set<Future<void>>>{};
+  bool _isBackgroundSuspending = false;
+  int _backgroundSuspendEpoch = 0;
+  Future<void>? _backgroundSuspendInFlight;
 
   Future<String> _resolveRealDirKey(String dirPath) async {
     if (dirPath.isEmpty || dirPath.isContentUri) {
@@ -161,12 +169,16 @@ class DownloadController extends GetxController {
       onUpdateStatus: galleryTaskUpdateStatus,
     );
 
+    iosBackgroundDownloadService = IosBackgroundDownloadService()
+      ..attach(onExpired: handleIosBackgroundExpired);
+
     _downloadInitialization = asyncInit();
   }
 
   @override
   void onClose() {
     _cancelDownloadStateChkTimer();
+    unawaited(iosBackgroundDownloadService.dispose());
     super.onClose();
   }
 
@@ -215,6 +227,9 @@ class DownloadController extends GetxController {
   }
 
   Future<void> asyncInit() async {
+    _backgroundSuspendedGids.addAll(
+      hiveHelper.getBackgroundSuspendedDownloadGids(),
+    );
     await pathManager.updateCustomDownloadPath();
     await pathManager.allowMediaScan(ehSettingService.allowMediaScan);
     await _reconcilePendingIncrementalUpdates();
@@ -225,6 +240,9 @@ class DownloadController extends GetxController {
       onTaskReconciledCallback: _onTaskReconciled,
     );
     _refreshDownloadGalleryList();
+    if (_backgroundSuspendedGids.isNotEmpty) {
+      await resumeBackgroundSuspendedTasks();
+    }
   }
 
   Future<void> updateCustomDownloadPath() async {
@@ -345,6 +363,7 @@ class DownloadController extends GetxController {
             .gState
             .firstPageImage
             .length,
+        userInitiated: true,
       );
     } finally {
       await _transferGateLock.synchronized(() {
@@ -602,6 +621,7 @@ class DownloadController extends GetxController {
               newTask,
               groupCount: plan.firstPageCount,
               images: plan.targetImages,
+              userInitiated: true,
             );
           }
 
@@ -780,6 +800,12 @@ class DownloadController extends GetxController {
 
     if (task?.status == TaskStatus.complete.value) {
       dState.incrementalProgressMap.remove(gid);
+      // 原子记录完成事件，避免并发完成时在等待槽位回调期间错失通知记账
+      iosBackgroundDownloadService.recordGalleryCompleted(
+        gid: gid,
+        title: task!.title,
+        fileCount: task.fileCount,
+      );
       // 清理该画廊的所有重试计数
       imageProcessor.clearGalleryReDownloadCounts(gid);
 
@@ -787,6 +813,13 @@ class DownloadController extends GetxController {
       logger.d('通知槽位管理器画廊任务完成: gid=$gid');
       await gallerySlotManager.onGalleryStatusChanged(gid, TaskStatus.complete);
       logger.d('槽位管理器处理完成: gid=$gid');
+      _removeBackgroundSuspendedGid(gid);
+      _syncBackgroundDownloadSession(
+        endReason: BackgroundSessionEndReason.completed,
+        justCompletedGid: gid,
+        justCompletedTitle: task.title,
+        justCompletedFileCount: task.fileCount,
+      );
     }
 
     return task;
@@ -795,6 +828,9 @@ class DownloadController extends GetxController {
   /// 暂停任务
   Future<GalleryTask?> galleryTaskPaused(int gid, {bool silent = false}) async {
     logger.d('画廊任务暂停: gid=$gid, silent=$silent');
+    if (!_isBackgroundSuspending) {
+      _removeBackgroundSuspendedGid(gid);
+    }
     final task = await taskManager.galleryTaskPaused(
       gid,
       silent: silent,
@@ -809,20 +845,33 @@ class DownloadController extends GetxController {
       logger.d('通知槽位管理器画廊任务暂停: gid=$gid');
       await gallerySlotManager.onGalleryStatusChanged(gid, TaskStatus.paused);
       logger.d('槽位管理器处理完成: gid=$gid');
+      if (!silent) {
+        _syncBackgroundDownloadSession(
+          endReason: BackgroundSessionEndReason.userPaused,
+        );
+      }
     }
 
     return task;
   }
 
   /// 恢复任务
-  Future<void> galleryTaskResume(int gid) async {
+  Future<void> galleryTaskResume(int gid, {bool userInitiated = true}) async {
+    if (_backgroundSuspendInFlight != null) {
+      await _backgroundSuspendInFlight;
+    }
+    _removeBackgroundSuspendedGid(gid);
+    await _waitForInFlightImages(gid);
     await _completionLockFor(gid).synchronized(() async {
       logger.d('画廊任务恢复: gid=$gid');
 
       // Reconcile restored files before changing pause state or enqueueing.
       await taskManager.galleryTaskResume(
         gid,
-        addGalleryTaskCallback: _addGalleryTask,
+        addGalleryTaskCallback: (GalleryTask task) => _addGalleryTask(
+          task,
+          userInitiated: userInitiated,
+        ),
       );
       final task = dState.galleryTaskMap[gid];
       if (task?.status == TaskStatus.complete.value) {
@@ -839,6 +888,10 @@ class DownloadController extends GetxController {
 
   /// 重下任务
   Future<void> galleryTaskRestart(int gid) async {
+    if (_backgroundSuspendInFlight != null) {
+      await _backgroundSuspendInFlight;
+    }
+    _removeBackgroundSuspendedGid(gid);
     await _completionLockFor(gid).synchronized(() async {
       loggerSimple.d('重启任务开始: gid=$gid');
 
@@ -860,11 +913,18 @@ class DownloadController extends GetxController {
       // 取消该任务的计时器
       _cancelDownloadStateChkTimer(gid);
 
+      // 取消后再短暂等待旧 worker 关闭 .part 句柄，避免被慢下载阻塞重启
+      await _waitForInFlightImages(gid)
+          .timeout(const Duration(seconds: 1), onTimeout: () {});
+
       // 调用taskManager执行任务重启
       loggerSimple.d('执行任务重启: gid=$gid');
       await taskManager.galleryTaskRestart(
         gid,
-        addGalleryTaskCallback: _addGalleryTask,
+        addGalleryTaskCallback: (GalleryTask task) => _addGalleryTask(
+          task,
+          userInitiated: true,
+        ),
       );
 
       loggerSimple.d('重启任务完成: gid=$gid');
@@ -883,6 +943,13 @@ class DownloadController extends GetxController {
       countComplete: countComplete,
       coverImg: coverImg,
       completeWhenReached: completeWhenReached,
+      onTaskCompleted: (GalleryTask completedTask) {
+        iosBackgroundDownloadService.recordGalleryCompleted(
+          gid: completedTask.gid,
+          title: completedTask.title,
+          fileCount: completedTask.fileCount,
+        );
+      },
     );
   }
 
@@ -923,6 +990,8 @@ class DownloadController extends GetxController {
   }) async {
     await _completionLockFor(gid).synchronized(() async {
       dState.incrementalProgressMap.remove(gid);
+      _removeBackgroundSuspendedGid(gid);
+      _cancelDownloadStateChkTimer(gid);
       // 清理该画廊的所有重试计数
       imageProcessor.clearGalleryReDownloadCounts(gid);
 
@@ -930,11 +999,22 @@ class DownloadController extends GetxController {
         gid: gid,
         shouldDeleteContent: shouldDeleteContent,
       );
+      // 释放可能占用的槽位，避免等待队列中的任务无 worker 且后台保活无法结束
+      await gallerySlotManager.onGalleryStatusChanged(gid, TaskStatus.paused);
+      _syncBackgroundDownloadSession(
+        endReason: BackgroundSessionEndReason.userRemoved,
+      );
     });
   }
 
   Future<void> resetConcurrency() {
     return _concurrencyResetLock.synchronized(() async {
+      if (_backgroundSuspendInFlight != null) {
+        await _backgroundSuspendInFlight;
+      }
+      if (_isBackgroundSuspending) {
+        return;
+      }
       loggerSimple.d('重置并发设置开始');
 
       // 记录当前正在运行的任务GID列表，用于后续恢复
@@ -1028,6 +1108,7 @@ class DownloadController extends GetxController {
     GalleryTask galleryTask, {
     int? groupCount,
     List<GalleryImage>? images,
+    bool userInitiated = false,
   }) {
     if (dState.unavailableGalleryFiles.contains(galleryTask.gid)) {
       return;
@@ -1047,6 +1128,7 @@ class DownloadController extends GetxController {
     loggerSimple.d('将任务交给槽位管理器: gid=${galleryTask.gid}');
     gallerySlotManager.addGalleryTask(galleryTask);
     loggerSimple.d('槽位管理器处理完成: gid=${galleryTask.gid}');
+    _syncBackgroundDownloadSession(userInitiated: userInitiated);
   }
 
   // 启动画廊下载
@@ -1137,18 +1219,32 @@ class DownloadController extends GetxController {
             checkMaxCount: dm.kCheckMaxCount,
             periodSeconds: dm.kPeriodSeconds,
             onRetryNeededCallback: (int gid) {
+              if (_isBackgroundSuspending) {
+                return;
+              }
+              final suspendEpoch = _backgroundSuspendEpoch;
               logger.d('检测到下载停滞，正在重试 gid:$gid, 时间:${DateTime.now()}');
 
               // 执行重试
-              Future<void>(() => galleryTaskPaused(gid, silent: true))
-                  .then(
-                      (_) => Future.delayed(const Duration(microseconds: 1000)))
-                  .then((_) => galleryTaskResume(gid));
+              Future<void>(() async {
+                if (_isBackgroundSuspending ||
+                    suspendEpoch != _backgroundSuspendEpoch) {
+                  return;
+                }
+                await galleryTaskPaused(gid, silent: true);
+                await Future.delayed(const Duration(microseconds: 1000));
+                if (_isBackgroundSuspending ||
+                    suspendEpoch != _backgroundSuspendEpoch) {
+                  return;
+                }
+                await galleryTaskResume(gid, userInitiated: false);
+              });
             },
           );
 
           // 更新UI
           _updateDownloadView(['DownloadGalleryItem_$gid']);
+          _syncBackgroundDownloadSession();
         }
       },
     );
@@ -1282,6 +1378,24 @@ class DownloadController extends GetxController {
 
   void _onTaskReconciled(GalleryTask task) {
     _updateDownloadView(['DownloadGalleryItem_${task.gid}']);
+    if (dState.unavailableGalleryFiles.contains(task.gid) ||
+        task.status == TaskStatus.complete.value) {
+      if (gallerySlotManager.isGalleryActive(task.gid) ||
+          gallerySlotManager.isGalleryWaiting(task.gid)) {
+        unawaited(
+          gallerySlotManager
+              .onGalleryStatusChanged(
+                task.gid,
+                task.status == TaskStatus.complete.value
+                    ? TaskStatus.complete
+                    : TaskStatus.paused,
+              )
+              .then((_) => _syncBackgroundDownloadSession()),
+        );
+        return;
+      }
+      _syncBackgroundDownloadSession();
+    }
   }
 
   void _updateShowKey(
@@ -1490,7 +1604,8 @@ class DownloadController extends GetxController {
               'Unable to obtain image information for $galleryTask.gid.$itemSer');
         }
       });
-      unawaited(imageFuture.catchError((Object error, StackTrace stack) async {
+      final trackedFuture =
+          imageFuture.catchError((Object error, StackTrace stack) async {
         await _handleImageTaskError(
           galleryTask.gid,
           itemSer,
@@ -1498,6 +1613,17 @@ class DownloadController extends GetxController {
           stack,
           taskCancelToken: cancelToken,
         );
+      });
+      final inFlightSet = _inFlightImageFutures.putIfAbsent(
+        galleryTask.gid,
+        () => <Future<void>>{},
+      );
+      inFlightSet.add(trackedFuture);
+      unawaited(trackedFuture.whenComplete(() {
+        inFlightSet.remove(trackedFuture);
+        if (inFlightSet.isEmpty) {
+          _inFlightImageFutures.remove(galleryTask.gid);
+        }
       }));
     }
     logger.d('所有图片任务已加入队列: gid=${galleryTask.gid}');
@@ -1559,6 +1685,9 @@ class DownloadController extends GetxController {
     if (error is DioException && CancelToken.isCancel(error)) {
       return;
     }
+    if (_isBackgroundSuspending) {
+      return;
+    }
 
     final currentTask = dState.galleryTaskMap[gid];
     if (currentTask?.status == TaskStatus.complete.value ||
@@ -1599,6 +1728,9 @@ class DownloadController extends GetxController {
     if (task?.status == TaskStatus.failed.value) {
       _updateErrInfo(gid, _formatDownloadError(error));
       await gallerySlotManager.onGalleryStatusChanged(gid, TaskStatus.failed);
+      _syncBackgroundDownloadSession(
+        endReason: BackgroundSessionEndReason.failed,
+      );
     }
   }
 
@@ -1666,6 +1798,11 @@ class DownloadController extends GetxController {
         if (task.status == TaskStatus.complete.value) {
           loggerSimple.d(
               '画廊任务全部完成: gid=$gid, ${listComplete.length}/${task.fileCount}');
+          iosBackgroundDownloadService.recordGalleryCompleted(
+            gid: gid,
+            title: task.title,
+            fileCount: task.fileCount,
+          );
           await _completeGalleryTask(gid);
         } else {
           loggerSimple.d(
@@ -1676,6 +1813,7 @@ class DownloadController extends GetxController {
       }
 
       _updateDownloadView(['DownloadGalleryItem_$gid']);
+      _syncBackgroundDownloadSession();
     });
   }
 
@@ -1811,5 +1949,171 @@ class DownloadController extends GetxController {
     } else {
       logger.e('设置最大下载图片线程数失败: 值超出范围(1-32): $count');
     }
+  }
+
+  /// 更新 iOS 后台下载开关
+  Future<void> setIosBackgroundDownloadEnabled(bool enabled) async {
+    ehSettingService.iosBackgroundDownload = enabled;
+    _syncBackgroundDownloadSession(
+      userInitiated: enabled,
+      endReason: enabled
+          ? BackgroundSessionEndReason.completed
+          : BackgroundSessionEndReason.disabled,
+    );
+  }
+
+  /// 更新 iOS 后台下载完成通知开关
+  Future<void> setIosBackgroundDownloadNotifyEnabled(bool enabled) async {
+    ehSettingService.iosBackgroundDownloadNotify = enabled;
+    if (enabled) {
+      await iosBackgroundDownloadService.requestNotificationPermission();
+    }
+  }
+
+  /// 系统后台保活即将过期或用户在系统实时通知中停止下载时优雅暂停。
+  Future<void> handleIosBackgroundExpired(String reason) {
+    final inFlight = _performIosBackgroundExpired(reason);
+    _backgroundSuspendInFlight = inFlight;
+    return inFlight.whenComplete(() {
+      if (identical(_backgroundSuspendInFlight, inFlight)) {
+        _backgroundSuspendInFlight = null;
+      }
+    });
+  }
+
+  Future<void> _performIosBackgroundExpired(String reason) async {
+    logger.i('iOS 后台下载会话终止: reason=$reason');
+    _backgroundSuspendEpoch++;
+    _isBackgroundSuspending = true;
+    try {
+      final activeTasks = _activeGalleryTasks()
+        ..sort((a, b) {
+          // 先暂停等待队列中的 enqueued 任务，避免释放 running 槽位时拉起下一个等待任务。
+          final aIsEnqueued = a.status == TaskStatus.enqueued.value ? 0 : 1;
+          final bIsEnqueued = b.status == TaskStatus.enqueued.value ? 0 : 1;
+          return aIsEnqueued.compareTo(bIsEnqueued);
+        });
+      final activeGids = activeTasks.map((task) => task.gid).toList();
+
+      // 仅对明确属于非用户主动取消的系统保活过期保留自动续传资格；
+      // BGContinuedProcessingTask 过期无法保证区分用户点击「停止」与系统回收，保持手动恢复。
+      final autoResumeEligible =
+          reason == 'grace_expired' || reason == 'audio_recovery_failed';
+      if (autoResumeEligible) {
+        _backgroundSuspendedGids.addAll(activeGids);
+      } else {
+        _backgroundSuspendedGids.clear();
+      }
+      // 1) 同步冻结本轮所有计时器和在途网络请求，立即阻止旧 worker 或停滞重试继续写入状态。
+      _cancelDownloadStateChkTimer();
+      for (final gid in activeGids) {
+        dState.taskCancelTokens[gid]?.cancel();
+        final cancelToken = dState.cancelTokenMap[gid];
+        if (cancelToken != null && !cancelToken.isCancelled) {
+          cancelToken.cancel();
+        }
+      }
+
+      // 2) 优先把暂停状态与挂起恢复标记并行落盘，避免系统在等待旧网络句柄前挂起导致状态丢失。
+      //    .part 句柄关闭会在后续 galleryTaskResume 恢复前等待确认。
+      final persistSuspendedFuture = _persistBackgroundSuspendedGids();
+      for (final gid in activeGids) {
+        await galleryTaskPaused(gid);
+      }
+      await persistSuspendedFuture;
+    } finally {
+      _isBackgroundSuspending = false;
+    }
+  }
+
+  /// 回到前台或冷启动后自动续传因系统后台到期而被优雅挂起的下载任务。
+  Future<void> resumeBackgroundSuspendedTasks() async {
+    if (_backgroundSuspendInFlight != null) {
+      await _backgroundSuspendInFlight;
+    }
+    if (_backgroundSuspendedGids.isEmpty) {
+      return;
+    }
+    final gidsToResume = _backgroundSuspendedGids.toList();
+    logger.i('恢复后台挂起的下载任务: $gidsToResume');
+    for (final gid in gidsToResume) {
+      final task = dState.galleryTaskMap[gid];
+      if (task?.status == TaskStatus.paused.value) {
+        await galleryTaskResume(gid, userInitiated: false);
+      } else {
+        _removeBackgroundSuspendedGid(gid);
+      }
+    }
+  }
+
+  void _removeBackgroundSuspendedGid(int gid) {
+    if (_backgroundSuspendedGids.remove(gid)) {
+      unawaited(_persistBackgroundSuspendedGids());
+    }
+  }
+
+  Future<void> _persistBackgroundSuspendedGids() async {
+    try {
+      await hiveHelper.setBackgroundSuspendedDownloadGids(
+        _backgroundSuspendedGids,
+      );
+    } on Object catch (e) {
+      logger.w('保存后台挂起下载列表失败: $e');
+    }
+  }
+
+  Future<void> _waitForInFlightImages(int gid) async {
+    final pending = _inFlightImageFutures[gid]?.toList();
+    if (pending == null || pending.isEmpty) {
+      return;
+    }
+    try {
+      await Future.wait(pending);
+    } on Object {
+      // Cancellation errors are already handled by each worker.
+    }
+  }
+
+  List<GalleryTask> _activeGalleryTasks() {
+    return dState.galleryTasks
+        .where((task) =>
+            !dState.unavailableGalleryFiles.contains(task.gid) &&
+            (task.status == TaskStatus.running.value ||
+                task.status == TaskStatus.enqueued.value))
+        .toList();
+  }
+
+  void _syncBackgroundDownloadSession({
+    bool userInitiated = false,
+    BackgroundSessionEndReason endReason = BackgroundSessionEndReason.completed,
+    int? justCompletedGid,
+    String? justCompletedTitle,
+    int? justCompletedFileCount,
+  }) {
+    if (!iosBackgroundDownloadService.isSupportedPlatform ||
+        _isBackgroundSuspending) {
+      return;
+    }
+    unawaited(
+      iosBackgroundDownloadService.syncDownloadState(
+        activeTasks: _activeGalleryTasks()
+            .map((task) => BackgroundDownloadTaskItem(
+                  gid: task.gid,
+                  title: task.title,
+                  fileCount: task.fileCount,
+                  completedCount: task.completCount ?? 0,
+                ))
+            .toList(),
+        downloadCounts: dState.downloadCounts,
+        downloadSpeeds: dState.downloadSpeeds,
+        backgroundDownloadEnabled: ehSettingService.iosBackgroundDownload,
+        completionNotifyEnabled: ehSettingService.iosBackgroundDownloadNotify,
+        userInitiated: userInitiated,
+        endReason: endReason,
+        justCompletedGid: justCompletedGid,
+        justCompletedTitle: justCompletedTitle,
+        justCompletedFileCount: justCompletedFileCount,
+      ),
+    );
   }
 }

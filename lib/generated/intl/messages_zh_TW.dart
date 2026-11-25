@@ -59,34 +59,42 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m18(reused, fetch) => "已啟動增量更新：複用 ${reused} 頁，拉取 ${fetch} 頁";
 
-  static String m19(modelName) => "模式 ${modelName}";
+  static String m19(count) => "已完成 ${count} 個畫廊的下載";
 
-  static String m20(count) => "${count} 頁";
+  static String m20(title) => "《${title}》已下載完成";
 
-  static String m21(seconds) => "${seconds} 秒";
+  static String m21(count) => "正在下載 ${count} 個畫廊";
 
-  static String m22(page, total) => "第 ${page} 頁，共 ${total} 頁";
+  static String m22(completed, total) => "已完成 ${completed}/${total} 頁";
 
-  static String m23(rating) => "${rating} ⭐";
+  static String m23(modelName) => "模式 ${modelName}";
 
-  static String m24(tag) => "加入 ${tag}";
+  static String m24(count) => "${count} 頁";
 
-  static String m25(count) => "共 ${count} 頁";
+  static String m25(seconds) => "${seconds} 秒";
 
-  static String m26(avg, count) => "平均 ${avg} · ${count} 人評分";
+  static String m26(page, total) => "第 ${page} 頁，共 ${total} 頁";
 
-  static String m27(text) => "搜尋「${text}」";
+  static String m27(rating) => "${rating} ⭐";
 
-  static String m28(count) => "已加入 ${count} 個 · 以逗號分隔";
+  static String m28(tag) => "加入 ${tag}";
 
-  static String m29(count, per) => "共 ${count} 頁 · 每頁 ${per} 張";
+  static String m29(count) => "共 ${count} 頁";
 
-  static String m30(count) => "種子 · ${count} 個";
+  static String m30(avg, count) => "平均 ${avg} · ${count} 人評分";
 
-  static String m31(tagNamespace) =>
+  static String m31(text) => "搜尋「${text}」";
+
+  static String m32(count) => "已加入 ${count} 個 · 以逗號分隔";
+
+  static String m33(count, per) => "共 ${count} 頁 · 每頁 ${per} 張";
+
+  static String m34(count) => "種子 · ${count} 個";
+
+  static String m35(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': '重新分類', 'language': '語言', 'parody': '原作', 'character': '角色', 'group': '社團', 'artist': '藝術家', 'male': '男性', 'female': '女性', 'mixed': '混雜', 'cosplayer': '扮演者', 'other': '其它', 'temp': '臨時'})}";
 
-  static String m32(version) => "可更新到 ${version}";
+  static String m36(version) => "可更新到 ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -467,6 +475,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "input_empty": MessageLookupByLibrary.simpleMessage("輸入空"),
     "input_error": MessageLookupByLibrary.simpleMessage("輸入格式有誤"),
     "instantly": MessageLookupByLibrary.simpleMessage("立即"),
+    "ios_bg_download": MessageLookupByLibrary.simpleMessage("背景下載"),
+    "ios_bg_download_complete_multi": m19,
+    "ios_bg_download_complete_single": m20,
+    "ios_bg_download_complete_title": MessageLookupByLibrary.simpleMessage(
+      "下載完成",
+    ),
+    "ios_bg_download_multi_title": m21,
+    "ios_bg_download_notify": MessageLookupByLibrary.simpleMessage("下載完成通知"),
+    "ios_bg_download_notify_subtitle": MessageLookupByLibrary.simpleMessage(
+      "背景下載完成後發送本地通知提醒",
+    ),
+    "ios_bg_download_progress_pages": m22,
+    "ios_bg_download_subtitle": MessageLookupByLibrary.simpleMessage(
+      "切換背景繼續下載畫廊，不打斷音樂播放",
+    ),
     "japanese_title": MessageLookupByLibrary.simpleMessage("日文標題"),
     "japanese_title_in_gallery": MessageLookupByLibrary.simpleMessage(
       "畫廊頁面顯示日文標題",
@@ -516,7 +539,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("透過網頁登入"),
     "max_history": MessageLookupByLibrary.simpleMessage("最大歷史紀錄"),
     "min": MessageLookupByLibrary.simpleMessage("分鐘"),
-    "model": m19,
+    "model": m23,
     "more_actions": MessageLookupByLibrary.simpleMessage("更多"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("更多預覽"),
     "multi_download": MessageLookupByLibrary.simpleMessage("同時下載圖片數量"),
@@ -557,7 +580,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("評分"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("相似"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("種子"),
-    "page_count": m20,
+    "page_count": m24,
     "page_range": MessageLookupByLibrary.simpleMessage("跳轉範圍"),
     "page_range_error": MessageLookupByLibrary.simpleMessage("輸入範圍有誤"),
     "page_view_type": MessageLookupByLibrary.simpleMessage("頁面檢視類型"),
@@ -593,10 +616,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("橫屏鋪滿全螢幕"),
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("直屏鋪滿全螢幕"),
-    "reader_interval_seconds": m21,
+    "reader_interval_seconds": m25,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("下一頁"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("頁面版式"),
-    "reader_page_of": m22,
+    "reader_page_of": m26,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage("上一頁"),
     "reader_single_page": MessageLookupByLibrary.simpleMessage("單頁"),
     "reader_surface_standard": MessageLookupByLibrary.simpleMessage("標準"),
@@ -649,7 +672,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "s_and": MessageLookupByLibrary.simpleMessage("到"),
     "s_pages": MessageLookupByLibrary.simpleMessage("頁數"),
-    "s_stars": m23,
+    "s_stars": m27,
     "save": MessageLookupByLibrary.simpleMessage("儲存"),
     "save_current_image": MessageLookupByLibrary.simpleMessage("儲存目前圖片"),
     "save_into_album": MessageLookupByLibrary.simpleMessage("儲存到相冊"),
@@ -690,7 +713,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "skip": MessageLookupByLibrary.simpleMessage("跳過"),
     "slide_out_page": MessageLookupByLibrary.simpleMessage("拖動返回"),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("加入快速搜尋"),
-    "sp_add_tag": m24,
+    "sp_add_tag": m28,
     "sp_all": MessageLookupByLibrary.simpleMessage("全部"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("全部收藏"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage("原圖歸檔"),
@@ -726,16 +749,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("末頁"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("下一頁"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("上一頁"),
-    "sp_page_total": m25,
+    "sp_page_total": m29,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage("點擊選擇圖片"),
     "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("快速搜尋列表"),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("送出評分"),
-    "sp_rating_summary": m26,
+    "sp_rating_summary": m30,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("最近搜尋"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("重新整理"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("重設"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("重試"),
-    "sp_search_for": m27,
+    "sp_search_for": m31,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "搜尋標題、標籤或貼上連結",
     ),
@@ -750,19 +773,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("相似掃描"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("開始搜尋"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("建議"),
-    "sp_tags_added": m28,
+    "sp_tags_added": m32,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "例如 female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("跳到預覽頁"),
-    "sp_thumbs_per_page": m29,
+    "sp_thumbs_per_page": m33,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("完成"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage("下載種子"),
     "sp_torrent_empty": MessageLookupByLibrary.simpleMessage("沒有可用的種子"),
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("分享磁力"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("下載中"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("做種"),
-    "sp_torrent_title": m30,
+    "sp_torrent_title": m34,
     "sp_translate": MessageLookupByLibrary.simpleMessage("翻譯"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage("分欄隨分隔線"),
     "sync_group": MessageLookupByLibrary.simpleMessage("同步分組"),
@@ -786,7 +809,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("關注"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("首頁欄位設定"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("平板布局"),
-    "tagNamespace": m31,
+    "tagNamespace": m35,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("管理標籤"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage("預設顏色"),
     "tag_dialog_Hide": MessageLookupByLibrary.simpleMessage("隱藏"),
@@ -991,7 +1014,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "如果要從預設標籤搜尋中排除某些標籤組，可以檢查以下內容。請注意，這不會阻止在這些標籤組中的標籤的展示區出現，它只是在搜尋標籤時排除這些標籤組。",
     ),
     "unlimited": MessageLookupByLibrary.simpleMessage("無限制"),
-    "update_to_version": m32,
+    "update_to_version": m36,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("上傳頭像"),
     "uploader": MessageLookupByLibrary.simpleMessage("上傳者"),
     "user_login": MessageLookupByLibrary.simpleMessage("使用者登入"),

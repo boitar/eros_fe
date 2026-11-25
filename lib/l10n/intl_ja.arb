@@ -708,5 +708,14 @@
   "incremental_update_completed_locally": "#{gid} へローカル更新完了（{reused} ページ再利用）",
   "incremental_update_saf_inplace_unsupported": "SAF ストレージはローカル再利用・上書き更新に未対応のため、新規タスクとして全ページ取得します。",
   "incremental_update_applying": "更新を適用中…",
-  "incremental_update_start_saf_full": "新規タスクで全件取得 · {count} ページ"
+  "incremental_update_start_saf_full": "新規タスクで全件取得 · {count} ページ",
+  "ios_bg_download": "バックグラウンドダウンロード",
+  "ios_bg_download_subtitle": "音楽再生を中断せずにバックグラウンドでギャラリーのダウンロードを継続します",
+  "ios_bg_download_notify": "ダウンロード完了通知",
+  "ios_bg_download_notify_subtitle": "バックグラウンドダウンロード完了時にローカル通知でお知らせします",
+  "ios_bg_download_multi_title": "{count} 件のギャラリーをダウンロード中",
+  "ios_bg_download_progress_pages": "{completed}/{total} ページ完了",
+  "ios_bg_download_complete_title": "ダウンロード完了",
+  "ios_bg_download_complete_single": "「{title}」のダウンロードが完了しました",
+  "ios_bg_download_complete_multi": "{count} 件のギャラリーのダウンロードが完了しました"
 }
