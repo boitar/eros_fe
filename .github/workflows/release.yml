@@ -604,7 +604,7 @@ jobs:
             echo "Release ${tag} already exists; uploading/replacing assets only (preserving body)."
             gh release upload "$tag" "${assets[@]}" --clobber
           else
-            create_args=("$tag" "${assets[@]}" --title "$tag")
+            create_args=("$tag" "${assets[@]}" --title "${PACKAGE_NAME} ${tag}")
 
             if [ -f "changelog/${tag}.md" ]; then
               create_args+=(--notes-file "changelog/${tag}.md")
