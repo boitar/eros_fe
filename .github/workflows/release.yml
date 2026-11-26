@@ -442,14 +442,136 @@ jobs:
           Compress-Archive -Path $destDir -DestinationPath $zipPath -Force
           Get-Item $zipPath | Select-Object Name, Length
 
-      - name: Upload Artifacts
+      - name: Upload single-file Artifact (raw, no outer zip)
+        if: matrix.target != 'android' || env.android_only_arm64 == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ${{ env.is_tag_release == 'true' && format('release-{0}', matrix.target) || format('preview-{0}-ci{1}', matrix.target, github.run_number) }}
           path: build/ci-output/*
+          archive: false
+          if-no-files-found: error
+          retention-days: ${{ env.is_tag_release == 'true' && 7 || 14 }}
+
+      - name: Upload multi-file Android Artifacts
+        if: matrix.target == 'android' && env.android_only_arm64 != 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.is_tag_release == 'true' && 'release-android' || format('preview-android-all-ci{0}', github.run_number) }}
+          path: build/ci-output/*
+          archive: true
           if-no-files-found: error
           retention-days: ${{ env.is_tag_release == 'true' && 7 || 14 }}
           compression-level: 0
+
+  Publish_nightly:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/custom'
+    name: Update Rolling Nightly Pre-release
+    needs: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout (shallow, for pubspec and commit info)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download preview artifacts (raw, no auto-decompress)
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: /tmp/nightly-artifacts
+          merge-multiple: true
+          skip-decompress: true
+
+      - name: Update rolling nightly pre-release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          app_version=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}' | tr -d '\r')
+          short_sha="${GITHUB_SHA::9}"
+          build_time=$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S CST')
+          commit_subject=$(git log -1 --pretty=%s)
+
+          stage_dir="/tmp/nightly-final"
+          rm -rf "$stage_dir"
+          mkdir -p "$stage_dir"
+
+          find_single() {
+            local pattern="$1"
+            local matches=()
+            while IFS= read -r f; do
+              matches+=("$f")
+            done < <(find /tmp/nightly-artifacts -type f -name "$pattern" | sort)
+            if [ ${#matches[@]} -ne 1 ]; then
+              echo "Expected 1 artifact matching ${pattern}, found ${#matches[@]}:" >&2
+              find /tmp/nightly-artifacts -maxdepth 3 -ls >&2
+              exit 1
+            fi
+            printf '%s' "${matches[0]}"
+          }
+
+          apk_src=$(find_single '*.apk')
+          ipa_src=$(find_single '*.ipa')
+          dmg_src=$(find_single '*.dmg')
+          win_src=$(find_single '*.zip')
+
+          cp "$apk_src" "${stage_dir}/${PACKAGE_NAME}-nightly-android-arm64-v8a-debug.apk"
+          cp "$ipa_src" "${stage_dir}/${PACKAGE_NAME}-nightly-ios-unsigned.ipa"
+          cp "$dmg_src" "${stage_dir}/${PACKAGE_NAME}-nightly-macos-adhoc.dmg"
+          cp "$win_src" "${stage_dir}/${PACKAGE_NAME}-nightly-windows-x64-portable.zip"
+
+          (
+            cd "$stage_dir"
+            sha256sum *.apk *.ipa *.dmg *.zip > SHA256SUMS.txt
+          )
+
+          cat > /tmp/nightly-notes.md <<EOF
+          ## Eros-FE Nightly Preview（滚动前瞻构建）
+
+          每次推送或合并到 \`custom\` 分支时自动构建并覆盖更新，**免登录 GitHub 可直接下载**，不会替换正式版 \`Latest\`。
+
+          - **版本**：\`${app_version}\`
+          - **提交**：[\`${short_sha}\`](https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}) — ${commit_subject}
+          - **构建时间**：${build_time}
+          - **构建日志**：[#${GITHUB_RUN_NUMBER}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+
+          ### 安装包说明
+          - \`${PACKAGE_NAME}-nightly-ios-unsigned.ipa\`：iOS 无签名 IPA（用于自签/巨魔安装）
+          - \`${PACKAGE_NAME}-nightly-android-arm64-v8a-debug.apk\`：Android \`arm64-v8a\` 临时测试包（debug 签名，与正式版签名不同，仅用于尝鲜自测；正式覆盖升级请下载版本化 \`v*\` Release）
+          - \`${PACKAGE_NAME}-nightly-macos-adhoc.dmg\`：macOS ad-hoc 签名 DMG
+          - \`${PACKAGE_NAME}-nightly-windows-x64-portable.zip\`：Windows x64 便携压缩包
+
+          ### SHA-256 校验和
+          \`\`\`text
+          $(cat "${stage_dir}/SHA256SUMS.txt")
+          \`\`\`
+          EOF
+
+          assets=(
+            "${stage_dir}/${PACKAGE_NAME}-nightly-android-arm64-v8a-debug.apk"
+            "${stage_dir}/${PACKAGE_NAME}-nightly-ios-unsigned.ipa"
+            "${stage_dir}/${PACKAGE_NAME}-nightly-macos-adhoc.dmg"
+            "${stage_dir}/${PACKAGE_NAME}-nightly-windows-x64-portable.zip"
+            "${stage_dir}/SHA256SUMS.txt"
+          )
+
+          release_title="Nightly Preview · ${app_version} (${short_sha})"
+
+          if gh release view nightly >/dev/null 2>&1; then
+            # Move lightweight 'nightly' tag to latest custom commit (does not start with 'v', so never re-triggers workflow)
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/nightly" \
+              -f sha="${GITHUB_SHA}" -F force=true >/dev/null
+            gh release upload nightly "${assets[@]}" --clobber
+            gh release edit nightly \
+              --prerelease \
+              --title "$release_title" \
+              --notes-file /tmp/nightly-notes.md
+          else
+            gh release create nightly "${assets[@]}" \
+              --target "${GITHUB_SHA}" \
+              --prerelease \
+              --title "$release_title" \
+              --notes-file /tmp/nightly-notes.md
+          fi
 
   Sign_and_publish:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -469,10 +591,19 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Download all build artifacts
+      - name: Download unsigned Android APK bundle
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          path: /tmp/release-artifacts
+          name: release-android
+          path: /tmp/release-artifacts/release-android
+
+      - name: Download raw iOS / macOS / Windows artifacts (no auto-decompress)
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: 'Eros-FE_*'
+          path: /tmp/release-artifacts/single
+          merge-multiple: true
+          skip-decompress: true
 
       - name: Sign & 16KB-align Android APKs (isolated from build tools)
         shell: bash
@@ -546,10 +677,8 @@ jobs:
             "$build_tools/apksigner" verify --verbose --print-certs "$signed_apk"
           done
 
-          # Copy iOS, macOS, and Windows release artifacts into final staging directory
-          cp /tmp/release-artifacts/release-ios/*.ipa "$stage_dir/"
-          cp /tmp/release-artifacts/release-macos/*.dmg "$stage_dir/"
-          cp /tmp/release-artifacts/release-windows/*.zip "$stage_dir/"
+          # Copy iOS, macOS, and Windows raw release artifacts into final staging directory
+          find /tmp/release-artifacts/single -type f \( -name '*.ipa' -o -name '*.dmg' -o -name '*.zip' \) -exec cp {} "$stage_dir/" \;
 
           # Generate SHA-256 checksums for all release assets
           (
