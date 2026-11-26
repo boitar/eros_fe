@@ -442,11 +442,22 @@ jobs:
           Compress-Archive -Path $destDir -DestinationPath $zipPath -Force
           Get-Item $zipPath | Select-Object Name, Length
 
-      - name: Upload Artifacts
+      - name: Upload single-file Artifact (raw, no outer zip)
+        if: matrix.target != 'android' || env.android_only_arm64 == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ${{ env.is_tag_release == 'true' && format('release-{0}', matrix.target) || format('preview-{0}-ci{1}', matrix.target, github.run_number) }}
           path: build/ci-output/*
+          archive: false
+          if-no-files-found: error
+          retention-days: ${{ env.is_tag_release == 'true' && 7 || 14 }}
+
+      - name: Upload multi-file Android Artifacts
+        if: matrix.target == 'android' && env.android_only_arm64 != 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.is_tag_release == 'true' && 'release-android' || format('preview-android-all-ci{0}', github.run_number) }}
+          path: build/ci-output/*
+          archive: true
           if-no-files-found: error
           retention-days: ${{ env.is_tag_release == 'true' && 7 || 14 }}
           compression-level: 0
@@ -469,10 +480,19 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Download all build artifacts
+      - name: Download unsigned Android APK bundle
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          path: /tmp/release-artifacts
+          name: release-android
+          path: /tmp/release-artifacts/release-android
+
+      - name: Download raw iOS / macOS / Windows artifacts (no auto-decompress)
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: 'Eros-FE_*'
+          path: /tmp/release-artifacts/single
+          merge-multiple: true
+          skip-decompress: true
 
       - name: Sign & 16KB-align Android APKs (isolated from build tools)
         shell: bash
@@ -546,10 +566,8 @@ jobs:
             "$build_tools/apksigner" verify --verbose --print-certs "$signed_apk"
           done
 
-          # Copy iOS, macOS, and Windows release artifacts into final staging directory
-          cp /tmp/release-artifacts/release-ios/*.ipa "$stage_dir/"
-          cp /tmp/release-artifacts/release-macos/*.dmg "$stage_dir/"
-          cp /tmp/release-artifacts/release-windows/*.zip "$stage_dir/"
+          # Copy iOS, macOS, and Windows raw release artifacts into final staging directory
+          find /tmp/release-artifacts/single -type f \( -name '*.ipa' -o -name '*.dmg' -o -name '*.zip' \) -exec cp {} "$stage_dir/" \;
 
           # Generate SHA-256 checksums for all release assets
           (

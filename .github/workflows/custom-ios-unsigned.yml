@@ -139,11 +139,10 @@ jobs:
           shasum -a 256 "$ipa_name"
           echo "ipa_name=${ipa_name}" >> "$GITHUB_ENV"
 
-      - name: Publish Artifacts
+      - name: Publish Artifacts (raw IPA, no outer zip)
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ${{ env.PACKAGE_NAME }}_${{ env.app_version }}-unsigned_ci${{ github.run_number }}-${{ env.short_sha }}
           path: build/${{ env.ipa_name }}
+          archive: false
           if-no-files-found: error
           retention-days: 14
-          compression-level: 0
