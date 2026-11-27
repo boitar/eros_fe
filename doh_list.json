@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-27T03:58:29Z",
+  "servers": [
+    {
+      "id": "cloudflare-security",
+      "name": "Cloudflare 1.0.0.1",
+      "url": "https://1.0.0.1/dns-query",
+      "bootstrapIps": [
+        "1.0.0.1",
+        "1.1.1.1"
+      ],
+      "region": "global"
+    },
+    {
+      "id": "cloudflare",
+      "name": "Cloudflare",
+      "url": "https://cloudflare-dns.com/dns-query",
+      "bootstrapIps": [
+        "1.1.1.1",
+        "1.0.0.1",
+        "104.16.248.249",
+        "104.16.249.249"
+      ],
+      "region": "global"
+    },
+    {
+      "id": "google",
+      "name": "Google DNS",
+      "url": "https://dns.google/resolve",
+      "bootstrapIps": [
+        "8.8.8.8",
+        "8.8.4.4"
+      ],
+      "region": "global"
+    },
+    {
+      "id": "nextdns",
+      "name": "NextDNS",
+      "url": "https://dns.nextdns.io/dns-query",
+      "bootstrapIps": [
+        "45.90.28.0",
+        "45.90.30.0",
+        "170.39.225.135",
+        "139.64.133.38"
+      ],
+      "region": "global"
+    },
+    {
+      "id": "adguard",
+      "name": "AdGuard",
+      "url": "https://dns.adguard-dns.com/dns-query",
+      "bootstrapIps": [
+        "94.140.14.14",
+        "94.140.15.15"
+      ],
+      "region": "global"
+    },
+    {
+      "id": "dnspod",
+      "name": "DNSPod",
+      "url": "https://doh.pub/dns-query",
+      "bootstrapIps": [
+        "1.12.12.12",
+        "120.53.53.53"
+      ],
+      "region": "cn"
+    },
+    {
+      "id": "dns-sb",
+      "name": "DNS.SB",
+      "url": "https://doh.dns.sb/dns-query",
+      "bootstrapIps": [
+        "45.11.45.11",
+        "185.222.222.222",
+        "104.128.62.173"
+      ],
+      "region": "global"
+    }
+  ],
+  "fallbackHosts": {
+    "e-hentai.org": [
+      "172.66.132.196",
+      "172.66.140.62"
+    ],
+    "exhentai.org": [
+      "104.21.56.202",
+      "172.67.187.219"
+    ],
+    "api.e-hentai.org": [
+      "5.79.104.110",
+      "37.48.81.204",
+      "89.149.222.80",
+      "95.211.79.44"
+    ],
+    "ehgt.org": [
+      "62.112.8.152",
+      "185.132.132.79",
+      "185.132.132.76"
+    ],
+    "forums.e-hentai.org": [
+      "172.66.132.196",
+      "172.66.140.62"
+    ],
+    "s.exhentai.org": [
+      "178.175.132.22",
+      "178.175.128.254",
+      "178.175.129.254"
+    ],
+    "ehtracker.org": [
+      "37.48.81.218",
+      "89.149.222.91",
+      "95.211.79.57",
+      "212.7.202.58"
+    ]
+  }
+}
