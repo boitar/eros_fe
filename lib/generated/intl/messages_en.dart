@@ -39,72 +39,87 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m8(gid) => "Parent #${gid}";
 
-  static String m9(count) => "${count} newer versions";
+  static String m9(count) =>
+      "${Intl.plural(count, one: '${count} rating', other: '${count} ratings')}";
 
-  static String m10(date) => "Updated ${date}";
+  static String m10(count) => "${count} newer versions";
 
-  static String m11(gid, reused) =>
+  static String m11(gid) => "Current version #${gid}";
+
+  static String m12(value) => "Peak ${value}";
+
+  static String m13(value) => "Avg ${value}";
+
+  static String m14(period, percent) => "${period} · ${percent}%";
+
+  static String m15(value) => "Total ${value}";
+
+  static String m16(score) => "Score ${score}";
+
+  static String m17(date) => "Updated ${date}";
+
+  static String m18(gid, reused) =>
       "Updated to #${gid} locally (${reused} pages reused)";
 
-  static String m12(gid) =>
+  static String m19(gid) =>
       "Reuse unchanged local images, update task to #${gid}, and map reading position.";
 
-  static String m13(gid) =>
+  static String m20(gid) =>
       "Create a new folder for #${gid} with reused images while keeping the old version.";
 
-  static String m14(count) => "Fetch ${count} pages";
+  static String m21(count) => "Fetch ${count} pages";
 
-  static String m15(count) => "Upgrade in place · Fetch ${count} pages";
+  static String m22(count) => "Upgrade in place · Fetch ${count} pages";
 
-  static String m16(count) => "Create new task · Fetch ${count} pages";
+  static String m23(count) => "Create new task · Fetch ${count} pages";
 
-  static String m17(count) => "Download as new task · ${count} pages";
+  static String m24(count) => "Download as new task · ${count} pages";
 
-  static String m18(reused, fetch) =>
+  static String m25(reused, fetch) =>
       "Incremental update started (reused ${reused}, fetching ${fetch})";
 
-  static String m19(count) => "${count} galleries finished downloading";
+  static String m26(count) => "${count} galleries finished downloading";
 
-  static String m20(title) => "${title} finished downloading";
+  static String m27(title) => "${title} finished downloading";
 
-  static String m21(count) => "Downloading ${count} galleries";
+  static String m28(count) => "Downloading ${count} galleries";
 
-  static String m22(completed, total) => "${completed}/${total} pages";
+  static String m29(completed, total) => "${completed}/${total} pages";
 
-  static String m23(modelName) => "Model ${modelName}";
+  static String m30(modelName) => "Model ${modelName}";
 
-  static String m24(count) => "${count} pages";
+  static String m31(count) => "${count} pages";
 
-  static String m25(seconds) => "${seconds} s";
+  static String m32(seconds) => "${seconds} s";
 
-  static String m26(page, total) => "Page ${page} of ${total}";
+  static String m33(page, total) => "Page ${page} of ${total}";
 
-  static String m27(rating) => "${rating} ⭐";
+  static String m34(rating) => "${rating} ⭐";
 
-  static String m28(ok, total) => "${ok}/${total} reachable";
+  static String m35(ok, total) => "${ok}/${total} reachable";
 
-  static String m29(name) => "Active: ${name}";
+  static String m36(name) => "Active: ${name}";
 
-  static String m30(time) => "· Synced ${time}";
+  static String m37(time) => "· Synced ${time}";
 
-  static String m31(tag) => "Add ${tag}";
+  static String m38(tag) => "Add ${tag}";
 
-  static String m32(count) => "${count} pages";
+  static String m39(count) => "${count} pages";
 
-  static String m33(avg, count) => "Avg ${avg} · ${count} ratings";
+  static String m40(avg, count) => "Avg ${avg} · ${count} ratings";
 
-  static String m34(text) => "Search “${text}”";
+  static String m41(text) => "Search “${text}”";
 
-  static String m35(count) => "${count} added · separate with commas";
+  static String m42(count) => "${count} added · separate with commas";
 
-  static String m36(count, per) => "${count} pages · ${per} per page";
+  static String m43(count, per) => "${count} pages · ${per} per page";
 
-  static String m37(count) => "Torrents · ${count}";
+  static String m44(count) => "Torrents · ${count}";
 
-  static String m38(tagNamespace) =>
+  static String m45(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m39(version) => "Update to ${version}";
+  static String m46(version) => "Update to ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -454,6 +469,33 @@ class MessageLookup extends MessageLookupByLibrary {
       "Has parent",
     ),
     "gallery_info": MessageLookupByLibrary.simpleMessage("Gallery info"),
+    "gallery_info_category": MessageLookupByLibrary.simpleMessage("Category"),
+    "gallery_info_cover_url": MessageLookupByLibrary.simpleMessage("Cover URL"),
+    "gallery_info_expunged": MessageLookupByLibrary.simpleMessage("Expunged"),
+    "gallery_info_favorite_status": MessageLookupByLibrary.simpleMessage(
+      "Favorite",
+    ),
+    "gallery_info_gallery_url": MessageLookupByLibrary.simpleMessage(
+      "Gallery URL",
+    ),
+    "gallery_info_open_browser": MessageLookupByLibrary.simpleMessage(
+      "Open in browser",
+    ),
+    "gallery_info_open_browser_failed": MessageLookupByLibrary.simpleMessage(
+      "Could not open link in browser",
+    ),
+    "gallery_info_posted": MessageLookupByLibrary.simpleMessage("Posted"),
+    "gallery_info_rating_votes": m9,
+    "gallery_info_section_details": MessageLookupByLibrary.simpleMessage(
+      "Details",
+    ),
+    "gallery_info_section_identifiers": MessageLookupByLibrary.simpleMessage(
+      "Identifiers & Links",
+    ),
+    "gallery_info_section_titles": MessageLookupByLibrary.simpleMessage(
+      "Titles",
+    ),
+    "gallery_info_visible": MessageLookupByLibrary.simpleMessage("Visible"),
     "gallery_latest_version": MessageLookupByLibrary.simpleMessage("Latest"),
     "gallery_lineage": MessageLookupByLibrary.simpleMessage("Version Lineage"),
     "gallery_lineage_tap_hint": MessageLookupByLibrary.simpleMessage(
@@ -463,7 +505,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_metadata_copy_hint": MessageLookupByLibrary.simpleMessage(
       "Tap to copy",
     ),
-    "gallery_newer_version_count": m9,
+    "gallery_newer_version_count": m10,
     "gallery_newer_version_single": MessageLookupByLibrary.simpleMessage(
       "Newer version available",
     ),
@@ -481,8 +523,74 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_parent_unavailable": MessageLookupByLibrary.simpleMessage(
       "Unavailable",
     ),
+    "gallery_stats": MessageLookupByLibrary.simpleMessage("Gallery Stats"),
+    "gallery_stats_all_time": MessageLookupByLibrary.simpleMessage("All-Time"),
+    "gallery_stats_collapse": MessageLookupByLibrary.simpleMessage("Hide"),
+    "gallery_stats_current_version": m11,
+    "gallery_stats_daily": MessageLookupByLibrary.simpleMessage("Daily"),
+    "gallery_stats_daily_avg": MessageLookupByLibrary.simpleMessage(
+      "Daily Avg",
+    ),
+    "gallery_stats_empty_body": MessageLookupByLibrary.simpleMessage(
+      "E-Hentai stats.php depends on account permissions (such as donor or uploader access) and gallery availability.",
+    ),
+    "gallery_stats_empty_title": MessageLookupByLibrary.simpleMessage(
+      "Statistics unavailable",
+    ),
+    "gallery_stats_expand_action": MessageLookupByLibrary.simpleMessage(
+      "Load gallery stats",
+    ),
+    "gallery_stats_expand_hint": MessageLookupByLibrary.simpleMessage(
+      "Fetch stats.php on demand (subject to account access)",
+    ),
+    "gallery_stats_fav_rate": MessageLookupByLibrary.simpleMessage("Fav Rate"),
+    "gallery_stats_hits": MessageLookupByLibrary.simpleMessage("Hits"),
+    "gallery_stats_load_failed": MessageLookupByLibrary.simpleMessage(
+      "Could not load gallery statistics",
+    ),
+    "gallery_stats_loading": MessageLookupByLibrary.simpleMessage(
+      "Loading stats.php…",
+    ),
+    "gallery_stats_login_required": MessageLookupByLibrary.simpleMessage(
+      "Sign in to E-Hentai to view gallery statistics",
+    ),
+    "gallery_stats_monthly": MessageLookupByLibrary.simpleMessage("Monthly"),
+    "gallery_stats_no_rankings": MessageLookupByLibrary.simpleMessage(
+      "Not ranked on any toplist period",
+    ),
+    "gallery_stats_no_series_data": MessageLookupByLibrary.simpleMessage(
+      "No historical data for this period",
+    ),
+    "gallery_stats_open_web": MessageLookupByLibrary.simpleMessage(
+      "Open stats.php",
+    ),
+    "gallery_stats_past_month": MessageLookupByLibrary.simpleMessage(
+      "Past Month",
+    ),
+    "gallery_stats_past_year": MessageLookupByLibrary.simpleMessage(
+      "Past Year",
+    ),
+    "gallery_stats_peak": m12,
+    "gallery_stats_period_avg": m13,
+    "gallery_stats_period_share": m14,
+    "gallery_stats_period_total": m15,
+    "gallery_stats_ranking": MessageLookupByLibrary.simpleMessage("Rankings"),
+    "gallery_stats_refresh": MessageLookupByLibrary.simpleMessage(
+      "Refresh stats",
+    ),
+    "gallery_stats_retry": MessageLookupByLibrary.simpleMessage("Retry"),
+    "gallery_stats_score": m16,
+    "gallery_stats_total_visits": MessageLookupByLibrary.simpleMessage(
+      "Total Visits",
+    ),
+    "gallery_stats_unranked": MessageLookupByLibrary.simpleMessage("Unranked"),
+    "gallery_stats_visits": MessageLookupByLibrary.simpleMessage("Visits"),
+    "gallery_stats_yearly": MessageLookupByLibrary.simpleMessage("Yearly"),
+    "gallery_stats_yesterday": MessageLookupByLibrary.simpleMessage(
+      "Yesterday",
+    ),
     "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage("Updatable"),
-    "gallery_updated_on": m10,
+    "gallery_updated_on": m17,
     "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage(
       "View lineage",
     ),
@@ -566,7 +674,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
       "Analyzing page differences...",
     ),
-    "incremental_update_completed_locally": m11,
+    "incremental_update_completed_locally": m18,
     "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
       "Incremental update downloaded gallery",
     ),
@@ -576,18 +684,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
       "Upgrade in place & keep progress",
     ),
-    "incremental_update_mode_inplace_desc": m12,
+    "incremental_update_mode_inplace_desc": m19,
     "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
       "Download as new task (keep old)",
     ),
-    "incremental_update_mode_new_desc": m13,
+    "incremental_update_mode_new_desc": m20,
     "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
       "Update mode",
     ),
     "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage(
       "Newer",
     ),
-    "incremental_update_only_download": m14,
+    "incremental_update_only_download": m21,
     "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
       "Recommended",
     ),
@@ -599,13 +707,13 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage(
           "SAF storage does not support local reuse or in-place upgrade; all pages will be downloaded as a new task.",
         ),
-    "incremental_update_start_inplace": m15,
-    "incremental_update_start_new": m16,
+    "incremental_update_start_inplace": m22,
+    "incremental_update_start_new": m23,
     "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
       "Complete update locally (0 pages to fetch)",
     ),
-    "incremental_update_start_saf_full": m17,
-    "incremental_update_started": m18,
+    "incremental_update_start_saf_full": m24,
+    "incremental_update_started": m25,
     "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
       "Reuse unchanged local images",
     ),
@@ -628,19 +736,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "ios_bg_download": MessageLookupByLibrary.simpleMessage(
       "Background download",
     ),
-    "ios_bg_download_complete_multi": m19,
-    "ios_bg_download_complete_single": m20,
+    "ios_bg_download_complete_multi": m26,
+    "ios_bg_download_complete_single": m27,
     "ios_bg_download_complete_title": MessageLookupByLibrary.simpleMessage(
       "Download complete",
     ),
-    "ios_bg_download_multi_title": m21,
+    "ios_bg_download_multi_title": m28,
     "ios_bg_download_notify": MessageLookupByLibrary.simpleMessage(
       "Completion notification",
     ),
     "ios_bg_download_notify_subtitle": MessageLookupByLibrary.simpleMessage(
       "Send a local notification when background downloads finish",
     ),
-    "ios_bg_download_progress_pages": m22,
+    "ios_bg_download_progress_pages": m29,
     "ios_bg_download_subtitle": MessageLookupByLibrary.simpleMessage(
       "Keep gallery downloads running in the background without interrupting music playback",
     ),
@@ -703,7 +811,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("Sign in on the Web"),
     "max_history": MessageLookupByLibrary.simpleMessage("Maximum History"),
     "min": MessageLookupByLibrary.simpleMessage("min"),
-    "model": m23,
+    "model": m30,
     "more_actions": MessageLookupByLibrary.simpleMessage("More"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("More Thumbnails"),
     "multi_download": MessageLookupByLibrary.simpleMessage("Multi download"),
@@ -760,7 +868,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("Rate"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("Similar"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("Torrent"),
-    "page_count": m24,
+    "page_count": m31,
     "page_range": MessageLookupByLibrary.simpleMessage("Page range"),
     "page_range_error": MessageLookupByLibrary.simpleMessage(
       "Page range error",
@@ -818,10 +926,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage(
       "Fill screen in portrait",
     ),
-    "reader_interval_seconds": m25,
+    "reader_interval_seconds": m32,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("Next page"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("Page Layout"),
-    "reader_page_of": m26,
+    "reader_page_of": m33,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage(
       "Previous page",
     ),
@@ -898,7 +1006,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "s_and": MessageLookupByLibrary.simpleMessage("and"),
     "s_pages": MessageLookupByLibrary.simpleMessage("pages"),
-    "s_stars": m27,
+    "s_stars": m34,
     "save": MessageLookupByLibrary.simpleMessage("Save"),
     "save_current_image": MessageLookupByLibrary.simpleMessage(
       "Save current image",
@@ -989,10 +1097,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_diag_section": MessageLookupByLibrary.simpleMessage(
       "Connectivity Diagnostics",
     ),
-    "sni_diag_summary_ok": m28,
+    "sni_diag_summary_ok": m35,
     "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("Tap to test"),
     "sni_doh_auto": MessageLookupByLibrary.simpleMessage("Automatic"),
-    "sni_doh_auto_selected": m29,
+    "sni_doh_auto_selected": m36,
     "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("Polluted"),
     "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH Servers"),
     "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("Test"),
@@ -1003,7 +1111,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
       "DoH server list updated",
     ),
-    "sni_doh_synced_at": m30,
+    "sni_doh_synced_at": m37,
     "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("Syncing…"),
     "sni_doh_testing": MessageLookupByLibrary.simpleMessage("Testing…"),
     "sni_mode_compat": MessageLookupByLibrary.simpleMessage("Compatibility"),
@@ -1031,7 +1139,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage(
       "Add to quick searches",
     ),
-    "sp_add_tag": m31,
+    "sp_add_tag": m38,
     "sp_all": MessageLookupByLibrary.simpleMessage("All"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("All favorites"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage(
@@ -1081,7 +1189,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("Last"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("Next"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("Prev"),
-    "sp_page_total": m32,
+    "sp_page_total": m39,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage(
       "Tap to choose an image",
     ),
@@ -1089,12 +1197,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Quick searches",
     ),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Submit rating"),
-    "sp_rating_summary": m33,
+    "sp_rating_summary": m40,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Recent"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("Reset"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("Retry"),
-    "sp_search_for": m34,
+    "sp_search_for": m41,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "Search titles, tags or paste a link",
     ),
@@ -1111,14 +1219,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("Similarity scan"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("Search"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("Suggestions"),
-    "sp_tags_added": m35,
+    "sp_tags_added": m42,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "e.g. female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage(
       "Go to preview page",
     ),
-    "sp_thumbs_per_page": m36,
+    "sp_thumbs_per_page": m43,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("Done"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage(
       "Download torrent",
@@ -1129,7 +1237,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("Share magnet"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("Peers"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("Seeds"),
-    "sp_torrent_title": m37,
+    "sp_torrent_title": m44,
     "sp_translate": MessageLookupByLibrary.simpleMessage("Translate"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage(
       "Split, set by divider",
@@ -1163,7 +1271,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("Tabbar setting"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-    "tagNamespace": m38,
+    "tagNamespace": m45,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("Add to Mytags"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default Color",
@@ -1430,7 +1538,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "If you want to exclude certain namespaces from a default tag search, you can check those abover. Note that this does not prevent galleries with tags in these namespaces from appearing, it just makes it so that when searching tags, it will forego those namespaces.",
     ),
     "unlimited": MessageLookupByLibrary.simpleMessage("Unlimited"),
-    "update_to_version": m39,
+    "update_to_version": m46,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
     "uploader": MessageLookupByLibrary.simpleMessage("Uploader"),
     "user_login": MessageLookupByLibrary.simpleMessage("User Sign"),

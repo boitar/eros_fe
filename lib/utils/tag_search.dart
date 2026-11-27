@@ -14,6 +14,9 @@ String formatSimpleSearch(String simpleSearch) {
   while (name.length >= 2 && name.startsWith('"') && name.endsWith('"')) {
     name = name.substring(1, name.length - 1).trim();
   }
+  if (namespace == 'uploader') {
+    name = name.replaceAll('"', r'\"');
+  }
   final end = namespace == 'uploader' || name.endsWith(r'$') ? '' : r'$';
   return '$namespace:"$name$end"';
 }

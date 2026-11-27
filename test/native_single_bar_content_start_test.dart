@@ -579,13 +579,9 @@ void main() {
     await tester.pumpAndSettle();
 
     final phoneContext = tester.element(find.byType(NativeSingleBarEdge));
-    final phoneSectionFinder = find.byType(CupertinoFormSection);
-    final phoneSection = tester.widget<CupertinoFormSection>(
-      phoneSectionFinder,
-    );
-    final phoneGroupTop =
-        tester.getTopLeft(phoneSectionFinder).dy +
-        phoneSection.margin.resolve(TextDirection.ltr).top;
+    final phoneGroupTop = tester
+        .getTopLeft(find.byKey(GalleryInfoPage.contentStartKey))
+        .dy;
     expect(phoneGroupTop, closeTo(_inset + 10, 0.5));
     expect(
       phoneGroupTop,
@@ -610,14 +606,9 @@ void main() {
 
     final tabletContext = tester.element(find.byType(NativeSingleBarEdge));
     final tabletGap = NativeTopTabHeader.contentGapFor(tabletContext);
-    final tabletSectionFinder = find.byType(CupertinoFormSection);
-    final tabletSection = tester.widget<CupertinoFormSection>(
-      tabletSectionFinder,
-    );
     expect(tabletGap, 12);
     expect(
-      tester.getTopLeft(tabletSectionFinder).dy +
-          tabletSection.margin.resolve(TextDirection.ltr).top,
+      tester.getTopLeft(find.byKey(GalleryInfoPage.contentStartKey)).dy,
       closeTo(_inset + tabletGap, 0.5),
     );
     expect(tester.takeException(), isNull);

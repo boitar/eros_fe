@@ -1,4 +1,5 @@
 import 'package:eros_fe/common/controller/download/gallery_update_service.dart';
+import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
@@ -128,6 +129,16 @@ List<GalleryMoreAction> galleryMoreActions(
       symbol: 'archivebox',
       icon: CupertinoIcons.archivebox,
       onPressed: showArchiverDialog,
+    ),
+    GalleryMoreAction(
+      id: 'galleryInfo',
+      title: l10n.gallery_info,
+      symbol: 'info.circle',
+      icon: CupertinoIcons.info_circle,
+      onPressed: () => Get.toNamed<void>(
+        EHRoutes.galleryInfo,
+        id: detailNavigatorId,
+      ),
     ),
     GalleryMoreAction(
       id: 'similar',
