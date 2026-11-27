@@ -7,23 +7,63 @@ import 'package:get/get.dart';
 import 'package:system_network_proxy/system_network_proxy.dart';
 import 'package:system_proxy/system_proxy.dart';
 
+typedef HostBypassPredicate = bool Function(String host);
+
 class HttpProxyAdapter extends IOHttpClientAdapter {
-  HttpProxyAdapter({required this.proxy, bool? skipCertificate}) {
+  HttpProxyAdapter({
+    required this.proxy,
+    bool? skipCertificate,
+    this.localSniProxy,
+    this.shouldBypassHost,
+  }) {
     createHttpClient = () {
       final client = createProxyHttpClient();
-      if (proxy.isNotEmpty) {
-        // logger.d('set proxy $proxy');
+      final hasLocalBypass =
+          localSniProxy != null && localSniProxy!.isNotEmpty;
+      final hasExternalProxy = proxy.isNotEmpty && proxy != 'DIRECT';
+
+      if (hasLocalBypass) {
+        client.findProxy = (Uri url) {
+          if (shouldBypassHost?.call(url.host) ?? false) {
+            return localSniProxy!;
+          }
+          if (proxy.isNotEmpty) {
+            return proxy;
+          }
+          return 'DIRECT';
+        };
+      } else if (proxy.isNotEmpty) {
         client.findProxy = (url) => proxy;
       }
-      if (proxy != 'DIRECT' || (skipCertificate ?? false)) {
-        client.badCertificateCallback =
-            (X509Certificate cert, String host, int port) => true;
+
+      // Preserve standard OS TLS certificate chain verification for all direct
+      // and SNI-bypassed hosts. Only keep legacy certificate relaxation when an
+      // explicit external proxy (e.g. local debugging MITM proxy) is active on
+      // non-bypassed hosts.
+      if (hasExternalProxy || (skipCertificate ?? false)) {
+        client.badCertificateCallback = (
+          X509Certificate cert,
+          String host,
+          int port,
+        ) {
+          if (hasLocalBypass && (shouldBypassHost?.call(host) ?? false)) {
+            return false;
+          }
+          return true;
+        };
+      } else {
+        // Defense-in-depth: clear any permissive callback installed by global
+        // HttpOverrides so direct and SNI-bypassed traffic enforces full OS TLS
+        // chain verification.
+        client.badCertificateCallback = null;
       }
       return client;
     };
   }
 
   final String proxy;
+  final String? localSniProxy;
+  final HostBypassPredicate? shouldBypassHost;
 }
 
 Future<String> getProxy({

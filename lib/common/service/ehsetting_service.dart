@@ -7,8 +7,10 @@ import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/app_icon_service.dart';
 import 'package:eros_fe/common/service/base_service.dart';
+import 'package:eros_fe/common/service/sni_bypass_service.dart';
 import 'package:eros_fe/const/storages.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/network/app_dio/dio_http_cli.dart';
 import 'package:eros_fe/network/app_dio/proxy.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/gallery_page.dart';
 import 'package:eros_fe/pages/image_view/common.dart';
@@ -220,6 +222,17 @@ class EhSettingService extends ProfileService {
   final RxBool _allowMediaScan = false.obs;
   bool get allowMediaScan => _allowMediaScan.value;
   set allowMediaScan(bool val) => _allowMediaScan.value = val;
+
+  // iOS 后台下载保活与实时进度
+  final RxBool _iosBackgroundDownload = true.obs;
+  bool get iosBackgroundDownload => _iosBackgroundDownload.value;
+  set iosBackgroundDownload(bool val) => _iosBackgroundDownload.value = val;
+
+  // iOS 后台下载完成本地通知
+  final RxBool _iosBackgroundDownloadNotify = true.obs;
+  bool get iosBackgroundDownloadNotify => _iosBackgroundDownloadNotify.value;
+  set iosBackgroundDownloadNotify(bool val) =>
+      _iosBackgroundDownloadNotify.value = val;
 
   final RxBool _enableTagTranslateCDN = false.obs;
   bool get enableTagTranslateCDN => _enableTagTranslateCDN.value;
@@ -1080,6 +1093,20 @@ class EhSettingService extends ProfileService {
       downloadConfig = downloadConfig.copyWith(allowMediaScan: value.oN);
     });
 
+    iosBackgroundDownload =
+        downloadConfig.iosBackgroundDownload ?? iosBackgroundDownload;
+    everProfile<bool>(_iosBackgroundDownload, (value) {
+      downloadConfig =
+          downloadConfig.copyWith(iosBackgroundDownload: value.oN);
+    });
+
+    iosBackgroundDownloadNotify = downloadConfig.iosBackgroundDownloadNotify ??
+        iosBackgroundDownloadNotify;
+    everProfile<bool>(_iosBackgroundDownloadNotify, (value) {
+      downloadConfig =
+          downloadConfig.copyWith(iosBackgroundDownloadNotify: value.oN);
+    });
+
     // downloadOrigImage
     downloadOrigImage = downloadConfig.downloadOrigImage ?? downloadOrigImage;
     everProfile<bool>(_downloadOrigImage, (value) {
@@ -1165,7 +1192,7 @@ class EhSettingService extends ProfileService {
     }
   }
 
-  Future<void> setProxy() async {
+  Future<void> setProxy({bool checkConflict = true}) async {
     final proxy = await getProxy(
       proxyType: proxyType,
       proxyHost: proxyHost,
@@ -1174,9 +1201,26 @@ class EhSettingService extends ProfileService {
       proxyPassword: proxyPassword,
     );
 
+    final changed = globalDioConfig.proxy != proxy;
     globalDioConfig = globalDioConfig.copyWith(
       proxy: proxy,
     );
+    if (changed) {
+      DioHttpClient.resetClients();
+    }
+    final sni = SniBypassService.maybeFind;
+    if (sni != null && sni.mode.isBypassEnabled) {
+      if (changed) {
+        try {
+          Global.initImageHttpClient(
+            maxConnectionsPerHost: globalDioConfig.maxConnectionsPerHost,
+          );
+        } catch (_) {}
+      }
+      if (checkConflict) {
+        unawaited(sni.detectProxyConflict());
+      }
+    }
   }
 
   /// 收藏排序 dialog

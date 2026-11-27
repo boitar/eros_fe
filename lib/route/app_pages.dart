@@ -38,6 +38,7 @@ import 'package:eros_fe/pages/setting/proxy_page.dart';
 import 'package:eros_fe/pages/setting/read_setting_page.dart';
 import 'package:eros_fe/pages/setting/search_setting_page.dart';
 import 'package:eros_fe/pages/setting/security_setting_page.dart';
+import 'package:eros_fe/pages/setting/sni_bypass_page.dart';
 import 'package:eros_fe/pages/setting/tabbar_setting_page.dart';
 import 'package:eros_fe/pages/setting/tag_translat_page.dart';
 import 'package:eros_fe/pages/setting/webdav/login_webdav.dart';
@@ -242,6 +243,10 @@ class AppPages {
       page: () => const ProxyPage(),
     ),
     GetPage(
+      name: EHRoutes.sniBypass,
+      page: () => const SniBypassPage(),
+    ),
+    GetPage(
       name: EHRoutes.webDavSetting,
       page: () => const WebDavSetting(),
     ),
@@ -388,6 +393,11 @@ class AppPages {
             return GetPageRoute(
               settings: settings,
               page: () => const ProxyPage(),
+            );
+          case EHRoutes.sniBypass:
+            return GetPageRoute(
+              settings: settings,
+              page: () => const SniBypassPage(),
             );
           case EHRoutes.webDavSetting:
             return GetPageRoute(

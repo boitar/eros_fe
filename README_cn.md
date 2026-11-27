@@ -5,7 +5,7 @@
 的个人 fork，`custom` 分支重做主要界面并接入液态玻璃导航，修复下载、收藏、分享、历史、头像、触感与 Cloudflare 验证等问题。
 最初面向 iOS／iPadOS 与 iPhone Duo，**新版 UI 现已支持 Android 与桌面端（macOS 和 Windows）**。
 
-当前版本 `1.11.1+570`，iOS Bundle ID 为 `cn.honjow.fehv`。
+当前版本 `1.11.2+571`，iOS Bundle ID 为 `cn.honjow.fehv`。
 
 ## 应用截图
 
@@ -64,6 +64,14 @@
 - 隐藏栏目入口：底栏隐藏的栏目在 iOS 27.1 原生导航与旧版玻璃顶栏中都按实际设置显示入口（1 项直接打开，多项弹出选择面板）。
 
 ## 更新记录
+
+### 2026-11-26：v1.11.2，登录页空白修复、iOS 后台下载与增量更新
+
+Tag：`v1.11.2`（[Release](https://github.com/boitar/eros_fe/releases/tag/v1.11.2)）。
+
+- 修复 Android、iOS 与窄窗桌面端登录页表单坍缩为空白（仅见右上角出口地区胶囊）的问题，并补齐矮屏与 macOS 窄窗安全区保护（修复 [#9](https://github.com/boitar/eros_fe/issues/9)，[#10](https://github.com/boitar/eros_fe/pull/10)）。
+- 新增 iOS 后台画廊下载保活、实时进度（iOS 26+ 原生 `BGContinuedProcessingTask` 与不打断音乐的静音混音回退）与后台完成无声本地通知（[#8](https://github.com/boitar/eros_fe/pull/8)）。
+- 新增画廊版本血缘（Parent / Newer Versions 跳转）与已下载画廊的崩溃安全原子增量更新，自动复用已有本地图片并保留阅读进度。
 
 ### 2026-11-24：v1.11.1，网页登录修复
 

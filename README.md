@@ -7,7 +7,7 @@ screens with Liquid Glass navigation and fixes downloads, favorites, sharing, hi
 haptics and Cloudflare verification. It started on iOS/iPadOS and iPhone Duo; **the new UI now also
 supports Android and desktop (macOS and Windows)**.
 
-The current version is `1.11.1+570`. The iOS Bundle ID is `cn.honjow.fehv`.
+The current version is `1.11.2+571`. The iOS Bundle ID is `cn.honjow.fehv`.
 
 ## Screenshots
 
@@ -92,6 +92,14 @@ The native vertical bars sit on the right edge.
   shell and the older glass top bar (one hidden tab opens directly; several open a picker).
 
 ## Changelog
+
+### 2026-11-26: v1.11.2, login layout fix, iOS background downloads & incremental updates
+
+Tag: `v1.11.2` ([release](https://github.com/boitar/eros_fe/releases/tag/v1.11.2)).
+
+- Fix the blank sign-in screen on Android, iOS, and narrow desktop windows caused by loose `CupertinoPageScaffold` constraints collapsing the mobile login curtain `Stack` (Fixes [#9](https://github.com/boitar/eros_fe/issues/9), [#10](https://github.com/boitar/eros_fe/pull/10)).
+- Add iOS background gallery download keep-alive with iOS 26+ `BGContinuedProcessingTask` live progress, non-interrupting audio keep-alive fallback, and silent completion notifications ([#8](https://github.com/boitar/eros_fe/pull/8)).
+- Add gallery version lineage (`Parent` / `Newer Versions` navigation) and crash-safe incremental updates for downloaded galleries that reuse existing local images and keep reading progress.
 
 ### 2026-11-24: v1.11.1, web sign-in reliability
 

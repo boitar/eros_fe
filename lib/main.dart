@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/auto_lock_controller.dart';
+import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/controller/log_controller.dart';
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
@@ -66,7 +67,7 @@ Future<void> main() async {
   await initializeOfflineGlass();
   getinit();
   await probeOfflineHaptics();
-  Global.proxyInit();
+  await Global.proxyInit();
 
   if (Get.find<EhSettingService>().debugMode || kDebugMode) {
     Logger.level = Level.debug;
@@ -174,6 +175,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
         if (context.mounted) {
           _ehSettingService.chkClipboardLink(context);
+        }
+
+        if (Get.isRegistered<DownloadController>()) {
+          unawaited(
+            Get.find<DownloadController>().resumeBackgroundSuspendedTasks(),
+          );
         }
       },
       onHide: () {

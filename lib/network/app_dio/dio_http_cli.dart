@@ -14,6 +14,17 @@ class DioHttpClient {
 
   static final _clientMap = <DioHttpConfig?, DioHttpClient>{};
 
+  /// Closes and clears cached Dio instances when network/SNI config changes so
+  /// new settings apply immediately without restarting the app.
+  static void resetClients() {
+    for (final client in _clientMap.values) {
+      try {
+        client._dio.close(force: false);
+      } catch (_) {}
+    }
+    _clientMap.clear();
+  }
+
   late final AppDio _dio;
 
   /// Configured transport for streamed Range downloads.

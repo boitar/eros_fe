@@ -25,6 +25,7 @@ import 'common/service/dns_service.dart';
 import 'common/service/ehsetting_service.dart';
 import 'common/service/layout_service.dart';
 import 'common/service/locale_service.dart';
+import 'common/service/sni_bypass_service.dart';
 import 'common/service/theme_service.dart';
 import 'pages/controller/fav_controller.dart';
 import 'pages/controller/favorite_sel_controller.dart';
@@ -47,6 +48,7 @@ void getinit() {
   Get.lazyPut(() => LocaleService(), fenix: true);
   Get.lazyPut(() => ThemeService(), fenix: true);
   Get.put(DnsService(), permanent: true);
+  Get.put(SniBypassService(), permanent: true);
   Get.put(ControllerTagService());
 
   Get.lazyPut(() => LayoutServices(), fenix: true);

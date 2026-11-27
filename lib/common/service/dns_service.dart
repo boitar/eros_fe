@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:eros_fe/common/service/sni_bypass_service.dart';
 import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/models/index.dart';
@@ -23,7 +26,6 @@ class DnsService extends ProfileService {
   set enableDoH(bool val) => _enableDoH.value = val;
 
   final _enableDomainFronting = false.obs;
-  // bool get enableDomainFronting => _enableDomainFronting.value;
   bool get enableDomainFronting => false;
   set enableDomainFronting(bool val) => _enableDomainFronting.value = val;
 
@@ -155,11 +157,19 @@ class DnsService extends ProfileService {
     enableCustomHosts = dnsConfig.enableCustomHosts ?? false;
     everProfile<bool>(_enableCustomHosts, (bool value) {
       dnsConfig = dnsConfig.copyWith(enableCustomHosts: value.oN);
+      final sni = SniBypassService.maybeFind;
+      if (sni != null) {
+        unawaited(sni.onCustomHostsChanged());
+      }
     });
 
     _hosts(dnsConfig.hosts);
     everProfile<List<DnsCache>>(_hosts, (List<DnsCache> value) {
       dnsConfig = dnsConfig.copyWith(hosts: value.oN);
+      final sni = SniBypassService.maybeFind;
+      if (sni != null) {
+        unawaited(sni.onCustomHostsChanged());
+      }
     });
 
     enableDoH = dnsConfig.enableDoH ?? false;

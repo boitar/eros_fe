@@ -4,16 +4,29 @@ import 'package:eros_fe/common/controller/cache_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
+import 'package:eros_fe/common/service/sni_bypass_service.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/locale.dart';
 import 'package:eros_fe/debug/offline_haptics.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/network/sni_bypass/sni_bypass_models.dart';
 import 'package:eros_fe/pages/setting/setting_items/selector_Item.dart';
 import 'package:eros_fe/pages/setting/webview/mode.dart';
 import 'package:eros_fe/utils/import_export.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:sliver_tools/sliver_tools.dart';
+
+/// Short localized label for the active SNI bypass / direct-connection mode,
+/// shared by the Settings home "Advanced" row and the "Direct Connection" row.
+String sniBypassModeLabel(BuildContext context, SniBypassMode mode) {
+  final l10n = L10n.of(context);
+  return switch (mode) {
+    SniBypassMode.standard => l10n.sni_mode_standard,
+    SniBypassMode.enhanced => l10n.sni_mode_enhanced_short,
+    SniBypassMode.compat => l10n.sni_mode_compat,
+  };
+}
 
 class AdvancedSettingPage extends StatelessWidget {
   const AdvancedSettingPage({super.key});
@@ -118,6 +131,30 @@ class ListViewAdvancedSetting extends StatelessWidget {
                 },
               );
             }),
+            Builder(
+              builder: (context) {
+                final sniService = SniBypassService.maybeFind;
+                Widget buildTile(SniBypassMode mode) {
+                  final l10n = L10n.of(context);
+                  return EhCupertinoListTile(
+                    title: Text(l10n.sni_bypass),
+                    additionalInfo: Text(sniBypassModeLabel(context, mode)),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () {
+                      Get.toNamed(
+                        EHRoutes.sniBypass,
+                        id: detailNavigatorId,
+                      );
+                    },
+                  );
+                }
+
+                if (sniService == null) {
+                  return buildTile(SniBypassMode.standard);
+                }
+                return Obx(() => buildTile(sniService.mode));
+              },
+            ),
           ],
         ),
 
