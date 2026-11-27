@@ -6,11 +6,14 @@ import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/auth_session_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
+import 'package:eros_fe/common/service/sni_bypass_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/component/setting/android_setting_group.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/network/sni_bypass/sni_bypass_models.dart';
+import 'package:eros_fe/pages/setting/advanced_setting_page.dart';
 import 'package:eros_fe/pages/setting/layout_setting_page.dart';
 import 'package:eros_fe/pages/setting/read_setting_page.dart';
 import 'package:eros_fe/pages/tab/controller/setting_controller.dart';
@@ -181,6 +184,18 @@ class SettingTab extends GetView<SettingViewController> {
                                   icon: CupertinoIcons.slider_horizontal_3,
                                   title: l10n.advanced,
                                   route: EHRoutes.advancedSetting,
+                                  value: SniBypassService.maybeFind != null
+                                      ? () => sniBypassModeLabel(
+                                            context,
+                                            SniBypassService.maybeFind!.mode,
+                                          )
+                                      : null,
+                                  staticValue: SniBypassService.maybeFind == null
+                                      ? sniBypassModeLabel(
+                                          context,
+                                          SniBypassMode.standard,
+                                        )
+                                      : null,
                                 ),
                                 _SettingLink(
                                   icon: CupertinoIcons.info_circle,
@@ -656,6 +671,10 @@ class _SplitMasterSettingsViewState extends State<_SplitMasterSettingsView> {
                 icon: CupertinoIcons.slider_horizontal_3,
                 title: l10n.advanced,
                 route: EHRoutes.advancedSetting,
+                currentValue: sniBypassModeLabel(
+                  context,
+                  SniBypassService.maybeFind?.mode ?? SniBypassMode.standard,
+                ),
               ),
               _SplitCategoryItem(
                 icon: CupertinoIcons.info_circle,

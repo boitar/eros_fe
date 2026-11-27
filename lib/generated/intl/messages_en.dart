@@ -81,24 +81,30 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m27(rating) => "${rating} ⭐";
 
-  static String m28(tag) => "Add ${tag}";
+  static String m28(ok, total) => "${ok}/${total} reachable";
 
-  static String m29(count) => "${count} pages";
+  static String m29(name) => "Active: ${name}";
 
-  static String m30(avg, count) => "Avg ${avg} · ${count} ratings";
+  static String m30(time) => "· Synced ${time}";
 
-  static String m31(text) => "Search “${text}”";
+  static String m31(tag) => "Add ${tag}";
 
-  static String m32(count) => "${count} added · separate with commas";
+  static String m32(count) => "${count} pages";
 
-  static String m33(count, per) => "${count} pages · ${per} per page";
+  static String m33(avg, count) => "Avg ${avg} · ${count} ratings";
 
-  static String m34(count) => "Torrents · ${count}";
+  static String m34(text) => "Search “${text}”";
 
-  static String m35(tagNamespace) =>
+  static String m35(count) => "${count} added · separate with commas";
+
+  static String m36(count, per) => "${count} pages · ${per} per page";
+
+  static String m37(count) => "Torrents · ${count}";
+
+  static String m38(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m36(version) => "Update to ${version}";
+  static String m39(version) => "Update to ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -956,10 +962,76 @@ class MessageLookup extends MessageLookupByLibrary {
     "sidebar_library": MessageLookupByLibrary.simpleMessage("Library"),
     "skip": MessageLookupByLibrary.simpleMessage("Skip"),
     "slide_out_page": MessageLookupByLibrary.simpleMessage("Slide Out Page"),
+    "sni_add_custom_doh": MessageLookupByLibrary.simpleMessage(
+      "Add Custom DoH Server",
+    ),
+    "sni_add_custom_doh_bootstrap": MessageLookupByLibrary.simpleMessage(
+      "Bootstrap IP (optional, comma-separated)",
+    ),
+    "sni_add_custom_doh_name": MessageLookupByLibrary.simpleMessage(
+      "Name (optional)",
+    ),
+    "sni_add_custom_doh_url": MessageLookupByLibrary.simpleMessage(
+      "DoH URL (https://...)",
+    ),
+    "sni_bypass": MessageLookupByLibrary.simpleMessage("Direct Connection"),
+    "sni_conflict_desc": MessageLookupByLibrary.simpleMessage(
+      "Your traffic appears routed by Surge / VPN. Direct bypass may conflict or fail.",
+    ),
+    "sni_conflict_title": MessageLookupByLibrary.simpleMessage(
+      "System proxy or Fake-IP tunnel detected",
+    ),
+    "sni_custom_hosts_footer": MessageLookupByLibrary.simpleMessage(
+      "Manual sync fetches the daily verified DoH server list and fallback IPs from the repository.",
+    ),
+    "sni_diag_eh_nodes": MessageLookupByLibrary.simpleMessage("E-Hentai Nodes"),
+    "sni_diag_retest": MessageLookupByLibrary.simpleMessage("Retest"),
+    "sni_diag_section": MessageLookupByLibrary.simpleMessage(
+      "Connectivity Diagnostics",
+    ),
+    "sni_diag_summary_ok": m28,
+    "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("Tap to test"),
+    "sni_doh_auto": MessageLookupByLibrary.simpleMessage("Automatic"),
+    "sni_doh_auto_selected": m29,
+    "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("Polluted"),
+    "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH Servers"),
+    "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("Test"),
+    "sni_doh_sync": MessageLookupByLibrary.simpleMessage("Sync"),
+    "sni_doh_sync_failed": MessageLookupByLibrary.simpleMessage(
+      "Sync failed; using local server list",
+    ),
+    "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
+      "DoH server list updated",
+    ),
+    "sni_doh_synced_at": m30,
+    "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("Syncing…"),
+    "sni_doh_testing": MessageLookupByLibrary.simpleMessage("Testing…"),
+    "sni_mode_compat": MessageLookupByLibrary.simpleMessage("Compatibility"),
+    "sni_mode_compat_desc": MessageLookupByLibrary.simpleMessage(
+      "Resolves via DoH and splits TCP segments with full certificate verification",
+    ),
+    "sni_mode_enhanced": MessageLookupByLibrary.simpleMessage(
+      "Enhanced Direct (Recommended)",
+    ),
+    "sni_mode_enhanced_desc": MessageLookupByLibrary.simpleMessage(
+      "Resolves via DoH and fragments TLS ClientHello with full certificate verification",
+    ),
+    "sni_mode_enhanced_short": MessageLookupByLibrary.simpleMessage("Enhanced"),
+    "sni_mode_section": MessageLookupByLibrary.simpleMessage("Connection Mode"),
+    "sni_mode_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+    "sni_mode_standard_desc": MessageLookupByLibrary.simpleMessage(
+      "Use system or proxy settings (recommended for Surge / VPN)",
+    ),
+    "sni_status_failed": MessageLookupByLibrary.simpleMessage("Failed"),
+    "sni_status_timeout": MessageLookupByLibrary.simpleMessage("Timeout"),
+    "sni_status_untested": MessageLookupByLibrary.simpleMessage("Idle"),
+    "sni_switch_to_standard": MessageLookupByLibrary.simpleMessage(
+      "Switch to Standard",
+    ),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage(
       "Add to quick searches",
     ),
-    "sp_add_tag": m28,
+    "sp_add_tag": m31,
     "sp_all": MessageLookupByLibrary.simpleMessage("All"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("All favorites"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage(
@@ -1009,7 +1081,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("Last"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("Next"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("Prev"),
-    "sp_page_total": m29,
+    "sp_page_total": m32,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage(
       "Tap to choose an image",
     ),
@@ -1017,12 +1089,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Quick searches",
     ),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Submit rating"),
-    "sp_rating_summary": m30,
+    "sp_rating_summary": m33,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Recent"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("Reset"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("Retry"),
-    "sp_search_for": m31,
+    "sp_search_for": m34,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "Search titles, tags or paste a link",
     ),
@@ -1039,14 +1111,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("Similarity scan"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("Search"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("Suggestions"),
-    "sp_tags_added": m32,
+    "sp_tags_added": m35,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "e.g. female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage(
       "Go to preview page",
     ),
-    "sp_thumbs_per_page": m33,
+    "sp_thumbs_per_page": m36,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("Done"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage(
       "Download torrent",
@@ -1057,7 +1129,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("Share magnet"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("Peers"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("Seeds"),
-    "sp_torrent_title": m34,
+    "sp_torrent_title": m37,
     "sp_translate": MessageLookupByLibrary.simpleMessage("Translate"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage(
       "Split, set by divider",
@@ -1091,7 +1163,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("Tabbar setting"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-    "tagNamespace": m35,
+    "tagNamespace": m38,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("Add to Mytags"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default Color",
@@ -1358,7 +1430,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "If you want to exclude certain namespaces from a default tag search, you can check those abover. Note that this does not prevent galleries with tags in these namespaces from appearing, it just makes it so that when searching tags, it will forego those namespaces.",
     ),
     "unlimited": MessageLookupByLibrary.simpleMessage("Unlimited"),
-    "update_to_version": m36,
+    "update_to_version": m39,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
     "uploader": MessageLookupByLibrary.simpleMessage("Uploader"),
     "user_login": MessageLookupByLibrary.simpleMessage("User Sign"),

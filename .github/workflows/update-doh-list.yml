@@ -1,0 +1,86 @@
+name: Update DoH Server List
+
+on:
+  schedule:
+    # Daily at 00:00 UTC (08:00 Asia/Shanghai)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-doh-list
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Probe DoH servers and build catalog
+        run: python3 scripts/update_doh_list.py --output /tmp/doh_list.json
+
+      - name: Publish doh_list.json to doh-data orphan branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          MAIN_SHA=$(git rev-parse HEAD)
+
+          if git ls-remote --exit-code --heads origin doh-data >/dev/null 2>&1; then
+            git fetch origin doh-data:doh-data
+            git checkout doh-data
+            # Verify doh-data is an isolated orphan branch with disjoint history
+            # containing only doh_list.json.
+            roots=$(git rev-list --max-parents=0 HEAD | wc -l | tr -d ' ')
+            if [ "$roots" -ne 1 ]; then
+              echo "ERROR: doh-data branch has $roots root commits; refusing to publish." >&2
+              exit 1
+            fi
+            if git merge-base "$MAIN_SHA" HEAD >/dev/null 2>&1; then
+              echo "ERROR: doh-data branch shares history with default branch; refusing to publish." >&2
+              exit 1
+            fi
+            files=$(git ls-tree -r --name-only HEAD | sort)
+            if [ -n "$files" ] && [ "$files" != "doh_list.json" ]; then
+              echo "ERROR: doh-data branch contains unexpected files: $files" >&2
+              exit 1
+            fi
+          else
+            git checkout --orphan doh-data
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          cp /tmp/doh_list.json doh_list.json
+
+          if git cat-file -e HEAD:doh_list.json 2>/dev/null; then
+            status=0
+            python3 -c '
+          import json, subprocess, sys
+          old = json.loads(subprocess.check_output(["git", "show", "HEAD:doh_list.json"]).decode())
+          new = json.load(open("doh_list.json", "r", encoding="utf-8"))
+          if old.get("servers") == new.get("servers") and old.get("fallbackHosts") == new.get("fallbackHosts"):
+              print("No server or fallback host changes detected; skipping commit.")
+              sys.exit(42)
+          ' || status=$?
+            if [ "$status" -eq 42 ]; then
+              exit 0
+            elif [ "$status" -ne 0 ]; then
+              exit "$status"
+            fi
+          fi
+
+          git add doh_list.json
+          git commit -m "chore(doh): update daily DoH catalog ($(date -u +%Y-%m-%d))"
+          git push origin HEAD:doh-data

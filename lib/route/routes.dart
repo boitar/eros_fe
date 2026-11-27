@@ -25,6 +25,7 @@ class EHRoutes {
   static const String quickSearch = '/quickSearch';
   static const String customHosts = '/customHosts';
   static const String proxySetting = '/proxySetting';
+  static const String sniBypass = '/sniBypass';
   static const String logfile = '/logfile';
   static const String webDavSetting = '/webDavSetting';
   static const String mysqlSync = '/mysqlSync';

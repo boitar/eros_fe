@@ -78,24 +78,30 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m27(rating) => "${rating} ⭐";
 
-  static String m28(tag) => "${tag} 추가";
+  static String m28(ok, total) => "${ok}/${total} 연결 가능";
 
-  static String m29(count) => "총 ${count}페이지";
+  static String m29(name) => "현재: ${name}";
 
-  static String m30(avg, count) => "평균 ${avg} · ${count}명";
+  static String m30(time) => "· ${time} 동기화";
 
-  static String m31(text) => "“${text}” 검색";
+  static String m31(tag) => "${tag} 추가";
 
-  static String m32(count) => "${count}개 추가됨 · 쉼표로 구분";
+  static String m32(count) => "총 ${count}페이지";
 
-  static String m33(count, per) => "총 ${count}페이지 · 페이지당 ${per}장";
+  static String m33(avg, count) => "평균 ${avg} · ${count}명";
 
-  static String m34(count) => "토렌트 · ${count}개";
+  static String m34(text) => "“${text}” 검색";
 
-  static String m35(tagNamespace) =>
+  static String m35(count) => "${count}개 추가됨 · 쉼표로 구분";
+
+  static String m36(count, per) => "총 ${count}페이지 · 페이지당 ${per}장";
+
+  static String m37(count) => "토렌트 · ${count}개";
+
+  static String m38(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m36(version) => "Update to ${version}";
+  static String m39(version) => "Update to ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -813,8 +819,66 @@ class MessageLookup extends MessageLookupByLibrary {
     "sidebar_library": MessageLookupByLibrary.simpleMessage("보관함"),
     "skip": MessageLookupByLibrary.simpleMessage("Skip"),
     "slide_out_page": MessageLookupByLibrary.simpleMessage("Slide Out Page"),
+    "sni_add_custom_doh": MessageLookupByLibrary.simpleMessage(
+      "사용자 지정 DoH 서버 추가",
+    ),
+    "sni_add_custom_doh_bootstrap": MessageLookupByLibrary.simpleMessage(
+      "부트스트랩 IP (선택, 쉼표 구분)",
+    ),
+    "sni_add_custom_doh_name": MessageLookupByLibrary.simpleMessage("이름 (선택)"),
+    "sni_add_custom_doh_url": MessageLookupByLibrary.simpleMessage(
+      "DoH 주소 (https://...)",
+    ),
+    "sni_bypass": MessageLookupByLibrary.simpleMessage("직접 연결"),
+    "sni_conflict_desc": MessageLookupByLibrary.simpleMessage(
+      "Surge / VPN이 트래픽을 라우팅 중일 수 있습니다. 동시 사용 시 충돌할 수 있습니다.",
+    ),
+    "sni_conflict_title": MessageLookupByLibrary.simpleMessage(
+      "시스템 프록시 또는 Fake-IP 터널 감지됨",
+    ),
+    "sni_custom_hosts_footer": MessageLookupByLibrary.simpleMessage(
+      "수동 동기화는 저장소에서 매일 검증된 DoH 목록과 예비 IP를 가져옵니다.",
+    ),
+    "sni_diag_eh_nodes": MessageLookupByLibrary.simpleMessage("E-Hentai 노드 확인"),
+    "sni_diag_retest": MessageLookupByLibrary.simpleMessage("재측정"),
+    "sni_diag_section": MessageLookupByLibrary.simpleMessage("연결 진단"),
+    "sni_diag_summary_ok": m28,
+    "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("탭하여 확인"),
+    "sni_doh_auto": MessageLookupByLibrary.simpleMessage("자동 선택"),
+    "sni_doh_auto_selected": m29,
+    "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("오염 의심"),
+    "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH 서버"),
+    "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("속도 측정"),
+    "sni_doh_sync": MessageLookupByLibrary.simpleMessage("동기화"),
+    "sni_doh_sync_failed": MessageLookupByLibrary.simpleMessage(
+      "동기화 실패, 로컬 목록 유지",
+    ),
+    "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
+      "최신 DoH 목록을 동기화했습니다",
+    ),
+    "sni_doh_synced_at": m30,
+    "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("동기화 중…"),
+    "sni_doh_testing": MessageLookupByLibrary.simpleMessage("측정 중…"),
+    "sni_mode_compat": MessageLookupByLibrary.simpleMessage("호환 모드"),
+    "sni_mode_compat_desc": MessageLookupByLibrary.simpleMessage(
+      "DoH 해석 및 TCP 세그먼트 분할 전송 (구형 네트워크 호환, 전체 인증서 검증)",
+    ),
+    "sni_mode_enhanced": MessageLookupByLibrary.simpleMessage("향상된 직접 연결 (권장)"),
+    "sni_mode_enhanced_desc": MessageLookupByLibrary.simpleMessage(
+      "DoH 해석 및 TLS ClientHello 분할 전송 (전체 인증서 검증 유지)",
+    ),
+    "sni_mode_enhanced_short": MessageLookupByLibrary.simpleMessage("향상된 연결"),
+    "sni_mode_section": MessageLookupByLibrary.simpleMessage("연결 모드"),
+    "sni_mode_standard": MessageLookupByLibrary.simpleMessage("표준 연결"),
+    "sni_mode_standard_desc": MessageLookupByLibrary.simpleMessage(
+      "시스템 또는 프록시 설정 사용 (Surge / VPN 권장)",
+    ),
+    "sni_status_failed": MessageLookupByLibrary.simpleMessage("실패"),
+    "sni_status_timeout": MessageLookupByLibrary.simpleMessage("시간 초과"),
+    "sni_status_untested": MessageLookupByLibrary.simpleMessage("미측정"),
+    "sni_switch_to_standard": MessageLookupByLibrary.simpleMessage("표준 연결로 전환"),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("빠른 검색에 추가"),
-    "sp_add_tag": m28,
+    "sp_add_tag": m31,
     "sp_all": MessageLookupByLibrary.simpleMessage("전체"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("전체 즐겨찾기"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage("원본 아카이브"),
@@ -852,16 +916,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("마지막"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("다음"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("이전"),
-    "sp_page_total": m29,
+    "sp_page_total": m32,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage("탭하여 이미지 선택"),
     "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("빠른 검색 목록"),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("평가 제출"),
-    "sp_rating_summary": m30,
+    "sp_rating_summary": m33,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("최근 검색"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("새로고침"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("초기화"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("다시 시도"),
-    "sp_search_for": m31,
+    "sp_search_for": m34,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "제목, 태그 검색 또는 링크 붙여넣기",
     ),
@@ -876,12 +940,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("유사 검색"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("검색"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("추천"),
-    "sp_tags_added": m32,
+    "sp_tags_added": m35,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "예: female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("미리보기 페이지로"),
-    "sp_thumbs_per_page": m33,
+    "sp_thumbs_per_page": m36,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("완료"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage("토렌트 다운로드"),
     "sp_torrent_empty": MessageLookupByLibrary.simpleMessage(
@@ -890,7 +954,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("마그넷 공유"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("피어"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("시드"),
-    "sp_torrent_title": m34,
+    "sp_torrent_title": m37,
     "sp_translate": MessageLookupByLibrary.simpleMessage("번역"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage(
       "분할 · 구분선에 따름",
@@ -920,7 +984,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("탭바 설정"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-    "tagNamespace": m35,
+    "tagNamespace": m38,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("Add to mytags"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default color",
@@ -1185,7 +1249,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "If you want to exclude certain namespaces from a default tag search, you can check those abover. Note that this does not prevent galleries with tags in these namespaces from appearing, it just makes it so that when searching tags, it will forego those namespaces.",
     ),
     "unlimited": MessageLookupByLibrary.simpleMessage("제한 없음"),
-    "update_to_version": m36,
+    "update_to_version": m39,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
     "uploader": MessageLookupByLibrary.simpleMessage("업로더"),
     "user_login": MessageLookupByLibrary.simpleMessage("로그인"),

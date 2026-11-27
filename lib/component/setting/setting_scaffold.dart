@@ -643,8 +643,8 @@ class SliverSettingCategoryHero extends StatelessWidget {
         CupertinoIcons.slider_horizontal_3,
         l10n.advanced,
         zh
-            ? '调整应用语言、屏蔽规则、网络域名前置与代理、WebDAV 同步及缓存清理。'
-            : 'Adjust app language, content blockers, network proxy/DoH, WebDAV sync, and cache storage.',
+            ? '调整应用语言、屏蔽规则、网络直连与代理、WebDAV 同步及缓存清理。'
+            : 'Adjust app language, content blockers, direct connection/proxy, WebDAV sync, and cache storage.',
       ),
       EHRoutes.about => (
         CupertinoIcons.info_circle,

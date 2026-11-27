@@ -6041,6 +6041,346 @@ class L10n {
       args: [count],
     );
   }
+
+  /// `Direct Connection`
+  String get sni_bypass {
+    return Intl.message(
+      'Direct Connection',
+      name: 'sni_bypass',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connection Mode`
+  String get sni_mode_section {
+    return Intl.message(
+      'Connection Mode',
+      name: 'sni_mode_section',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Standard`
+  String get sni_mode_standard {
+    return Intl.message(
+      'Standard',
+      name: 'sni_mode_standard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Use system or proxy settings (recommended for Surge / VPN)`
+  String get sni_mode_standard_desc {
+    return Intl.message(
+      'Use system or proxy settings (recommended for Surge / VPN)',
+      name: 'sni_mode_standard_desc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enhanced Direct (Recommended)`
+  String get sni_mode_enhanced {
+    return Intl.message(
+      'Enhanced Direct (Recommended)',
+      name: 'sni_mode_enhanced',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enhanced`
+  String get sni_mode_enhanced_short {
+    return Intl.message(
+      'Enhanced',
+      name: 'sni_mode_enhanced_short',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Resolves via DoH and fragments TLS ClientHello with full certificate verification`
+  String get sni_mode_enhanced_desc {
+    return Intl.message(
+      'Resolves via DoH and fragments TLS ClientHello with full certificate verification',
+      name: 'sni_mode_enhanced_desc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Compatibility`
+  String get sni_mode_compat {
+    return Intl.message(
+      'Compatibility',
+      name: 'sni_mode_compat',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Resolves via DoH and splits TCP segments with full certificate verification`
+  String get sni_mode_compat_desc {
+    return Intl.message(
+      'Resolves via DoH and splits TCP segments with full certificate verification',
+      name: 'sni_mode_compat_desc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `System proxy or Fake-IP tunnel detected`
+  String get sni_conflict_title {
+    return Intl.message(
+      'System proxy or Fake-IP tunnel detected',
+      name: 'sni_conflict_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your traffic appears routed by Surge / VPN. Direct bypass may conflict or fail.`
+  String get sni_conflict_desc {
+    return Intl.message(
+      'Your traffic appears routed by Surge / VPN. Direct bypass may conflict or fail.',
+      name: 'sni_conflict_desc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Switch to Standard`
+  String get sni_switch_to_standard {
+    return Intl.message(
+      'Switch to Standard',
+      name: 'sni_switch_to_standard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DoH Servers`
+  String get sni_doh_section {
+    return Intl.message(
+      'DoH Servers',
+      name: 'sni_doh_section',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sync`
+  String get sni_doh_sync {
+    return Intl.message('Sync', name: 'sni_doh_sync', desc: '', args: []);
+  }
+
+  /// `Test`
+  String get sni_doh_speed_test {
+    return Intl.message('Test', name: 'sni_doh_speed_test', desc: '', args: []);
+  }
+
+  /// `Syncing…`
+  String get sni_doh_syncing {
+    return Intl.message(
+      'Syncing…',
+      name: 'sni_doh_syncing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Testing…`
+  String get sni_doh_testing {
+    return Intl.message(
+      'Testing…',
+      name: 'sni_doh_testing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `· Synced {time}`
+  String sni_doh_synced_at(Object time) {
+    return Intl.message(
+      '· Synced $time',
+      name: 'sni_doh_synced_at',
+      desc: '',
+      args: [time],
+    );
+  }
+
+  /// `DoH server list updated`
+  String get sni_doh_sync_success {
+    return Intl.message(
+      'DoH server list updated',
+      name: 'sni_doh_sync_success',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sync failed; using local server list`
+  String get sni_doh_sync_failed {
+    return Intl.message(
+      'Sync failed; using local server list',
+      name: 'sni_doh_sync_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Automatic`
+  String get sni_doh_auto {
+    return Intl.message('Automatic', name: 'sni_doh_auto', desc: '', args: []);
+  }
+
+  /// `Active: {name}`
+  String sni_doh_auto_selected(Object name) {
+    return Intl.message(
+      'Active: $name',
+      name: 'sni_doh_auto_selected',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Polluted`
+  String get sni_doh_polluted {
+    return Intl.message(
+      'Polluted',
+      name: 'sni_doh_polluted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Timeout`
+  String get sni_status_timeout {
+    return Intl.message(
+      'Timeout',
+      name: 'sni_status_timeout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed`
+  String get sni_status_failed {
+    return Intl.message(
+      'Failed',
+      name: 'sni_status_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Idle`
+  String get sni_status_untested {
+    return Intl.message(
+      'Idle',
+      name: 'sni_status_untested',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add Custom DoH Server`
+  String get sni_add_custom_doh {
+    return Intl.message(
+      'Add Custom DoH Server',
+      name: 'sni_add_custom_doh',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Name (optional)`
+  String get sni_add_custom_doh_name {
+    return Intl.message(
+      'Name (optional)',
+      name: 'sni_add_custom_doh_name',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `DoH URL (https://...)`
+  String get sni_add_custom_doh_url {
+    return Intl.message(
+      'DoH URL (https://...)',
+      name: 'sni_add_custom_doh_url',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Bootstrap IP (optional, comma-separated)`
+  String get sni_add_custom_doh_bootstrap {
+    return Intl.message(
+      'Bootstrap IP (optional, comma-separated)',
+      name: 'sni_add_custom_doh_bootstrap',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connectivity Diagnostics`
+  String get sni_diag_section {
+    return Intl.message(
+      'Connectivity Diagnostics',
+      name: 'sni_diag_section',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Retest`
+  String get sni_diag_retest {
+    return Intl.message('Retest', name: 'sni_diag_retest', desc: '', args: []);
+  }
+
+  /// `E-Hentai Nodes`
+  String get sni_diag_eh_nodes {
+    return Intl.message(
+      'E-Hentai Nodes',
+      name: 'sni_diag_eh_nodes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{ok}/{total} reachable`
+  String sni_diag_summary_ok(Object ok, Object total) {
+    return Intl.message(
+      '$ok/$total reachable',
+      name: 'sni_diag_summary_ok',
+      desc: '',
+      args: [ok, total],
+    );
+  }
+
+  /// `Tap to test`
+  String get sni_diag_tap_to_test {
+    return Intl.message(
+      'Tap to test',
+      name: 'sni_diag_tap_to_test',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manual sync fetches the daily verified DoH server list and fallback IPs from the repository.`
+  String get sni_custom_hosts_footer {
+    return Intl.message(
+      'Manual sync fetches the daily verified DoH server list and fallback IPs from the repository.',
+      name: 'sni_custom_hosts_footer',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {
