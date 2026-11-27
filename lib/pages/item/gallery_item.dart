@@ -6,7 +6,10 @@ import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/item/favorite_icon.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_controller.dart';
 import 'package:eros_fe/widget/desktop_sidebar.dart';
+import 'package:eros_fe/widget/fav_note_line.dart';
+import 'package:eros_fe/widget/favorite_selection_chrome.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -43,40 +46,57 @@ class GalleryItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => itemController.onTap(tabTag),
-      onTapDown: itemController.onTapDown,
-      onTapUp: itemController.onTapUp,
-      onTapCancel: itemController.onTapCancel,
-      onLongPress: itemController.onLongPress,
-      child: Center(
-        child: Stack(
-          children: [
-            _buildCardItem(context),
-            if (Get.find<EhSettingService>().debugMode)
-              Positioned(
-                left: 4,
-                top: 4,
-                child: Text(
-                  '${galleryProvider.pageOfList ?? ''}',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: CupertinoColors.secondarySystemBackground,
-                    shadows: <Shadow>[
-                      Shadow(
-                        color: Colors.black,
-                        offset: Offset(2, 2),
-                        blurRadius: 4,
-                      ),
-                    ],
+    final favScope = FavoriteListScope.maybeOf(context);
+    return FavoriteSelectableCard(
+      provider: itemController.galleryProvider,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          final current = itemController.galleryProvider;
+          if (favScope?.selection?.selecting.value == true) {
+            favScope!.selection!.toggle(current);
+            return;
+          }
+          if (favScope?.onPreviewSelect != null) {
+            favScope!.onPreviewSelect!(current);
+            return;
+          }
+          itemController.onTap(tabTag);
+        },
+        onTapDown: itemController.onTapDown,
+        onTapUp: itemController.onTapUp,
+        onTapCancel: itemController.onTapCancel,
+        onLongPress: () => itemController.onLongPress(
+          selectionController: favScope?.selection,
+        ),
+        child: Center(
+          child: Stack(
+            children: [
+              _buildCardItem(context),
+              if (Get.find<EhSettingService>().debugMode)
+                Positioned(
+                  left: 4,
+                  top: 4,
+                  child: Text(
+                    '${galleryProvider.pageOfList ?? ''}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: CupertinoColors.secondarySystemBackground,
+                      shadows: <Shadow>[
+                        Shadow(
+                          color: Colors.black,
+                          offset: Offset(2, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
-      ),
-    ).autoCompressKeyboard(context);
+      ).autoCompressKeyboard(context),
+    );
   }
 
   Widget _buildCardItem(BuildContext context) {
@@ -114,13 +134,26 @@ class GalleryItemWidget extends StatelessWidget {
     if (inDesktopPane) {
       return _desktopRowCard(context, titleWidth: titleWidth);
     }
+    final favScope = FavoriteListScope.maybeOf(context);
+    final showFavNote = favScope?.showFavNote ?? false;
+    final highlightQuery = favScope?.highlightQuery ?? '';
+    final favNoteMaxLines = favScope?.favNoteMaxLines ?? 1;
     return Obx(() {
-      final bool useFixedHeight = _useFixedHeight(context);
+      final currentProvider = itemController.galleryProvider;
+      final noteText = currentProvider.favNote?.trim() ?? '';
+      final uploader = currentProvider.uploader?.trim() ?? '';
+      final isPreviewActive = favScope?.activePreviewGid != null &&
+          favScope!.activePreviewGid == currentProvider.gid;
+      final bool fixedHeightPreference = _useFixedHeight(context);
+      final bool useFixedHeight =
+          fixedHeightPreference && !(showFavNote && noteText.isNotEmpty);
       return Container(
         height: useFixedHeight ? kFixedHeight : null,
         decoration: BoxDecoration(
           boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
-          color: itemController.colorTap.value,
+          color: isPreviewActive
+              ? EhPalette.accentSoft.resolveFrom(context)
+              : itemController.colorTap.value,
           borderRadius: BorderRadius.circular(kCardRadius),
         ),
         padding: const EdgeInsets.only(right: kPaddingHorizontal),
@@ -132,11 +165,18 @@ class GalleryItemWidget extends StatelessWidget {
               Column(
                 children: [
                   Expanded(
-                    child: _CoverImage(
-                      galleryProviderController: itemController,
-                      fixedHeight: useFixedHeight,
-                      tabTag: tabTag,
-                      cardType: true,
+                    child: FavoriteCoverSelectionChrome(
+                      gid: currentProvider.gid,
+                      radius: const BorderRadius.only(
+                        topLeft: Radius.circular(kCardRadius),
+                        bottomLeft: Radius.circular(kCardRadius),
+                      ),
+                      child: _CoverImage(
+                        galleryProviderController: itemController,
+                        fixedHeight: useFixedHeight,
+                        tabTag: tabTag,
+                        cardType: true,
+                      ),
                     ),
                   ),
                 ],
@@ -154,24 +194,32 @@ class GalleryItemWidget extends StatelessWidget {
                         galleryItemController: itemController,
                         fixedHeight: useFixedHeight,
                         availableWidth: titleWidth,
+                        highlightQuery: highlightQuery,
                       ),
-                      const SizedBox(height: 6),
-                      // 上传者 或 收藏备注
-                      Text(
-                        (galleryProvider.uploader?.isNotEmpty ?? false)
-                            ? galleryProvider.uploader ?? ''
-                            : (galleryProvider.favNote?.isNotEmpty ?? false)
-                            ? 'Note: ${galleryProvider.favNote ?? ''}'
-                            : '',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: ehTheme.palette.text2.resolveFrom(context),
+                      if (uploader.isNotEmpty) ...<Widget>[
+                        const SizedBox(height: 6),
+                        Text(
+                          uploader,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: ehTheme.palette.text2.resolveFrom(context),
+                          ),
                         ),
-                      ),
+                      ],
+                      if (showFavNote && noteText.isNotEmpty) ...<Widget>[
+                        const SizedBox(height: 5),
+                        FavNoteLine(
+                          note: noteText,
+                          maxLines: favNoteMaxLines,
+                          highlightQuery: highlightQuery,
+                        ),
+                      ],
                       const Spacer(),
                       const SizedBox(height: 6),
                       // 标签
-                      if (useFixedHeight)
+                      if (fixedHeightPreference)
                         TagWaterfallFlowViewBox(
                           simpleTags: galleryProvider.simpleTags,
                           crossAxisCount: itemController.tagLine,
@@ -197,6 +245,9 @@ class GalleryItemWidget extends StatelessWidget {
                           ),
                           // 收藏图标
                           Obx(() {
+                            if (favScope?.selection?.selecting.value == true) {
+                              return const SizedBox.shrink();
+                            }
                             logger.t(
                               '${itemController.galleryProvider.gid} favCat ${itemController.favCat}',
                             );
@@ -241,15 +292,18 @@ class GalleryItemWidget extends StatelessWidget {
   }
 
   Widget _desktopRowCard(BuildContext context, {double? titleWidth}) {
+    final favScope = FavoriteListScope.maybeOf(context);
+    final showFavNote = favScope?.showFavNote ?? false;
+    final highlightQuery = favScope?.highlightQuery ?? '';
+    final favNoteMaxLines = favScope?.favNoteMaxLines ?? 1;
     return Obx(() {
-      final useFixedHeight = _useFixedHeight(context);
+      final currentProvider = itemController.galleryProvider;
+      final noteText = currentProvider.favNote?.trim() ?? '';
+      final useFixedHeight =
+          _useFixedHeight(context) && !(showFavNote && noteText.isNotEmpty);
       final palette = ehTheme.palette;
       final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-      final subtitle = (galleryProvider.uploader?.isNotEmpty ?? false)
-          ? galleryProvider.uploader ?? ''
-          : (galleryProvider.favNote?.isNotEmpty ?? false)
-          ? 'Note: ${galleryProvider.favNote ?? ''}'
-          : '';
+      final uploader = currentProvider.uploader?.trim() ?? '';
       final hasTags = galleryProvider.simpleTags?.isNotEmpty ?? false;
       final ratingColor =
           ThemeColors.colorRatingMap[itemController.colorRating.trim().isEmpty
@@ -300,16 +354,24 @@ class GalleryItemWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (subtitle.isNotEmpty) ...[
+                if (uploader.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    subtitle,
+                    uploader,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11.5,
                       color: palette.text2.resolveFrom(context),
                     ),
+                  ),
+                ],
+                if (showFavNote && noteText.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  FavNoteLine(
+                    note: noteText,
+                    maxLines: favNoteMaxLines,
+                    highlightQuery: highlightQuery,
                   ),
                 ],
                 if (hasTags)
@@ -555,21 +617,40 @@ class _Title extends StatelessWidget {
     required this.galleryItemController,
     required this.fixedHeight,
     required this.availableWidth,
+    this.highlightQuery = '',
   });
   final double? availableWidth;
   final GalleryItemController galleryItemController;
   final bool fixedHeight;
+  final String highlightQuery;
 
   @override
   Widget build(BuildContext context) {
     final maxLine = 5 - galleryItemController.tagLine;
+    final lines = fixedHeight ? maxLine : 4;
+    if (highlightQuery.isNotEmpty) {
+      return Text.rich(
+        buildHighlightedTextSpan(
+          context: context,
+          text: galleryItemController.title,
+          style: TextStyle(
+            fontSize: 14.5,
+            color: ehTheme.palette.text1.resolveFrom(context),
+          ),
+          highlightQuery: highlightQuery,
+        ),
+        maxLines: lines,
+        textAlign: TextAlign.left,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
 
     return GalleryCardTitle(
-      lines: fixedHeight ? maxLine : 4,
+      lines: lines,
       availableWidth: availableWidth,
       legacy: Text(
         galleryItemController.title,
-        maxLines: fixedHeight ? maxLine : 4,
+        maxLines: lines,
         textAlign: TextAlign.left, // 对齐方式
         overflow: TextOverflow.ellipsis, // 超出部分省略号
         style: const TextStyle(

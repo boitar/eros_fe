@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
+import 'package:eros_fe/common/controller/favorite_state_store.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
@@ -10,9 +11,11 @@ import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/pages/controller/fav_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_fav_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
+import 'package:eros_fe/pages/gallery/view/favorite_note_edit_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_incremental_update_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_title_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/rate_dialog.dart';
@@ -20,6 +23,8 @@ import 'package:eros_fe/pages/item/cover_ratio.dart';
 import 'package:eros_fe/pages/item/gallery_item.dart';
 import 'package:eros_fe/utils/gallery_title.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
+import 'package:eros_fe/widget/eh_buttons.dart';
+import 'package:eros_fe/widget/favcat_grid.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -217,11 +222,14 @@ class _GalleryHero extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           scaledTitleAndMeta,
-          if (usesGalleryActionDock(context))
-            const SizedBox(height: 22)
-          else ...<Widget>[
+          if (usesGalleryActionDock(context)) ...<Widget>[
+            const SizedBox(height: 16),
+            _FavNoteSection(controller: controller),
+            const SizedBox(height: 16),
+          ] else ...<Widget>[
             const SizedBox(height: 20),
             _PrimaryActions(controller: controller),
+            _FavNoteSection(controller: controller),
             const SizedBox(height: 18),
           ],
           _DataStrip(provider: provider, state: state),
@@ -533,6 +541,336 @@ class _PrimaryActions extends StatelessWidget {
         _DownloadCircle(controller: controller),
       ],
     );
+  }
+}
+
+/// Flat hairline-separated favorite note section placed directly under
+/// [_PrimaryActions]. Hidden when not favorited; shows an "Add note" row when
+/// empty, or the note body (up to 4 lines, tap to expand) + edit button +
+/// "Saved in ♥ {folder}" footer when non-empty.
+class _FavNoteSection extends StatefulWidget {
+  const _FavNoteSection({required this.controller});
+
+  final GalleryPageController controller;
+
+  @override
+  State<_FavNoteSection> createState() => _FavNoteSectionState();
+}
+
+class _FavNoteSectionState extends State<_FavNoteSection> {
+  bool _expanded = false;
+  bool _loadingNote = false;
+  String? _loadedKey;
+  Future<String?>? _pendingLoad;
+
+  void _ensureNoteLoaded({
+    required String gid,
+    required String token,
+    required String favcat,
+    required String? knownNote,
+  }) {
+    if (!isNetworkFavoriteCategory(favcat) || gid.isEmpty || token.isEmpty) {
+      return;
+    }
+    if (knownNote != null) {
+      return;
+    }
+    final key = '${favoriteStates.epoch}:$gid:$favcat';
+    if (_loadedKey == key || _loadingNote) {
+      return;
+    }
+    _loadedKey = key;
+    _loadingNote = true;
+    final requestEpoch = favoriteStates.epoch;
+    final favTitle = widget.controller.gState.galleryProvider?.favTitle ?? '';
+    final future = () async {
+      try {
+        if (!Get.isRegistered<FavController>()) {
+          _loadedKey = null;
+          return null;
+        }
+        final fetched =
+            await Get.find<FavController>().loadFavoriteNote(gid, token);
+        if (!mounted || requestEpoch != favoriteStates.epoch) {
+          return null;
+        }
+        if (favoriteStates.isBusy(gid)) {
+          return null;
+        }
+        final current = favoriteStates[gid];
+        if (current != null) {
+          if (current.category.isEmpty || current.note != null) {
+            return current.note;
+          }
+          final normalized = (fetched ?? '').trim();
+          favoriteStates.commitNote(gid, normalized);
+          return normalized;
+        }
+        final normalized = (fetched ?? '').trim();
+        favoriteStates.commit(gid, favcat, favTitle, note: normalized);
+        return normalized;
+      } catch (_) {
+        _loadedKey = null;
+        return null;
+      } finally {
+        if (mounted) {
+          setState(() => _loadingNote = false);
+        }
+      }
+    }();
+    _pendingLoad = future;
+  }
+
+  Future<void> _openEditor({
+    required String gid,
+    required String token,
+    required String favcat,
+    required String favTitle,
+    required String currentNote,
+    required bool noteKnown,
+  }) async {
+    var resolvedNote = currentNote;
+    if (!noteKnown) {
+      if (_pendingLoad != null) {
+        final loaded = await _pendingLoad;
+        if (!mounted) {
+          return;
+        }
+        if (loaded != null) {
+          resolvedNote = loaded;
+        }
+      }
+      final storeNote = favoriteStates[gid]?.note;
+      if (storeNote != null) {
+        resolvedNote = storeNote;
+      } else if (Get.isRegistered<FavController>()) {
+        try {
+          final fetched =
+              await Get.find<FavController>().loadFavoriteNote(gid, token);
+          if (!mounted) {
+            return;
+          }
+          resolvedNote = (fetched ?? '').trim();
+        } catch (_) {
+          if (mounted) {
+            showToast('原收藏备注未能读取，未提交更改，请重试');
+          }
+          return;
+        }
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    final updated = await showFavoriteNoteEditSheet(
+      context,
+      gid: gid,
+      token: token,
+      favcat: favcat,
+      favTitle: favTitle,
+      initialNote: resolvedNote,
+    );
+    if (updated != null && mounted) {
+      final state = widget.controller.gState;
+      state.galleryProvider =
+          state.galleryProvider?.copyWith(favNote: updated.oN);
+      widget.controller.update([GetIds.PAGE_VIEW_HEADER]);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tag = pageCtrlTagOf(context);
+    if (!Get.isRegistered<GalleryFavController>(tag: tag)) {
+      return const SizedBox.shrink();
+    }
+    final favorites = Get.find<GalleryFavController>(tag: tag);
+    final l10n = L10n.of(context);
+    final palette = ehTheme.palette;
+
+    return Obx(() {
+      final isFav = favorites.isFav;
+      final favcat = favorites.favcat;
+      if (!isFav || !isNetworkFavoriteCategory(favcat)) {
+        return const SizedBox.shrink();
+      }
+      final state = widget.controller.gState;
+      final provider = state.galleryProvider;
+      final gid = state.gid;
+      final token = provider?.token ?? '';
+      final favTitle = favorites.favTitle.isNotEmpty
+          ? favorites.favTitle
+          : (provider?.favTitle ?? '');
+
+      final storeNote = favoriteStates[gid]?.note;
+      final providerNote = provider?.favNote;
+      final String? knownNote = storeNote ??
+          ((providerNote != null && providerNote.trim().isNotEmpty)
+              ? providerNote.trim()
+              : null);
+
+      _ensureNoteLoaded(
+        gid: gid,
+        token: token,
+        favcat: favcat,
+        knownNote: knownNote,
+      );
+
+      final noteKnown = knownNote != null;
+      final note = (knownNote ?? '').trim();
+      final hairline = palette.hairline.resolveFrom(context);
+      final text1 = palette.text1.resolveFrom(context);
+      final text2 = palette.text2.resolveFrom(context);
+
+      return Padding(
+        padding: const EdgeInsets.only(top: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Container(height: 0.5, color: hairline),
+            if (note.isEmpty)
+              Semantics(
+                button: true,
+                label: l10n.fav_note_add,
+                excludeSemantics: true,
+                onTap: () => _openEditor(
+                  gid: gid,
+                  token: token,
+                  favcat: favcat,
+                  favTitle: favTitle,
+                  currentNote: '',
+                  noteKnown: noteKnown,
+                ),
+                child: EhPressable(
+                  onPressed: () => _openEditor(
+                    gid: gid,
+                    token: token,
+                    favcat: favcat,
+                    favTitle: favTitle,
+                    currentNote: '',
+                    noteKnown: noteKnown,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: Row(
+                      children: <Widget>[
+                        EhSvgIcon(
+                          CupertinoIcons.plus_circle,
+                          size: 16,
+                          color: text2,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            l10n.fav_note_add,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              color: text2,
+                            ),
+                          ),
+                        ),
+                        if (_loadingNote)
+                          const CupertinoActivityIndicator(radius: 8),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () =>
+                                setState(() => _expanded = !_expanded),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Text(
+                                note,
+                                maxLines: _expanded ? null : 4,
+                                overflow: _expanded
+                                    ? TextOverflow.visible
+                                    : TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  height: 1.4,
+                                  color: text1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Semantics(
+                          button: true,
+                          label: l10n.fav_note_edit,
+                          excludeSemantics: true,
+                          onTap: () => _openEditor(
+                            gid: gid,
+                            token: token,
+                            favcat: favcat,
+                            favTitle: favTitle,
+                            currentNote: note,
+                            noteKnown: true,
+                          ),
+                          child: CupertinoButton(
+                            minimumSize: const Size(44, 44),
+                            padding: EdgeInsets.zero,
+                            onPressed: () => _openEditor(
+                              gid: gid,
+                              token: token,
+                              favcat: favcat,
+                              favTitle: favTitle,
+                              currentNote: note,
+                              noteKnown: true,
+                            ),
+                            child: EhSvgIcon(
+                              CupertinoIcons.pencil,
+                              size: 18,
+                              color: text2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: <Widget>[
+                        EhSvgIcon(
+                          CupertinoIcons.heart_fill,
+                          size: 12,
+                          color: favcatDisplayColor(context, favcat),
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            l10n.fav_saved_in(favTitle),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: text2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            Container(height: 0.5, color: hairline),
+          ],
+        ),
+      );
+    });
   }
 }
 

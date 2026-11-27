@@ -252,12 +252,13 @@ double? largeWaterfallFoldGap(
     return null;
   }
   final content = environment.contentRect;
+  final centerTolerance = environment.hasDuoVerticalBar ? 48.0 : 4.0;
   for (final region in environment.activeDivisionRegions) {
     final fold = region.frame;
     if (fold.height < fold.width || !fold.overlaps(content)) {
       continue;
     }
-    if ((fold.center.dx - content.center.dx).abs() > 4) {
+    if ((fold.center.dx - content.center.dx).abs() > centerTolerance) {
       continue;
     }
     return math.max(EHConst.waterfallFlowLargeCrossAxisSpacing, fold.width);

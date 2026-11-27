@@ -72,6 +72,7 @@ class SearchFetchListClient extends FetchListClient {
       gid: fetchParams.gid,
       search: fetchParams.searchText,
       cats: fetchParams.cats,
+      favcat: fetchParams.favcat,
       cancelToken: fetchParams.cancelToken,
       refresh: fetchParams.refresh,
       galleryListType: fetchParams.galleryListType,

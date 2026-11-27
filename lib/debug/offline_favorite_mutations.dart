@@ -68,7 +68,11 @@ ${i == 0 ? 'checked' : ''}></div><div>icon</div>
 <tr><td>Length:</td><td>20 pages</td></tr>
 </tbody></table></div></body></html>''';
 
-  String list(String html, {String? favoriteCategory}) {
+  String list(
+    String html, {
+    String? favoriteCategory,
+    String? searchQuery,
+  }) {
     final document = parse(offlineFavoriteList(html, categories: true));
     final counts = List<int>.filled(10, 0);
     for (var i = 0; i < 48; i++) {
@@ -81,6 +85,7 @@ ${i == 0 ? 'checked' : ''}></div><div>icon</div>
     for (var i = 0; i < 10; i++) {
       folders[i].children.first.text = '${counts[i]}';
     }
+    final query = (searchQuery ?? '').trim().toLowerCase();
     for (final row in document.querySelectorAll('tr')) {
       final href = row.querySelector('a[href*="/g/"]')?.attributes['href'];
       if (href == null) {
@@ -90,9 +95,36 @@ ${i == 0 ? 'checked' : ''}></div><div>icon</div>
       final cat = category(gid);
       if (favoriteCategory != null &&
           (cat.isEmpty ||
-              (favoriteCategory != 'a' && cat != favoriteCategory))) {
+              (favoriteCategory != 'a' &&
+                  favoriteCategory != 'all' &&
+                  cat != favoriteCategory))) {
         row.remove();
         continue;
+      }
+      final itemNote = note(gid);
+      if (query.isNotEmpty) {
+        final title = row.querySelector('.glink')?.text.toLowerCase() ?? '';
+        final tags = row
+            .querySelectorAll('.gt')
+            .map((e) => e.text.toLowerCase())
+            .join(' ');
+        final noteLower = itemNote.toLowerCase();
+        bool matches;
+        if (query.startsWith('title:')) {
+          matches = title.contains(query.substring(6).replaceAll('"', ''));
+        } else if (query.startsWith('tag:')) {
+          matches = tags.contains(query.substring(4).replaceAll('"', ''));
+        } else if (query.startsWith('favnote:')) {
+          matches = noteLower.contains(query.substring(8).replaceAll('"', ''));
+        } else {
+          matches = title.contains(query) ||
+              tags.contains(query) ||
+              noteLower.contains(query);
+        }
+        if (!matches) {
+          row.remove();
+          continue;
+        }
       }
       for (final marker in row.querySelectorAll('div[title][style]')) {
         marker.attributes.remove('title');
@@ -109,6 +141,15 @@ ${i == 0 ? 'checked' : ''}></div><div>icon</div>
           'title': 'Offline folder $cat',
           'style': 'border-color:$color;',
         });
+      }
+      if (favoriteCategory != null && itemNote.isNotEmpty) {
+        final glname = row.querySelector('td.gl3c.glname a');
+        if (glname != null && glname.querySelector('.glfnote') == null) {
+          glname.append(parse(
+                  '<div class="glfnote" id="favnote_$gid">Note: ${const HtmlEscape().convert(itemNote)}</div>')
+              .body!
+              .firstChild!);
+        }
       }
     }
     return document.outerHtml;
@@ -140,6 +181,60 @@ Future<ResponseBody?> offlineFavoriteMutationResponse(RequestOptions options,
         Headers.contentTypeHeader: ['text/html; charset=utf-8'],
       });
   if (options.method == 'POST') {
+    if (route == '/favorites.php') {
+      final bytes = <int>[];
+      if (stream != null) {
+        await stream.forEach(bytes.addAll);
+      }
+      final body = utf8.decode(bytes);
+      final textForm = options.contentType == Headers.formUrlEncodedContentType;
+      final pairs = textForm
+          ? body.split('&').map((part) {
+              final eq = part.indexOf('=');
+              if (eq < 0) return MapEntry(Uri.decodeQueryComponent(part), '');
+              return MapEntry(
+                Uri.decodeQueryComponent(part.substring(0, eq)),
+                Uri.decodeQueryComponent(part.substring(eq + 1)),
+              );
+            }).toList()
+          : const <MapEntry<String, String>>[];
+      final ddact = pairs
+              .where((e) => e.key == 'ddact')
+              .map((e) => e.value)
+              .firstOrNull ??
+          '';
+      final modifyGids = pairs
+          .where((e) => e.key == 'modifygids[]')
+          .map((e) => e.value)
+          .toList();
+      final isDelete = ddact == 'delete';
+      final moveMatch = RegExp(r'^fav([0-9])$').firstMatch(ddact);
+      if (!textForm || (!isDelete && moveMatch == null)) {
+        return response('Synthetic batch mutation invalid', 400);
+      }
+      final nextCat = isDelete ? '' : moveMatch!.group(1)!;
+      for (final targetGid in modifyGids) {
+        if (!RegExp(r'^91000[0-3][0-9]$|^910004[0-7]$').hasMatch(targetGid)) {
+          continue;
+        }
+        store.records[targetGid] = {
+          'category': nextCat,
+          'note': isDelete ? '' : store.note(targetGid),
+        };
+      }
+      store.requests.add({
+        'method': 'POST',
+        'route': '/favorites.php',
+        'ddact': ddact,
+        'gids': modifyGids,
+        'status': 200,
+      });
+      await store.save();
+      return response(store.list(
+        galleryHtml,
+        favoriteCategory: '${options.queryParameters['favcat'] ?? 'a'}',
+      ));
+    }
     if (route != '/gallerypopups.php' ||
         !validGallery ||
         options.queryParameters['t'] != '0000000000' ||
@@ -191,10 +286,15 @@ Future<ResponseBody?> offlineFavoriteMutationResponse(RequestOptions options,
   }
   if (['/', '/popular', '/watched', '/toplist.php', '/favorites.php']
       .contains(route)) {
-    return response(store.list(galleryHtml,
-        favoriteCategory: route == '/favorites.php'
-            ? '${options.queryParameters['favcat'] ?? 'a'}'
-            : null));
+    return response(store.list(
+      galleryHtml,
+      favoriteCategory: route == '/favorites.php'
+          ? '${options.queryParameters['favcat'] ?? 'a'}'
+          : null,
+      searchQuery: route == '/favorites.php'
+          ? options.queryParameters['f_search']?.toString()
+          : null,
+    ));
   }
   return null;
 }

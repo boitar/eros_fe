@@ -355,9 +355,9 @@ GalleryList parseGalleryList(
 
     // favNote
     final favNoteElm = tr.querySelector('div.glfnote');
-    final regFavnote = RegExp(r'Note:\s(.+)');
+    final regFavnote = RegExp(r'Note:\s*(.+)', dotAll: true);
     final matchFavnote = regFavnote.firstMatch(favNoteElm?.text ?? '');
-    final favNote = matchFavnote?.group(1);
+    final favNote = matchFavnote?.group(1)?.trim();
     // if (favNote != null) print('favNote:$favNote');
 
     /// 判断获取语言标识

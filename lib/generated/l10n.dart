@@ -6848,6 +6848,231 @@ class L10n {
       args: [],
     );
   }
+
+  /// `Select`
+  String get fav_select {
+    return Intl.message('Select', name: 'fav_select', desc: '', args: []);
+  }
+
+  /// `{count} selected`
+  String fav_selected_count(Object count) {
+    return Intl.message(
+      '$count selected',
+      name: 'fav_selected_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{favcat} · {total} items`
+  String fav_selected_scope(Object favcat, Object total) {
+    return Intl.message(
+      '$favcat · $total items',
+      name: 'fav_selected_scope',
+      desc: '',
+      args: [favcat, total],
+    );
+  }
+
+  /// `Deselect all`
+  String get fav_deselect_all {
+    return Intl.message(
+      'Deselect all',
+      name: 'fav_deselect_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Move to…`
+  String get fav_move_to {
+    return Intl.message('Move to…', name: 'fav_move_to', desc: '', args: []);
+  }
+
+  /// `Current`
+  String get fav_current {
+    return Intl.message('Current', name: 'fav_current', desc: '', args: []);
+  }
+
+  /// `Moved to "{favcat}"`
+  String fav_moved_to(Object favcat) {
+    return Intl.message(
+      'Moved to "$favcat"',
+      name: 'fav_moved_to',
+      desc: '',
+      args: [favcat],
+    );
+  }
+
+  /// `Removed {count} favorites`
+  String fav_removed_count(Object count) {
+    return Intl.message(
+      'Removed $count favorites',
+      name: 'fav_removed_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Remove {count} favorites?`
+  String fav_remove_title(Object count) {
+    return Intl.message(
+      'Remove $count favorites?',
+      name: 'fav_remove_title',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{notes} notes will also be deleted. This cannot be undone.`
+  String fav_remove_note_warn(Object notes) {
+    return Intl.message(
+      '$notes notes will also be deleted. This cannot be undone.',
+      name: 'fav_remove_note_warn',
+      desc: '',
+      args: [notes],
+    );
+  }
+
+  /// `This cannot be undone.`
+  String get fav_remove_irreversible {
+    return Intl.message(
+      'This cannot be undone.',
+      name: 'fav_remove_irreversible',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{ok} moved, {fail} failed`
+  String fav_partial_failed(Object ok, Object fail) {
+    return Intl.message(
+      '$ok moved, $fail failed',
+      name: 'fav_partial_failed',
+      desc: '',
+      args: [ok, fail],
+    );
+  }
+
+  /// `{ok} removed, {fail} failed`
+  String fav_partial_remove_failed(Object ok, Object fail) {
+    return Intl.message(
+      '$ok removed, $fail failed',
+      name: 'fav_partial_remove_failed',
+      desc: '',
+      args: [ok, fail],
+    );
+  }
+
+  /// `Working…`
+  String get fav_batch_working {
+    return Intl.message(
+      'Working…',
+      name: 'fav_batch_working',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Undo`
+  String get undo {
+    return Intl.message('Undo', name: 'undo', desc: '', args: []);
+  }
+
+  /// `Retry`
+  String get retry {
+    return Intl.message('Retry', name: 'retry', desc: '', args: []);
+  }
+
+  /// `Add note`
+  String get fav_note_add {
+    return Intl.message('Add note', name: 'fav_note_add', desc: '', args: []);
+  }
+
+  /// `Edit note`
+  String get fav_note_edit {
+    return Intl.message('Edit note', name: 'fav_note_edit', desc: '', args: []);
+  }
+
+  /// `Saved in {favcat}`
+  String fav_saved_in(Object favcat) {
+    return Intl.message(
+      'Saved in $favcat',
+      name: 'fav_saved_in',
+      desc: '',
+      args: [favcat],
+    );
+  }
+
+  /// `All`
+  String get fav_scope_all {
+    return Intl.message('All', name: 'fav_scope_all', desc: '', args: []);
+  }
+
+  /// `Title`
+  String get fav_scope_title {
+    return Intl.message('Title', name: 'fav_scope_title', desc: '', args: []);
+  }
+
+  /// `Tag`
+  String get fav_scope_tag {
+    return Intl.message('Tag', name: 'fav_scope_tag', desc: '', args: []);
+  }
+
+  /// `Note`
+  String get fav_scope_note {
+    return Intl.message('Note', name: 'fav_scope_note', desc: '', args: []);
+  }
+
+  /// `Search in {favcat}`
+  String fav_search_in(Object favcat) {
+    return Intl.message(
+      'Search in $favcat',
+      name: 'fav_search_in',
+      desc: '',
+      args: [favcat],
+    );
+  }
+
+  /// `{count} results in {scope}`
+  String fav_search_count(Object count, Object scope) {
+    return Intl.message(
+      '$count results in $scope',
+      name: 'fav_search_count',
+      desc: '',
+      args: [count, scope],
+    );
+  }
+
+  /// `No "{query}" in {scope}`
+  String fav_search_empty(Object query, Object scope) {
+    return Intl.message(
+      'No "$query" in $scope',
+      name: 'fav_search_empty',
+      desc: '',
+      args: [query, scope],
+    );
+  }
+
+  /// `Search all fields`
+  String get fav_search_all_fields {
+    return Intl.message(
+      'Search all fields',
+      name: 'fav_search_all_fields',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search all folders`
+  String get fav_search_all_folders {
+    return Intl.message(
+      'Search all folders',
+      name: 'fav_search_all_folders',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

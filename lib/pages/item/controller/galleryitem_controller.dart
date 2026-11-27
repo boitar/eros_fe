@@ -11,6 +11,7 @@ import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/favorite_mutation.dart';
 import 'package:eros_fe/pages/controller/fav_controller.dart';
 import 'package:eros_fe/pages/item/item_base.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
@@ -243,7 +244,9 @@ class GalleryItemController extends GetxController {
   }
 
   /// 长按菜单
-  Future<void> _showLongPressSheet() async {
+  Future<void> _showLongPressSheet({
+    FavoriteSelectionController? selectionController,
+  }) async {
     final BuildContext context = Get.overlayContext!;
     final isHistoryItem = this.isHistoryItem;
     logger.d('isHistoryItem $isHistoryItem');
@@ -259,6 +262,16 @@ class GalleryItemController extends GetxController {
                 },
                 child: Text(L10n.of(context).cancel)),
             actions: <Widget>[
+              if (selectionController != null)
+                EhActionSheetAction(
+                  icon: CupertinoIcons.checkmark_circle,
+                  systemIcon: 'checkmark.circle',
+                  onPressed: () {
+                    Get.back();
+                    selectionController.enter(initialItem: galleryProvider);
+                  },
+                  child: Text(L10n.of(context).fav_select),
+                ),
               if (!_hasNetworkFavorite)
                 EhActionSheetAction(
                   icon: CupertinoIcons.heart,
@@ -317,8 +330,12 @@ class GalleryItemController extends GetxController {
         });
   }
 
-  void onLongPress() {
+  void onLongPress({FavoriteSelectionController? selectionController}) {
+    if (selectionController != null && selectionController.selecting.value) {
+      selectionController.toggle(galleryProvider);
+      return;
+    }
     vibrateUtil.heavy();
-    _showLongPressSheet();
+    _showLongPressSheet(selectionController: selectionController);
   }
 }

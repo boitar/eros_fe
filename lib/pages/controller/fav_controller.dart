@@ -8,7 +8,7 @@ import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/extension.dart';
 import 'package:eros_fe/generated/l10n.dart';
-import 'package:eros_fe/models/favcat.dart';
+import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/network/request.dart';
 import 'package:eros_fe/pages/gallery/view/favorite_form_widgets.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_favcat.dart';
@@ -457,5 +457,141 @@ class FavController extends GetxController {
       _localFavController.removeFavByGid(gid);
     }
     _updateCounts(favcat, '');
+  }
+
+  /// Batch move selected favorites into [targetFavcat] (`'0'`..`'9'`).
+  Future<FavoriteBatchResult> batchMove(
+    List<GalleryProvider> items,
+    String targetFavcat, {
+    String? currentFavcat,
+  }) async {
+    final gids = items
+        .map((e) => e.gid ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+    if (gids.isEmpty) {
+      return const FavoriteBatchResult(
+        succeededGids: <String>[],
+        failedGids: <String>[],
+      );
+    }
+    final previousCategories = <String, String>{
+      for (final item in items)
+        if ((item.gid ?? '').isNotEmpty)
+          item.gid!:
+              favoriteStates[item.gid]?.category ?? item.favcat ?? '',
+    };
+    final targetTitle = _favoriteSelectorController.favcatList
+            .where((f) => f.favId == targetFavcat)
+            .map((f) => f.favTitle)
+            .firstOrNull ??
+        '';
+    final result = await favoritesBatch(
+      gids: gids,
+      ddact: 'fav$targetFavcat',
+      favcat: currentFavcat,
+      targetFavTitle: targetTitle,
+    );
+    if (result.updatedFavList.isNotEmpty) {
+      _favoriteSelectorController.addAllFavList(result.updatedFavList);
+    } else if (result.succeededGids.isNotEmpty) {
+      for (final gid in result.succeededGids) {
+        final prev = previousCategories[gid] ?? '';
+        if (prev != targetFavcat) {
+          if (prev.isNotEmpty) {
+            _favoriteSelectorController.decrease(prev);
+          }
+          _favoriteSelectorController.increase(targetFavcat);
+        }
+      }
+    }
+    if (result.succeededGids.isNotEmpty) {
+      _dirtyCategories.addAll(<String>[
+        'a',
+        targetFavcat,
+        if (currentFavcat != null && currentFavcat.isNotEmpty) currentFavcat,
+        for (final prev in previousCategories.values)
+          if (prev.isNotEmpty) prev,
+      ]);
+      unawaited(_refreshAffectedFavorites());
+    }
+    return result;
+  }
+
+  /// Batch remove selected favorites (`ddact=delete` for network, local store
+  /// removal for `'l'`).
+  Future<FavoriteBatchResult> batchRemove(
+    List<GalleryProvider> items, {
+    String? currentFavcat,
+  }) async {
+    final gids = items
+        .map((e) => e.gid ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+    if (gids.isEmpty) {
+      return const FavoriteBatchResult(
+        succeededGids: <String>[],
+        failedGids: <String>[],
+      );
+    }
+    if (currentFavcat == 'l') {
+      for (final gid in gids) {
+        _localFavController.removeFavByGid(gid);
+        _favoriteSelectorController.decrease('l');
+      }
+      _dirtyCategories.add('l');
+      unawaited(_refreshAffectedFavorites());
+      return FavoriteBatchResult(
+        succeededGids: gids,
+        failedGids: const <String>[],
+      );
+    }
+    final result = await favoritesBatch(
+      gids: gids,
+      ddact: 'delete',
+      favcat: currentFavcat,
+    );
+    if (result.updatedFavList.isNotEmpty) {
+      _favoriteSelectorController.addAllFavList(result.updatedFavList);
+    } else if (result.succeededGids.isNotEmpty) {
+      final succeededSet = result.succeededGids.toSet();
+      for (final item in items) {
+        if (!succeededSet.contains(item.gid)) {
+          continue;
+        }
+        final prev = item.favcat ?? '';
+        if (prev.isNotEmpty) {
+          _favoriteSelectorController.decrease(prev);
+        }
+      }
+    }
+    if (result.succeededGids.isNotEmpty) {
+      _dirtyCategories.addAll(<String>[
+        'a',
+        if (currentFavcat != null && currentFavcat.isNotEmpty) currentFavcat,
+        for (final item in items)
+          if ((item.favcat ?? '').isNotEmpty) item.favcat!,
+      ]);
+      unawaited(_refreshAffectedFavorites());
+    }
+    return result;
+  }
+
+  /// Updates the note on an already-favorited network gallery without changing
+  /// its folder.
+  Future<void> updateFavoriteNote(
+    String gid,
+    String token, {
+    required String favcat,
+    required String favnote,
+  }) async {
+    await galleryAddFavorite(
+      gid,
+      token,
+      favcat: favcat,
+      favnote: favnote,
+    );
+    _dirtyCategories.addAll(<String>['a', favcat]);
+    unawaited(_refreshAffectedFavorites());
   }
 }

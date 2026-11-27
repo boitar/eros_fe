@@ -65,6 +65,7 @@ String favoriteMutationMessage(Object error) {
   if (error is StateError &&
       const {
         '该画廊的收藏操作正在处理中',
+        '所选画廊中有收藏操作正在处理中',
         '账号已切换',
         '原收藏备注未能读取，未提交更改，请重试',
       }.contains(error.message)) {

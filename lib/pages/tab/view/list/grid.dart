@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:eros_fe/adaptive/browse_layout.dart';
 import 'package:eros_fe/adaptive/gallery_anchor.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/debug/offline_acceptance.dart';
@@ -9,6 +10,7 @@ import 'package:eros_fe/pages/item/gallery_grid_tags.dart';
 import 'package:eros_fe/pages/item/gallery_item_grid.dart';
 import 'package:eros_fe/pages/item/gallery_item_grid_placeholder.dart';
 import 'package:eros_fe/pages/tab/view/list/card_size.dart';
+import 'package:eros_fe/pages/tab/view/list/waterfall_flow.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
@@ -93,6 +95,10 @@ class EhGridView extends StatelessWidget {
         child: offlineGallerySemantics(_provider.gid, keyed),
       );
     }, childCount: galleryProviders.length);
+    final foldGap = largeWaterfallFoldGap(
+      AdaptiveEnvironment.maybeOf(context),
+      split: BrowsePaneScope.isSplit(context),
+    );
     return SliverPadding(
       padding: const EdgeInsets.all(EHConst.gridCrossAxisSpacing)
           .copyWith(top: topPadding),
@@ -107,6 +113,42 @@ class EhGridView extends StatelessWidget {
               );
             })
           : Obx(() {
+              final spacing = foldGap ?? EHConst.gridCrossAxisSpacing;
+              if (foldGap != null) {
+                return SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    final rawCount = math.max(
+                      2,
+                      ((constraints.crossAxisExtent + spacing) /
+                              (getMaxCrossAxisExtent() + spacing))
+                          .ceil(),
+                    );
+                    final evenCount =
+                        rawCount.isOdd ? rawCount + 1 : rawCount;
+                    final tileWidth =
+                        (constraints.crossAxisExtent - spacing * (evenCount - 1)) /
+                            evenCount;
+                    final extra = MediaQuery.textScalerOf(context)
+                        .scale(14.4)
+                        .ceilToDouble();
+                    final mainExtent = _ehSettingService.fullTitleInGalleryPage
+                        ? math.max(
+                            tileWidth * 1.8 + extra,
+                            gridFullTitleMinHeight(context, tileWidth),
+                          )
+                        : tileWidth / EHConst.gridChildAspectRatio;
+                    return SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: evenCount,
+                        crossAxisSpacing: spacing,
+                        mainAxisSpacing: EHConst.gridMainAxisSpacing,
+                        mainAxisExtent: mainExtent,
+                      ),
+                      delegate: delegate,
+                    );
+                  },
+                );
+              }
               if (!_ehSettingService.fullTitleInGalleryPage) {
                 return SliverGrid(
                   gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
