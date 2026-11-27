@@ -11,6 +11,7 @@ import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/parser/eh_parser.dart';
 import 'package:eros_fe/component/exception/error.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/models/gallery_stats.dart';
 import 'package:eros_fe/pages/gallery/controller/archiver_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/torrent_controller.dart';
 import 'package:eros_fe/pages/tab/fetch_list.dart';
@@ -1421,4 +1422,96 @@ Future<EhHome?> getEhHome({bool refresh = false}) async {
     logger.e('${httpResponse.error.runtimeType}');
     throw httpResponse.error ?? EhError(error: 'getEhHome error');
   }
+}
+
+/// Fetches and parses E-Hentai `stats.php` statistics for a specific gallery
+/// version (`gid`, `token`). Always requests `e-hentai.org/stats.php` because
+/// ExHentai does not host a separate stats endpoint.
+Future<GalleryStats> getGalleryStats({
+  required String gid,
+  required String token,
+  bool refresh = false,
+  CancelToken? cancelToken,
+  @visibleForTesting DioHttpClient? httpClient,
+  @visibleForTesting Options Function({required bool refresh})? optionsBuilder,
+}) async {
+  final cleanGid = gid.trim();
+  final cleanToken = token.trim();
+  if (buildGalleryStatsUrl(cleanGid, cleanToken).isEmpty) {
+    throw const GalleryStatsException(
+      GalleryStatsErrorKind.unavailable,
+      'Invalid gallery identifier for stats',
+    );
+  }
+
+  final DioHttpClient dioHttpClient =
+      httpClient ?? DioHttpClient(dioConfig: globalDioConfig);
+  const String url = '${EHConst.EH_BASE_URL}/stats.php';
+
+  final DioHttpResponse httpResponse = await dioHttpClient.get(
+    url,
+    queryParameters: <String, dynamic>{
+      'gid': cleanGid,
+      't': cleanToken,
+    },
+    cancelToken: cancelToken,
+    options: optionsBuilder != null
+        ? optionsBuilder(refresh: refresh)
+        : getCacheOptions(refresh: refresh, forceCache: false),
+  );
+
+  if (!httpResponse.ok) {
+    final err = httpResponse.error;
+    if (err is CancelException) {
+      throw err;
+    }
+    if (err is UnauthorisedException) {
+      throw GalleryStatsException(
+        GalleryStatsErrorKind.loginRequired,
+        err.message,
+      );
+    }
+    // Check Cloudflare challenges before generic 403/404 handling because
+    // CloudflareChallengeException extends BadRequestException with code 403.
+    if (err is CloudflareChallengeException ||
+        isCfBlockedError(err) ||
+        (err?.data is String && isCloudflareChallenge(err!.data as String))) {
+      throw GalleryStatsException(
+        GalleryStatsErrorKind.network,
+        err?.message ?? 'Cloudflare verification required',
+      );
+    }
+    if (err is BadRequestException && err.code == 404) {
+      throw GalleryStatsException(
+        GalleryStatsErrorKind.unavailable,
+        err.message,
+      );
+    }
+    if (err is BadRequestException && err.code == 403) {
+      if (err.data is String && isGalleryStatsLoginHtml(err.data as String)) {
+        throw GalleryStatsException(
+          GalleryStatsErrorKind.loginRequired,
+          err.message,
+        );
+      }
+      throw GalleryStatsException(
+        GalleryStatsErrorKind.unavailable,
+        err.message,
+      );
+    }
+    throw GalleryStatsException(
+      GalleryStatsErrorKind.network,
+      err?.message,
+    );
+  }
+
+  final rawHtml = httpResponse.data;
+  if (rawHtml is! String) {
+    throw const GalleryStatsException(
+      GalleryStatsErrorKind.unavailable,
+      'Unexpected stats response payload',
+    );
+  }
+
+  return await compute(parseGalleryStats, rawHtml);
 }

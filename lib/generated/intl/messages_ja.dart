@@ -43,52 +43,64 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m10(count) => "新しいバージョンが ${count} 件";
 
-  static String m11(date) => "${date} 更新";
+  static String m11(gid) => "現在のバージョン #${gid}";
 
-  static String m12(gid, reused) => "#${gid} へローカル更新完了（${reused} ページ再利用）";
+  static String m12(value) => "ピーク ${value}";
 
-  static String m13(gid) => "未変更画像を再利用して #${gid} へ更新し、読書位置を自動引き継ぎします。";
+  static String m13(value) => "期間平均 ${value}";
 
-  static String m14(gid) => "#${gid} 用のフォルダを作成して再利用し、旧版をそのまま残します。";
+  static String m14(period, percent) => "${period} · ${percent}%";
 
-  static String m15(count) => "${count} ページのみ取得";
+  static String m15(value) => "期間合計 ${value}";
 
-  static String m16(count) => "上書き差分更新 · ${count} ページ取得";
+  static String m16(score) => "スコア ${score}";
 
-  static String m17(count) => "新規タスクで差分更新 · ${count} ページ取得";
+  static String m17(date) => "${date} 更新";
 
-  static String m18(count) => "新規タスクで全件取得 · ${count} ページ";
+  static String m18(gid, reused) => "#${gid} へローカル更新完了（${reused} ページ再利用）";
 
-  static String m19(reused, fetch) => "差分更新を開始しました（再利用 ${reused}、取得 ${fetch}）";
+  static String m19(gid) => "未変更画像を再利用して #${gid} へ更新し、読書位置を自動引き継ぎします。";
 
-  static String m20(modelName) => "モデル${modelName}";
+  static String m20(gid) => "#${gid} 用のフォルダを作成して再利用し、旧版をそのまま残します。";
 
-  static String m21(count) => "${count} ページ";
+  static String m21(count) => "${count} ページのみ取得";
 
-  static String m22(seconds) => "${seconds} 秒";
+  static String m22(count) => "上書き差分更新 · ${count} ページ取得";
 
-  static String m23(page, total) => "${page} / ${total} ページ";
+  static String m23(count) => "新規タスクで差分更新 · ${count} ページ取得";
 
-  static String m24(rating) => "${rating} ⭐";
+  static String m24(count) => "新規タスクで全件取得 · ${count} ページ";
 
-  static String m25(tag) => "${tag} を追加";
+  static String m25(reused, fetch) => "差分更新を開始しました（再利用 ${reused}、取得 ${fetch}）";
 
-  static String m26(count) => "全 ${count} ページ";
+  static String m26(modelName) => "モデル${modelName}";
 
-  static String m27(avg, count) => "平均 ${avg} · ${count} 件";
+  static String m27(count) => "${count} ページ";
 
-  static String m28(text) => "「${text}」を検索";
+  static String m28(seconds) => "${seconds} 秒";
 
-  static String m29(count) => "${count} 件追加 · カンマ区切り";
+  static String m29(page, total) => "${page} / ${total} ページ";
 
-  static String m30(count, per) => "全 ${count} ページ · 1ページ ${per} 枚";
+  static String m30(rating) => "${rating} ⭐";
 
-  static String m31(count) => "トレント · ${count} 件";
+  static String m31(tag) => "${tag} を追加";
 
-  static String m32(tagNamespace) =>
+  static String m32(count) => "全 ${count} ページ";
+
+  static String m33(avg, count) => "平均 ${avg} · ${count} 件";
+
+  static String m34(text) => "「${text}」を検索";
+
+  static String m35(count) => "${count} 件追加 · カンマ区切り";
+
+  static String m36(count, per) => "全 ${count} ページ · 1ページ ${per} 枚";
+
+  static String m37(count) => "トレント · ${count} 件";
+
+  static String m38(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m33(version) => "アップデート利用可能！【${version}】";
+  static String m39(version) => "アップデート利用可能！【${version}】";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -392,8 +404,62 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_parent": MessageLookupByLibrary.simpleMessage("親ギャラリー"),
     "gallery_parent_none": MessageLookupByLibrary.simpleMessage("なし"),
     "gallery_parent_unavailable": MessageLookupByLibrary.simpleMessage("利用不可"),
+    "gallery_stats": MessageLookupByLibrary.simpleMessage("ギャラリー統計"),
+    "gallery_stats_all_time": MessageLookupByLibrary.simpleMessage("全期間"),
+    "gallery_stats_collapse": MessageLookupByLibrary.simpleMessage("閉じる"),
+    "gallery_stats_current_version": m11,
+    "gallery_stats_daily": MessageLookupByLibrary.simpleMessage("日別"),
+    "gallery_stats_daily_avg": MessageLookupByLibrary.simpleMessage("日平均"),
+    "gallery_stats_empty_body": MessageLookupByLibrary.simpleMessage(
+      "E-Hentai の stats.php はアカウント権限（寄付・投稿者など）やギャラリーの状態により閲覧できない場合があります。",
+    ),
+    "gallery_stats_empty_title": MessageLookupByLibrary.simpleMessage(
+      "統計データを表示できません",
+    ),
+    "gallery_stats_expand_action": MessageLookupByLibrary.simpleMessage(
+      "ギャラリー統計を読み込む",
+    ),
+    "gallery_stats_expand_hint": MessageLookupByLibrary.simpleMessage(
+      "必要に応じて stats.php を取得（アカウント権限に依存）",
+    ),
+    "gallery_stats_fav_rate": MessageLookupByLibrary.simpleMessage("お気に入り率"),
+    "gallery_stats_hits": MessageLookupByLibrary.simpleMessage("ヒット数"),
+    "gallery_stats_load_failed": MessageLookupByLibrary.simpleMessage(
+      "ギャラリー統計の取得に失敗しました",
+    ),
+    "gallery_stats_loading": MessageLookupByLibrary.simpleMessage(
+      "統計データを読み込み中…",
+    ),
+    "gallery_stats_login_required": MessageLookupByLibrary.simpleMessage(
+      "ギャラリー統計を表示するには E-Hentai へのログインが必要です",
+    ),
+    "gallery_stats_monthly": MessageLookupByLibrary.simpleMessage("月別"),
+    "gallery_stats_no_rankings": MessageLookupByLibrary.simpleMessage(
+      "現在ランキング圏外です",
+    ),
+    "gallery_stats_no_series_data": MessageLookupByLibrary.simpleMessage(
+      "この期間の履歴データはありません",
+    ),
+    "gallery_stats_open_web": MessageLookupByLibrary.simpleMessage(
+      "stats.php を開く",
+    ),
+    "gallery_stats_past_month": MessageLookupByLibrary.simpleMessage("過去1か月"),
+    "gallery_stats_past_year": MessageLookupByLibrary.simpleMessage("過去1年"),
+    "gallery_stats_peak": m12,
+    "gallery_stats_period_avg": m13,
+    "gallery_stats_period_share": m14,
+    "gallery_stats_period_total": m15,
+    "gallery_stats_ranking": MessageLookupByLibrary.simpleMessage("ランキング"),
+    "gallery_stats_refresh": MessageLookupByLibrary.simpleMessage("統計を更新"),
+    "gallery_stats_retry": MessageLookupByLibrary.simpleMessage("再試行"),
+    "gallery_stats_score": m16,
+    "gallery_stats_total_visits": MessageLookupByLibrary.simpleMessage("総閲覧数"),
+    "gallery_stats_unranked": MessageLookupByLibrary.simpleMessage("圏外"),
+    "gallery_stats_visits": MessageLookupByLibrary.simpleMessage("閲覧数"),
+    "gallery_stats_yearly": MessageLookupByLibrary.simpleMessage("年別"),
+    "gallery_stats_yesterday": MessageLookupByLibrary.simpleMessage("昨日"),
     "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage("差分更新可"),
-    "gallery_updated_on": m11,
+    "gallery_updated_on": m17,
     "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage("履歴を見る"),
     "glass_effect": MessageLookupByLibrary.simpleMessage("ガラス効果"),
     "glass_material": MessageLookupByLibrary.simpleMessage("ガラスの素材"),
@@ -465,7 +531,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
       "ページ差分を解析中…",
     ),
-    "incremental_update_completed_locally": m12,
+    "incremental_update_completed_locally": m18,
     "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
       "ダウンロード済みギャラリーを差分更新",
     ),
@@ -473,16 +539,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
       "上書き更新（読書進捗を保持）",
     ),
-    "incremental_update_mode_inplace_desc": m13,
+    "incremental_update_mode_inplace_desc": m19,
     "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
       "新規タスクとして保存（旧版を保持）",
     ),
-    "incremental_update_mode_new_desc": m14,
+    "incremental_update_mode_new_desc": m20,
     "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
       "更新方法",
     ),
     "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage("新版"),
-    "incremental_update_only_download": m15,
+    "incremental_update_only_download": m21,
     "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
       "推奨",
     ),
@@ -494,13 +560,13 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage(
           "SAF ストレージはローカル再利用・上書き更新に未対応のため、新規タスクとして全ページ取得します。",
         ),
-    "incremental_update_start_inplace": m16,
-    "incremental_update_start_new": m17,
+    "incremental_update_start_inplace": m22,
+    "incremental_update_start_new": m23,
     "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
       "ローカルで更新完了（ダウンロード不要）",
     ),
-    "incremental_update_start_saf_full": m18,
-    "incremental_update_started": m19,
+    "incremental_update_start_saf_full": m24,
+    "incremental_update_started": m25,
     "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
       "未変更のローカル画像を再利用",
     ),
@@ -573,7 +639,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("Webでログイン"),
     "max_history": MessageLookupByLibrary.simpleMessage("最大履歴"),
     "min": MessageLookupByLibrary.simpleMessage("分"),
-    "model": m20,
+    "model": m26,
     "more_actions": MessageLookupByLibrary.simpleMessage("その他"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("他のサムネイル"),
     "multi_download": MessageLookupByLibrary.simpleMessage("マルチダウンロード"),
@@ -622,7 +688,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("評価"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("類似のギャラリー"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("トレント"),
-    "page_count": m21,
+    "page_count": m27,
     "page_range": MessageLookupByLibrary.simpleMessage("ページ範囲"),
     "page_range_error": MessageLookupByLibrary.simpleMessage("入力範囲エラー"),
     "page_view_type": MessageLookupByLibrary.simpleMessage("Page View Type"),
@@ -664,10 +730,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("横向きで全画面表示"),
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("縦向きで全画面表示"),
-    "reader_interval_seconds": m22,
+    "reader_interval_seconds": m28,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("次のページ"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("ページレイアウト"),
-    "reader_page_of": m23,
+    "reader_page_of": m29,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage("前のページ"),
     "reader_single_page": MessageLookupByLibrary.simpleMessage("単ページ"),
     "reader_surface_standard": MessageLookupByLibrary.simpleMessage("標準"),
@@ -724,7 +790,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "s_Show_Expunged_Galleries": MessageLookupByLibrary.simpleMessage("削除済み"),
     "s_and": MessageLookupByLibrary.simpleMessage("〜"),
     "s_pages": MessageLookupByLibrary.simpleMessage("ページ"),
-    "s_stars": m24,
+    "s_stars": m30,
     "save": MessageLookupByLibrary.simpleMessage("保存"),
     "save_current_image": MessageLookupByLibrary.simpleMessage("表示中の画像を保存"),
     "save_into_album": MessageLookupByLibrary.simpleMessage("保存"),
@@ -765,7 +831,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "skip": MessageLookupByLibrary.simpleMessage("スキップ"),
     "slide_out_page": MessageLookupByLibrary.simpleMessage("Slide Out Page"),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("クイック検索に追加"),
-    "sp_add_tag": m25,
+    "sp_add_tag": m31,
     "sp_all": MessageLookupByLibrary.simpleMessage("すべて"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("すべてのお気に入り"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage("オリジナルアーカイブ"),
@@ -803,16 +869,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("最後"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("次へ"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("前へ"),
-    "sp_page_total": m26,
+    "sp_page_total": m32,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage("タップして画像を選択"),
     "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("クイック検索一覧"),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("評価を送信"),
-    "sp_rating_summary": m27,
+    "sp_rating_summary": m33,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("最近の検索"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("更新"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("リセット"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("再試行"),
-    "sp_search_for": m28,
+    "sp_search_for": m34,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "タイトル・タグを検索、またはリンクを貼り付け",
     ),
@@ -827,19 +893,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("類似スキャン"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("検索"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("候補"),
-    "sp_tags_added": m29,
+    "sp_tags_added": m35,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "例: female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("プレビューページへ"),
-    "sp_thumbs_per_page": m30,
+    "sp_thumbs_per_page": m36,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("完了"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage("トレントをダウンロード"),
     "sp_torrent_empty": MessageLookupByLibrary.simpleMessage("利用できるトレントはありません"),
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("マグネットを共有"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("ピア"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("シード"),
-    "sp_torrent_title": m31,
+    "sp_torrent_title": m37,
     "sp_translate": MessageLookupByLibrary.simpleMessage("翻訳"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage("分割・仕切りで変化"),
     "sync_group": MessageLookupByLibrary.simpleMessage("グループ同期"),
@@ -863,7 +929,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("登録"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("カテゴリー設定"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("タブレットUI"),
-    "tagNamespace": m32,
+    "tagNamespace": m38,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("マイタグに追加"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default Color",
@@ -1078,7 +1144,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "特定の名前空間をデフォルトのタグ検索から除外したい場合は、上記でチェックできます。これは、これらの名前空間に含まれるタグを持つギャラリーが表示されないようにするのではなく、タグを検索するときに、これらの名前空間を見送るようにするだけであることに注意してください。",
     ),
     "unlimited": MessageLookupByLibrary.simpleMessage("無制限"),
-    "update_to_version": m33,
+    "update_to_version": m39,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
     "uploader": MessageLookupByLibrary.simpleMessage("アップローダー"),
     "user_login": MessageLookupByLibrary.simpleMessage("ユーザーログイン"),

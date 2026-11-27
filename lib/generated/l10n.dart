@@ -6083,6 +6083,341 @@ class L10n {
       args: [count],
     );
   }
+
+  /// `Gallery Stats`
+  String get gallery_stats {
+    return Intl.message(
+      'Gallery Stats',
+      name: 'gallery_stats',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Current version #{gid}`
+  String gallery_stats_current_version(Object gid) {
+    return Intl.message(
+      'Current version #$gid',
+      name: 'gallery_stats_current_version',
+      desc: '',
+      args: [gid],
+    );
+  }
+
+  /// `Total Visits`
+  String get gallery_stats_total_visits {
+    return Intl.message(
+      'Total Visits',
+      name: 'gallery_stats_total_visits',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fav Rate`
+  String get gallery_stats_fav_rate {
+    return Intl.message(
+      'Fav Rate',
+      name: 'gallery_stats_fav_rate',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Daily Avg`
+  String get gallery_stats_daily_avg {
+    return Intl.message(
+      'Daily Avg',
+      name: 'gallery_stats_daily_avg',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rankings`
+  String get gallery_stats_ranking {
+    return Intl.message(
+      'Rankings',
+      name: 'gallery_stats_ranking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `All-Time`
+  String get gallery_stats_all_time {
+    return Intl.message(
+      'All-Time',
+      name: 'gallery_stats_all_time',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Past Year`
+  String get gallery_stats_past_year {
+    return Intl.message(
+      'Past Year',
+      name: 'gallery_stats_past_year',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Past Month`
+  String get gallery_stats_past_month {
+    return Intl.message(
+      'Past Month',
+      name: 'gallery_stats_past_month',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Yesterday`
+  String get gallery_stats_yesterday {
+    return Intl.message(
+      'Yesterday',
+      name: 'gallery_stats_yesterday',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Score {score}`
+  String gallery_stats_score(Object score) {
+    return Intl.message(
+      'Score $score',
+      name: 'gallery_stats_score',
+      desc: '',
+      args: [score],
+    );
+  }
+
+  /// `Unranked`
+  String get gallery_stats_unranked {
+    return Intl.message(
+      'Unranked',
+      name: 'gallery_stats_unranked',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not ranked on any toplist period`
+  String get gallery_stats_no_rankings {
+    return Intl.message(
+      'Not ranked on any toplist period',
+      name: 'gallery_stats_no_rankings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Visits`
+  String get gallery_stats_visits {
+    return Intl.message(
+      'Visits',
+      name: 'gallery_stats_visits',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hits`
+  String get gallery_stats_hits {
+    return Intl.message('Hits', name: 'gallery_stats_hits', desc: '', args: []);
+  }
+
+  /// `Yearly`
+  String get gallery_stats_yearly {
+    return Intl.message(
+      'Yearly',
+      name: 'gallery_stats_yearly',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Monthly`
+  String get gallery_stats_monthly {
+    return Intl.message(
+      'Monthly',
+      name: 'gallery_stats_monthly',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Daily`
+  String get gallery_stats_daily {
+    return Intl.message(
+      'Daily',
+      name: 'gallery_stats_daily',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Peak {value}`
+  String gallery_stats_peak(Object value) {
+    return Intl.message(
+      'Peak $value',
+      name: 'gallery_stats_peak',
+      desc: '',
+      args: [value],
+    );
+  }
+
+  /// `Total {value}`
+  String gallery_stats_period_total(Object value) {
+    return Intl.message(
+      'Total $value',
+      name: 'gallery_stats_period_total',
+      desc: '',
+      args: [value],
+    );
+  }
+
+  /// `Avg {value}`
+  String gallery_stats_period_avg(Object value) {
+    return Intl.message(
+      'Avg $value',
+      name: 'gallery_stats_period_avg',
+      desc: '',
+      args: [value],
+    );
+  }
+
+  /// `Loading stats.php…`
+  String get gallery_stats_loading {
+    return Intl.message(
+      'Loading stats.php…',
+      name: 'gallery_stats_loading',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign in to E-Hentai to view gallery statistics`
+  String get gallery_stats_login_required {
+    return Intl.message(
+      'Sign in to E-Hentai to view gallery statistics',
+      name: 'gallery_stats_login_required',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Statistics unavailable`
+  String get gallery_stats_empty_title {
+    return Intl.message(
+      'Statistics unavailable',
+      name: 'gallery_stats_empty_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `E-Hentai stats.php depends on account permissions (such as donor or uploader access) and gallery availability.`
+  String get gallery_stats_empty_body {
+    return Intl.message(
+      'E-Hentai stats.php depends on account permissions (such as donor or uploader access) and gallery availability.',
+      name: 'gallery_stats_empty_body',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not load gallery statistics`
+  String get gallery_stats_load_failed {
+    return Intl.message(
+      'Could not load gallery statistics',
+      name: 'gallery_stats_load_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Retry`
+  String get gallery_stats_retry {
+    return Intl.message(
+      'Retry',
+      name: 'gallery_stats_retry',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refresh stats`
+  String get gallery_stats_refresh {
+    return Intl.message(
+      'Refresh stats',
+      name: 'gallery_stats_refresh',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open stats.php`
+  String get gallery_stats_open_web {
+    return Intl.message(
+      'Open stats.php',
+      name: 'gallery_stats_open_web',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No historical data for this period`
+  String get gallery_stats_no_series_data {
+    return Intl.message(
+      'No historical data for this period',
+      name: 'gallery_stats_no_series_data',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{period} · {percent}%`
+  String gallery_stats_period_share(Object period, Object percent) {
+    return Intl.message(
+      '$period · $percent%',
+      name: 'gallery_stats_period_share',
+      desc: '',
+      args: [period, percent],
+    );
+  }
+
+  /// `Load gallery stats`
+  String get gallery_stats_expand_action {
+    return Intl.message(
+      'Load gallery stats',
+      name: 'gallery_stats_expand_action',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fetch stats.php on demand (subject to account access)`
+  String get gallery_stats_expand_hint {
+    return Intl.message(
+      'Fetch stats.php on demand (subject to account access)',
+      name: 'gallery_stats_expand_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hide`
+  String get gallery_stats_collapse {
+    return Intl.message(
+      'Hide',
+      name: 'gallery_stats_collapse',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

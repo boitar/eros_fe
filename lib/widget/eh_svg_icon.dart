@@ -1581,6 +1581,12 @@ abstract final class EhSvgRegistry {
       EhSvgLine(12, 16, 12, 12),
       EhSvgCircle(12, 8.5, 0.8, filled: true),
     ]);
+    const chartBar = EhSvgSpec([
+      EhSvgLine(5, 19.5, 19, 19.5),
+      EhSvgRect(5.5, 12, 3, 7.5, rx: 1),
+      EhSvgRect(10.5, 7.5, 3, 12, rx: 1),
+      EhSvgRect(15.5, 4.5, 3, 15, rx: 1),
+    ]);
     const exclamationCircle = EhSvgSpec([
       EhSvgCircle(12, 12, 9),
       EhSvgLine(12, 8, 12, 13),
@@ -2088,6 +2094,8 @@ abstract final class EhSvgRegistry {
     reg(CupertinoIcons.lock_fill, lockFilled);
     reg(CupertinoIcons.slider_horizontal_3, sliders);
     reg(CupertinoIcons.info_circle, infoCircle);
+    reg(CupertinoIcons.chart_bar, chartBar);
+    reg(CupertinoIcons.chart_bar_alt_fill, chartBar);
     reg(CupertinoIcons.exclamationmark_circle, exclamationCircle);
     reg(CupertinoIcons.exclamationmark_triangle, warningTriangle);
     reg(CupertinoIcons.person, user);

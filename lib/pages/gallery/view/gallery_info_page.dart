@@ -7,6 +7,7 @@ import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/download/gallery_update_service.dart';
 import 'package:eros_fe/common/controller/download_controller.dart';
 import 'package:eros_fe/common/controller/image_block_controller.dart';
+import 'package:eros_fe/common/parser/gallery_stats_parser.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
@@ -18,6 +19,7 @@ import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_incremental_update_sheet.dart';
+import 'package:eros_fe/pages/gallery/view/gallery_stats_section.dart';
 import 'package:eros_fe/pages/item/gallery_item.dart';
 import 'package:eros_fe/route/navigator_util.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
@@ -82,6 +84,7 @@ class GalleryInfoPage extends StatefulWidget {
     this.onSearchUploader,
     this.onOpenExternalUrl,
     this.externalUrlLauncher,
+    this.statsLoader,
   });
 
   /// Stable key on the first content block so native bar gap tests can measure
@@ -116,6 +119,9 @@ class GalleryInfoPage extends StatefulWidget {
   /// Optional override for the underlying external URL launcher call (used in
   /// tests to verify failure and exception handling).
   final Future<bool> Function(String url)? externalUrlLauncher;
+
+  /// Optional override for loading E-Hentai `stats.php` data (used in tests).
+  final GalleryStatsLoader? statsLoader;
 
   /// Resolves and validates a canonical E-Hentai / ExHentai gallery URL from
   /// [provider], handling protocol-relative, bare-relative, root-relative, and
@@ -204,6 +210,50 @@ class _GalleryInfoPageState extends State<GalleryInfoPage> {
     } on Object catch (e, stack) {
       logger.e(
         'Failed to launch gallery URL: $normalized',
+        error: e,
+        stackTrace: stack,
+      );
+      if (context.mounted) {
+        showToast(L10n.of(context).gallery_info_open_browser_failed);
+      }
+    }
+  }
+
+  Future<void> _openExternalStatsUrl(
+    BuildContext context,
+    String rawUrl,
+  ) async {
+    final uri = Uri.tryParse(rawUrl.trim());
+    final canonical = uri == null ||
+            uri.scheme != 'https' ||
+            uri.host != 'e-hentai.org' ||
+            uri.path != '/stats.php'
+        ? ''
+        : buildGalleryStatsUrl(
+            uri.queryParameters['gid'],
+            uri.queryParameters['t'],
+          );
+    if (canonical.isEmpty) {
+      if (context.mounted) {
+        showToast(L10n.of(context).gallery_info_open_browser_failed);
+      }
+      return;
+    }
+    if (widget.onOpenExternalUrl != null) {
+      widget.onOpenExternalUrl!(canonical);
+      return;
+    }
+    try {
+      final launcher =
+          widget.externalUrlLauncher ??
+          GalleryInfoPage._defaultLaunchExternalUrl;
+      final launched = await launcher(canonical);
+      if (!launched && context.mounted) {
+        showToast(L10n.of(context).gallery_info_open_browser_failed);
+      }
+    } on Object catch (e, stack) {
+      logger.e(
+        'Failed to launch gallery stats URL: $canonical',
         error: e,
         stackTrace: stack,
       );
@@ -342,6 +392,17 @@ class _GalleryInfoPageState extends State<GalleryInfoPage> {
               coverUrl: imgUrl,
               onCopy: (value) => _copyValue(context, value),
               onOpenExternalUrl: (url) => _openExternalUrl(context, url),
+            ),
+            GalleryStatsSection(
+              gid: provider.gid?.trim() ?? '',
+              token: provider.token?.trim() ?? '',
+              favoriteCount: int.tryParse(
+                (provider.favoritedCount ?? '').replaceAll(',', '').trim(),
+              ),
+              postTime: provider.postTime,
+              hasLineage: showLineageSection,
+              statsLoader: widget.statsLoader,
+              onOpenExternalUrl: (url) => _openExternalStatsUrl(context, url),
             ),
           ];
 
@@ -574,17 +635,6 @@ class _MetaSurfaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = ehTheme.palette;
-    final separator = EhPalette.separator.resolveFrom(context);
-    final dividerHeight = 1.0 / MediaQuery.devicePixelRatioOf(context);
-    final shape = RoundedSuperellipseBorder(
-      borderRadius: BorderRadius.circular(_kCardRadius),
-      side: BorderSide(
-        color: palette.hairline.resolveFrom(context),
-        width: 0.5,
-      ),
-    );
-
     final resolvedItems =
         items ??
         <Widget>[...?children]
@@ -597,30 +647,18 @@ class _MetaSurfaceCard extends StatelessWidget {
       if (i > 0) {
         final indent = item.dividerIndentBefore ?? dividerIndent;
         columnChildren.add(
-          Padding(
-            padding: EdgeInsetsDirectional.only(start: indent),
-            child: ColoredBox(
-              color: separator,
-              child: SizedBox(width: double.infinity, height: dividerHeight),
-            ),
-          ),
+          GalleryLuminousDivider.horizontal(startInset: indent),
         );
       }
       columnChildren.add(item.child);
     }
 
-    return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: palette.surface.resolveFrom(context),
-        shape: shape,
-      ),
-      child: ClipRSuperellipse(
-        borderRadius: BorderRadius.circular(_kCardRadius),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: columnChildren,
-        ),
+    return GalleryLuminousCardFrame(
+      radius: _kCardRadius,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: columnChildren,
       ),
     );
   }
@@ -1025,9 +1063,7 @@ class _MetricsStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = L10n.of(context);
-    final separator = EhPalette.separator.resolveFrom(context);
     final starColor = EhPalette.star.resolveFrom(context);
-    final dividerThickness = 1.0 / MediaQuery.devicePixelRatioOf(context);
 
     final rating = provider.rating ?? 0;
     final hasRating = rating > 0;
@@ -1074,9 +1110,9 @@ class _MetricsStrip extends StatelessWidget {
       ),
     ];
 
-    Widget vDivider() => ColoredBox(
-      color: separator,
-      child: SizedBox(width: dividerThickness, height: 28),
+    Widget vDivider() => const GalleryLuminousDivider.vertical(
+      inset: 0,
+      extent: 28,
     );
 
     return LayoutBuilder(
@@ -1091,29 +1127,20 @@ class _MetricsStrip extends StatelessWidget {
                 child: Row(
                   children: <Widget>[
                     Expanded(child: cells[0]),
-                    ColoredBox(
-                      color: separator,
-                      child: SizedBox(width: dividerThickness),
-                    ),
+                    const GalleryLuminousDivider.vertical(inset: 8),
                     Expanded(child: cells[1]),
                   ],
                 ),
               ),
-              ColoredBox(
-                color: separator,
-                child: SizedBox(
-                  width: double.infinity,
-                  height: dividerThickness,
-                ),
+              const GalleryLuminousDivider.horizontal(
+                startInset: 8,
+                endInset: 8,
               ),
               IntrinsicHeight(
                 child: Row(
                   children: <Widget>[
                     Expanded(child: cells[2]),
-                    ColoredBox(
-                      color: separator,
-                      child: SizedBox(width: dividerThickness),
-                    ),
+                    const GalleryLuminousDivider.vertical(inset: 8),
                     Expanded(child: cells[3]),
                   ],
                 ),
@@ -1837,9 +1864,6 @@ class _IdPairRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final separator = EhPalette.separator.resolveFrom(context);
-    final dividerThickness = 1.0 / MediaQuery.devicePixelRatioOf(context);
-
     final gidTile = _IdCell(
       label: 'GID',
       value: gid,
@@ -1861,12 +1885,9 @@ class _IdPairRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               gidTile,
-              ColoredBox(
-                color: separator,
-                child: SizedBox(
-                  width: double.infinity,
-                  height: dividerThickness,
-                ),
+              const GalleryLuminousDivider.horizontal(
+                startInset: 8,
+                endInset: 8,
               ),
               tokenTile,
             ],
@@ -1877,10 +1898,7 @@ class _IdPairRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Expanded(child: gidTile),
-              ColoredBox(
-                color: separator,
-                child: SizedBox(width: dividerThickness),
-              ),
+              const GalleryLuminousDivider.vertical(inset: 8),
               Expanded(child: tokenTile),
             ],
           ),
