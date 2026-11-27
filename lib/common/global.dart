@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -5,6 +6,7 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/sni_bypass_service.dart';
 import 'package:eros_fe/const/storages.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/network/api.dart';
@@ -222,13 +224,20 @@ class Global {
 
   static Future<void> proxyInit() async {
     SystemNetworkProxy.init();
-    // final proxy = await getProxy();
-    // // log proxy
-    // logger.d('proxy $proxy');
-    // globalDioConfig = globalDioConfig.copyWith(
-    //   proxy: proxy,
-    // );
-    Get.find<EhSettingService>().setProxy();
+    try {
+      await Get.find<EhSettingService>()
+          .setProxy(checkConflict: false)
+          .timeout(const Duration(seconds: 2));
+    } catch (e) {
+      logger.w('proxyInit setProxy failed: $e');
+    }
+    final sni = SniBypassService.maybeFind;
+    if (sni != null) {
+      await sni.initializeRuntime();
+      if (sni.mode.isBypassEnabled) {
+        unawaited(sni.detectProxyConflict());
+      }
+    }
   }
 
   static Future<void> createDirs() async {
@@ -241,11 +250,6 @@ class Global {
     _checkReset();
 
     _initProfile();
-
-    if (profile.dnsConfig.enableDomainFronting ?? false) {
-      logger.d('enableDomainFronting');
-      HttpOverrides.global = ehHttpOverrides..skipCertificateCheck = true;
-    }
   }
 
   static void _initProfile() {
@@ -272,10 +276,37 @@ class Global {
   static void initImageHttpClient({int? maxConnectionsPerHost}) {
     final HttpClient eClient =
         ExtendedNetworkImageProvider.httpClient as HttpClient;
+    final sni = SniBypassService.maybeFind;
+    final useLocalProxy = sni != null &&
+        sni.mode.isBypassEnabled &&
+        (sni.activeLocalProxyDirective?.isNotEmpty ?? false);
+    final hasExternalProxy = globalDioConfig.proxy != null &&
+        globalDioConfig.proxy!.isNotEmpty &&
+        globalDioConfig.proxy != 'DIRECT';
     eClient
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) {
-        return true;
-      }
+      // Enforce full OS certificate chain verification on SNI-bypassed image
+      // hosts; keep legacy relaxation only for standard mode or explicit
+      // non-bypassed external proxy traffic.
+      ..badCertificateCallback = useLocalProxy
+          ? (hasExternalProxy
+              ? (X509Certificate cert, String host, int port) =>
+                  !sni.shouldBypassHost(host)
+              : null)
+          : (X509Certificate cert, String host, int port) {
+              return true;
+            }
+      ..findProxy = useLocalProxy
+          ? (Uri url) {
+              if (sni.shouldBypassHost(url.host)) {
+                return sni.activeLocalProxyDirective!;
+              }
+              final extProxy = globalDioConfig.proxy;
+              if (extProxy != null && extProxy.isNotEmpty) {
+                return extProxy;
+              }
+              return 'DIRECT';
+            }
+          : null
       ..maxConnectionsPerHost = maxConnectionsPerHost;
   }
 }

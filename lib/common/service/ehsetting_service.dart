@@ -7,8 +7,10 @@ import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/controller/webdav_controller.dart';
 import 'package:eros_fe/common/service/app_icon_service.dart';
 import 'package:eros_fe/common/service/base_service.dart';
+import 'package:eros_fe/common/service/sni_bypass_service.dart';
 import 'package:eros_fe/const/storages.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/network/app_dio/dio_http_cli.dart';
 import 'package:eros_fe/network/app_dio/proxy.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/gallery_page.dart';
 import 'package:eros_fe/pages/image_view/common.dart';
@@ -1190,7 +1192,7 @@ class EhSettingService extends ProfileService {
     }
   }
 
-  Future<void> setProxy() async {
+  Future<void> setProxy({bool checkConflict = true}) async {
     final proxy = await getProxy(
       proxyType: proxyType,
       proxyHost: proxyHost,
@@ -1199,9 +1201,26 @@ class EhSettingService extends ProfileService {
       proxyPassword: proxyPassword,
     );
 
+    final changed = globalDioConfig.proxy != proxy;
     globalDioConfig = globalDioConfig.copyWith(
       proxy: proxy,
     );
+    if (changed) {
+      DioHttpClient.resetClients();
+    }
+    final sni = SniBypassService.maybeFind;
+    if (sni != null && sni.mode.isBypassEnabled) {
+      if (changed) {
+        try {
+          Global.initImageHttpClient(
+            maxConnectionsPerHost: globalDioConfig.maxConnectionsPerHost,
+          );
+        } catch (_) {}
+      }
+      if (checkConflict) {
+        unawaited(sni.detectProxyConflict());
+      }
+    }
   }
 
   /// 收藏排序 dialog

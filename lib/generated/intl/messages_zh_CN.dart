@@ -77,24 +77,30 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m27(rating) => "${rating} ⭐";
 
-  static String m28(tag) => "添加 ${tag}";
+  static String m28(ok, total) => "${ok}/${total} 可达";
 
-  static String m29(count) => "共 ${count} 页";
+  static String m29(name) => "当前：${name}";
 
-  static String m30(avg, count) => "均分 ${avg} · ${count} 人评分";
+  static String m30(time) => "· ${time} 同步";
 
-  static String m31(text) => "搜索 “${text}”";
+  static String m31(tag) => "添加 ${tag}";
 
-  static String m32(count) => "已添加 ${count} 个 · 用逗号分隔";
+  static String m32(count) => "共 ${count} 页";
 
-  static String m33(count, per) => "共 ${count} 页 · 每页 ${per} 张";
+  static String m33(avg, count) => "均分 ${avg} · ${count} 人评分";
 
-  static String m34(count) => "种子 · ${count} 个";
+  static String m34(text) => "搜索 “${text}”";
 
-  static String m35(tagNamespace) =>
+  static String m35(count) => "已添加 ${count} 个 · 用逗号分隔";
+
+  static String m36(count, per) => "共 ${count} 页 · 每页 ${per} 张";
+
+  static String m37(count) => "种子 · ${count} 个";
+
+  static String m38(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': '重新分类', 'language': '语言', 'parody': '原作', 'character': '角色', 'group': '社团', 'artist': '艺术家', 'male': '男性', 'female': '女性', 'mixed': '混杂', 'cosplayer': '扮演者', 'other': '其它', 'temp': '临时'})}";
 
-  static String m36(version) => "可更新到 ${version}";
+  static String m39(version) => "可更新到 ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -710,8 +716,64 @@ class MessageLookup extends MessageLookupByLibrary {
     "sidebar_library": MessageLookupByLibrary.simpleMessage("资料库"),
     "skip": MessageLookupByLibrary.simpleMessage("跳过"),
     "slide_out_page": MessageLookupByLibrary.simpleMessage("拖动返回"),
+    "sni_add_custom_doh": MessageLookupByLibrary.simpleMessage("添加自定义 DoH 服务器"),
+    "sni_add_custom_doh_bootstrap": MessageLookupByLibrary.simpleMessage(
+      "引导 IP（可选，逗号分隔）",
+    ),
+    "sni_add_custom_doh_name": MessageLookupByLibrary.simpleMessage("名称（可选）"),
+    "sni_add_custom_doh_url": MessageLookupByLibrary.simpleMessage(
+      "DoH 地址（https://...）",
+    ),
+    "sni_bypass": MessageLookupByLibrary.simpleMessage("网络直连"),
+    "sni_conflict_desc": MessageLookupByLibrary.simpleMessage(
+      "当前网络可能已由 Surge / VPN 接管，同时启用直连可能导致绕行或失败。",
+    ),
+    "sni_conflict_title": MessageLookupByLibrary.simpleMessage(
+      "检测到系统代理或 Fake-IP 接管",
+    ),
+    "sni_custom_hosts_footer": MessageLookupByLibrary.simpleMessage(
+      "手动同步将从仓库拉取每日测速后的 DoH 列表与备用 IP。",
+    ),
+    "sni_diag_eh_nodes": MessageLookupByLibrary.simpleMessage("E 站节点检测"),
+    "sni_diag_retest": MessageLookupByLibrary.simpleMessage("重测"),
+    "sni_diag_section": MessageLookupByLibrary.simpleMessage("连通性诊断"),
+    "sni_diag_summary_ok": m28,
+    "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("点击检测"),
+    "sni_doh_auto": MessageLookupByLibrary.simpleMessage("自动选择"),
+    "sni_doh_auto_selected": m29,
+    "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("疑似污染"),
+    "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH 服务器"),
+    "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("测速"),
+    "sni_doh_sync": MessageLookupByLibrary.simpleMessage("同步"),
+    "sni_doh_sync_failed": MessageLookupByLibrary.simpleMessage(
+      "同步失败，继续使用本地列表",
+    ),
+    "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
+      "已同步最新 DoH 列表",
+    ),
+    "sni_doh_synced_at": m30,
+    "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("同步中…"),
+    "sni_doh_testing": MessageLookupByLibrary.simpleMessage("测速中…"),
+    "sni_mode_compat": MessageLookupByLibrary.simpleMessage("兼容模式"),
+    "sni_mode_compat_desc": MessageLookupByLibrary.simpleMessage(
+      "DoH 解析并采用 TCP 分包发送握手（兼容老网络，保留完整证书校验）",
+    ),
+    "sni_mode_enhanced": MessageLookupByLibrary.simpleMessage("增强连接（推荐直连）"),
+    "sni_mode_enhanced_desc": MessageLookupByLibrary.simpleMessage(
+      "DoH 解析并分段发送 TLS 握手，保留完整证书校验",
+    ),
+    "sni_mode_enhanced_short": MessageLookupByLibrary.simpleMessage("增强连接"),
+    "sni_mode_section": MessageLookupByLibrary.simpleMessage("连接模式"),
+    "sni_mode_standard": MessageLookupByLibrary.simpleMessage("标准连接"),
+    "sni_mode_standard_desc": MessageLookupByLibrary.simpleMessage(
+      "使用系统或代理设置（推荐 Surge / VPN 用户）",
+    ),
+    "sni_status_failed": MessageLookupByLibrary.simpleMessage("失败"),
+    "sni_status_timeout": MessageLookupByLibrary.simpleMessage("超时"),
+    "sni_status_untested": MessageLookupByLibrary.simpleMessage("未测"),
+    "sni_switch_to_standard": MessageLookupByLibrary.simpleMessage("切回标准连接"),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("加入快速搜索"),
-    "sp_add_tag": m28,
+    "sp_add_tag": m31,
     "sp_all": MessageLookupByLibrary.simpleMessage("全部"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("全部收藏"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage("原图归档"),
@@ -747,16 +809,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("末页"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("下一页"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("上一页"),
-    "sp_page_total": m29,
+    "sp_page_total": m32,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage("点击选择图片"),
     "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("快速搜索列表"),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("提交评分"),
-    "sp_rating_summary": m30,
+    "sp_rating_summary": m33,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("最近搜索"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("刷新"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("重置"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("重试"),
-    "sp_search_for": m31,
+    "sp_search_for": m34,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "搜索标题、标签或粘贴链接",
     ),
@@ -771,19 +833,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("相似扫描"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("开始搜索"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("建议"),
-    "sp_tags_added": m32,
+    "sp_tags_added": m35,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "例如 female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("跳到预览页"),
-    "sp_thumbs_per_page": m33,
+    "sp_thumbs_per_page": m36,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("完成"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage("下载种子"),
     "sp_torrent_empty": MessageLookupByLibrary.simpleMessage("没有可用的种子"),
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("分享磁力"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("下载中"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("做种"),
-    "sp_torrent_title": m34,
+    "sp_torrent_title": m37,
     "sp_translate": MessageLookupByLibrary.simpleMessage("翻译"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage("分栏随分割条"),
     "sync_group": MessageLookupByLibrary.simpleMessage("同步分组"),
@@ -807,7 +869,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("订阅"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("主页栏位设置"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("平板布局"),
-    "tagNamespace": m35,
+    "tagNamespace": m38,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("管理标签"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage("默认颜色"),
     "tag_dialog_Hide": MessageLookupByLibrary.simpleMessage("隐藏"),
@@ -1012,7 +1074,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "如果要从默认标签搜索中排除某些标签组，可以检查以下内容。请注意，这不会阻止在这些标签组中的标签的展示区出现，它只是在搜索标签时排除这些标签组。",
     ),
     "unlimited": MessageLookupByLibrary.simpleMessage("不限制"),
-    "update_to_version": m36,
+    "update_to_version": m39,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("上传头像"),
     "uploader": MessageLookupByLibrary.simpleMessage("上传者"),
     "user_login": MessageLookupByLibrary.simpleMessage("用户登录"),

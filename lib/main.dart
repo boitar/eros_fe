@@ -67,7 +67,7 @@ Future<void> main() async {
   await initializeOfflineGlass();
   getinit();
   await probeOfflineHaptics();
-  Global.proxyInit();
+  await Global.proxyInit();
 
   if (Get.find<EhSettingService>().debugMode || kDebugMode) {
     Logger.level = Level.debug;

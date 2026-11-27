@@ -77,24 +77,30 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m27(rating) => "${rating} ⭐";
 
-  static String m28(tag) => "${tag} を追加";
+  static String m28(ok, total) => "${ok}/${total} 接続可能";
 
-  static String m29(count) => "全 ${count} ページ";
+  static String m29(name) => "現在：${name}";
 
-  static String m30(avg, count) => "平均 ${avg} · ${count} 件";
+  static String m30(time) => "· ${time} 同期";
 
-  static String m31(text) => "「${text}」を検索";
+  static String m31(tag) => "${tag} を追加";
 
-  static String m32(count) => "${count} 件追加 · カンマ区切り";
+  static String m32(count) => "全 ${count} ページ";
 
-  static String m33(count, per) => "全 ${count} ページ · 1ページ ${per} 枚";
+  static String m33(avg, count) => "平均 ${avg} · ${count} 件";
 
-  static String m34(count) => "トレント · ${count} 件";
+  static String m34(text) => "「${text}」を検索";
 
-  static String m35(tagNamespace) =>
+  static String m35(count) => "${count} 件追加 · カンマ区切り";
+
+  static String m36(count, per) => "全 ${count} ページ · 1ページ ${per} 枚";
+
+  static String m37(count) => "トレント · ${count} 件";
+
+  static String m38(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m36(version) => "アップデート利用可能！【${version}】";
+  static String m39(version) => "アップデート利用可能！【${version}】";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -762,8 +768,66 @@ class MessageLookup extends MessageLookupByLibrary {
     "sidebar_library": MessageLookupByLibrary.simpleMessage("ライブラリ"),
     "skip": MessageLookupByLibrary.simpleMessage("スキップ"),
     "slide_out_page": MessageLookupByLibrary.simpleMessage("Slide Out Page"),
+    "sni_add_custom_doh": MessageLookupByLibrary.simpleMessage(
+      "カスタム DoH サーバーを追加",
+    ),
+    "sni_add_custom_doh_bootstrap": MessageLookupByLibrary.simpleMessage(
+      "ブートストラップ IP（任意、カンマ区切り）",
+    ),
+    "sni_add_custom_doh_name": MessageLookupByLibrary.simpleMessage("名前（任意）"),
+    "sni_add_custom_doh_url": MessageLookupByLibrary.simpleMessage(
+      "DoH URL（https://...）",
+    ),
+    "sni_bypass": MessageLookupByLibrary.simpleMessage("ダイレクト接続"),
+    "sni_conflict_desc": MessageLookupByLibrary.simpleMessage(
+      "通信が Surge / VPN 経由の可能性があります。併用すると接続に失敗する場合があります。",
+    ),
+    "sni_conflict_title": MessageLookupByLibrary.simpleMessage(
+      "システムプロキシまたは Fake-IP を検出",
+    ),
+    "sni_custom_hosts_footer": MessageLookupByLibrary.simpleMessage(
+      "手動同期で毎日検証された DoH リストと予備 IP をリポジトリから取得します。",
+    ),
+    "sni_diag_eh_nodes": MessageLookupByLibrary.simpleMessage("E-Hentai ノード確認"),
+    "sni_diag_retest": MessageLookupByLibrary.simpleMessage("再テスト"),
+    "sni_diag_section": MessageLookupByLibrary.simpleMessage("接続診断"),
+    "sni_diag_summary_ok": m28,
+    "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("タップして確認"),
+    "sni_doh_auto": MessageLookupByLibrary.simpleMessage("自動選択"),
+    "sni_doh_auto_selected": m29,
+    "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("汚染の疑い"),
+    "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH サーバー"),
+    "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("速度計測"),
+    "sni_doh_sync": MessageLookupByLibrary.simpleMessage("同期"),
+    "sni_doh_sync_failed": MessageLookupByLibrary.simpleMessage(
+      "同期に失敗しました（ローカル一覧を使用）",
+    ),
+    "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
+      "最新の DoH リストを同期しました",
+    ),
+    "sni_doh_synced_at": m30,
+    "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("同期中…"),
+    "sni_doh_testing": MessageLookupByLibrary.simpleMessage("計測中…"),
+    "sni_mode_compat": MessageLookupByLibrary.simpleMessage("互換モード"),
+    "sni_mode_compat_desc": MessageLookupByLibrary.simpleMessage(
+      "DoH 解決と TCP パケット分割送信（旧ネットワーク互換・完全な証明書検証）",
+    ),
+    "sni_mode_enhanced": MessageLookupByLibrary.simpleMessage("拡張ダイレクト（推奨）"),
+    "sni_mode_enhanced_desc": MessageLookupByLibrary.simpleMessage(
+      "DoH 解決と TLS ClientHello 分割送信（完全な証明書検証を維持）",
+    ),
+    "sni_mode_enhanced_short": MessageLookupByLibrary.simpleMessage("拡張ダイレクト"),
+    "sni_mode_section": MessageLookupByLibrary.simpleMessage("接続モード"),
+    "sni_mode_standard": MessageLookupByLibrary.simpleMessage("標準接続"),
+    "sni_mode_standard_desc": MessageLookupByLibrary.simpleMessage(
+      "システムまたはプロキシ設定を使用（Surge / VPN 推奨）",
+    ),
+    "sni_status_failed": MessageLookupByLibrary.simpleMessage("失敗"),
+    "sni_status_timeout": MessageLookupByLibrary.simpleMessage("タイムアウト"),
+    "sni_status_untested": MessageLookupByLibrary.simpleMessage("未計測"),
+    "sni_switch_to_standard": MessageLookupByLibrary.simpleMessage("標準接続に戻す"),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("クイック検索に追加"),
-    "sp_add_tag": m28,
+    "sp_add_tag": m31,
     "sp_all": MessageLookupByLibrary.simpleMessage("すべて"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("すべてのお気に入り"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage("オリジナルアーカイブ"),
@@ -801,16 +865,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("最後"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("次へ"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("前へ"),
-    "sp_page_total": m29,
+    "sp_page_total": m32,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage("タップして画像を選択"),
     "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("クイック検索一覧"),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("評価を送信"),
-    "sp_rating_summary": m30,
+    "sp_rating_summary": m33,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("最近の検索"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("更新"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("リセット"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("再試行"),
-    "sp_search_for": m31,
+    "sp_search_for": m34,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "タイトル・タグを検索、またはリンクを貼り付け",
     ),
@@ -825,19 +889,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("類似スキャン"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("検索"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("候補"),
-    "sp_tags_added": m32,
+    "sp_tags_added": m35,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "例: female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("プレビューページへ"),
-    "sp_thumbs_per_page": m33,
+    "sp_thumbs_per_page": m36,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("完了"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage("トレントをダウンロード"),
     "sp_torrent_empty": MessageLookupByLibrary.simpleMessage("利用できるトレントはありません"),
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("マグネットを共有"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("ピア"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("シード"),
-    "sp_torrent_title": m34,
+    "sp_torrent_title": m37,
     "sp_translate": MessageLookupByLibrary.simpleMessage("翻訳"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage("分割・仕切りで変化"),
     "sync_group": MessageLookupByLibrary.simpleMessage("グループ同期"),
@@ -861,7 +925,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("登録"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("カテゴリー設定"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("タブレットUI"),
-    "tagNamespace": m35,
+    "tagNamespace": m38,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("マイタグに追加"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default Color",
@@ -1076,7 +1140,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "特定の名前空間をデフォルトのタグ検索から除外したい場合は、上記でチェックできます。これは、これらの名前空間に含まれるタグを持つギャラリーが表示されないようにするのではなく、タグを検索するときに、これらの名前空間を見送るようにするだけであることに注意してください。",
     ),
     "unlimited": MessageLookupByLibrary.simpleMessage("無制限"),
-    "update_to_version": m36,
+    "update_to_version": m39,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
     "uploader": MessageLookupByLibrary.simpleMessage("アップローダー"),
     "user_login": MessageLookupByLibrary.simpleMessage("ユーザーログイン"),
