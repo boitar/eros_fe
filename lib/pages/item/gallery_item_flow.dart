@@ -6,6 +6,7 @@ import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/item/favorite_icon.dart';
 import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_controller.dart';
 import 'package:eros_fe/widget/favorite_selection_chrome.dart';
+import 'package:eros_fe/widget/gallery_card_context_menu.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
@@ -118,13 +119,7 @@ class GalleryItemFlow extends StatelessWidget {
       final favScope = FavoriteListScope.maybeOf(context);
       return FavoriteSelectableCard(
         provider: galleryProvider,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          child: FavoriteCoverSelectionChrome(
-            gid: galleryProvider.gid,
-            radius: BorderRadius.circular(kRadius),
-            child: container,
-          ),
+        child: GalleryCardPressFeedback(
           onTap: () {
             final current = galleryProviderController.galleryProvider;
             if (favScope?.selection?.selecting.value == true) {
@@ -137,8 +132,13 @@ class GalleryItemFlow extends StatelessWidget {
             }
             galleryProviderController.onTap(tabTag);
           },
-          onLongPress: () => galleryProviderController.onLongPress(
-            selectionController: favScope?.selection,
+          onLongPress: galleryProviderController.onLongPress,
+          child: RepaintBoundary(
+            child: FavoriteCoverSelectionChrome(
+              gid: galleryProvider.gid,
+              radius: BorderRadius.circular(kRadius),
+              child: container,
+            ),
           ),
         ).autoCompressKeyboard(context),
       );

@@ -11,6 +11,7 @@ import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_control
 import 'package:eros_fe/utils/utility.dart';
 import 'package:eros_fe/widget/fav_note_line.dart';
 import 'package:eros_fe/widget/favorite_selection_chrome.dart';
+import 'package:eros_fe/widget/gallery_card_context_menu.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -76,16 +77,14 @@ class GalleryItemFlowLarge extends StatelessWidget {
 
   Widget _buildStandard(BuildContext context) {
     final controller = galleryProviderController;
-    final favScope = FavoriteListScope.maybeOf(context);
     final GalleryProvider provider = controller.galleryProvider;
 
     return FavoriteSelectableCard(
       provider: provider,
-      child: _PressScale(
-        onTap: () => _handleTap(context, controller, controller.galleryProvider),
-        onLongPress: () => controller.onLongPress(
-          selectionController: favScope?.selection,
-        ),
+      child: GalleryCardPressFeedback(
+        onTap: () =>
+            _handleTap(context, controller, controller.galleryProvider),
+        onLongPress: controller.onLongPress,
         child: _CardFrame(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -110,16 +109,14 @@ class GalleryItemFlowLarge extends StatelessWidget {
   /// Only the cover: title and rating sit on a deeper scrim at its foot.
   Widget _buildImmersive(BuildContext context) {
     final controller = galleryProviderController;
-    final favScope = FavoriteListScope.maybeOf(context);
     final GalleryProvider provider = controller.galleryProvider;
 
     return FavoriteSelectableCard(
       provider: provider,
-      child: _PressScale(
-        onTap: () => _handleTap(context, controller, controller.galleryProvider),
-        onLongPress: () => controller.onLongPress(
-          selectionController: favScope?.selection,
-        ),
+      child: GalleryCardPressFeedback(
+        onTap: () =>
+            _handleTap(context, controller, controller.galleryProvider),
+        onLongPress: controller.onLongPress,
         child: _CardFrame(
           child: _Cover(
             provider: provider,
@@ -152,23 +149,25 @@ class _CardFrame extends StatelessWidget {
           )
         : hairline;
 
-    return DecoratedBox(
-      // A circular rect is indistinguishable from the superellipse under a
-      // 14pt blur and keeps the shadow on the fast blur path.
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(kCardRadius),
-        boxShadow: dark ? null : EhPalette.lightCardShadows,
-      ),
-      child: CustomPaint(
-        foregroundPainter: _CardEdgePainter(top: edgeTop, line: hairline),
-        child: DecoratedBox(
-          decoration: ShapeDecoration(
-            color: CupertinoDynamicColor.resolve(palette.surface, context),
-            shape: RoundedSuperellipseBorder(
-              borderRadius: BorderRadius.circular(kCardRadius),
+    return RepaintBoundary(
+      child: DecoratedBox(
+        // A circular rect is indistinguishable from the superellipse under a
+        // 14pt blur and keeps the shadow on the fast blur path.
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(kCardRadius),
+          boxShadow: dark ? null : EhPalette.lightCardShadows,
+        ),
+        child: CustomPaint(
+          foregroundPainter: _CardEdgePainter(top: edgeTop, line: hairline),
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              color: CupertinoDynamicColor.resolve(palette.surface, context),
+              shape: RoundedSuperellipseBorder(
+                borderRadius: BorderRadius.circular(kCardRadius),
+              ),
             ),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );
@@ -211,51 +210,6 @@ class _CardEdgePainter extends CustomPainter {
   @override
   bool shouldRepaint(_CardEdgePainter oldDelegate) =>
       oldDelegate.top != top || oldDelegate.line != line;
-}
-
-/// Shrinks the card slightly while pressed. Skipped with Reduce Motion.
-class _PressScale extends StatefulWidget {
-  const _PressScale({
-    required this.child,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  final Widget child;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-
-  @override
-  State<_PressScale> createState() => _PressScaleState();
-}
-
-class _PressScaleState extends State<_PressScale> {
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (_pressed != value) {
-      setState(() => _pressed = value);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _setPressed(true),
-      onTapUp: (_) => _setPressed(false),
-      onTapCancel: () => _setPressed(false),
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      child: AnimatedScale(
-        scale: _pressed && !reduceMotion ? 0.97 : 1,
-        duration: Duration(milliseconds: _pressed ? 100 : 220),
-        curve: Curves.easeOut,
-        child: widget.child,
-      ),
-    );
-  }
 }
 
 class _Cover extends StatelessWidget {

@@ -23,6 +23,7 @@ import 'common/service/auth_session_service.dart';
 import 'common/service/controller_tag_service.dart';
 import 'common/service/dns_service.dart';
 import 'common/service/ehsetting_service.dart';
+import 'common/service/fav_rule_service.dart';
 import 'common/service/layout_service.dart';
 import 'common/service/locale_service.dart';
 import 'common/service/sni_bypass_service.dart';
@@ -45,6 +46,7 @@ import 'pages/tab/controller/unlock_page_controller.dart';
 
 void getinit() {
   Get.lazyPut(() => EhSettingService(), fenix: true);
+  Get.lazyPut(() => FavRuleService(), fenix: true);
   Get.lazyPut(() => LocaleService(), fenix: true);
   Get.lazyPut(() => ThemeService(), fenix: true);
   Get.put(DnsService(), permanent: true);

@@ -13,6 +13,7 @@ import '../../common/service/ehsetting_service.dart';
 import '../../common/service/layout_service.dart';
 import '../../const/theme_colors.dart';
 import '../../index.dart';
+import '../../widget/gallery_card_context_menu.dart';
 import '../../widget/rating_bar.dart';
 import 'controller/galleryitem_controller.dart';
 import 'gallery_card_title.dart';
@@ -225,13 +226,7 @@ class GalleryItemGrid extends StatelessWidget {
         final favScope = FavoriteListScope.maybeOf(context);
         return FavoriteSelectableCard(
           provider: galleryProviderController.galleryProvider,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            child: FavoriteCoverSelectionChrome(
-              gid: galleryProvider.gid,
-              radius: BorderRadius.circular(kRadius),
-              child: container,
-            ),
+          child: GalleryCardPressFeedback(
             onTap: () {
               final current = galleryProviderController.galleryProvider;
               if (favScope?.selection?.selecting.value == true) {
@@ -244,8 +239,13 @@ class GalleryItemGrid extends StatelessWidget {
               }
               galleryProviderController.onTap(tabTag);
             },
-            onLongPress: () => galleryProviderController.onLongPress(
-              selectionController: favScope?.selection,
+            onLongPress: galleryProviderController.onLongPress,
+            child: RepaintBoundary(
+              child: FavoriteCoverSelectionChrome(
+                gid: galleryProvider.gid,
+                radius: BorderRadius.circular(kRadius),
+                child: container,
+              ),
             ),
           ).autoCompressKeyboard(context),
         );

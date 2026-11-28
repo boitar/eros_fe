@@ -25,6 +25,7 @@ const String viewHistoryMigrationKey = 'viewHistoryMigration';
 const String downloadTaskMigrationKey = 'downloadTaskMigration';
 const String backgroundSuspendedDownloadGidsKey =
     'backgroundSuspendedDownloadGids';
+const String favRuleConfigKey = 'fav_rule_config';
 
 class HiveHelper {
   HiveHelper();
@@ -351,5 +352,13 @@ class HiveHelper {
 
   set profile(Profile? val) {
     _configBox.put(profileKey, jsonEncode(val));
+  }
+
+  String? getFavRuleConfigJson() {
+    return _configBox.get(favRuleConfigKey);
+  }
+
+  Future<void> setFavRuleConfigJson(String json) async {
+    await _configBox.put(favRuleConfigKey, json);
   }
 }

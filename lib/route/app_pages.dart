@@ -20,6 +20,9 @@ import 'package:eros_fe/pages/setting/avatar_setting_page.dart';
 import 'package:eros_fe/pages/setting/block/block_rule_edit_page.dart';
 import 'package:eros_fe/pages/setting/block/block_rules_page.dart';
 import 'package:eros_fe/pages/setting/block/blockers_page.dart';
+import 'package:eros_fe/pages/setting/fav_rule/fav_rule_edit_page.dart';
+import 'package:eros_fe/pages/setting/fav_rule/fav_rule_setting_page.dart';
+import 'package:eros_fe/pages/setting/fav_rule/fav_rule_test_page.dart';
 import 'package:eros_fe/pages/setting/controller/tab_setting_controller.dart';
 import 'package:eros_fe/pages/setting/custom_hosts_page.dart';
 import 'package:eros_fe/pages/setting/download_setting_page.dart';
@@ -275,6 +278,22 @@ class AppPages {
       page: () => const BlockRuleEditPage(),
     ),
     GetPage(
+      name: EHRoutes.favRuleSetting,
+      page: () => const FavRuleSettingPage(),
+    ),
+    GetPage(
+      name: EHRoutes.favRuleEdit,
+      page: () => FavRuleEditPage(
+        args: Get.arguments is FavRuleEditArgs
+            ? Get.arguments as FavRuleEditArgs
+            : null,
+      ),
+    ),
+    GetPage(
+      name: EHRoutes.favRuleTest,
+      page: () => const FavRuleTestPage(),
+    ),
+    GetPage(
       name: EHRoutes.logfile,
       page: () => const LogPage(),
     ),
@@ -428,6 +447,25 @@ class AppPages {
             return GetPageRoute(
               settings: settings,
               page: () => const BlockRuleEditPage(),
+            );
+          case EHRoutes.favRuleSetting:
+            return GetPageRoute(
+              settings: settings,
+              page: () => const FavRuleSettingPage(),
+            );
+          case EHRoutes.favRuleEdit:
+            return GetPageRoute(
+              settings: settings,
+              page: () => FavRuleEditPage(
+                args: settings.arguments is FavRuleEditArgs
+                    ? settings.arguments as FavRuleEditArgs
+                    : null,
+              ),
+            );
+          case EHRoutes.favRuleTest:
+            return GetPageRoute(
+              settings: settings,
+              page: () => const FavRuleTestPage(),
             );
           case EHRoutes.avatarSetting:
             return GetPageRoute(

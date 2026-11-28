@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:collection/collection.dart';
+import 'package:eros_fe/common/service/fav_rule_matcher.dart';
+import 'package:eros_fe/models/fav_rule.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
 import 'package:eros_fe/store/db/entity/tag_translate_info.dart';
 import 'package:eros_fe/store/db/entity/view_history.dart';
@@ -152,6 +154,408 @@ class IsarHelper {
     logger.d('result.len ${result.length}');
 
     return result;
+  }
+
+  Future<int> countTagTranslates() async {
+    return isar.tagTranslats
+        .filter()
+        .not()
+        .namespaceEqualTo('rows')
+        .count();
+  }
+
+  QueryBuilder<TagTranslat, TagTranslat, QAfterFilterCondition> _nsEqualsFilter(
+    QueryBuilder<TagTranslat, TagTranslat, QFilterCondition> q,
+    String normNs,
+  ) {
+    final variants = FavRuleMatcher.previewStorageVariants(normNs);
+    if (variants.length <= 1) {
+      return q.namespaceEqualTo(normNs, caseSensitive: false);
+    }
+    return q.group((g) {
+      var b = g.namespaceEqualTo(variants.first, caseSensitive: false);
+      for (var i = 1; i < variants.length; i++) {
+        b = b.or().namespaceEqualTo(variants[i], caseSensitive: false);
+      }
+      return b;
+    });
+  }
+
+  QueryBuilder<TagTranslat, TagTranslat, QAfterFilterCondition>
+      _nsEndsWithTokensFilter(
+    QueryBuilder<TagTranslat, TagTranslat, QFilterCondition> q,
+    String normNs,
+  ) {
+    final tokens = FavRuleMatcher.previewTokens(normNs);
+    if (tokens.isEmpty) {
+      return q.namespaceIsNotEmpty();
+    }
+    if (tokens.length == 1) {
+      return q.namespaceEndsWith(tokens.first, caseSensitive: false);
+    }
+    return q.group((g) {
+      var b = g.namespaceContains(tokens.first, caseSensitive: false);
+      for (var i = 1; i < tokens.length; i++) {
+        b = b.and().namespaceContains(tokens[i], caseSensitive: false);
+      }
+      return b;
+    });
+  }
+
+  QueryBuilder<TagTranslat, TagTranslat, QAfterFilterCondition>
+      _nsPrefixForContains(
+    QueryBuilder<TagTranslat, TagTranslat, QFilterCondition> q,
+    String lhsNorm,
+  ) {
+    if (lhsNorm.isEmpty) {
+      return q.namespaceIsNotEmpty();
+    }
+    return _nsEndsWithTokensFilter(q, lhsNorm);
+  }
+
+  QueryBuilder<TagTranslat, TagTranslat, QAfterFilterCondition>
+      _keyTokensFilter(
+    QueryBuilder<TagTranslat, TagTranslat, QFilterCondition> q,
+    List<String> tokens, {
+    required bool exactSingleToken,
+  }) {
+    if (tokens.isEmpty) {
+      return q.keyIsNotEmpty();
+    }
+    if (tokens.length == 1) {
+      final token = tokens.first;
+      if (exactSingleToken && token.length == 1) {
+        return q.group(
+          (g) => g
+              .keyEqualTo(token, caseSensitive: false)
+              .or()
+              .keyContains('_$token', caseSensitive: false)
+              .or()
+              .keyContains('${token}_', caseSensitive: false)
+              .or()
+              .keyContains(' $token', caseSensitive: false)
+              .or()
+              .keyContains('$token ', caseSensitive: false),
+        );
+      }
+      return q.keyContains(token, caseSensitive: false);
+    }
+    return q.group((g) {
+      var b = g.keyContains(tokens.first, caseSensitive: false);
+      for (var i = 1; i < tokens.length; i++) {
+        b = b.and().keyContains(tokens[i], caseSensitive: false);
+      }
+      return b;
+    });
+  }
+
+  List<String> _cleanedTranslationTokens(String rawText) {
+    final cleanedNorm = FavRuleMatcher.normalize(
+      FavRuleMatcher.cleanTranslation(rawText),
+    );
+    return FavRuleMatcher.previewTokens(cleanedNorm);
+  }
+
+  QueryBuilder<TagTranslat, TagTranslat, QAfterFilterCondition>
+      _orNameTokensFilter(
+    QueryBuilder<TagTranslat, TagTranslat, QAfterFilterCondition> branch,
+    String rawText,
+  ) {
+    final tokens = _cleanedTranslationTokens(rawText);
+    if (tokens.isEmpty) {
+      return branch;
+    }
+    if (tokens.length == 1) {
+      return branch.or().nameContains(tokens.first, caseSensitive: false);
+    }
+    return branch.or().group((g) {
+      var b = g.nameContains(tokens.first, caseSensitive: false);
+      for (var i = 1; i < tokens.length; i++) {
+        b = b.and().nameContains(tokens[i], caseSensitive: false);
+      }
+      return b;
+    });
+  }
+
+  QueryBuilder<TagTranslat, TagTranslat, QAfterFilterCondition>
+      _nameTokensGroup(
+    QueryBuilder<TagTranslat, TagTranslat, QFilterCondition> q,
+    List<String> tokens,
+  ) {
+    if (tokens.length == 1) {
+      return q.nameContains(tokens.first, caseSensitive: false);
+    }
+    return q.group((g) {
+      var b = g.nameContains(tokens.first, caseSensitive: false);
+      for (var i = 1; i < tokens.length; i++) {
+        b = b.and().nameContains(tokens[i], caseSensitive: false);
+      }
+      return b;
+    });
+  }
+
+  /// Queries known tags matching a rule condition for live condition preview.
+  /// Returns `(matches, totalCount)`.
+  Future<(List<TagTranslat>, int)> findTagTranslatesForRuleCondition({
+    required String value,
+    String? namespace,
+    required String opName,
+    bool matchTranslation = false,
+    int limit = 40,
+  }) async {
+    final parsed = FavRuleMatcher.parseConditionPreviewQuery(
+      value: value,
+      namespace: namespace,
+    );
+    if (parsed.isEmpty) {
+      return (const <TagTranslat>[], 0);
+    }
+    final op = switch (opName) {
+      'equals' => FavRuleOp.equals,
+      'contains' => FavRuleOp.contains,
+      'regex' => FavRuleOp.regex,
+      _ => null,
+    };
+    if (op == null) {
+      return (const <TagTranslat>[], 0);
+    }
+
+    final trimmed = parsed.rawValue;
+    final normalized = parsed.normalizedFull;
+    final fullTokens = parsed.normalizedFullTokens;
+    final explicitNs = parsed.explicitNamespace;
+
+    final colonPos = normalized.indexOf(':');
+    final hasColon = colonPos >= 0;
+    final colonLhs = hasColon ? normalized.substring(0, colonPos) : '';
+    final colonRhs = hasColon ? normalized.substring(colonPos + 1) : '';
+    final colonRhsTokens = FavRuleMatcher.previewTokens(colonRhs);
+    final rawColonPos = trimmed.indexOf(':');
+    final colonRhsRaw =
+        rawColonPos >= 0 ? trimmed.substring(rawColonPos + 1).trim() : '';
+    final colonRhsTransTokens = _cleanedTranslationTokens(colonRhsRaw);
+
+    final condition = FavRuleCondition(
+      namespace: explicitNs,
+      op: op,
+      value: trimmed,
+      matchTranslation: matchTranslation,
+    );
+
+    final base = isar.tagTranslats
+        .filter()
+        .not()
+        .namespaceEqualTo('rows')
+        .and()
+        .not()
+        .namespaceEqualTo(kFavRuleCategoryNamespace, caseSensitive: false);
+
+    if (op == FavRuleOp.equals) {
+      final QueryBuilder<TagTranslat, TagTranslat, QAfterFilterCondition> query;
+      if (explicitNs != null) {
+        final scoped = base.and().group((q) => _nsEqualsFilter(q, explicitNs));
+        final matchInlineKey =
+            hasColon && colonLhs == explicitNs && colonRhsTokens.isNotEmpty;
+        query = scoped.and().group((q) {
+          var branch = matchInlineKey
+              ? _keyTokensFilter(
+                  q,
+                  colonRhsTokens,
+                  exactSingleToken: true,
+                ).or().group(
+                    (g) => _keyTokensFilter(
+                      g,
+                      fullTokens,
+                      exactSingleToken: true,
+                    ),
+                  )
+              : _keyTokensFilter(q, fullTokens, exactSingleToken: true);
+          if (matchTranslation) {
+            branch = _orNameTokensFilter(branch, trimmed);
+            if (hasColon &&
+                colonLhs == explicitNs &&
+                colonRhsTransTokens.isNotEmpty) {
+              branch = _orNameTokensFilter(branch, colonRhsRaw);
+            }
+          }
+          return branch;
+        });
+      } else if (hasColon && colonLhs.isNotEmpty) {
+        query = base.and().group((q) {
+          var branch = colonRhsTokens.isNotEmpty
+              ? q
+                  .group(
+                    (inner) => _nsEqualsFilter(inner, colonLhs).and().group(
+                          (g) => _keyTokensFilter(
+                            g,
+                            colonRhsTokens,
+                            exactSingleToken: true,
+                          ),
+                        ),
+                  )
+                  .or()
+                  .group(
+                    (g) => _keyTokensFilter(
+                      g,
+                      fullTokens,
+                      exactSingleToken: true,
+                    ),
+                  )
+              : _keyTokensFilter(q, fullTokens, exactSingleToken: true);
+          if (matchTranslation) {
+            branch = _orNameTokensFilter(branch, trimmed);
+            if (colonRhsTransTokens.isNotEmpty) {
+              branch = branch.or().group(
+                    (inner) => _nsEqualsFilter(inner, colonLhs).and().group(
+                          (g) => _nameTokensGroup(g, colonRhsTransTokens),
+                        ),
+                  );
+            }
+          }
+          return branch;
+        });
+      } else {
+        query = base.and().group((q) {
+          var branch = _keyTokensFilter(q, fullTokens, exactSingleToken: true);
+          if (matchTranslation) {
+            branch = _orNameTokensFilter(branch, trimmed);
+          }
+          return branch;
+        });
+      }
+      final candidates = await query.findAll();
+      return FavRuleMatcher.filterPreviewCandidates<TagTranslat>(
+        candidates: candidates,
+        condition: condition,
+        namespaceOf: (t) => t.namespace,
+        keyOf: (t) => t.key,
+        translationOf: (t) => t.name,
+        limit: limit,
+      );
+    }
+
+    if (op == FavRuleOp.contains) {
+      // Fast exact path for single-word key substring queries without spaces,
+      // underscores, colons, or translation matching.
+      final singleWordFastPath = !matchTranslation &&
+          !hasColon &&
+          fullTokens.length == 1 &&
+          !trimmed.contains(' ') &&
+          !trimmed.contains('_') &&
+          !trimmed.contains(':') &&
+          (explicitNs == null || !explicitNs.contains(' '));
+      if (singleWordFastPath) {
+        final fastQuery = explicitNs != null
+            ? base
+                .and()
+                .namespaceEqualTo(explicitNs, caseSensitive: false)
+                .and()
+                .keyContains(normalized, caseSensitive: false)
+            : base.and().keyContains(normalized, caseSensitive: false);
+        final total = await fastQuery.count();
+        final items = await fastQuery.limit(limit).findAll();
+        return (items, total);
+      }
+
+      final QueryBuilder<TagTranslat, TagTranslat, QAfterFilterCondition> query;
+      if (explicitNs != null) {
+        final scoped = base.and().group((q) => _nsEqualsFilter(q, explicitNs));
+        final matchColonBoundary = hasColon && explicitNs.endsWith(colonLhs);
+        if (matchColonBoundary && colonRhs.isEmpty) {
+          query = scoped;
+        } else {
+          query = scoped.and().group((q) {
+            var branch =
+                _keyTokensFilter(q, fullTokens, exactSingleToken: false);
+            if (matchColonBoundary && colonRhsTokens.isNotEmpty) {
+              branch = branch.or().group(
+                    (g) => _keyTokensFilter(
+                      g,
+                      colonRhsTokens,
+                      exactSingleToken: false,
+                    ),
+                  );
+            }
+            if (matchTranslation) {
+              branch = _orNameTokensFilter(branch, trimmed);
+              if (matchColonBoundary && colonRhsTransTokens.isNotEmpty) {
+                branch = _orNameTokensFilter(branch, colonRhsRaw);
+              }
+            }
+            return branch;
+          });
+        }
+      } else if (hasColon) {
+        query = base.and().group((q) {
+          var branch = _keyTokensFilter(q, fullTokens, exactSingleToken: false);
+          if (colonRhs.isEmpty) {
+            branch = branch.or().group(
+                  (inner) => _nsPrefixForContains(inner, colonLhs),
+                );
+          } else if (colonRhsTokens.isNotEmpty) {
+            branch = branch.or().group(
+                  (inner) => _nsPrefixForContains(inner, colonLhs).and().group(
+                        (g) => _keyTokensFilter(
+                          g,
+                          colonRhsTokens,
+                          exactSingleToken: false,
+                        ),
+                      ),
+                );
+          }
+          if (matchTranslation) {
+            branch = _orNameTokensFilter(branch, trimmed);
+            if (colonRhsTransTokens.isNotEmpty) {
+              branch = branch.or().group(
+                    (inner) =>
+                        _nsPrefixForContains(inner, colonLhs).and().group(
+                              (g) => _nameTokensGroup(g, colonRhsTransTokens),
+                            ),
+                  );
+            }
+          }
+          return branch;
+        });
+      } else {
+        query = base.and().group((q) {
+          var branch =
+              _keyTokensFilter(q, fullTokens, exactSingleToken: false);
+          if (matchTranslation) {
+            branch = _orNameTokensFilter(branch, trimmed);
+          }
+          return branch;
+        });
+      }
+      final candidates = await query.findAll();
+      return FavRuleMatcher.filterPreviewCandidates<TagTranslat>(
+        candidates: candidates,
+        condition: condition,
+        namespaceOf: (t) => t.namespace,
+        keyOf: (t) => t.key,
+        translationOf: (t) => t.name,
+        limit: limit,
+      );
+    }
+
+    if (op == FavRuleOp.regex) {
+      if (!condition.isValidRegex) {
+        return (const <TagTranslat>[], 0);
+      }
+      final scoped = explicitNs != null
+          ? base.and().group((q) => _nsEqualsFilter(q, explicitNs))
+          : base;
+      final candidates = await scoped.findAll();
+      return FavRuleMatcher.filterPreviewCandidates<TagTranslat>(
+        candidates: candidates,
+        condition: condition,
+        namespaceOf: (t) => t.namespace,
+        keyOf: (t) => t.key,
+        translationOf: (t) => t.name,
+        limit: limit,
+      );
+    }
+
+    return (const <TagTranslat>[], 0);
   }
 
   Future<void> tapTagTranslate(TagTranslat tagTranslate) async {

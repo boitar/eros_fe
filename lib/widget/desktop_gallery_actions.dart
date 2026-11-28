@@ -3,19 +3,24 @@ import 'dart:math' as math;
 
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
+import 'package:eros_fe/common/service/fav_rule_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
+import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/generated/l10n.dart';
+import 'package:eros_fe/models/fav_rule.dart';
 import 'package:eros_fe/models/gallery_provider.dart';
 import 'package:eros_fe/network/api.dart';
+import 'package:eros_fe/network/favorite_mutation.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/route/navigator_util.dart';
 import 'package:eros_fe/utils/toast.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 bool get _mac => PlatformCapabilities.hostPlatform == TargetPlatform.macOS;
 
@@ -208,6 +213,8 @@ class DesktopMenuEntry {
     required this.label,
     required this.icon,
     required this.onSelected,
+    this.subtitle,
+    this.accentColor,
     this.shortcut,
     this.destructive = false,
     this.dividerBefore = false,
@@ -215,6 +222,8 @@ class DesktopMenuEntry {
   });
 
   final String label;
+  final String? subtitle;
+  final Color? accentColor;
   final IconData icon;
   final VoidCallback onSelected;
   final String? shortcut;
@@ -229,11 +238,72 @@ List<DesktopMenuEntry> desktopGalleryMenuEntries(
   GalleryItemController item,
 ) {
   final l10n = L10n.of(context);
+  final zh = Localizations.localeOf(context).languageCode == 'zh';
   final provider = item.galleryProvider;
   final uploader = provider.uploader ?? '';
   final networkFavorite = (provider.favcat ?? '').isNotEmpty;
+
+  DesktopMenuEntry? ruleEntry;
+  if (Get.isRegistered<FavRuleService>()) {
+    final ruleService = Get.find<FavRuleService>();
+    if (ruleService.enabled && ruleService.config.enabledRuleCount > 0) {
+      if (ruleService.needsAsyncTagFetch(provider)) {
+        ruleEntry = DesktopMenuEntry(
+          label: l10n.fav_rule_title,
+          subtitle: l10n.fav_rule_entry_desc,
+          accentColor: EhPalette.accent.resolveFrom(context),
+          icon: CupertinoIcons.heart_fill,
+          onSelected: () => unawaited(() async {
+            try {
+              final eval = await ruleService.evaluateGalleryWithFetch(provider);
+              await item.applyRuleOrFallback(eval);
+            } catch (e) {
+              showToast(favoriteMutationMessage(e));
+            }
+          }()),
+        );
+      } else {
+        final eval = ruleService.evaluateGallerySync(provider);
+        final hit = eval.primary;
+        if (hit != null) {
+          final favTitle = ruleService.favTitleFor(hit.rule.favcat);
+          final favColor = CupertinoDynamicColor.resolve(
+            ThemeColors.favColorFor(hit.rule.favcat),
+            context,
+          );
+          final tagLabel = hit.primaryTag?.displayLabel() ?? '';
+          final ruleName = hit.rule.displayName(zh: zh);
+          final sameFolder = item.isFav && item.favCat == hit.rule.favcat;
+          final keepExisting = item.isFav &&
+              !sameFolder &&
+              ruleService.config.existing == FavRuleExisting.keep;
+          final curTitle = item.favCat.isNotEmpty
+              ? ruleService.favTitleFor(item.favCat)
+              : favTitle;
+          ruleEntry = DesktopMenuEntry(
+            label: sameFolder
+                ? l10n.fav_rule_already_in_folder(favTitle)
+                : keepExisting
+                    ? l10n.fav_rule_kept_in_folder(curTitle)
+                    : item.isFav
+                        ? l10n.fav_rule_move_to_folder(favTitle)
+                        : l10n.fav_rule_save_to_folder(favTitle),
+            subtitle: tagLabel.isEmpty
+                ? l10n.fav_rule_reason_only(ruleName)
+                : l10n.fav_rule_reason_with_tag(ruleName, tagLabel),
+            accentColor: favColor,
+            icon: CupertinoIcons.heart_fill,
+            onSelected: () => unawaited(item.applyRuleFavorite(eval)),
+          );
+        }
+      }
+    }
+  }
+
   return <DesktopMenuEntry>[
+    if (ruleEntry != null) ruleEntry,
     DesktopMenuEntry(
+      dividerBefore: ruleEntry != null,
       label: l10n.read,
       icon: CupertinoIcons.book,
       shortcut: DesktopGalleryActions.readShortcutLabel,
@@ -608,8 +678,16 @@ class _MenuRowState extends State<_MenuRow> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: ShapeDecoration(
                 color: _hovered || _focused
-                    ? (dark ? const Color(0x1FFFFFFF) : const Color(0x1214161C))
-                    : (dark ? const Color(0x00FFFFFF) : const Color(0x0014161C)),
+                    ? (entry.accentColor != null
+                        ? entry.accentColor!.withValues(alpha: dark ? .28 : .18)
+                        : (dark
+                            ? const Color(0x1FFFFFFF)
+                            : const Color(0x1214161C)))
+                    : (entry.accentColor != null
+                        ? entry.accentColor!.withValues(alpha: dark ? .18 : .10)
+                        : (dark
+                            ? const Color(0x00FFFFFF)
+                            : const Color(0x0014161C))),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(widget.glass ? 9 : 6),
                 ),
@@ -621,15 +699,39 @@ class _MenuRowState extends State<_MenuRow> {
                     size: 16,
                     color: entry.destructive
                         ? foreground
-                        : palette.text2.resolveFrom(context),
+                        : (entry.accentColor ??
+                            palette.text2.resolveFrom(context)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      entry.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 13, color: foreground),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          entry.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: entry.accentColor != null
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: foreground,
+                          ),
+                        ),
+                        if (entry.subtitle != null &&
+                            entry.subtitle!.isNotEmpty)
+                          Text(
+                            entry.subtitle!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: palette.text2.resolveFrom(context),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   if (entry.shortcut != null) ...<Widget>[

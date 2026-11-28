@@ -50,101 +50,143 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m13(count) => "Removed ${count} favorites";
 
-  static String m14(favcat) => "Saved in ${favcat}";
+  static String m14(folder) => "Already in \"${folder}\"";
 
-  static String m15(count, scope) => "${count} results in ${scope}";
+  static String m15(count) => "Used in ${count} rules";
 
-  static String m16(query, scope) => "No \"${query}\" in ${scope}";
+  static String m16(count) => "${count}";
 
-  static String m17(favcat) => "Search in ${favcat}";
+  static String m17(category) => "New rule for \"${category}\"";
 
-  static String m18(count) => "${count} selected";
+  static String m18(count) => "${count} galleries";
 
-  static String m19(favcat, total) => "${favcat} · ${total} items";
+  static String m19(count) => "${count} galleries matched in history";
 
-  static String m20(gid) => "Parent #${gid}";
+  static String m20(count) => "${count} galleries match in history";
 
-  static String m21(count) =>
+  static String m21(count) => "Matched ${count} times";
+
+  static String m22(count, time) => "Matched ${count} times · Last ${time}";
+
+  static String m23(count) => "${count} tags";
+
+  static String m24(folder) => "Kept in \"${folder}\"";
+
+  static String m25(folder) => "Move to \"${folder}\"";
+
+  static String m26(from, to) => "Moved from \"${from}\" to \"${to}\"";
+
+  static String m27(rules) => "Also matched \"${rules}\" (lower priority)";
+
+  static String m28(rule) => "Rule \"${rule}\"";
+
+  static String m29(rule, tag) => "Rule \"${rule}\" · ${tag}";
+
+  static String m30(folder) => "Save to \"${folder}\"";
+
+  static String m31(folder) => "Saved to \"${folder}\"";
+
+  static String m32(count) => "On · ${count}";
+
+  static String m33(fallback) => "Fallback action: ${fallback}";
+
+  static String m34(count) => "${count} total";
+
+  static String m35(favcat) => "Saved in ${favcat}";
+
+  static String m36(count, scope) => "${count} results in ${scope}";
+
+  static String m37(query, scope) => "No \"${query}\" in ${scope}";
+
+  static String m38(favcat) => "Search in ${favcat}";
+
+  static String m39(count) => "${count} selected";
+
+  static String m40(favcat, total) => "${favcat} · ${total} items";
+
+  static String m41(gid) => "Parent #${gid}";
+
+  static String m42(count) =>
       "${Intl.plural(count, one: '${count} rating', other: '${count} ratings')}";
 
-  static String m22(count) => "${count} newer versions";
+  static String m43(count) => "${count} newer versions";
 
-  static String m23(gid) => "Current version #${gid}";
+  static String m44(gid) => "Current version #${gid}";
 
-  static String m24(value) => "Peak ${value}";
+  static String m45(value) => "Peak ${value}";
 
-  static String m25(value) => "Avg ${value}";
+  static String m46(value) => "Avg ${value}";
 
-  static String m26(period, percent) => "${period} · ${percent}%";
+  static String m47(period, percent) => "${period} · ${percent}%";
 
-  static String m27(value) => "Total ${value}";
+  static String m48(value) => "Total ${value}";
 
-  static String m28(score) => "Score ${score}";
+  static String m49(score) => "Score ${score}";
 
-  static String m29(date) => "Updated ${date}";
+  static String m50(date) => "Updated ${date}";
 
-  static String m30(gid, reused) =>
+  static String m51(gid, reused) =>
       "Updated to #${gid} locally (${reused} pages reused)";
 
-  static String m31(gid) =>
+  static String m52(gid) =>
       "Reuse unchanged local images, update task to #${gid}, and map reading position.";
 
-  static String m32(gid) =>
+  static String m53(gid) =>
       "Create a new folder for #${gid} with reused images while keeping the old version.";
 
-  static String m33(count) => "Fetch ${count} pages";
+  static String m54(count) => "Fetch ${count} pages";
 
-  static String m34(count) => "Upgrade in place · Fetch ${count} pages";
+  static String m55(count) => "Upgrade in place · Fetch ${count} pages";
 
-  static String m35(count) => "Create new task · Fetch ${count} pages";
+  static String m56(count) => "Create new task · Fetch ${count} pages";
 
-  static String m36(count) => "Download as new task · ${count} pages";
+  static String m57(count) => "Download as new task · ${count} pages";
 
-  static String m37(reused, fetch) =>
+  static String m58(reused, fetch) =>
       "Incremental update started (reused ${reused}, fetching ${fetch})";
 
-  static String m38(count) => "${count} galleries finished downloading";
+  static String m59(count) => "${count} galleries finished downloading";
 
-  static String m39(title) => "${title} finished downloading";
+  static String m60(title) => "${title} finished downloading";
 
-  static String m40(count) => "Downloading ${count} galleries";
+  static String m61(count) => "Downloading ${count} galleries";
 
-  static String m41(completed, total) => "${completed}/${total} pages";
+  static String m62(completed, total) => "${completed}/${total} pages";
 
-  static String m42(modelName) => "Model ${modelName}";
+  static String m63(modelName) => "Model ${modelName}";
 
-  static String m43(count) => "${count} pages";
+  static String m64(count) => "${count} pages";
 
-  static String m44(seconds) => "${seconds} s";
+  static String m65(seconds) => "${seconds} s";
 
-  static String m45(page, total) => "Page ${page} of ${total}";
+  static String m66(page, total) => "Page ${page} of ${total}";
 
-  static String m46(rating) => "${rating} ⭐";
+  static String m67(rating) => "${rating} ⭐";
 
-  static String m47(ok, total) => "${ok}/${total} reachable";
+  static String m68(ok, total) => "${ok}/${total} reachable";
 
-  static String m48(name) => "Active: ${name}";
+  static String m69(name) => "Active: ${name}";
 
-  static String m49(time) => "· Synced ${time}";
+  static String m70(time) => "· Synced ${time}";
 
-  static String m50(tag) => "Add ${tag}";
+  static String m71(tag) => "Add ${tag}";
 
-  static String m51(count) => "${count} pages";
+  static String m72(count) => "${count} pages";
 
-  static String m52(avg, count) => "Avg ${avg} · ${count} ratings";
+  static String m73(avg, count) => "Avg ${avg} · ${count} ratings";
 
-  static String m53(text) => "Search “${text}”";
+  static String m74(text) => "Search “${text}”";
 
-  static String m54(count) => "${count} added · separate with commas";
+  static String m75(count) => "${count} added · separate with commas";
 
-  static String m55(count, per) => "${count} pages · ${per} per page";
+  static String m76(count, per) => "${count} pages · ${per} per page";
 
-  static String m56(count) => "Torrents · ${count}";
+  static String m77(count) => "Torrents · ${count}";
 
-  static String m57(tagNamespace) =>
+  static String m78(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m58(version) => "Update to ${version}";
+  static String m79(version) => "Update to ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -467,7 +509,250 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_remove_note_warn": m11,
     "fav_remove_title": m12,
     "fav_removed_count": m13,
-    "fav_saved_in": m14,
+    "fav_rule_add_condition": MessageLookupByLibrary.simpleMessage(
+      "Add Condition",
+    ),
+    "fav_rule_already_in_folder": m14,
+    "fav_rule_category_badge": MessageLookupByLibrary.simpleMessage("Category"),
+    "fav_rule_category_used_count": m15,
+    "fav_rule_change_folder": MessageLookupByLibrary.simpleMessage("Change"),
+    "fav_rule_clear_selection": MessageLookupByLibrary.simpleMessage("Clear"),
+    "fav_rule_conditions": MessageLookupByLibrary.simpleMessage("Conditions"),
+    "fav_rule_count_items": m16,
+    "fav_rule_create_by_category": m17,
+    "fav_rule_create_from_gallery": MessageLookupByLibrary.simpleMessage(
+      "New rule from this gallery",
+    ),
+    "fav_rule_create_from_tag_short": MessageLookupByLibrary.simpleMessage(
+      "New Rule",
+    ),
+    "fav_rule_delete_condition": MessageLookupByLibrary.simpleMessage(
+      "Delete Condition",
+    ),
+    "fav_rule_delete_confirm": MessageLookupByLibrary.simpleMessage(
+      "Delete this favorite rule?",
+    ),
+    "fav_rule_delete_title": MessageLookupByLibrary.simpleMessage(
+      "Delete Rule",
+    ),
+    "fav_rule_edit_condition": MessageLookupByLibrary.simpleMessage(
+      "Edit Condition",
+    ),
+    "fav_rule_edit_title": MessageLookupByLibrary.simpleMessage("Edit Rule"),
+    "fav_rule_enable": MessageLookupByLibrary.simpleMessage(
+      "Enable Rule Favorites",
+    ),
+    "fav_rule_enable_desc": MessageLookupByLibrary.simpleMessage(
+      "Save directly to the matching folder when a rule hits",
+    ),
+    "fav_rule_entry_desc": MessageLookupByLibrary.simpleMessage(
+      "Sort into folders by tag or category when favoriting",
+    ),
+    "fav_rule_existing": MessageLookupByLibrary.simpleMessage(
+      "If Already Favorited",
+    ),
+    "fav_rule_existing_keep": MessageLookupByLibrary.simpleMessage(
+      "Keep Current Folder",
+    ),
+    "fav_rule_existing_move": MessageLookupByLibrary.simpleMessage(
+      "Move to Target Folder",
+    ),
+    "fav_rule_fallback": MessageLookupByLibrary.simpleMessage(
+      "When No Rule Matches",
+    ),
+    "fav_rule_fallback_fixed": MessageLookupByLibrary.simpleMessage(
+      "Save to Fixed Folder",
+    ),
+    "fav_rule_fallback_folder": MessageLookupByLibrary.simpleMessage(
+      "Fixed Folder",
+    ),
+    "fav_rule_fallback_last": MessageLookupByLibrary.simpleMessage(
+      "Save to Last Used Folder",
+    ),
+    "fav_rule_fallback_picker": MessageLookupByLibrary.simpleMessage(
+      "Open Folder Picker",
+    ),
+    "fav_rule_fetch_tags_failed": MessageLookupByLibrary.simpleMessage(
+      "Could not fetch full tags",
+    ),
+    "fav_rule_gallery_count": m18,
+    "fav_rule_history_empty_save_ok": MessageLookupByLibrary.simpleMessage(
+      "No galleries in your history match yet; the rule will still take effect once saved.",
+    ),
+    "fav_rule_history_hits_count": m19,
+    "fav_rule_history_hits_empty": MessageLookupByLibrary.simpleMessage(
+      "No galleries in your history match this rule yet.",
+    ),
+    "fav_rule_history_hits_matched": m20,
+    "fav_rule_hit_stats": m21,
+    "fav_rule_hit_stats_with_time": m22,
+    "fav_rule_hit_tag_count": m23,
+    "fav_rule_invalid_condition": MessageLookupByLibrary.simpleMessage(
+      "Invalid condition or regular expression",
+    ),
+    "fav_rule_invalid_regex": MessageLookupByLibrary.simpleMessage(
+      "Invalid regular expression",
+    ),
+    "fav_rule_kept_in_folder": m24,
+    "fav_rule_last_used_badge": MessageLookupByLibrary.simpleMessage("Last"),
+    "fav_rule_list_footer": MessageLookupByLibrary.simpleMessage(
+      "Long-press to reorder, swipe left to delete.",
+    ),
+    "fav_rule_list_menu_context": MessageLookupByLibrary.simpleMessage(
+      "Floating Card Menu",
+    ),
+    "fav_rule_list_menu_sheet": MessageLookupByLibrary.simpleMessage(
+      "Bottom Action Sheet",
+    ),
+    "fav_rule_list_menu_style": MessageLookupByLibrary.simpleMessage(
+      "List Long-Press Menu",
+    ),
+    "fav_rule_match_all": MessageLookupByLibrary.simpleMessage("Match All"),
+    "fav_rule_match_any": MessageLookupByLibrary.simpleMessage("Match Any"),
+    "fav_rule_match_op": MessageLookupByLibrary.simpleMessage("Match Mode"),
+    "fav_rule_match_translation_hint": MessageLookupByLibrary.simpleMessage(
+      "Also match translated tag names",
+    ),
+    "fav_rule_matched_known_tags": MessageLookupByLibrary.simpleMessage(
+      "Matching Known Tags",
+    ),
+    "fav_rule_matching_tags": MessageLookupByLibrary.simpleMessage(
+      "Matching favorite rules…",
+    ),
+    "fav_rule_migrated_desc": MessageLookupByLibrary.simpleMessage(
+      "Your previous tap-to-last-folder behavior has been preserved. Add tag or category rules anytime to choose folders when favoriting.",
+    ),
+    "fav_rule_migrated_title": MessageLookupByLibrary.simpleMessage(
+      "One-Step Favorite upgraded to Rule Favorites",
+    ),
+    "fav_rule_miss_saved_fixed": MessageLookupByLibrary.simpleMessage(
+      "No rule matched · Saved to fixed folder",
+    ),
+    "fav_rule_miss_saved_last": MessageLookupByLibrary.simpleMessage(
+      "No rule matched · Saved to last folder",
+    ),
+    "fav_rule_miss_title": MessageLookupByLibrary.simpleMessage(
+      "No rule matched",
+    ),
+    "fav_rule_mode_category": MessageLookupByLibrary.simpleMessage("Category"),
+    "fav_rule_mode_tag": MessageLookupByLibrary.simpleMessage("Tag"),
+    "fav_rule_move_to_folder": m25,
+    "fav_rule_moved_folder": m26,
+    "fav_rule_my_tags_short": MessageLookupByLibrary.simpleMessage("My Tags"),
+    "fav_rule_name_placeholder": MessageLookupByLibrary.simpleMessage(
+      "Rule name (generated from condition if empty)",
+    ),
+    "fav_rule_namespace_any": MessageLookupByLibrary.simpleMessage("Any"),
+    "fav_rule_namespace_more": MessageLookupByLibrary.simpleMessage("More"),
+    "fav_rule_need_condition": MessageLookupByLibrary.simpleMessage(
+      "Add at least one condition",
+    ),
+    "fav_rule_new_subtitle": MessageLookupByLibrary.simpleMessage(
+      "New rule · Name optional",
+    ),
+    "fav_rule_new_title": MessageLookupByLibrary.simpleMessage("New Rule"),
+    "fav_rule_no_hits_yet": MessageLookupByLibrary.simpleMessage(
+      "No galleries matched yet",
+    ),
+    "fav_rule_no_known_tag_matches": MessageLookupByLibrary.simpleMessage(
+      "No known tags matched in the local database; you can still save this condition.",
+    ),
+    "fav_rule_no_tag_db_hint": MessageLookupByLibrary.simpleMessage(
+      "Tag translation database is not downloaded yet; live preview is unavailable (rules still match normally).",
+    ),
+    "fav_rule_op_contains": MessageLookupByLibrary.simpleMessage("Contains"),
+    "fav_rule_op_equals": MessageLookupByLibrary.simpleMessage("Exact"),
+    "fav_rule_op_regex": MessageLookupByLibrary.simpleMessage("Regex"),
+    "fav_rule_order_hint": MessageLookupByLibrary.simpleMessage(
+      "Top to bottom, first match wins",
+    ),
+    "fav_rule_other_hits_note": m27,
+    "fav_rule_pick_one_folder_hint": MessageLookupByLibrary.simpleMessage(
+      "Select a folder",
+    ),
+    "fav_rule_picker_grid": MessageLookupByLibrary.simpleMessage("Color Grid"),
+    "fav_rule_picker_list": MessageLookupByLibrary.simpleMessage(
+      "Classic List",
+    ),
+    "fav_rule_picker_style": MessageLookupByLibrary.simpleMessage(
+      "Folder Picker Style",
+    ),
+    "fav_rule_picker_switched": MessageLookupByLibrary.simpleMessage(
+      "Picker style switched",
+    ),
+    "fav_rule_picker_wheel": MessageLookupByLibrary.simpleMessage(
+      "Wheel Picker",
+    ),
+    "fav_rule_preview": MessageLookupByLibrary.simpleMessage("Preview"),
+    "fav_rule_reason_only": m28,
+    "fav_rule_reason_with_tag": m29,
+    "fav_rule_regex_placeholder": MessageLookupByLibrary.simpleMessage(
+      "Regular expression, e.g. ^foot.*",
+    ),
+    "fav_rule_remember_action": MessageLookupByLibrary.simpleMessage(
+      "Remember",
+    ),
+    "fav_rule_remember_created_title": MessageLookupByLibrary.simpleMessage(
+      "Rule created",
+    ),
+    "fav_rule_save_into_lead": MessageLookupByLibrary.simpleMessage("Save to"),
+    "fav_rule_save_to_folder": m30,
+    "fav_rule_saved_to_folder": m31,
+    "fav_rule_search_this_category": MessageLookupByLibrary.simpleMessage(
+      "Search Category",
+    ),
+    "fav_rule_section_rules": MessageLookupByLibrary.simpleMessage("Rules"),
+    "fav_rule_section_trigger": MessageLookupByLibrary.simpleMessage(
+      "Trigger & Fallback",
+    ),
+    "fav_rule_section_ui_style": MessageLookupByLibrary.simpleMessage(
+      "Panel Styles",
+    ),
+    "fav_rule_select_category": MessageLookupByLibrary.simpleMessage(
+      "Select Categories",
+    ),
+    "fav_rule_status_disabled": MessageLookupByLibrary.simpleMessage("Off"),
+    "fav_rule_status_enabled": MessageLookupByLibrary.simpleMessage("On"),
+    "fav_rule_status_enabled_count": m32,
+    "fav_rule_tag_namespace": MessageLookupByLibrary.simpleMessage("Namespace"),
+    "fav_rule_target_folder": MessageLookupByLibrary.simpleMessage("Save To"),
+    "fav_rule_test_custom_tags": MessageLookupByLibrary.simpleMessage(
+      "Custom Tags",
+    ),
+    "fav_rule_test_fallback_desc": m33,
+    "fav_rule_test_from_history": MessageLookupByLibrary.simpleMessage(
+      "From History",
+    ),
+    "fav_rule_test_input_label": MessageLookupByLibrary.simpleMessage(
+      "Enter tags (comma or newline separated)",
+    ),
+    "fav_rule_test_input_placeholder": MessageLookupByLibrary.simpleMessage(
+      "e.g. artist:mitsuki, female:foot focus",
+    ),
+    "fav_rule_test_no_history": MessageLookupByLibrary.simpleMessage(
+      "No browsing history yet. Switch to Custom Tags to test.",
+    ),
+    "fav_rule_test_pick_gallery": MessageLookupByLibrary.simpleMessage(
+      "Pick a gallery to test rule order",
+    ),
+    "fav_rule_test_title": MessageLookupByLibrary.simpleMessage("Test Rules"),
+    "fav_rule_title": MessageLookupByLibrary.simpleMessage("Rule Favorites"),
+    "fav_rule_total_count": m34,
+    "fav_rule_trigger": MessageLookupByLibrary.simpleMessage("Trigger Gesture"),
+    "fav_rule_trigger_long_press": MessageLookupByLibrary.simpleMessage(
+      "Long-press Favorite",
+    ),
+    "fav_rule_trigger_tap": MessageLookupByLibrary.simpleMessage(
+      "Tap Favorite",
+    ),
+    "fav_rule_type_to_preview_tags": MessageLookupByLibrary.simpleMessage(
+      "Type a keyword to preview matching known tags.",
+    ),
+    "fav_rule_undo": MessageLookupByLibrary.simpleMessage("Undo"),
+    "fav_rule_value_placeholder": MessageLookupByLibrary.simpleMessage(
+      "Enter tag or keyword",
+    ),
+    "fav_saved_in": m35,
     "fav_scope_all": MessageLookupByLibrary.simpleMessage("All"),
     "fav_scope_note": MessageLookupByLibrary.simpleMessage("Note"),
     "fav_scope_tag": MessageLookupByLibrary.simpleMessage("Tag"),
@@ -478,12 +763,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_search_all_folders": MessageLookupByLibrary.simpleMessage(
       "Search all folders",
     ),
-    "fav_search_count": m15,
-    "fav_search_empty": m16,
-    "fav_search_in": m17,
+    "fav_search_count": m36,
+    "fav_search_empty": m37,
+    "fav_search_in": m38,
     "fav_select": MessageLookupByLibrary.simpleMessage("Select"),
-    "fav_selected_count": m18,
-    "fav_selected_scope": m19,
+    "fav_selected_count": m39,
+    "fav_selected_scope": m40,
     "favcat": MessageLookupByLibrary.simpleMessage("Favorites"),
     "favorite_note_hint": MessageLookupByLibrary.simpleMessage(
       "Note (optional)",
@@ -521,7 +806,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_comments": MessageLookupByLibrary.simpleMessage(
       "Gallery Comments",
     ),
-    "gallery_from_parent_hint": m20,
+    "gallery_from_parent_hint": m41,
     "gallery_has_parent_hint": MessageLookupByLibrary.simpleMessage(
       "Has parent",
     ),
@@ -542,7 +827,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Could not open link in browser",
     ),
     "gallery_info_posted": MessageLookupByLibrary.simpleMessage("Posted"),
-    "gallery_info_rating_votes": m21,
+    "gallery_info_rating_votes": m42,
     "gallery_info_section_details": MessageLookupByLibrary.simpleMessage(
       "Details",
     ),
@@ -562,7 +847,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_metadata_copy_hint": MessageLookupByLibrary.simpleMessage(
       "Tap to copy",
     ),
-    "gallery_newer_version_count": m22,
+    "gallery_newer_version_count": m43,
     "gallery_newer_version_single": MessageLookupByLibrary.simpleMessage(
       "Newer version available",
     ),
@@ -583,7 +868,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_stats": MessageLookupByLibrary.simpleMessage("Gallery Stats"),
     "gallery_stats_all_time": MessageLookupByLibrary.simpleMessage("All-Time"),
     "gallery_stats_collapse": MessageLookupByLibrary.simpleMessage("Hide"),
-    "gallery_stats_current_version": m23,
+    "gallery_stats_current_version": m44,
     "gallery_stats_daily": MessageLookupByLibrary.simpleMessage("Daily"),
     "gallery_stats_daily_avg": MessageLookupByLibrary.simpleMessage(
       "Daily Avg",
@@ -627,16 +912,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_stats_past_year": MessageLookupByLibrary.simpleMessage(
       "Past Year",
     ),
-    "gallery_stats_peak": m24,
-    "gallery_stats_period_avg": m25,
-    "gallery_stats_period_share": m26,
-    "gallery_stats_period_total": m27,
+    "gallery_stats_peak": m45,
+    "gallery_stats_period_avg": m46,
+    "gallery_stats_period_share": m47,
+    "gallery_stats_period_total": m48,
     "gallery_stats_ranking": MessageLookupByLibrary.simpleMessage("Rankings"),
     "gallery_stats_refresh": MessageLookupByLibrary.simpleMessage(
       "Refresh stats",
     ),
     "gallery_stats_retry": MessageLookupByLibrary.simpleMessage("Retry"),
-    "gallery_stats_score": m28,
+    "gallery_stats_score": m49,
     "gallery_stats_total_visits": MessageLookupByLibrary.simpleMessage(
       "Total Visits",
     ),
@@ -647,7 +932,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Yesterday",
     ),
     "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage("Updatable"),
-    "gallery_updated_on": m29,
+    "gallery_updated_on": m50,
     "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage(
       "View lineage",
     ),
@@ -731,7 +1016,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
       "Analyzing page differences...",
     ),
-    "incremental_update_completed_locally": m30,
+    "incremental_update_completed_locally": m51,
     "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
       "Incremental update downloaded gallery",
     ),
@@ -741,18 +1026,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
       "Upgrade in place & keep progress",
     ),
-    "incremental_update_mode_inplace_desc": m31,
+    "incremental_update_mode_inplace_desc": m52,
     "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
       "Download as new task (keep old)",
     ),
-    "incremental_update_mode_new_desc": m32,
+    "incremental_update_mode_new_desc": m53,
     "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
       "Update mode",
     ),
     "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage(
       "Newer",
     ),
-    "incremental_update_only_download": m33,
+    "incremental_update_only_download": m54,
     "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
       "Recommended",
     ),
@@ -764,13 +1049,13 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage(
           "SAF storage does not support local reuse or in-place upgrade; all pages will be downloaded as a new task.",
         ),
-    "incremental_update_start_inplace": m34,
-    "incremental_update_start_new": m35,
+    "incremental_update_start_inplace": m55,
+    "incremental_update_start_new": m56,
     "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
       "Complete update locally (0 pages to fetch)",
     ),
-    "incremental_update_start_saf_full": m36,
-    "incremental_update_started": m37,
+    "incremental_update_start_saf_full": m57,
+    "incremental_update_started": m58,
     "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
       "Reuse unchanged local images",
     ),
@@ -793,19 +1078,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "ios_bg_download": MessageLookupByLibrary.simpleMessage(
       "Background download",
     ),
-    "ios_bg_download_complete_multi": m38,
-    "ios_bg_download_complete_single": m39,
+    "ios_bg_download_complete_multi": m59,
+    "ios_bg_download_complete_single": m60,
     "ios_bg_download_complete_title": MessageLookupByLibrary.simpleMessage(
       "Download complete",
     ),
-    "ios_bg_download_multi_title": m40,
+    "ios_bg_download_multi_title": m61,
     "ios_bg_download_notify": MessageLookupByLibrary.simpleMessage(
       "Completion notification",
     ),
     "ios_bg_download_notify_subtitle": MessageLookupByLibrary.simpleMessage(
       "Send a local notification when background downloads finish",
     ),
-    "ios_bg_download_progress_pages": m41,
+    "ios_bg_download_progress_pages": m62,
     "ios_bg_download_subtitle": MessageLookupByLibrary.simpleMessage(
       "Keep gallery downloads running in the background without interrupting music playback",
     ),
@@ -868,7 +1153,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("Sign in on the Web"),
     "max_history": MessageLookupByLibrary.simpleMessage("Maximum History"),
     "min": MessageLookupByLibrary.simpleMessage("min"),
-    "model": m42,
+    "model": m63,
     "more_actions": MessageLookupByLibrary.simpleMessage("More"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("More Thumbnails"),
     "multi_download": MessageLookupByLibrary.simpleMessage("Multi download"),
@@ -925,7 +1210,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("Rate"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("Similar"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("Torrent"),
-    "page_count": m43,
+    "page_count": m64,
     "page_range": MessageLookupByLibrary.simpleMessage("Page range"),
     "page_range_error": MessageLookupByLibrary.simpleMessage(
       "Page range error",
@@ -983,10 +1268,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage(
       "Fill screen in portrait",
     ),
-    "reader_interval_seconds": m44,
+    "reader_interval_seconds": m65,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("Next page"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("Page Layout"),
-    "reader_page_of": m45,
+    "reader_page_of": m66,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage(
       "Previous page",
     ),
@@ -1064,7 +1349,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "s_and": MessageLookupByLibrary.simpleMessage("and"),
     "s_pages": MessageLookupByLibrary.simpleMessage("pages"),
-    "s_stars": m46,
+    "s_stars": m67,
     "save": MessageLookupByLibrary.simpleMessage("Save"),
     "save_current_image": MessageLookupByLibrary.simpleMessage(
       "Save current image",
@@ -1155,10 +1440,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_diag_section": MessageLookupByLibrary.simpleMessage(
       "Connectivity Diagnostics",
     ),
-    "sni_diag_summary_ok": m47,
+    "sni_diag_summary_ok": m68,
     "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("Tap to test"),
     "sni_doh_auto": MessageLookupByLibrary.simpleMessage("Automatic"),
-    "sni_doh_auto_selected": m48,
+    "sni_doh_auto_selected": m69,
     "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("Polluted"),
     "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH Servers"),
     "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("Test"),
@@ -1169,7 +1454,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
       "DoH server list updated",
     ),
-    "sni_doh_synced_at": m49,
+    "sni_doh_synced_at": m70,
     "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("Syncing…"),
     "sni_doh_testing": MessageLookupByLibrary.simpleMessage("Testing…"),
     "sni_mode_compat": MessageLookupByLibrary.simpleMessage("Compatibility"),
@@ -1197,7 +1482,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage(
       "Add to quick searches",
     ),
-    "sp_add_tag": m50,
+    "sp_add_tag": m71,
     "sp_all": MessageLookupByLibrary.simpleMessage("All"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("All favorites"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage(
@@ -1247,7 +1532,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("Last"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("Next"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("Prev"),
-    "sp_page_total": m51,
+    "sp_page_total": m72,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage(
       "Tap to choose an image",
     ),
@@ -1255,12 +1540,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Quick searches",
     ),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Submit rating"),
-    "sp_rating_summary": m52,
+    "sp_rating_summary": m73,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Recent"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("Reset"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("Retry"),
-    "sp_search_for": m53,
+    "sp_search_for": m74,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "Search titles, tags or paste a link",
     ),
@@ -1277,14 +1562,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("Similarity scan"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("Search"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("Suggestions"),
-    "sp_tags_added": m54,
+    "sp_tags_added": m75,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "e.g. female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage(
       "Go to preview page",
     ),
-    "sp_thumbs_per_page": m55,
+    "sp_thumbs_per_page": m76,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("Done"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage(
       "Download torrent",
@@ -1295,7 +1580,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("Share magnet"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("Peers"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("Seeds"),
-    "sp_torrent_title": m56,
+    "sp_torrent_title": m77,
     "sp_translate": MessageLookupByLibrary.simpleMessage("Translate"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage(
       "Split, set by divider",
@@ -1329,7 +1614,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("Tabbar setting"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-    "tagNamespace": m57,
+    "tagNamespace": m78,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("Add to Mytags"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default Color",
@@ -1597,7 +1882,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "undo": MessageLookupByLibrary.simpleMessage("Undo"),
     "unlimited": MessageLookupByLibrary.simpleMessage("Unlimited"),
-    "update_to_version": m58,
+    "update_to_version": m79,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
     "uploader": MessageLookupByLibrary.simpleMessage("Uploader"),
     "user_login": MessageLookupByLibrary.simpleMessage("User Sign"),

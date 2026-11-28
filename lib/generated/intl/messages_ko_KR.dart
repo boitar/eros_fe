@@ -49,97 +49,139 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m13(count) => "즐겨찾기 ${count}개 제거됨";
 
-  static String m14(favcat) => "${favcat}에 저장됨";
+  static String m14(folder) => "이미 「${folder}」에 있음";
 
-  static String m15(count, scope) => "${scope}에서 ${count}개 결과";
+  static String m15(count) => "${count}개 규칙에서 사용 중";
 
-  static String m16(query, scope) => "${scope}에 \"${query}\" 없음";
+  static String m16(count) => "${count}개";
 
-  static String m17(favcat) => "${favcat}에서 검색";
+  static String m17(category) => "「${category}」 새 규칙";
 
-  static String m18(count) => "${count}개 선택됨";
+  static String m18(count) => "${count}개 갤러리";
 
-  static String m19(favcat, total) => "${favcat} · ${total}개";
+  static String m19(count) => "기록에서 ${count}개 갤러리 일치";
 
-  static String m20(gid) => "원본 #${gid}";
+  static String m20(count) => "기록에서 ${count}개 갤러리 일치";
 
-  static String m21(count) => "평가 ${count}건";
+  static String m21(count) => "${count}회 일치";
 
-  static String m22(count) => "새 버전 ${count}개";
+  static String m22(count, time) => "${count}회 일치 · 최근 ${time}";
 
-  static String m23(gid) => "현재 버전 #${gid}";
+  static String m23(count) => "${count}개 태그";
 
-  static String m24(value) => "최고 ${value}";
+  static String m24(folder) => "「${folder}」 유지됨";
 
-  static String m25(value) => "기간 평균 ${value}";
+  static String m25(folder) => "「${folder}」로 이동";
 
-  static String m26(period, percent) => "${period} · ${percent}%";
+  static String m26(from, to) => "「${from}」에서 「${to}」로 이동됨";
 
-  static String m27(value) => "기간 합계 ${value}";
+  static String m27(rules) => "「${rules}」도 일치함 (우선순위 낮음)";
 
-  static String m28(score) => "점수 ${score}";
+  static String m28(rule) => "규칙 「${rule}」";
 
-  static String m29(date) => "${date} 수정";
+  static String m29(rule, tag) => "규칙 「${rule}」· ${tag}";
 
-  static String m30(gid, reused) => "#${gid}로 로컬 업데이트 완료 (${reused}쪽 재사용)";
+  static String m30(folder) => "「${folder}」에 저장";
 
-  static String m31(gid) => "변경되지 않은 이미지를 재사용하고 #${gid}로 업데이트하며 읽기 위치를 매핑합니다.";
+  static String m31(folder) => "「${folder}」에 저장됨";
 
-  static String m32(gid) => "#${gid} 폴더를 새로 만들어 재사용하며 구버전을 그대로 유지합니다.";
+  static String m32(count) => "켜짐 · ${count}개";
 
-  static String m33(count) => "${count}쪽만 다운로드";
+  static String m33(fallback) => "대체 동작: ${fallback}";
 
-  static String m34(count) => "제자리 증분 업데이트 · ${count}쪽 받기";
+  static String m34(count) => "총 ${count}개";
 
-  static String m35(count) => "새 작업으로 받기 · ${count}쪽 받기";
+  static String m35(favcat) => "${favcat}에 저장됨";
 
-  static String m36(count) => "새 작업으로 전체 다운로드 · ${count}쪽";
+  static String m36(count, scope) => "${scope}에서 ${count}개 결과";
 
-  static String m37(reused, fetch) =>
+  static String m37(query, scope) => "${scope}에 \"${query}\" 없음";
+
+  static String m38(favcat) => "${favcat}에서 검색";
+
+  static String m39(count) => "${count}개 선택됨";
+
+  static String m40(favcat, total) => "${favcat} · ${total}개";
+
+  static String m41(gid) => "원본 #${gid}";
+
+  static String m42(count) => "평가 ${count}건";
+
+  static String m43(count) => "새 버전 ${count}개";
+
+  static String m44(gid) => "현재 버전 #${gid}";
+
+  static String m45(value) => "최고 ${value}";
+
+  static String m46(value) => "기간 평균 ${value}";
+
+  static String m47(period, percent) => "${period} · ${percent}%";
+
+  static String m48(value) => "기간 합계 ${value}";
+
+  static String m49(score) => "점수 ${score}";
+
+  static String m50(date) => "${date} 수정";
+
+  static String m51(gid, reused) => "#${gid}로 로컬 업데이트 완료 (${reused}쪽 재사용)";
+
+  static String m52(gid) => "변경되지 않은 이미지를 재사용하고 #${gid}로 업데이트하며 읽기 위치를 매핑합니다.";
+
+  static String m53(gid) => "#${gid} 폴더를 새로 만들어 재사용하며 구버전을 그대로 유지합니다.";
+
+  static String m54(count) => "${count}쪽만 다운로드";
+
+  static String m55(count) => "제자리 증분 업데이트 · ${count}쪽 받기";
+
+  static String m56(count) => "새 작업으로 받기 · ${count}쪽 받기";
+
+  static String m57(count) => "새 작업으로 전체 다운로드 · ${count}쪽";
+
+  static String m58(reused, fetch) =>
       "증분 업데이트 시작 (재사용 ${reused}, 다운로드 ${fetch})";
 
-  static String m38(count) => "갤러리 ${count}개의 다운로드가 완료되었습니다";
+  static String m59(count) => "갤러리 ${count}개의 다운로드가 완료되었습니다";
 
-  static String m39(title) => "「${title}」 다운로드가 완료되었습니다";
+  static String m60(title) => "「${title}」 다운로드가 완료되었습니다";
 
-  static String m40(count) => "갤러리 ${count}개 다운로드 중";
+  static String m61(count) => "갤러리 ${count}개 다운로드 중";
 
-  static String m41(completed, total) => "${completed}/${total}페이지 완료";
+  static String m62(completed, total) => "${completed}/${total}페이지 완료";
 
-  static String m42(modelName) => "Model ${modelName}";
+  static String m63(modelName) => "Model ${modelName}";
 
-  static String m43(count) => "${count}페이지";
+  static String m64(count) => "${count}페이지";
 
-  static String m44(seconds) => "${seconds}초";
+  static String m65(seconds) => "${seconds}초";
 
-  static String m45(page, total) => "${page} / ${total}쪽";
+  static String m66(page, total) => "${page} / ${total}쪽";
 
-  static String m46(rating) => "${rating} ⭐";
+  static String m67(rating) => "${rating} ⭐";
 
-  static String m47(ok, total) => "${ok}/${total} 연결 가능";
+  static String m68(ok, total) => "${ok}/${total} 연결 가능";
 
-  static String m48(name) => "현재: ${name}";
+  static String m69(name) => "현재: ${name}";
 
-  static String m49(time) => "· ${time} 동기화";
+  static String m70(time) => "· ${time} 동기화";
 
-  static String m50(tag) => "${tag} 추가";
+  static String m71(tag) => "${tag} 추가";
 
-  static String m51(count) => "총 ${count}페이지";
+  static String m72(count) => "총 ${count}페이지";
 
-  static String m52(avg, count) => "평균 ${avg} · ${count}명";
+  static String m73(avg, count) => "평균 ${avg} · ${count}명";
 
-  static String m53(text) => "“${text}” 검색";
+  static String m74(text) => "“${text}” 검색";
 
-  static String m54(count) => "${count}개 추가됨 · 쉼표로 구분";
+  static String m75(count) => "${count}개 추가됨 · 쉼표로 구분";
 
-  static String m55(count, per) => "총 ${count}페이지 · 페이지당 ${per}장";
+  static String m76(count, per) => "총 ${count}페이지 · 페이지당 ${per}장";
 
-  static String m56(count) => "토렌트 · ${count}개";
+  static String m77(count) => "토렌트 · ${count}개";
 
-  static String m57(tagNamespace) =>
+  static String m78(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m58(version) => "Update to ${version}";
+  static String m79(version) => "Update to ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -402,7 +444,214 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_remove_note_warn": m11,
     "fav_remove_title": m12,
     "fav_removed_count": m13,
-    "fav_saved_in": m14,
+    "fav_rule_add_condition": MessageLookupByLibrary.simpleMessage("조건 추가"),
+    "fav_rule_already_in_folder": m14,
+    "fav_rule_category_badge": MessageLookupByLibrary.simpleMessage("카테고리"),
+    "fav_rule_category_used_count": m15,
+    "fav_rule_change_folder": MessageLookupByLibrary.simpleMessage("변경"),
+    "fav_rule_clear_selection": MessageLookupByLibrary.simpleMessage("지우기"),
+    "fav_rule_conditions": MessageLookupByLibrary.simpleMessage("조건"),
+    "fav_rule_count_items": m16,
+    "fav_rule_create_by_category": m17,
+    "fav_rule_create_from_gallery": MessageLookupByLibrary.simpleMessage(
+      "이 갤러리로 새 규칙",
+    ),
+    "fav_rule_create_from_tag_short": MessageLookupByLibrary.simpleMessage(
+      "새 규칙",
+    ),
+    "fav_rule_delete_condition": MessageLookupByLibrary.simpleMessage("조건 삭제"),
+    "fav_rule_delete_confirm": MessageLookupByLibrary.simpleMessage(
+      "이 즐겨찾기 규칙을 삭제할까요?",
+    ),
+    "fav_rule_delete_title": MessageLookupByLibrary.simpleMessage("규칙 삭제"),
+    "fav_rule_edit_condition": MessageLookupByLibrary.simpleMessage("조건 편집"),
+    "fav_rule_edit_title": MessageLookupByLibrary.simpleMessage("규칙 편집"),
+    "fav_rule_enable": MessageLookupByLibrary.simpleMessage("규칙 즐겨찾기 사용"),
+    "fav_rule_enable_desc": MessageLookupByLibrary.simpleMessage(
+      "규칙 일치 시 해당 폴더로 바로 저장",
+    ),
+    "fav_rule_entry_desc": MessageLookupByLibrary.simpleMessage(
+      "즐겨찾기 시 태그·카테고리 규칙으로 폴더 지정",
+    ),
+    "fav_rule_existing": MessageLookupByLibrary.simpleMessage("이미 즐겨찾기된 경우"),
+    "fav_rule_existing_keep": MessageLookupByLibrary.simpleMessage("현재 폴더 유지"),
+    "fav_rule_existing_move": MessageLookupByLibrary.simpleMessage("일치 폴더로 이동"),
+    "fav_rule_fallback": MessageLookupByLibrary.simpleMessage("일치하는 규칙이 없을 때"),
+    "fav_rule_fallback_fixed": MessageLookupByLibrary.simpleMessage(
+      "고정 폴더에 저장",
+    ),
+    "fav_rule_fallback_folder": MessageLookupByLibrary.simpleMessage("고정 폴더"),
+    "fav_rule_fallback_last": MessageLookupByLibrary.simpleMessage(
+      "마지막 폴더에 저장",
+    ),
+    "fav_rule_fallback_picker": MessageLookupByLibrary.simpleMessage(
+      "폴더 선택 창 열기",
+    ),
+    "fav_rule_fetch_tags_failed": MessageLookupByLibrary.simpleMessage(
+      "태그를 가져올 수 없습니다",
+    ),
+    "fav_rule_gallery_count": m18,
+    "fav_rule_history_empty_save_ok": MessageLookupByLibrary.simpleMessage(
+      "기록에 일치하는 갤러리가 아직 없지만 저장 후 정상 적용됩니다.",
+    ),
+    "fav_rule_history_hits_count": m19,
+    "fav_rule_history_hits_empty": MessageLookupByLibrary.simpleMessage(
+      "기록에 이 규칙과 일치하는 갤러리가 없습니다.",
+    ),
+    "fav_rule_history_hits_matched": m20,
+    "fav_rule_hit_stats": m21,
+    "fav_rule_hit_stats_with_time": m22,
+    "fav_rule_hit_tag_count": m23,
+    "fav_rule_invalid_condition": MessageLookupByLibrary.simpleMessage(
+      "유효하지 않은 조건 또는 정규식입니다",
+    ),
+    "fav_rule_invalid_regex": MessageLookupByLibrary.simpleMessage(
+      "유효하지 않은 정규식입니다",
+    ),
+    "fav_rule_kept_in_folder": m24,
+    "fav_rule_last_used_badge": MessageLookupByLibrary.simpleMessage("최근"),
+    "fav_rule_list_footer": MessageLookupByLibrary.simpleMessage(
+      "길게 눌러 정렬, 왼쪽 스와이프로 삭제.",
+    ),
+    "fav_rule_list_menu_context": MessageLookupByLibrary.simpleMessage(
+      "카드 플로팅 메뉴",
+    ),
+    "fav_rule_list_menu_sheet": MessageLookupByLibrary.simpleMessage(
+      "하단 액션 시트",
+    ),
+    "fav_rule_list_menu_style": MessageLookupByLibrary.simpleMessage(
+      "목록 길게 누르기 메뉴",
+    ),
+    "fav_rule_match_all": MessageLookupByLibrary.simpleMessage("모두 일치"),
+    "fav_rule_match_any": MessageLookupByLibrary.simpleMessage("하나라도 일치"),
+    "fav_rule_match_op": MessageLookupByLibrary.simpleMessage("일치 방식"),
+    "fav_rule_match_translation_hint": MessageLookupByLibrary.simpleMessage(
+      "번역된 태그 이름도 함께 일치",
+    ),
+    "fav_rule_matched_known_tags": MessageLookupByLibrary.simpleMessage(
+      "일치하는 알려진 태그",
+    ),
+    "fav_rule_matching_tags": MessageLookupByLibrary.simpleMessage(
+      "즐겨찾기 규칙 확인 중…",
+    ),
+    "fav_rule_migrated_desc": MessageLookupByLibrary.simpleMessage(
+      "기존 탭 저장 동작은 유지됩니다. 이제 태그 규칙을 추가해 자동 분류할 수 있습니다.",
+    ),
+    "fav_rule_migrated_title": MessageLookupByLibrary.simpleMessage(
+      "원스텝 즐겨찾기가 규칙 즐겨찾기로 업그레이드되었습니다",
+    ),
+    "fav_rule_miss_saved_fixed": MessageLookupByLibrary.simpleMessage(
+      "규칙 불일치 · 고정 폴더에 저장됨",
+    ),
+    "fav_rule_miss_saved_last": MessageLookupByLibrary.simpleMessage(
+      "규칙 불일치 · 마지막 폴더에 저장됨",
+    ),
+    "fav_rule_miss_title": MessageLookupByLibrary.simpleMessage("일치하는 규칙 없음"),
+    "fav_rule_mode_category": MessageLookupByLibrary.simpleMessage("카테고리"),
+    "fav_rule_mode_tag": MessageLookupByLibrary.simpleMessage("태그"),
+    "fav_rule_move_to_folder": m25,
+    "fav_rule_moved_folder": m26,
+    "fav_rule_my_tags_short": MessageLookupByLibrary.simpleMessage("내 태그"),
+    "fav_rule_name_placeholder": MessageLookupByLibrary.simpleMessage(
+      "규칙 이름 (비워두면 자동 생성)",
+    ),
+    "fav_rule_namespace_any": MessageLookupByLibrary.simpleMessage("전체"),
+    "fav_rule_namespace_more": MessageLookupByLibrary.simpleMessage("더보기"),
+    "fav_rule_need_condition": MessageLookupByLibrary.simpleMessage(
+      "조건을 하나 이상 추가하세요",
+    ),
+    "fav_rule_new_subtitle": MessageLookupByLibrary.simpleMessage(
+      "새 규칙 · 이름 생략 가능",
+    ),
+    "fav_rule_new_title": MessageLookupByLibrary.simpleMessage("새 규칙"),
+    "fav_rule_no_hits_yet": MessageLookupByLibrary.simpleMessage(
+      "아직 일치한 갤러리가 없습니다",
+    ),
+    "fav_rule_no_known_tag_matches": MessageLookupByLibrary.simpleMessage(
+      "일치하는 알려진 태그가 없지만 그대로 저장할 수 있습니다.",
+    ),
+    "fav_rule_no_tag_db_hint": MessageLookupByLibrary.simpleMessage(
+      "태그 번역 DB가 없어 미리보기할 수 없습니다 (규칙 매칭은 정상 동작).",
+    ),
+    "fav_rule_op_contains": MessageLookupByLibrary.simpleMessage("포함"),
+    "fav_rule_op_equals": MessageLookupByLibrary.simpleMessage("정확히 일치"),
+    "fav_rule_op_regex": MessageLookupByLibrary.simpleMessage("정규식"),
+    "fav_rule_order_hint": MessageLookupByLibrary.simpleMessage(
+      "위에서 아래로 순서대로 적용",
+    ),
+    "fav_rule_other_hits_note": m27,
+    "fav_rule_pick_one_folder_hint": MessageLookupByLibrary.simpleMessage(
+      "폴더를 선택하세요",
+    ),
+    "fav_rule_picker_grid": MessageLookupByLibrary.simpleMessage("컬러 그리드"),
+    "fav_rule_picker_list": MessageLookupByLibrary.simpleMessage("기본 목록"),
+    "fav_rule_picker_style": MessageLookupByLibrary.simpleMessage("폴더 선택 스타일"),
+    "fav_rule_picker_switched": MessageLookupByLibrary.simpleMessage(
+      "스타일이 변경되었습니다",
+    ),
+    "fav_rule_picker_wheel": MessageLookupByLibrary.simpleMessage("휠 선택기"),
+    "fav_rule_preview": MessageLookupByLibrary.simpleMessage("미리보기"),
+    "fav_rule_reason_only": m28,
+    "fav_rule_reason_with_tag": m29,
+    "fav_rule_regex_placeholder": MessageLookupByLibrary.simpleMessage(
+      "정규식 입력 (예: ^foot.*)",
+    ),
+    "fav_rule_remember_action": MessageLookupByLibrary.simpleMessage("기억"),
+    "fav_rule_remember_created_title": MessageLookupByLibrary.simpleMessage(
+      "규칙 생성됨",
+    ),
+    "fav_rule_save_into_lead": MessageLookupByLibrary.simpleMessage("저장 폴더"),
+    "fav_rule_save_to_folder": m30,
+    "fav_rule_saved_to_folder": m31,
+    "fav_rule_search_this_category": MessageLookupByLibrary.simpleMessage(
+      "이 카테고리 검색",
+    ),
+    "fav_rule_section_rules": MessageLookupByLibrary.simpleMessage("규칙"),
+    "fav_rule_section_trigger": MessageLookupByLibrary.simpleMessage(
+      "트리거 및 대체 동작",
+    ),
+    "fav_rule_section_ui_style": MessageLookupByLibrary.simpleMessage("패널 스타일"),
+    "fav_rule_select_category": MessageLookupByLibrary.simpleMessage("카테고리 선택"),
+    "fav_rule_status_disabled": MessageLookupByLibrary.simpleMessage("꺼짐"),
+    "fav_rule_status_enabled": MessageLookupByLibrary.simpleMessage("켜짐"),
+    "fav_rule_status_enabled_count": m32,
+    "fav_rule_tag_namespace": MessageLookupByLibrary.simpleMessage("태그 유형"),
+    "fav_rule_target_folder": MessageLookupByLibrary.simpleMessage("저장 폴더"),
+    "fav_rule_test_custom_tags": MessageLookupByLibrary.simpleMessage(
+      "태그 직접 입력",
+    ),
+    "fav_rule_test_fallback_desc": m33,
+    "fav_rule_test_from_history": MessageLookupByLibrary.simpleMessage(
+      "기록에서 선택",
+    ),
+    "fav_rule_test_input_label": MessageLookupByLibrary.simpleMessage(
+      "테스트 태그 입력 (쉼표 또는 줄바꿈 구분)",
+    ),
+    "fav_rule_test_input_placeholder": MessageLookupByLibrary.simpleMessage(
+      "예: artist:mitsuki, female:foot focus",
+    ),
+    "fav_rule_test_no_history": MessageLookupByLibrary.simpleMessage(
+      "기록이 없습니다. 직접 입력 탭에서 테스트하세요.",
+    ),
+    "fav_rule_test_pick_gallery": MessageLookupByLibrary.simpleMessage(
+      "갤러리를 선택해 규칙 순서 테스트",
+    ),
+    "fav_rule_test_title": MessageLookupByLibrary.simpleMessage("규칙 테스트"),
+    "fav_rule_title": MessageLookupByLibrary.simpleMessage("규칙 즐겨찾기"),
+    "fav_rule_total_count": m34,
+    "fav_rule_trigger": MessageLookupByLibrary.simpleMessage("트리거 방식"),
+    "fav_rule_trigger_long_press": MessageLookupByLibrary.simpleMessage(
+      "즐겨찾기 버튼 길게 누르기",
+    ),
+    "fav_rule_trigger_tap": MessageLookupByLibrary.simpleMessage("즐겨찾기 버튼 탭"),
+    "fav_rule_type_to_preview_tags": MessageLookupByLibrary.simpleMessage(
+      "키워드를 입력하면 일치하는 태그를 표시합니다.",
+    ),
+    "fav_rule_undo": MessageLookupByLibrary.simpleMessage("실행 취소"),
+    "fav_rule_value_placeholder": MessageLookupByLibrary.simpleMessage(
+      "태그 또는 키워드 입력",
+    ),
+    "fav_saved_in": m35,
     "fav_scope_all": MessageLookupByLibrary.simpleMessage("전체"),
     "fav_scope_note": MessageLookupByLibrary.simpleMessage("메모"),
     "fav_scope_tag": MessageLookupByLibrary.simpleMessage("태그"),
@@ -411,12 +660,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_search_all_folders": MessageLookupByLibrary.simpleMessage(
       "모든 즐겨찾기에서 검색",
     ),
-    "fav_search_count": m15,
-    "fav_search_empty": m16,
-    "fav_search_in": m17,
+    "fav_search_count": m36,
+    "fav_search_empty": m37,
+    "fav_search_in": m38,
     "fav_select": MessageLookupByLibrary.simpleMessage("선택"),
-    "fav_selected_count": m18,
-    "fav_selected_scope": m19,
+    "fav_selected_count": m39,
+    "fav_selected_scope": m40,
     "favcat": MessageLookupByLibrary.simpleMessage("즐겨찾기"),
     "favorite_note_hint": MessageLookupByLibrary.simpleMessage("메모 (선택 사항)"),
     "favorites_order": MessageLookupByLibrary.simpleMessage("즐겨찾기 정렬"),
@@ -444,7 +693,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fullscreen": MessageLookupByLibrary.simpleMessage("Fullscreen"),
     "galery_site": MessageLookupByLibrary.simpleMessage("갤러리 사이트"),
     "gallery_comments": MessageLookupByLibrary.simpleMessage("갤러리 댓글"),
-    "gallery_from_parent_hint": m20,
+    "gallery_from_parent_hint": m41,
     "gallery_has_parent_hint": MessageLookupByLibrary.simpleMessage("원본 포함"),
     "gallery_info": MessageLookupByLibrary.simpleMessage("갤러리 정보"),
     "gallery_info_category": MessageLookupByLibrary.simpleMessage("카테고리"),
@@ -461,7 +710,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "브라우저에서 링크를 열 수 없습니다",
     ),
     "gallery_info_posted": MessageLookupByLibrary.simpleMessage("게시일"),
-    "gallery_info_rating_votes": m21,
+    "gallery_info_rating_votes": m42,
     "gallery_info_section_details": MessageLookupByLibrary.simpleMessage(
       "갤러리 속성",
     ),
@@ -479,7 +728,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_metadata_copy_hint": MessageLookupByLibrary.simpleMessage(
       "탭하여 복사",
     ),
-    "gallery_newer_version_count": m22,
+    "gallery_newer_version_count": m43,
     "gallery_newer_version_single": MessageLookupByLibrary.simpleMessage(
       "새 버전 있음",
     ),
@@ -494,7 +743,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_stats": MessageLookupByLibrary.simpleMessage("갤러리 통계"),
     "gallery_stats_all_time": MessageLookupByLibrary.simpleMessage("전체 기간"),
     "gallery_stats_collapse": MessageLookupByLibrary.simpleMessage("접기"),
-    "gallery_stats_current_version": m23,
+    "gallery_stats_current_version": m44,
     "gallery_stats_daily": MessageLookupByLibrary.simpleMessage("일별"),
     "gallery_stats_daily_avg": MessageLookupByLibrary.simpleMessage("일평균"),
     "gallery_stats_empty_body": MessageLookupByLibrary.simpleMessage(
@@ -530,14 +779,14 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "gallery_stats_past_month": MessageLookupByLibrary.simpleMessage("지난 1개월"),
     "gallery_stats_past_year": MessageLookupByLibrary.simpleMessage("지난 1년"),
-    "gallery_stats_peak": m24,
-    "gallery_stats_period_avg": m25,
-    "gallery_stats_period_share": m26,
-    "gallery_stats_period_total": m27,
+    "gallery_stats_peak": m45,
+    "gallery_stats_period_avg": m46,
+    "gallery_stats_period_share": m47,
+    "gallery_stats_period_total": m48,
     "gallery_stats_ranking": MessageLookupByLibrary.simpleMessage("순위"),
     "gallery_stats_refresh": MessageLookupByLibrary.simpleMessage("통계 새로고침"),
     "gallery_stats_retry": MessageLookupByLibrary.simpleMessage("다시 시도"),
-    "gallery_stats_score": m28,
+    "gallery_stats_score": m49,
     "gallery_stats_total_visits": MessageLookupByLibrary.simpleMessage("총 조회"),
     "gallery_stats_unranked": MessageLookupByLibrary.simpleMessage("순위권 외"),
     "gallery_stats_visits": MessageLookupByLibrary.simpleMessage("방문수"),
@@ -546,7 +795,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage(
       "증분 업데이트 가능",
     ),
-    "gallery_updated_on": m29,
+    "gallery_updated_on": m50,
     "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage("계보 보기"),
     "glass_effect": MessageLookupByLibrary.simpleMessage("유리 효과"),
     "glass_material": MessageLookupByLibrary.simpleMessage("유리 재질"),
@@ -622,7 +871,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
       "페이지 차이 분석 중…",
     ),
-    "incremental_update_completed_locally": m30,
+    "incremental_update_completed_locally": m51,
     "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
       "다운로드한 갤러리 증분 업데이트",
     ),
@@ -630,18 +879,18 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
       "제자리 업그레이드 및 읽기 위치 유지",
     ),
-    "incremental_update_mode_inplace_desc": m31,
+    "incremental_update_mode_inplace_desc": m52,
     "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
       "새 작업으로 다운로드 (구버전 유지)",
     ),
-    "incremental_update_mode_new_desc": m32,
+    "incremental_update_mode_new_desc": m53,
     "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
       "업데이트 방식",
     ),
     "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage(
       "새 버전",
     ),
-    "incremental_update_only_download": m33,
+    "incremental_update_only_download": m54,
     "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
       "추천",
     ),
@@ -653,13 +902,13 @@ class MessageLookup extends MessageLookupByLibrary {
         MessageLookupByLibrary.simpleMessage(
           "SAF 저장소는 로컬 파일 재사용 및 제자리 업데이트를 지원하지 않아 새 작업으로 전체 다운로드합니다.",
         ),
-    "incremental_update_start_inplace": m34,
-    "incremental_update_start_new": m35,
+    "incremental_update_start_inplace": m55,
+    "incremental_update_start_new": m56,
     "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
       "로컬에서 즉시 완료 (다운로드 없음)",
     ),
-    "incremental_update_start_saf_full": m36,
-    "incremental_update_started": m37,
+    "incremental_update_start_saf_full": m57,
+    "incremental_update_started": m58,
     "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
       "변경되지 않은 로컬 이미지 재사용",
     ),
@@ -680,19 +929,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "input_error": MessageLookupByLibrary.simpleMessage("인풋 에러"),
     "instantly": MessageLookupByLibrary.simpleMessage("즉시"),
     "ios_bg_download": MessageLookupByLibrary.simpleMessage("백그라운드 다운로드"),
-    "ios_bg_download_complete_multi": m38,
-    "ios_bg_download_complete_single": m39,
+    "ios_bg_download_complete_multi": m59,
+    "ios_bg_download_complete_single": m60,
     "ios_bg_download_complete_title": MessageLookupByLibrary.simpleMessage(
       "다운로드 완료",
     ),
-    "ios_bg_download_multi_title": m40,
+    "ios_bg_download_multi_title": m61,
     "ios_bg_download_notify": MessageLookupByLibrary.simpleMessage(
       "다운로드 완료 알림",
     ),
     "ios_bg_download_notify_subtitle": MessageLookupByLibrary.simpleMessage(
       "백그라운드 다운로드가 완료되면 로컬 알림을 보냅니다",
     ),
-    "ios_bg_download_progress_pages": m41,
+    "ios_bg_download_progress_pages": m62,
     "ios_bg_download_subtitle": MessageLookupByLibrary.simpleMessage(
       "음악 재생을 방해하지 않고 백그라운드에서 갤러리 다운로드를 계속합니다",
     ),
@@ -753,7 +1002,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("웹 로그인"),
     "max_history": MessageLookupByLibrary.simpleMessage("최대 방문 기록"),
     "min": MessageLookupByLibrary.simpleMessage("분"),
-    "model": m42,
+    "model": m63,
     "more_actions": MessageLookupByLibrary.simpleMessage("더 보기"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("미리 보기 더 보기"),
     "multi_download": MessageLookupByLibrary.simpleMessage("다중 다운로드"),
@@ -802,7 +1051,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("평가"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("유사"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("토렌트"),
-    "page_count": m43,
+    "page_count": m64,
     "page_range": MessageLookupByLibrary.simpleMessage("페이지 범위"),
     "page_range_error": MessageLookupByLibrary.simpleMessage("페이지 범위 오류"),
     "page_view_type": MessageLookupByLibrary.simpleMessage("Page View Type"),
@@ -850,10 +1099,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "가로 모드 전체 화면",
     ),
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("세로 모드 전체 화면"),
-    "reader_interval_seconds": m44,
+    "reader_interval_seconds": m65,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("다음 페이지"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("페이지 레이아웃"),
-    "reader_page_of": m45,
+    "reader_page_of": m66,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage("이전 페이지"),
     "reader_single_page": MessageLookupByLibrary.simpleMessage("단일 페이지"),
     "reader_surface_standard": MessageLookupByLibrary.simpleMessage("표준"),
@@ -919,7 +1168,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "s_and": MessageLookupByLibrary.simpleMessage("그리고"),
     "s_pages": MessageLookupByLibrary.simpleMessage("페이지"),
-    "s_stars": m46,
+    "s_stars": m67,
     "save": MessageLookupByLibrary.simpleMessage("Save"),
     "save_current_image": MessageLookupByLibrary.simpleMessage("현재 이미지 저장"),
     "save_into_album": MessageLookupByLibrary.simpleMessage("앨범에 저장"),
@@ -986,10 +1235,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_diag_eh_nodes": MessageLookupByLibrary.simpleMessage("E-Hentai 노드 확인"),
     "sni_diag_retest": MessageLookupByLibrary.simpleMessage("재측정"),
     "sni_diag_section": MessageLookupByLibrary.simpleMessage("연결 진단"),
-    "sni_diag_summary_ok": m47,
+    "sni_diag_summary_ok": m68,
     "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("탭하여 확인"),
     "sni_doh_auto": MessageLookupByLibrary.simpleMessage("자동 선택"),
-    "sni_doh_auto_selected": m48,
+    "sni_doh_auto_selected": m69,
     "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("오염 의심"),
     "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH 서버"),
     "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("속도 측정"),
@@ -1000,7 +1249,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
       "최신 DoH 목록을 동기화했습니다",
     ),
-    "sni_doh_synced_at": m49,
+    "sni_doh_synced_at": m70,
     "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("동기화 중…"),
     "sni_doh_testing": MessageLookupByLibrary.simpleMessage("측정 중…"),
     "sni_mode_compat": MessageLookupByLibrary.simpleMessage("호환 모드"),
@@ -1022,7 +1271,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_status_untested": MessageLookupByLibrary.simpleMessage("미측정"),
     "sni_switch_to_standard": MessageLookupByLibrary.simpleMessage("표준 연결로 전환"),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("빠른 검색에 추가"),
-    "sp_add_tag": m50,
+    "sp_add_tag": m71,
     "sp_all": MessageLookupByLibrary.simpleMessage("전체"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("전체 즐겨찾기"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage("원본 아카이브"),
@@ -1060,16 +1309,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("마지막"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("다음"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("이전"),
-    "sp_page_total": m51,
+    "sp_page_total": m72,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage("탭하여 이미지 선택"),
     "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("빠른 검색 목록"),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("평가 제출"),
-    "sp_rating_summary": m52,
+    "sp_rating_summary": m73,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("최근 검색"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("새로고침"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("초기화"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("다시 시도"),
-    "sp_search_for": m53,
+    "sp_search_for": m74,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "제목, 태그 검색 또는 링크 붙여넣기",
     ),
@@ -1084,12 +1333,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("유사 검색"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("검색"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("추천"),
-    "sp_tags_added": m54,
+    "sp_tags_added": m75,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "예: female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("미리보기 페이지로"),
-    "sp_thumbs_per_page": m55,
+    "sp_thumbs_per_page": m76,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("완료"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage("토렌트 다운로드"),
     "sp_torrent_empty": MessageLookupByLibrary.simpleMessage(
@@ -1098,7 +1347,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("마그넷 공유"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("피어"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("시드"),
-    "sp_torrent_title": m56,
+    "sp_torrent_title": m77,
     "sp_translate": MessageLookupByLibrary.simpleMessage("번역"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage(
       "분할 · 구분선에 따름",
@@ -1128,7 +1377,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("탭바 설정"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-    "tagNamespace": m57,
+    "tagNamespace": m78,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("Add to mytags"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default color",
@@ -1394,7 +1643,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "undo": MessageLookupByLibrary.simpleMessage("실행 취소"),
     "unlimited": MessageLookupByLibrary.simpleMessage("제한 없음"),
-    "update_to_version": m58,
+    "update_to_version": m79,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("아바타 업로드"),
     "uploader": MessageLookupByLibrary.simpleMessage("업로더"),
     "user_login": MessageLookupByLibrary.simpleMessage("로그인"),

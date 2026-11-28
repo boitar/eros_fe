@@ -10,6 +10,7 @@ import 'package:eros_fe/models/simple_tag.dart';
 import 'package:eros_fe/pages/controller/fav_controller.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 /// Offline dependencies for exercising the production grid without user data.
@@ -89,7 +90,7 @@ class GridTagsFixtureController extends GalleryItemController {
   @override
   void onTap(dynamic tabTag) => taps++;
   @override
-  void onLongPress() => longPresses++;
+  void onLongPress([BuildContext? cardContext]) => longPresses++;
 }
 
 List<GalleryProvider> gridTagsFixtureGalleries({int count = 6}) {

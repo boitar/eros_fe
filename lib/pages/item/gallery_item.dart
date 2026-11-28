@@ -10,6 +10,7 @@ import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_control
 import 'package:eros_fe/widget/desktop_sidebar.dart';
 import 'package:eros_fe/widget/fav_note_line.dart';
 import 'package:eros_fe/widget/favorite_selection_chrome.dart';
+import 'package:eros_fe/widget/gallery_card_context_menu.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -49,8 +50,7 @@ class GalleryItemWidget extends StatelessWidget {
     final favScope = FavoriteListScope.maybeOf(context);
     return FavoriteSelectableCard(
       provider: itemController.galleryProvider,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: GalleryCardPressFeedback(
         onTap: () {
           final current = itemController.galleryProvider;
           if (favScope?.selection?.selecting.value == true) {
@@ -66,9 +66,7 @@ class GalleryItemWidget extends StatelessWidget {
         onTapDown: itemController.onTapDown,
         onTapUp: itemController.onTapUp,
         onTapCancel: itemController.onTapCancel,
-        onLongPress: () => itemController.onLongPress(
-          selectionController: favScope?.selection,
-        ),
+        onLongPress: itemController.onLongPress,
         child: Center(
           child: Stack(
             children: [
@@ -147,18 +145,20 @@ class GalleryItemWidget extends StatelessWidget {
       final bool fixedHeightPreference = _useFixedHeight(context);
       final bool useFixedHeight =
           fixedHeightPreference && !(showFavNote && noteText.isNotEmpty);
-      return Container(
-        height: useFixedHeight ? kFixedHeight : null,
-        decoration: BoxDecoration(
-          boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
-          color: isPreviewActive
-              ? EhPalette.accentSoft.resolveFrom(context)
-              : itemController.colorTap.value,
-          borderRadius: BorderRadius.circular(kCardRadius),
-        ),
-        padding: const EdgeInsets.only(right: kPaddingHorizontal),
-        margin: const EdgeInsets.fromLTRB(10, topMargin, 10, 4),
-        child: IntrinsicHeight(
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(10, topMargin, 10, 4),
+        child: RepaintBoundary(
+          child: Container(
+            height: useFixedHeight ? kFixedHeight : null,
+            decoration: BoxDecoration(
+              boxShadow: ehTheme.isDarkMode ? null : EhPalette.lightCardShadows,
+              color: isPreviewActive
+                  ? EhPalette.accentSoft.resolveFrom(context)
+                  : itemController.colorTap.value,
+              borderRadius: BorderRadius.circular(kCardRadius),
+            ),
+            padding: const EdgeInsets.only(right: kPaddingHorizontal),
+            child: IntrinsicHeight(
           child: Row(
             children: <Widget>[
               // 封面图片
@@ -285,6 +285,8 @@ class GalleryItemWidget extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
           ),
         ),
       );
@@ -424,18 +426,22 @@ class GalleryItemWidget extends StatelessWidget {
           ),
         ],
       );
-      return Container(
-        height: useFixedHeight ? 136.0 : null,
-        decoration: BoxDecoration(
-          color: dark
-              ? palette.raised.resolveFrom(context).withValues(alpha: .55)
-              : const Color(0xFFF9FAFC),
-          borderRadius: BorderRadius.circular(kCardRadius),
-          border: Border.all(color: palette.hairline.resolveFrom(context)),
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(10, topMargin, 10, 4),
+        child: RepaintBoundary(
+          child: Container(
+            height: useFixedHeight ? 136.0 : null,
+            decoration: BoxDecoration(
+              color: dark
+                  ? palette.raised.resolveFrom(context).withValues(alpha: .55)
+                  : const Color(0xFFF9FAFC),
+              borderRadius: BorderRadius.circular(kCardRadius),
+              border: Border.all(color: palette.hairline.resolveFrom(context)),
+            ),
+            padding: const EdgeInsets.all(8),
+            child: useFixedHeight ? row : IntrinsicHeight(child: row),
+          ),
         ),
-        padding: const EdgeInsets.all(8),
-        margin: const EdgeInsets.fromLTRB(10, topMargin, 10, 4),
-        child: useFixedHeight ? row : IntrinsicHeight(child: row),
       );
     });
   }
