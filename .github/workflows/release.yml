@@ -27,6 +27,8 @@ concurrency:
 
 env:
   PACKAGE_NAME: Eros-FE
+  # Offset added to github.run_number for monotonic tag build numbers (> v1.11.2+571).
+  BUILD_NUMBER_OFFSET: '550'
   FLUTTER_VERSION: '3.47.1'
   FLUTTER_CHANNEL: 'stable'
   # flutter/flutter#191575: windowing _Rect crashes during macOS AOT on 3.47.1.
@@ -35,10 +37,51 @@ env:
   XCODE_PATH: /Applications/Xcode_27.1.app
 
 jobs:
-  Build:
-    name: Build (${{ matrix.target }})
+  Resolve_metadata:
+    name: Resolve Release Metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      build_name: ${{ steps.meta.outputs.build_name }}
+      build_number: ${{ steps.meta.outputs.build_number }}
+      artifact_version: ${{ steps.meta.outputs.artifact_version }}
+      pubspec_version: ${{ steps.meta.outputs.pubspec_version }}
+      is_tag_release: ${{ steps.meta.outputs.is_tag_release }}
+      is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
+      android_only_arm64: ${{ steps.meta.outputs.android_only_arm64 }}
+      build_date: ${{ steps.meta.outputs.build_date }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+    steps:
+      - name: Checkout (shallow)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify metadata resolver tests
+        shell: bash
+        run: python3 -m unittest scripts/test_resolve_release_metadata.py
+
+      - name: Resolve build metadata from Git ref & pubspec
+        id: meta
+        shell: bash
+        env:
+          INPUT_ANDROID_ALL_ABIS: ${{ inputs.android_all_abis }}
+        run: python3 scripts/resolve_release_metadata.py
+
+  Build:
+    name: Build (${{ matrix.target }})
+    needs: Resolve_metadata
+    permissions:
+      contents: read
+    env:
+      build_name: ${{ needs.Resolve_metadata.outputs.build_name }}
+      build_number: ${{ needs.Resolve_metadata.outputs.build_number }}
+      app_version: ${{ needs.Resolve_metadata.outputs.artifact_version }}
+      is_tag_release: ${{ needs.Resolve_metadata.outputs.is_tag_release }}
+      is_prerelease: ${{ needs.Resolve_metadata.outputs.is_prerelease }}
+      android_only_arm64: ${{ needs.Resolve_metadata.outputs.android_only_arm64 }}
+      build_date: ${{ needs.Resolve_metadata.outputs.build_date }}
+      short_sha: ${{ needs.Resolve_metadata.outputs.short_sha }}
     strategy:
       fail-fast: false
       matrix:
@@ -59,33 +102,11 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Resolve build metadata
+      - name: Log resolved build metadata
         shell: bash
         run: |
           set -euo pipefail
-          app_version=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}' | tr -d '\r')
-          if [ -z "$app_version" ]; then
-            echo "Failed to read version from pubspec.yaml" >&2
-            exit 1
-          fi
-          is_tag_release="false"
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            is_tag_release="true"
-          fi
-          android_only_arm64="true"
-          if [ "$is_tag_release" = "true" ] || [ "${{ inputs.android_all_abis }}" = "true" ]; then
-            android_only_arm64="false"
-          fi
-          build_date=$(TZ=Asia/Shanghai date +%Y%m%d)
-          short_sha="${GITHUB_SHA::9}"
-          {
-            echo "app_version=${app_version}"
-            echo "is_tag_release=${is_tag_release}"
-            echo "android_only_arm64=${android_only_arm64}"
-            echo "build_date=${build_date}"
-            echo "short_sha=${short_sha}"
-          } >> "$GITHUB_ENV"
-          echo "Version: ${app_version} | Tag release: ${is_tag_release} | Android arm64-only: ${android_only_arm64}"
+          echo "Artifact version: ${app_version} (build-name=${build_name}, build-number=${build_number}) | Tag release: ${is_tag_release} | Pre-release: ${is_prerelease} | Android arm64-only: ${android_only_arm64}"
 
       - name: Prepare secretless fork config
         shell: bash
@@ -246,11 +267,40 @@ jobs:
           out_dir="build/ci-output"
           mkdir -p "$out_dir"
           build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
+          test -x "$build_tools/aapt2"
+
+          verify_apk_version() {
+            local apk_path="$1"
+            local expected_code="$2"
+            local badging actual_name actual_code
+            badging="$("$build_tools/aapt2" dump badging "$apk_path" | head -n 1)"
+            actual_name="$(printf '%s' "$badging" | sed -nE "s/.*versionName='([^']+)'.*/\1/p")"
+            actual_code="$(printf '%s' "$badging" | sed -nE "s/.*versionCode='([^']+)'.*/\1/p")"
+            echo "APK $(basename "$apk_path") | versionName=${actual_name} (expected ${build_name}) | versionCode=${actual_code} (expected ${expected_code})"
+            test "$actual_name" = "${build_name}"
+            test "$actual_code" = "${expected_code}"
+          }
+
+          expected_abi_code() {
+            local base="$1"
+            case "$base" in
+              *-armeabi-v7a-release*.apk) echo $((1000 + 10#${build_number})) ;;
+              *-arm64-v8a-release*.apk)   echo $((2000 + 10#${build_number})) ;;
+              *-x86_64-release*.apk)      echo $((4000 + 10#${build_number})) ;;
+              *-universal-release*.apk)   echo $((10#${build_number})) ;;
+              *)
+                echo "Unexpected APK filename for ABI offset: $base" >&2
+                return 1
+                ;;
+            esac
+          }
 
           if [ "$is_tag_release" = "true" ]; then
             # Tag release: build unsigned APKs here (zero secrets in build job);
             # isolated Sign_and_publish job handles 16KB alignment + release signing.
-            ANDROID_UNSIGNED_RELEASE=true flutter build apk --release --no-pub
+            ANDROID_UNSIGNED_RELEASE=true flutter build apk --release --no-pub \
+              --build-name="${build_name}" \
+              --build-number="${build_number}"
             shopt -s nullglob
             apks=(build/app/outputs/apk/release/*-release-unsigned.apk)
             if [ ${#apks[@]} -ne 4 ]; then
@@ -259,11 +309,15 @@ jobs:
               exit 1
             fi
             for apk in "${apks[@]}"; do
+              base="$(basename "$apk")"
+              verify_apk_version "$apk" "$(expected_abi_code "$base")"
               cp "$apk" "$out_dir/"
             done
           elif [ "$android_only_arm64" = "true" ]; then
             # Daily push preview: fast arm64-v8a debug-signed APK ready for direct install.
-            ANDROID_ONLY_ARM64=true flutter build apk --release --target-platform android-arm64 --no-pub
+            ANDROID_ONLY_ARM64=true flutter build apk --release --target-platform android-arm64 --no-pub \
+              --build-name="${build_name}" \
+              --build-number="${build_number}"
             shopt -s nullglob
             apks=(build/app/outputs/apk/release/*-release.apk)
             if [ ${#apks[@]} -ne 1 ]; then
@@ -271,12 +325,15 @@ jobs:
               ls -la build/app/outputs/apk/release/ >&2
               exit 1
             fi
+            verify_apk_version "${apks[0]}" "${build_number}"
             "$build_tools/apksigner" verify --verbose "${apks[0]}"
             target_name="${PACKAGE_NAME}_${app_version}-android-arm64-v8a-debug_${build_date}_ci${GITHUB_RUN_NUMBER}.apk"
             cp "${apks[0]}" "${out_dir}/${target_name}"
           else
             # Manual workflow_dispatch with all ABIs (non-tag): debug-signed all 4 APKs.
-            flutter build apk --release --no-pub
+            flutter build apk --release --no-pub \
+              --build-name="${build_name}" \
+              --build-number="${build_number}"
             shopt -s nullglob
             apks=(build/app/outputs/apk/release/*-release.apk)
             if [ ${#apks[@]} -ne 4 ]; then
@@ -285,8 +342,9 @@ jobs:
               exit 1
             fi
             for apk in "${apks[@]}"; do
-              "$build_tools/apksigner" verify --verbose "$apk"
               base="$(basename "$apk")"
+              verify_apk_version "$apk" "$(expected_abi_code "$base")"
+              "$build_tools/apksigner" verify --verbose "$apk"
               cp "$apk" "${out_dir}/${base%.apk}_${build_date}_ci${GITHUB_RUN_NUMBER}.apk"
             done
           fi
@@ -298,7 +356,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          flutter build ios --release --no-codesign --no-pub
+          flutter build ios --release --no-codesign --no-pub \
+            --build-name="${build_name}" \
+            --build-number="${build_number}"
           app_src=$(ls -d build/ios/iphoneos/*.app)
           rm -f "$app_src/GoogleService-Info.plist" "$app_src/embedded.mobileprovision"
           sh scripts/thin-payload.sh "$app_src"
@@ -321,8 +381,12 @@ jobs:
 
           app_dir=$(ls -d build/Payload/*.app)
           bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_dir/Info.plist")
-          echo "iOS App: $app_dir | Bundle ID: $bundle_id"
+          short_ver=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_dir/Info.plist")
+          bundle_ver=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_dir/Info.plist")
+          echo "iOS App: $app_dir | Bundle ID: $bundle_id | Version: ${short_ver} (${bundle_ver})"
           test "$bundle_id" = "cn.honjow.fehv"
+          test "$short_ver" = "${build_name}"
+          test "$bundle_ver" = "${build_number}"
           test ! -e "$app_dir/GoogleService-Info.plist"
           test ! -e "$app_dir/embedded.mobileprovision"
           ipa_size=$(stat -f%z "${out_dir}/${ipa_name}")
@@ -339,7 +403,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          flutter build macos --release --no-pub
+          flutter build macos --release --no-pub \
+            --build-name="${build_name}" \
+            --build-number="${build_number}"
           app_src="build/macos/Build/Products/Release/fehviewer.app"
           test -d "$app_src"
 
@@ -353,6 +419,11 @@ jobs:
           rm -f "$app_dst/Contents/Resources/GoogleService-Info.plist"
           test -f "$app_dst/Contents/Resources/AppIcon.icns"
           test -f "$app_dst/Contents/Resources/Assets.car"
+          mac_short_ver=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_dst/Contents/Info.plist")
+          mac_bundle_ver=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_dst/Contents/Info.plist")
+          echo "macOS App: $app_dst | Version: ${mac_short_ver} (${mac_bundle_ver})"
+          test "$mac_short_ver" = "${build_name}"
+          test "$mac_bundle_ver" = "${build_number}"
 
           # Ad-hoc sign nested Mach-O binaries/frameworks first, then main bundle with entitlements
           if [ -d "$app_dst/Contents/Frameworks" ]; then
@@ -389,7 +460,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          flutter build windows --release --no-pub
+          flutter build windows --release --no-pub --build-name="$($env:build_name)" --build-number="$($env:build_number)"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           $srcDir = "build\windows\x64\runner\Release"
@@ -465,13 +536,18 @@ jobs:
   Sign_and_publish:
     if: startsWith(github.ref, 'refs/tags/v')
     name: Sign Android & Publish Release
-    needs: Build
+    needs: [Resolve_metadata, Build]
     runs-on: ubuntu-latest
     environment: release
     permissions:
       contents: write
+    env:
+      build_name: ${{ needs.Resolve_metadata.outputs.build_name }}
+      build_number: ${{ needs.Resolve_metadata.outputs.build_number }}
+      app_version: ${{ needs.Resolve_metadata.outputs.artifact_version }}
+      is_prerelease: ${{ needs.Resolve_metadata.outputs.is_prerelease }}
     steps:
-      - name: Checkout (shallow, for pubspec/changelog only)
+      - name: Checkout (shallow, for changelog only)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java JDK (for apksigner)
@@ -510,10 +586,8 @@ jobs:
             fi
           done
 
-          app_version=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}' | tr -d '\r')
-          echo "app_version=${app_version}" >> "$GITHUB_ENV"
-
           build_tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
+          test -x "$build_tools/aapt2"
           ks_file="$(mktemp /tmp/android-signing-XXXXXX.p12)"
           chmod 600 "$ks_file"
           cleanup() {
@@ -540,10 +614,22 @@ jobs:
           for unsigned_apk in "${unsigned_apks[@]}"; do
             base="$(basename "$unsigned_apk")"
             case "$base" in
-              *-arm64-v8a-release-unsigned.apk)   abi="arm64-v8a" ;;
-              *-armeabi-v7a-release-unsigned.apk) abi="armeabi-v7a" ;;
-              *-x86_64-release-unsigned.apk)      abi="x86_64" ;;
-              *-universal-release-unsigned.apk)   abi="universal" ;;
+              *-arm64-v8a-release-unsigned.apk)
+                abi="arm64-v8a"
+                expected_code=$((2000 + 10#${build_number}))
+                ;;
+              *-armeabi-v7a-release-unsigned.apk)
+                abi="armeabi-v7a"
+                expected_code=$((1000 + 10#${build_number}))
+                ;;
+              *-x86_64-release-unsigned.apk)
+                abi="x86_64"
+                expected_code=$((4000 + 10#${build_number}))
+                ;;
+              *-universal-release-unsigned.apk)
+                abi="universal"
+                expected_code=$((10#${build_number}))
+                ;;
               *)
                 echo "Unexpected APK filename: $base" >&2
                 exit 1
@@ -564,6 +650,13 @@ jobs:
 
             "$build_tools/zipalign" -c -P 16 4 "$signed_apk"
             "$build_tools/apksigner" verify --verbose --print-certs "$signed_apk"
+
+            badging="$("$build_tools/aapt2" dump badging "$signed_apk" | head -n 1)"
+            actual_name="$(printf '%s' "$badging" | sed -nE "s/.*versionName='([^']+)'.*/\1/p")"
+            actual_code="$(printf '%s' "$badging" | sed -nE "s/.*versionCode='([^']+)'.*/\1/p")"
+            echo "Signed APK $(basename "$signed_apk") | versionName=${actual_name} | versionCode=${actual_code}"
+            test "$actual_name" = "${build_name}"
+            test "$actual_code" = "${expected_code}"
           done
 
           # Copy iOS, macOS, and Windows raw release artifacts into final staging directory
@@ -584,13 +677,7 @@ jobs:
         run: |
           set -euo pipefail
           tag="${GITHUB_REF_NAME}"
-          tag_lower="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
           stage_dir="/tmp/release-final"
-
-          is_prerelease="false"
-          if [[ "$tag_lower" == *nightly* || "$tag_lower" == *pre* || "$tag_lower" == *beta* || "$tag_lower" == *alpha* || "$tag_lower" == *rc* ]]; then
-            is_prerelease="true"
-          fi
 
           shopt -s nullglob
           assets=("$stage_dir"/*.apk "$stage_dir"/*.ipa "$stage_dir"/*.dmg "$stage_dir"/*.zip "$stage_dir"/SHA256SUMS.txt)
@@ -608,8 +695,10 @@ jobs:
 
             if [ -f "changelog/${tag}.md" ]; then
               create_args+=(--notes-file "changelog/${tag}.md")
-            elif [ -f "changelog/v${app_version}.md" ]; then
+            elif [ "$is_prerelease" = "false" ] && [ -f "changelog/v${app_version}.md" ]; then
               create_args+=(--notes-file "changelog/v${app_version}.md")
+            elif [ "$is_prerelease" = "false" ] && [ -f "changelog/v${build_name}.md" ]; then
+              create_args+=(--notes-file "changelog/v${build_name}.md")
             else
               create_args+=(--generate-notes)
             fi
