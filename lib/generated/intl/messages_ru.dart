@@ -30,162 +30,171 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(site) => "Текущий ${site}";
 
-  static String m5(reused) => "Повторно: ${reused}";
+  static String m5(checked, total) =>
+      "Проверка обновлений ${checked} / ${total}";
 
-  static String m6(checked, found, failed) =>
+  static String m6(done, total) => "Загрузка ${done} / ${total}";
+
+  static String m7(reused) => "Пауза · повт.: ${reused}";
+
+  static String m8(reused) => "Обновление · повт.: ${reused}";
+
+  static String m9(checked, found, failed) =>
       "Проверено ${checked} · обновлений ${found} (ошибок: ${failed})";
 
-  static String m7(count) => "Найдены новые версии для ${count} галерей";
+  static String m10(count) => "ошибок: ${count}";
 
-  static String m8(favcat) => "Перемещено в «${favcat}»";
+  static String m11(count) => "Обновлений: ${count}";
 
-  static String m9(ok, fail) => "Перемещено: ${ok}, ошибок: ${fail}";
+  static String m12(count) => "Всё актуально · проверено: ${count}";
 
-  static String m10(ok, fail) => "Удалено: ${ok}, ошибок: ${fail}";
+  static String m13(favcat) => "Перемещено в «${favcat}»";
 
-  static String m11(notes) =>
+  static String m14(ok, fail) => "Перемещено: ${ok}, ошибок: ${fail}";
+
+  static String m15(ok, fail) => "Удалено: ${ok}, ошибок: ${fail}";
+
+  static String m16(notes) =>
       "Также будет удалено заметок: ${notes}. Это действие нельзя отменить.";
 
-  static String m12(count) => "Удалить ${count} из избранного?";
+  static String m17(count) => "Удалить ${count} из избранного?";
 
-  static String m13(count) => "Удалено из избранного: ${count}";
+  static String m18(count) => "Удалено из избранного: ${count}";
 
-  static String m14(folder) => "Уже в «${folder}»";
+  static String m19(folder) => "Уже в «${folder}»";
 
-  static String m15(count) => "Используется в правилах: ${count}";
+  static String m20(count) => "Используется в правилах: ${count}";
 
-  static String m16(count) => "${count}";
+  static String m21(count) => "${count}";
 
-  static String m17(category) => "Новое правило для «${category}»";
+  static String m22(category) => "Новое правило для «${category}»";
 
-  static String m18(count) => "${count} галерей";
+  static String m23(count) => "${count} галерей";
 
-  static String m19(count) => "Совпало в истории: ${count}";
+  static String m24(count) => "Совпало в истории: ${count}";
 
-  static String m20(count) => "Совпало в истории: ${count}";
+  static String m25(count) => "Совпало в истории: ${count}";
 
-  static String m21(count) => "Совпадений: ${count}";
+  static String m26(count) => "Совпадений: ${count}";
 
-  static String m22(count, time) => "Совпадений: ${count} · ${time}";
+  static String m27(count, time) => "Совпадений: ${count} · ${time}";
 
-  static String m23(count) => "Тегов: ${count}";
+  static String m28(count) => "Тегов: ${count}";
 
-  static String m24(folder) => "Оставлено в «${folder}»";
+  static String m29(folder) => "Оставлено в «${folder}»";
 
-  static String m25(folder) => "Переместить в «${folder}»";
+  static String m30(folder) => "Переместить в «${folder}»";
 
-  static String m26(from, to) => "Перемещено из «${from}» в «${to}»";
+  static String m31(from, to) => "Перемещено из «${from}» в «${to}»";
 
-  static String m27(rules) => "Также совпало: «${rules}» (ниже по приоритету)";
+  static String m32(rules) => "Также совпало: «${rules}» (ниже по приоритету)";
 
-  static String m28(rule) => "Правило «${rule}»";
+  static String m33(rule) => "Правило «${rule}»";
 
-  static String m29(rule, tag) => "Правило «${rule}» · ${tag}";
+  static String m34(rule, tag) => "Правило «${rule}» · ${tag}";
 
-  static String m30(folder) => "В «${folder}»";
+  static String m35(folder) => "В «${folder}»";
 
-  static String m31(folder) => "Сохранено в «${folder}»";
+  static String m36(folder) => "Сохранено в «${folder}»";
 
-  static String m32(count) => "Вкл. · ${count}";
+  static String m37(count) => "Вкл. · ${count}";
 
-  static String m33(fallback) => "Запасное действие: ${fallback}";
+  static String m38(fallback) => "Запасное действие: ${fallback}";
 
-  static String m34(count) => "Всего: ${count}";
+  static String m39(count) => "Всего: ${count}";
 
-  static String m35(favcat) => "В папке ${favcat}";
+  static String m40(favcat) => "В папке ${favcat}";
 
-  static String m36(count, scope) => "В «${scope}»: ${count}";
+  static String m41(count, scope) => "В «${scope}»: ${count}";
 
-  static String m37(query, scope) => "В «${scope}» нет «${query}»";
+  static String m42(query, scope) => "В «${scope}» нет «${query}»";
 
-  static String m38(favcat) => "Искать в ${favcat}";
+  static String m43(favcat) => "Искать в ${favcat}";
 
-  static String m39(count) => "Выбрано: ${count}";
+  static String m44(count) => "Выбрано: ${count}";
 
-  static String m40(favcat, total) => "${favcat} · ${total} эл.";
+  static String m45(favcat, total) => "${favcat} · ${total} эл.";
 
-  static String m41(gid) => "Родитель #${gid}";
+  static String m46(count) => "Оценок: ${count}";
 
-  static String m42(count) => "Оценок: ${count}";
+  static String m47(count) => "Версий: ${count}";
 
-  static String m43(count) => "Новых версий: ${count}";
+  static String m48(count) => "Из родительской · версий: ${count}";
 
-  static String m44(gid) => "Текущая версия #${gid}";
+  static String m49(count) => "Новых версий: ${count}";
 
-  static String m45(value) => "Пик ${value}";
+  static String m50(gid) => "Текущая версия #${gid}";
 
-  static String m46(value) => "Средн. ${value}";
+  static String m51(value) => "Пик ${value}";
 
-  static String m47(period, percent) => "${period} · ${percent}%";
+  static String m52(value) => "Средн. ${value}";
 
-  static String m48(value) => "Всего ${value}";
+  static String m53(period, percent) => "${period} · ${percent}%";
 
-  static String m49(score) => "Счёт ${score}";
+  static String m54(value) => "Всего ${value}";
 
-  static String m50(date) => "Обновлено ${date}";
+  static String m55(score) => "Счёт ${score}";
 
-  static String m51(gid, reused) =>
+  static String m56(date) => "Обновлено ${date}";
+
+  static String m57(count) => "Новых: ${count}";
+
+  static String m58(gid, reused) =>
       "Обновлено локально до #${gid} (повторно: ${reused} стр.)";
 
-  static String m52(gid) =>
-      "Повторно использовать неизменённые файлы, обновить задачу до #${gid} и перенести прогресс чтения.";
+  static String m59(count) => "Скачать: ${count}";
 
-  static String m53(gid) =>
-      "Создать новую папку для #${gid} с повторным использованием файлов, сохранив старую версию.";
+  static String m60(count) => "≈${count} изм.";
 
-  static String m54(count) => "Скачать ${count} стр.";
+  static String m61(count) => "Повторно: ${count}";
 
-  static String m55(count) => "Обновить на месте · скачать ${count} стр.";
-
-  static String m56(count) => "Новая задача · скачать ${count} стр.";
-
-  static String m57(count) => "Новая задача целиком · ${count} стр.";
-
-  static String m58(reused, fetch) =>
+  static String m62(reused, fetch) =>
       "Обновление запущено (повторно: ${reused}, загрузка: ${fetch})";
 
-  static String m59(count) => "Загрузка ${count} галерей завершена";
+  static String m63(count) => "Всего стр.: ${count}";
 
-  static String m60(title) => "Загрузка «${title}» завершена";
+  static String m64(count) => "Загрузка ${count} галерей завершена";
 
-  static String m61(count) => "Загрузка галерей: ${count}";
+  static String m65(title) => "Загрузка «${title}» завершена";
 
-  static String m62(completed, total) => "${completed}/${total} стр.";
+  static String m66(count) => "Загрузка галерей: ${count}";
 
-  static String m63(modelName) => "Модель ${modelName}";
+  static String m67(completed, total) => "${completed}/${total} стр.";
 
-  static String m64(count) => "${count} стр.";
+  static String m68(modelName) => "Модель ${modelName}";
 
-  static String m65(seconds) => "${seconds} с";
+  static String m69(count) => "${count} стр.";
 
-  static String m66(page, total) => "Стр. ${page} из ${total}";
+  static String m70(seconds) => "${seconds} с";
 
-  static String m67(rating) => "${rating} ⭐";
+  static String m71(page, total) => "Стр. ${page} из ${total}";
 
-  static String m68(ok, total) => "${ok}/${total} доступно";
+  static String m72(rating) => "${rating} ⭐";
 
-  static String m69(name) => "Текущий: ${name}";
+  static String m73(ok, total) => "${ok}/${total} доступно";
 
-  static String m70(time) => "· Синхр. ${time}";
+  static String m74(name) => "Текущий: ${name}";
 
-  static String m71(tag) => "Добавить ${tag}";
+  static String m75(time) => "· Синхр. ${time}";
 
-  static String m72(count) => "Всего ${count} стр.";
+  static String m76(tag) => "Добавить ${tag}";
 
-  static String m73(avg, count) => "Средняя ${avg} · ${count} оценок";
+  static String m77(count) => "Всего ${count} стр.";
 
-  static String m74(text) => "Искать «${text}»";
+  static String m78(avg, count) => "Средняя ${avg} · ${count} оценок";
 
-  static String m75(count) => "Добавлено: ${count} · через запятую";
+  static String m79(text) => "Искать «${text}»";
 
-  static String m76(count, per) => "${count} стр. · по ${per}";
+  static String m80(count) => "Добавлено: ${count} · через запятую";
 
-  static String m77(count) => "Торренты · ${count}";
+  static String m81(count, per) => "${count} стр. · по ${per}";
 
-  static String m78(tagNamespace) =>
+  static String m82(count) => "Торренты · ${count}";
+
+  static String m83(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m79(version) => "Обновиться до ${version}";
+  static String m84(version) => "Обновиться до ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -445,16 +454,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "download_check_updates": MessageLookupByLibrary.simpleMessage(
       "Проверить обновления",
     ),
-    "download_checking_updates": MessageLookupByLibrary.simpleMessage(
-      "Проверка…",
-    ),
+    "download_checking_updates_progress": m5,
     "download_files_unavailable": MessageLookupByLibrary.simpleMessage(
       "Файлы временно недоступны",
+    ),
+    "download_filter_updatable": MessageLookupByLibrary.simpleMessage(
+      "С обновлениями",
     ),
     "download_has_update_badge": MessageLookupByLibrary.simpleMessage(
       "Обновление",
     ),
-    "download_incremental_reused_status": m5,
+    "download_incremental_download_progress": m6,
+    "download_incremental_failed_status": MessageLookupByLibrary.simpleMessage(
+      "Ошибка обновления",
+    ),
+    "download_incremental_paused_status": m7,
+    "download_incremental_status": m8,
     "download_incremental_updating": MessageLookupByLibrary.simpleMessage(
       "Обновление",
     ),
@@ -467,12 +482,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "download_ori_image_summary": MessageLookupByLibrary.simpleMessage(
       "Это опасно! Вы можете получить ошибку 509",
     ),
+    "download_stop_check": MessageLookupByLibrary.simpleMessage("Стоп"),
+    "download_update_action": MessageLookupByLibrary.simpleMessage("Обновить"),
     "download_update_all": MessageLookupByLibrary.simpleMessage("Обновить все"),
-    "download_updates_checked_with_errors": m6,
-    "download_updates_found": m7,
-    "download_updates_none": MessageLookupByLibrary.simpleMessage(
-      "Все загруженные галереи актуальны",
+    "download_updates_checked_with_errors": m9,
+    "download_updates_failed_count": m10,
+    "download_updates_found": m11,
+    "download_updates_no_targets": MessageLookupByLibrary.simpleMessage(
+      "Нет завершённых загрузок для проверки",
     ),
+    "download_updates_none": m12,
     "downloaded": MessageLookupByLibrary.simpleMessage("Скачано"),
     "downloading": MessageLookupByLibrary.simpleMessage("Скачивание"),
     "edit": MessageLookupByLibrary.simpleMessage("Редактировать"),
@@ -503,32 +522,32 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_current": MessageLookupByLibrary.simpleMessage("Текущая"),
     "fav_deselect_all": MessageLookupByLibrary.simpleMessage("Снять выбор"),
     "fav_move_to": MessageLookupByLibrary.simpleMessage("Переместить…"),
-    "fav_moved_to": m8,
+    "fav_moved_to": m13,
     "fav_note_add": MessageLookupByLibrary.simpleMessage("Добавить заметку"),
     "fav_note_edit": MessageLookupByLibrary.simpleMessage("Изменить заметку"),
-    "fav_partial_failed": m9,
-    "fav_partial_remove_failed": m10,
+    "fav_partial_failed": m14,
+    "fav_partial_remove_failed": m15,
     "fav_remove_irreversible": MessageLookupByLibrary.simpleMessage(
       "Это действие нельзя отменить.",
     ),
-    "fav_remove_note_warn": m11,
-    "fav_remove_title": m12,
-    "fav_removed_count": m13,
+    "fav_remove_note_warn": m16,
+    "fav_remove_title": m17,
+    "fav_removed_count": m18,
     "fav_rule_add_condition": MessageLookupByLibrary.simpleMessage(
       "Добавить условие",
     ),
-    "fav_rule_already_in_folder": m14,
+    "fav_rule_already_in_folder": m19,
     "fav_rule_category_badge": MessageLookupByLibrary.simpleMessage(
       "Категория",
     ),
-    "fav_rule_category_used_count": m15,
+    "fav_rule_category_used_count": m20,
     "fav_rule_change_folder": MessageLookupByLibrary.simpleMessage("Изменить"),
     "fav_rule_clear_selection": MessageLookupByLibrary.simpleMessage(
       "Очистить",
     ),
     "fav_rule_conditions": MessageLookupByLibrary.simpleMessage("Условия"),
-    "fav_rule_count_items": m16,
-    "fav_rule_create_by_category": m17,
+    "fav_rule_count_items": m21,
+    "fav_rule_create_by_category": m22,
     "fav_rule_create_from_gallery": MessageLookupByLibrary.simpleMessage(
       "Новое правило из этой галереи",
     ),
@@ -586,25 +605,25 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_fetch_tags_failed": MessageLookupByLibrary.simpleMessage(
       "Не удалось получить теги",
     ),
-    "fav_rule_gallery_count": m18,
+    "fav_rule_gallery_count": m23,
     "fav_rule_history_empty_save_ok": MessageLookupByLibrary.simpleMessage(
       "В истории пока нет совпадений, но после сохранения правило будет работать.",
     ),
-    "fav_rule_history_hits_count": m19,
+    "fav_rule_history_hits_count": m24,
     "fav_rule_history_hits_empty": MessageLookupByLibrary.simpleMessage(
       "В истории пока нет совпадений.",
     ),
-    "fav_rule_history_hits_matched": m20,
-    "fav_rule_hit_stats": m21,
-    "fav_rule_hit_stats_with_time": m22,
-    "fav_rule_hit_tag_count": m23,
+    "fav_rule_history_hits_matched": m25,
+    "fav_rule_hit_stats": m26,
+    "fav_rule_hit_stats_with_time": m27,
+    "fav_rule_hit_tag_count": m28,
     "fav_rule_invalid_condition": MessageLookupByLibrary.simpleMessage(
       "Некорректное условие или регулярное выражение",
     ),
     "fav_rule_invalid_regex": MessageLookupByLibrary.simpleMessage(
       "Некорректное регулярное выражение",
     ),
-    "fav_rule_kept_in_folder": m24,
+    "fav_rule_kept_in_folder": m29,
     "fav_rule_last_used_badge": MessageLookupByLibrary.simpleMessage(
       "Последняя",
     ),
@@ -649,8 +668,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "fav_rule_mode_category": MessageLookupByLibrary.simpleMessage("Категория"),
     "fav_rule_mode_tag": MessageLookupByLibrary.simpleMessage("Тег"),
-    "fav_rule_move_to_folder": m25,
-    "fav_rule_moved_folder": m26,
+    "fav_rule_move_to_folder": m30,
+    "fav_rule_moved_folder": m31,
     "fav_rule_my_tags_short": MessageLookupByLibrary.simpleMessage("Мои теги"),
     "fav_rule_name_placeholder": MessageLookupByLibrary.simpleMessage(
       "Название правила (авто, если пусто)",
@@ -679,7 +698,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_order_hint": MessageLookupByLibrary.simpleMessage(
       "Сверху вниз, до первого совпадения",
     ),
-    "fav_rule_other_hits_note": m27,
+    "fav_rule_other_hits_note": m32,
     "fav_rule_pick_one_folder_hint": MessageLookupByLibrary.simpleMessage(
       "Выберите папку",
     ),
@@ -699,8 +718,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Колесо выбора",
     ),
     "fav_rule_preview": MessageLookupByLibrary.simpleMessage("Предпросмотр"),
-    "fav_rule_reason_only": m28,
-    "fav_rule_reason_with_tag": m29,
+    "fav_rule_reason_only": m33,
+    "fav_rule_reason_with_tag": m34,
     "fav_rule_regex_placeholder": MessageLookupByLibrary.simpleMessage(
       "Регулярное выражение, напр. ^foot.*",
     ),
@@ -713,8 +732,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_save_into_lead": MessageLookupByLibrary.simpleMessage(
       "Сохранить в",
     ),
-    "fav_rule_save_to_folder": m30,
-    "fav_rule_saved_to_folder": m31,
+    "fav_rule_save_to_folder": m35,
+    "fav_rule_saved_to_folder": m36,
     "fav_rule_search_this_category": MessageLookupByLibrary.simpleMessage(
       "Искать категорию",
     ),
@@ -730,7 +749,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "fav_rule_status_disabled": MessageLookupByLibrary.simpleMessage("Выкл."),
     "fav_rule_status_enabled": MessageLookupByLibrary.simpleMessage("Вкл."),
-    "fav_rule_status_enabled_count": m32,
+    "fav_rule_status_enabled_count": m37,
     "fav_rule_tag_namespace": MessageLookupByLibrary.simpleMessage(
       "Категория тега",
     ),
@@ -740,7 +759,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_test_custom_tags": MessageLookupByLibrary.simpleMessage(
       "Свои теги",
     ),
-    "fav_rule_test_fallback_desc": m33,
+    "fav_rule_test_fallback_desc": m38,
     "fav_rule_test_from_history": MessageLookupByLibrary.simpleMessage(
       "Из истории",
     ),
@@ -760,7 +779,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_title": MessageLookupByLibrary.simpleMessage(
       "Правила избранного",
     ),
-    "fav_rule_total_count": m34,
+    "fav_rule_total_count": m39,
     "fav_rule_trigger": MessageLookupByLibrary.simpleMessage("Способ запуска"),
     "fav_rule_trigger_long_press": MessageLookupByLibrary.simpleMessage(
       "Долгое нажатие",
@@ -775,7 +794,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_value_placeholder": MessageLookupByLibrary.simpleMessage(
       "Введите тег или ключевое слово",
     ),
-    "fav_saved_in": m35,
+    "fav_saved_in": m40,
     "fav_scope_all": MessageLookupByLibrary.simpleMessage("Всё"),
     "fav_scope_note": MessageLookupByLibrary.simpleMessage("Заметки"),
     "fav_scope_tag": MessageLookupByLibrary.simpleMessage("Теги"),
@@ -786,12 +805,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_search_all_folders": MessageLookupByLibrary.simpleMessage(
       "Искать во всём избранном",
     ),
-    "fav_search_count": m36,
-    "fav_search_empty": m37,
-    "fav_search_in": m38,
+    "fav_search_count": m41,
+    "fav_search_empty": m42,
+    "fav_search_in": m43,
     "fav_select": MessageLookupByLibrary.simpleMessage("Выбрать"),
-    "fav_selected_count": m39,
-    "fav_selected_scope": m40,
+    "fav_selected_count": m44,
+    "fav_selected_scope": m45,
     "favcat": MessageLookupByLibrary.simpleMessage("Избранное"),
     "favorite_note_hint": MessageLookupByLibrary.simpleMessage(
       "Заметка (необязательно)",
@@ -831,9 +850,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_comments": MessageLookupByLibrary.simpleMessage(
       "Комментарии галереи",
     ),
-    "gallery_from_parent_hint": m41,
-    "gallery_has_parent_hint": MessageLookupByLibrary.simpleMessage(
-      "Есть родительская",
+    "gallery_downloaded_has_update": MessageLookupByLibrary.simpleMessage(
+      "Загружено, есть новая версия",
     ),
     "gallery_info": MessageLookupByLibrary.simpleMessage("Сведения о галерее"),
     "gallery_info_category": MessageLookupByLibrary.simpleMessage("Категория"),
@@ -854,7 +872,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Не удалось открыть ссылку в браузере",
     ),
     "gallery_info_posted": MessageLookupByLibrary.simpleMessage("Опубликовано"),
-    "gallery_info_rating_votes": m42,
+    "gallery_info_rating_votes": m46,
     "gallery_info_section_details": MessageLookupByLibrary.simpleMessage(
       "Сведения",
     ),
@@ -867,14 +885,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_info_visible": MessageLookupByLibrary.simpleMessage("Видимость"),
     "gallery_latest_version": MessageLookupByLibrary.simpleMessage("Новейшая"),
     "gallery_lineage": MessageLookupByLibrary.simpleMessage("Версии галереи"),
-    "gallery_lineage_tap_hint": MessageLookupByLibrary.simpleMessage(
-      "Нажмите для перехода · Удерживайте для копирования",
+    "gallery_lineage_copy_hint": MessageLookupByLibrary.simpleMessage(
+      "Нажмите, чтобы открыть · Удерживайте для копирования",
+    ),
+    "gallery_lineage_count": m47,
+    "gallery_lineage_current": MessageLookupByLibrary.simpleMessage("Текущая"),
+    "gallery_lineage_from_parent": m48,
+    "gallery_lineage_newer": MessageLookupByLibrary.simpleMessage(
+      "Новая версия",
     ),
     "gallery_metadata": MessageLookupByLibrary.simpleMessage("Метаданные"),
-    "gallery_metadata_copy_hint": MessageLookupByLibrary.simpleMessage(
-      "Нажмите для копирования",
-    ),
-    "gallery_newer_version_count": m43,
+    "gallery_newer_version_count": m49,
     "gallery_newer_version_single": MessageLookupByLibrary.simpleMessage(
       "Доступна новая версия",
     ),
@@ -897,7 +918,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "За всё время",
     ),
     "gallery_stats_collapse": MessageLookupByLibrary.simpleMessage("Свернуть"),
-    "gallery_stats_current_version": m44,
+    "gallery_stats_current_version": m50,
     "gallery_stats_daily": MessageLookupByLibrary.simpleMessage("По дням"),
     "gallery_stats_daily_avg": MessageLookupByLibrary.simpleMessage("В день"),
     "gallery_stats_empty_body": MessageLookupByLibrary.simpleMessage(
@@ -937,16 +958,16 @@ class MessageLookup extends MessageLookupByLibrary {
       "За месяц",
     ),
     "gallery_stats_past_year": MessageLookupByLibrary.simpleMessage("За год"),
-    "gallery_stats_peak": m45,
-    "gallery_stats_period_avg": m46,
-    "gallery_stats_period_share": m47,
-    "gallery_stats_period_total": m48,
+    "gallery_stats_peak": m51,
+    "gallery_stats_period_avg": m52,
+    "gallery_stats_period_share": m53,
+    "gallery_stats_period_total": m54,
     "gallery_stats_ranking": MessageLookupByLibrary.simpleMessage("Рейтинг"),
     "gallery_stats_refresh": MessageLookupByLibrary.simpleMessage(
       "Обновить статистику",
     ),
     "gallery_stats_retry": MessageLookupByLibrary.simpleMessage("Повторить"),
-    "gallery_stats_score": m49,
+    "gallery_stats_score": m55,
     "gallery_stats_total_visits": MessageLookupByLibrary.simpleMessage(
       "Просмотры",
     ),
@@ -957,8 +978,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage(
       "Можно обновить",
     ),
-    "gallery_updated_on": m50,
-    "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage("Версии"),
+    "gallery_updated_on": m56,
     "glass_effect": MessageLookupByLibrary.simpleMessage("Эффект стекла"),
     "glass_material": MessageLookupByLibrary.simpleMessage("Материал стекла"),
     "glass_material_frosted": MessageLookupByLibrary.simpleMessage(
@@ -1031,60 +1051,69 @@ class MessageLookup extends MessageLookupByLibrary {
     "incremental_update_added": MessageLookupByLibrary.simpleMessage(
       "Добавлено",
     ),
+    "incremental_update_added_pages": m57,
     "incremental_update_all_reused": MessageLookupByLibrary.simpleMessage(
       "Все страницы использованы локально",
     ),
     "incremental_update_applying": MessageLookupByLibrary.simpleMessage(
       "Применение обновления…",
     ),
+    "incremental_update_cannot_reuse": MessageLookupByLibrary.simpleMessage(
+      "Без повтора",
+    ),
     "incremental_update_compare_failed": MessageLookupByLibrary.simpleMessage(
-      "Не удалось проанализировать новую версию",
+      "Не удалось сравнить новую версию",
     ),
     "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
-      "Анализ отличий страниц…",
+      "Сравнение новых страниц…",
     ),
-    "incremental_update_completed_locally": m51,
+    "incremental_update_completed_locally": m58,
     "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
       "Инкрементально обновить загрузку",
     ),
-    "incremental_update_local_tag": MessageLookupByLibrary.simpleMessage(
-      "Локально",
-    ),
     "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
-      "Обновить на месте и сохранить прогресс",
+      "Заменить",
     ),
-    "incremental_update_mode_inplace_desc": m52,
+    "incremental_update_mode_inplace_desc":
+        MessageLookupByLibrary.simpleMessage(
+          "Заменяет старую папку на новую и переносит прогресс чтения.",
+        ),
     "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
-      "Скачать как новую задачу (сохранить старую)",
+      "Сохранить обе",
     ),
-    "incremental_update_mode_new_desc": m53,
-    "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
-      "Способ обновления",
+    "incremental_update_mode_new_desc": MessageLookupByLibrary.simpleMessage(
+      "Создаёт новую задачу с повторным использованием файлов, сохраняя старую.",
     ),
-    "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage(
-      "Новая",
+    "incremental_update_mode_new_saf_desc":
+        MessageLookupByLibrary.simpleMessage(
+          "Скачивает новую версию целиком как новую задачу, сохраняя старую.",
+        ),
+    "incremental_update_need_download": m59,
+    "incremental_update_old_version": MessageLookupByLibrary.simpleMessage(
+      "Старая версия",
     ),
-    "incremental_update_only_download": m54,
-    "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
-      "Рекомендуется",
-    ),
-    "incremental_update_replaced": MessageLookupByLibrary.simpleMessage(
-      "Заменено",
-    ),
+    "incremental_update_replaced_approx": m60,
     "incremental_update_reused": MessageLookupByLibrary.simpleMessage(
       "Повторно",
     ),
+    "incremental_update_reused_pages": m61,
     "incremental_update_saf_inplace_unsupported":
         MessageLookupByLibrary.simpleMessage(
           "Хранилище SAF не поддерживает локальное копирование и обновление на месте; все страницы будут загружены как новая задача.",
         ),
-    "incremental_update_start_inplace": m55,
-    "incremental_update_start_new": m56,
-    "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
-      "Завершить локально (0 стр. к загрузке)",
+    "incremental_update_saf_short_note": MessageLookupByLibrary.simpleMessage(
+      "Хранилище SAF не поддерживает повторное использование",
     ),
-    "incremental_update_start_saf_full": m57,
-    "incremental_update_started": m58,
+    "incremental_update_start": MessageLookupByLibrary.simpleMessage(
+      "Обновить",
+    ),
+    "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
+      "Завершить сейчас",
+    ),
+    "incremental_update_start_saf_full": MessageLookupByLibrary.simpleMessage(
+      "Скачать целиком",
+    ),
+    "incremental_update_started": m62,
     "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
       "Повторное использование неизменённых страниц",
     ),
@@ -1092,32 +1121,33 @@ class MessageLookup extends MessageLookupByLibrary {
       "Целевая версия",
     ),
     "incremental_update_title": MessageLookupByLibrary.simpleMessage(
-      "Инкрементальное обновление",
+      "Обновить загрузку",
     ),
-    "incremental_update_version_compare": MessageLookupByLibrary.simpleMessage(
-      "Сравнение версий",
+    "incremental_update_to_latest": MessageLookupByLibrary.simpleMessage(
+      "Обновить до последней",
     ),
+    "incremental_update_total_pages": m63,
     "incremental_update_view_newer": MessageLookupByLibrary.simpleMessage(
-      "Открыть новую галерею",
+      "Открыть новую версию",
     ),
     "inner_display": MessageLookupByLibrary.simpleMessage("Внутренний экран"),
     "input_empty": MessageLookupByLibrary.simpleMessage("Буфер обмена пуст"),
     "input_error": MessageLookupByLibrary.simpleMessage("Ошибка ввода"),
     "instantly": MessageLookupByLibrary.simpleMessage("Сразу"),
     "ios_bg_download": MessageLookupByLibrary.simpleMessage("Фоновая загрузка"),
-    "ios_bg_download_complete_multi": m59,
-    "ios_bg_download_complete_single": m60,
+    "ios_bg_download_complete_multi": m64,
+    "ios_bg_download_complete_single": m65,
     "ios_bg_download_complete_title": MessageLookupByLibrary.simpleMessage(
       "Загрузка завершена",
     ),
-    "ios_bg_download_multi_title": m61,
+    "ios_bg_download_multi_title": m66,
     "ios_bg_download_notify": MessageLookupByLibrary.simpleMessage(
       "Уведомление о завершении",
     ),
     "ios_bg_download_notify_subtitle": MessageLookupByLibrary.simpleMessage(
       "Отправлять локальное уведомление по завершении фоновой загрузки",
     ),
-    "ios_bg_download_progress_pages": m62,
+    "ios_bg_download_progress_pages": m67,
     "ios_bg_download_subtitle": MessageLookupByLibrary.simpleMessage(
       "Продолжать загрузку галерей в фоне, не прерывая воспроизведение музыки",
     ),
@@ -1186,7 +1216,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("Войти через браузер"),
     "max_history": MessageLookupByLibrary.simpleMessage("Maximum history"),
     "min": MessageLookupByLibrary.simpleMessage("минут"),
-    "model": m63,
+    "model": m68,
     "more_actions": MessageLookupByLibrary.simpleMessage("Ещё"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("Показать ещё"),
     "multi_download": MessageLookupByLibrary.simpleMessage(
@@ -1243,7 +1273,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("Оценить"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("Похожие"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("Торрент"),
-    "page_count": m64,
+    "page_count": m69,
     "page_range": MessageLookupByLibrary.simpleMessage("Диапазон страниц"),
     "page_range_error": MessageLookupByLibrary.simpleMessage(
       "Ошибка в диапазоне страниц",
@@ -1303,14 +1333,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage(
       "Весь экран в портретной ориентации",
     ),
-    "reader_interval_seconds": m65,
+    "reader_interval_seconds": m70,
     "reader_next_page": MessageLookupByLibrary.simpleMessage(
       "Следующая страница",
     ),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage(
       "Макет страницы",
     ),
-    "reader_page_of": m66,
+    "reader_page_of": m71,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage(
       "Предыдущая страница",
     ),
@@ -1396,7 +1426,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "s_and": MessageLookupByLibrary.simpleMessage("и"),
     "s_pages": MessageLookupByLibrary.simpleMessage("страницы"),
-    "s_stars": m67,
+    "s_stars": m72,
     "save": MessageLookupByLibrary.simpleMessage("Сохранить"),
     "save_current_image": MessageLookupByLibrary.simpleMessage(
       "Сохранить текущее изображение",
@@ -1491,12 +1521,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_diag_section": MessageLookupByLibrary.simpleMessage(
       "Диагностика подключения",
     ),
-    "sni_diag_summary_ok": m68,
+    "sni_diag_summary_ok": m73,
     "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage(
       "Нажмите для проверки",
     ),
     "sni_doh_auto": MessageLookupByLibrary.simpleMessage("Автовыбор"),
-    "sni_doh_auto_selected": m69,
+    "sni_doh_auto_selected": m74,
     "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("Подмена DNS"),
     "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH-серверы"),
     "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("Тест"),
@@ -1507,7 +1537,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
       "Список DoH-серверов обновлён",
     ),
-    "sni_doh_synced_at": m70,
+    "sni_doh_synced_at": m75,
     "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("Синхр…"),
     "sni_doh_testing": MessageLookupByLibrary.simpleMessage("Тест…"),
     "sni_mode_compat": MessageLookupByLibrary.simpleMessage(
@@ -1541,7 +1571,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage(
       "В быстрые запросы",
     ),
-    "sp_add_tag": m71,
+    "sp_add_tag": m76,
     "sp_all": MessageLookupByLibrary.simpleMessage("Все"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("Всё избранное"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage(
@@ -1597,7 +1627,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("Последняя"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("Вперёд"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("Назад"),
-    "sp_page_total": m72,
+    "sp_page_total": m77,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage(
       "Нажмите, чтобы выбрать изображение",
     ),
@@ -1605,12 +1635,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Быстрые запросы",
     ),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Оценить"),
-    "sp_rating_summary": m73,
+    "sp_rating_summary": m78,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Недавние"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("Обновить"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("Сбросить"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("Повторить"),
-    "sp_search_for": m74,
+    "sp_search_for": m79,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "Название, теги или ссылка",
     ),
@@ -1627,12 +1657,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("Поиск похожих"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("Искать"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("Подсказки"),
-    "sp_tags_added": m75,
+    "sp_tags_added": m80,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "Напр. female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("К странице превью"),
-    "sp_thumbs_per_page": m76,
+    "sp_thumbs_per_page": m81,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("Готово"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage(
       "Скачать торрент",
@@ -1645,7 +1675,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("Пиры"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("Сиды"),
-    "sp_torrent_title": m77,
+    "sp_torrent_title": m82,
     "sp_translate": MessageLookupByLibrary.simpleMessage("Перевод"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage(
       "разделение по разделителю",
@@ -1685,7 +1715,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Настройки нижней панели",
     ),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-    "tagNamespace": m78,
+    "tagNamespace": m83,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage(
       "Добавить в мои теги",
     ),
@@ -1987,7 +2017,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "undo": MessageLookupByLibrary.simpleMessage("Отменить"),
     "unlimited": MessageLookupByLibrary.simpleMessage("Без ограничения"),
-    "update_to_version": m79,
+    "update_to_version": m84,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("Загрузить аватар"),
     "uploader": MessageLookupByLibrary.simpleMessage("Загрузчик"),
     "user_login": MessageLookupByLibrary.simpleMessage("Вход в аккаунт"),

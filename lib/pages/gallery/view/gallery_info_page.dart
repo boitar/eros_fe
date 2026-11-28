@@ -19,6 +19,7 @@ import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_incremental_update_sheet.dart';
+import 'package:eros_fe/pages/gallery/view/gallery_lineage_chain.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_stats_section.dart';
 import 'package:eros_fe/pages/item/gallery_item.dart';
 import 'package:eros_fe/route/navigator_util.dart';
@@ -30,7 +31,7 @@ import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/eh_svg_icon.dart';
 import 'package:eros_fe/widget/image/eh_cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, SelectableText;
+import 'package:flutter/material.dart' show SelectableText;
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -359,13 +360,10 @@ class _GalleryInfoPageState extends State<GalleryInfoPage> {
             if (showLineageSection) ...<Widget>[
               _SectionHeader(
                 title: l10n.gallery_lineage,
-                hint: l10n.gallery_lineage_tap_hint,
               ),
               _LineageCard(
                 provider: provider,
-                rawParent: rawParent,
-                hasParentDisplay: hasParentDisplay,
-                hasParentLink: hasParentLink,
+                currentTitle: pageState.displayTitle,
                 newerVersions: newerVersions,
                 onOpenGalleryUrl: _openGalleryUrl,
                 onCopy: (value) => _copyValue(context, value),
@@ -374,7 +372,6 @@ class _GalleryInfoPageState extends State<GalleryInfoPage> {
             ],
             _SectionHeader(
               title: l10n.gallery_info_section_details,
-              hint: l10n.gallery_metadata_copy_hint,
             ),
             _DetailsCard(
               provider: provider,
@@ -383,7 +380,6 @@ class _GalleryInfoPageState extends State<GalleryInfoPage> {
             ),
             _SectionHeader(
               title: l10n.gallery_info_section_identifiers,
-              hint: l10n.gallery_metadata_copy_hint,
             ),
             _IdentifiersCard(
               gid: provider.gid?.trim() ?? '',
@@ -404,6 +400,19 @@ class _GalleryInfoPageState extends State<GalleryInfoPage> {
               statsLoader: widget.statsLoader,
               onOpenExternalUrl: (url) => _openExternalStatsUrl(context, url),
             ),
+            if (showLineageSection)
+              Padding(
+                padding: const EdgeInsets.only(top: 14),
+                child: Text(
+                  l10n.gallery_lineage_copy_hint,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.45,
+                    color: ehTheme.palette.text3.resolveFrom(context),
+                  ),
+                ),
+              ),
           ];
 
           return Center(
@@ -451,14 +460,12 @@ class _GalleryInfoPageState extends State<GalleryInfoPage> {
 }
 
 /// Observes [DownloadState.galleryTaskMap] reactively when newer versions exist
-/// so the incremental-update action appears immediately if a download completes
-/// while this page is open.
+/// so the incremental-update button appears without jumping card height if a
+/// download completes while this page is open.
 class _LineageCard extends StatelessWidget {
   const _LineageCard({
     required this.provider,
-    required this.rawParent,
-    required this.hasParentDisplay,
-    required this.hasParentLink,
+    required this.currentTitle,
     required this.newerVersions,
     required this.onOpenGalleryUrl,
     required this.onCopy,
@@ -466,9 +473,7 @@ class _LineageCard extends StatelessWidget {
   });
 
   final GalleryProvider provider;
-  final String rawParent;
-  final bool hasParentDisplay;
-  final bool hasParentLink;
+  final String currentTitle;
   final List<GalleryNewerVersion> newerVersions;
   final ValueChanged<String> onOpenGalleryUrl;
   final _CopyHandler onCopy;
@@ -479,62 +484,62 @@ class _LineageCard extends StatelessWidget {
   )?
   onIncrementalUpdate;
 
-  Widget _buildCard(BuildContext context, GalleryTask? downloadedTask) {
-    final items = <_MetaCardItem>[
-      if (hasParentDisplay)
-        _MetaCardItem(
-          child: _ParentLineageRow(
-            parentText: rawParent,
-            parentGid: provider.parentGid,
-            hasLink: hasParentLink,
-            onTap: hasParentLink
-                ? () => onOpenGalleryUrl(provider.parentHref!)
-                : () => unawaited(onCopy(rawParent)),
-            onLongPress: () => unawaited(
-              onCopy(
-                hasParentLink
-                    ? normalizeGalleryUrl(provider.parentHref!)
-                    : rawParent,
-              ),
-            ),
-          ),
-        ),
-      for (var i = 0; i < newerVersions.length; i++)
-        _MetaCardItem(
-          dividerIndentBefore: 56.0,
-          child: _NewerVersionRow(
-            version: newerVersions[i],
-            isLatest: i == 0,
-            onTap: () => onOpenGalleryUrl(newerVersions[i].url),
-            onLongPress: () => unawaited(
-              onCopy(normalizeGalleryUrl(newerVersions[i].url)),
-            ),
-          ),
-        ),
-      if (downloadedTask != null)
-        _MetaCardItem(
-          dividerIndentBefore: 0.0,
-          child: _IncrementalUpdateEntryRow(
-            onTap: () {
-              if (onIncrementalUpdate != null) {
-                onIncrementalUpdate!(
-                  context,
-                  downloadedTask,
-                  newerVersions,
-                );
-                return;
-              }
-              showGalleryIncrementalUpdateSheet(
-                context,
-                oldTask: downloadedTask,
-                newerVersions: newerVersions,
-              );
-            },
-          ),
+  Widget _buildCard(
+    BuildContext context, {
+    required GalleryTask? completeTask,
+    required bool hasIncompleteTask,
+    required List<GalleryNewerVersion> updatableNewer,
+  }) {
+    final l10n = L10n.of(context);
+    final showActionSlot =
+        updatableNewer.isNotEmpty && (completeTask != null || hasIncompleteTask);
+    final children = <Widget>[
+      GalleryLineageChain(
+        provider: provider,
+        currentTitle: currentTitle,
+        isDownloaded: completeTask != null,
+        onOpen: onOpenGalleryUrl,
+        onCopy: (value) => unawaited(onCopy(value)),
+      ),
+      if (showActionSlot)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
+          child: completeTask != null
+              ? EhButton(
+                  label: l10n.incremental_update_to_latest,
+                  icon: CupertinoIcons.arrow_down_to_line,
+                  style: EhButtonStyle.tonal,
+                  selected: true,
+                  expand: true,
+                  size: 44,
+                  onPressed: () {
+                    if (onIncrementalUpdate != null) {
+                      onIncrementalUpdate!(
+                        context,
+                        completeTask,
+                        updatableNewer,
+                      );
+                      return;
+                    }
+                    showGalleryIncrementalUpdateSheet(
+                      context,
+                      oldTask: completeTask,
+                      newerVersions: updatableNewer,
+                    );
+                  },
+                )
+              : const SizedBox(height: 44),
         ),
     ];
 
-    return _MetaSurfaceCard.items(items: items);
+    return GalleryLuminousCardFrame(
+      radius: _kCardRadius,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
   }
 
   @override
@@ -545,16 +550,32 @@ class _LineageCard extends StatelessWidget {
         gid != null &&
         Get.isRegistered<DownloadController>();
     if (!canObserveDownload) {
-      return _buildCard(context, null);
+      return _buildCard(
+        context,
+        completeTask: null,
+        hasIncompleteTask: false,
+        updatableNewer: const <GalleryNewerVersion>[],
+      );
     }
 
     return Obx(() {
-      final task = Get.find<DownloadController>().dState.galleryTaskMap[gid];
+      final taskMap = Get.find<DownloadController>().dState.galleryTaskMap;
+      final task = taskMap[gid];
       final completeTask =
           (task != null && task.status == TaskStatus.complete.value)
           ? task
           : null;
-      return _buildCard(context, completeTask);
+      final hasIncompleteTask = task != null && completeTask == null;
+      final updatableNewer = filterUndownloadedNewerVersions(
+        newerVersions,
+        taskMap,
+      );
+      return _buildCard(
+        context,
+        completeTask: completeTask,
+        hasIncompleteTask: hasIncompleteTask,
+        updatableNewer: updatableNewer,
+      );
     });
   }
 }
@@ -562,11 +583,9 @@ class _LineageCard extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({
     required this.title,
-    this.hint,
   });
 
   final String title;
-  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -575,82 +594,41 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsetsDirectional.fromSTEB(12, 20, 12, 8),
       child: SizedBox(
         width: double.infinity,
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 2,
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: <Widget>[
-            Semantics(
-              header: true,
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: palette.text2.resolveFrom(context),
-                ),
-              ),
+        child: Semantics(
+          header: true,
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: palette.text2.resolveFrom(context),
             ),
-            if (hint != null && hint!.isNotEmpty)
-              Text(
-                hint!,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w400,
-                  color: palette.text3.resolveFrom(context),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _MetaCardItem {
-  const _MetaCardItem({
-    required this.child,
-    this.dividerIndentBefore,
-  });
-
-  final Widget child;
-  final double? dividerIndentBefore;
-}
-
 class _MetaSurfaceCard extends StatelessWidget {
   const _MetaSurfaceCard({
-    required List<Widget> this.children,
+    required this.children,
     this.dividerIndent = 16.0,
-  }) : items = null;
+  });
 
-  const _MetaSurfaceCard.items({
-    required List<_MetaCardItem> this.items,
-  }) : children = null,
-       dividerIndent = 16.0;
-
-  final List<Widget>? children;
-  final List<_MetaCardItem>? items;
+  final List<Widget> children;
   final double dividerIndent;
 
   @override
   Widget build(BuildContext context) {
-    final resolvedItems =
-        items ??
-        <Widget>[...?children]
-            .map((w) => _MetaCardItem(child: w))
-            .toList(growable: false);
-
     final columnChildren = <Widget>[];
-    for (var i = 0; i < resolvedItems.length; i++) {
-      final item = resolvedItems[i];
+    for (var i = 0; i < children.length; i++) {
       if (i > 0) {
-        final indent = item.dividerIndentBefore ?? dividerIndent;
         columnChildren.add(
-          GalleryLuminousDivider.horizontal(startInset: indent),
+          GalleryLuminousDivider.horizontal(startInset: dividerIndent),
         );
       }
-      columnChildren.add(item.child);
+      columnChildren.add(children[i]);
     }
 
     return GalleryLuminousCardFrame(
@@ -1233,303 +1211,6 @@ class _MetricCell extends StatelessWidget {
       onPressed: onTap,
       borderRadius: BorderRadius.zero,
       child: content,
-    );
-  }
-}
-
-class _ParentLineageRow extends StatelessWidget {
-  const _ParentLineageRow({
-    required this.parentText,
-    required this.parentGid,
-    required this.hasLink,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  final String parentText;
-  final String? parentGid;
-  final bool hasLink;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = L10n.of(context);
-    final palette = ehTheme.palette;
-    final accent = EhPalette.accent.resolveFrom(context);
-    final label = hasLink
-        ? (parentGid != null && parentGid!.isNotEmpty
-            ? '#$parentGid'
-            : parentText)
-        : (parentText.isNotEmpty
-            ? parentText
-            : l10n.gallery_parent_unavailable);
-
-    return EhPressable(
-      onPressed: onTap,
-      onLongPress: onLongPress,
-      borderRadius: BorderRadius.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 28,
-              height: 28,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: hasLink
-                    ? EhPalette.accentSoft.resolveFrom(context)
-                    : palette.fill.resolveFrom(context),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: EhSvgIcon(
-                CupertinoIcons.arrow_up_left,
-                size: 14,
-                color: hasLink ? accent : palette.text3.resolveFrom(context),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    l10n.gallery_parent,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      color: palette.text2.resolveFrom(context),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: hasLink ? FontWeight.w600 : FontWeight.w500,
-                      fontFamily: _monoFontFamily(),
-                      fontFamilyFallback: _kMonoFallbacks,
-                      fontFeatures: _kTabularFigures,
-                      color: hasLink
-                          ? accent
-                          : palette.text2.resolveFrom(context),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            EhSvgIcon(
-              hasLink
-                  ? CupertinoIcons.chevron_right
-                  : CupertinoIcons.doc_on_doc,
-              size: 14,
-              color: palette.text3.resolveFrom(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NewerVersionRow extends StatelessWidget {
-  const _NewerVersionRow({
-    required this.version,
-    required this.isLatest,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  final GalleryNewerVersion version;
-  final bool isLatest;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = L10n.of(context);
-    final palette = ehTheme.palette;
-    final accent = EhPalette.accent.resolveFrom(context);
-    final subtitleParts = <String>[
-      '#${version.gid}',
-      if (version.addedDate?.trim().isNotEmpty ?? false)
-        version.addedDate!.trim(),
-    ];
-
-    return EhPressable(
-      onPressed: onTap,
-      onLongPress: onLongPress,
-      borderRadius: BorderRadius.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: <Widget>[
-            SizedBox(
-              width: 28,
-              child: Center(
-                child: isLatest
-                    ? Container(
-                        width: 18,
-                        height: 18,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: EhPalette.accentSoft.resolveFrom(context),
-                        ),
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: accent,
-                          ),
-                        ),
-                      )
-                    : Container(
-                        width: 9,
-                        height: 9,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.transparent,
-                          border: Border.all(
-                            color: palette.text3.resolveFrom(context),
-                            width: 1.6,
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    version.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      height: 1.35,
-                      fontWeight: isLatest ? FontWeight.w600 : FontWeight.w500,
-                      color: palette.text1.resolveFrom(context),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: <Widget>[
-                      if (isLatest)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 1.5,
-                          ),
-                          decoration: ShapeDecoration(
-                            color: EhPalette.accentSoft.resolveFrom(context),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            l10n.gallery_latest_version,
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: accent,
-                            ),
-                          ),
-                        ),
-                      Text(
-                        subtitleParts.join(' · '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: palette.text2.resolveFrom(context),
-                          fontFeatures: _kTabularFigures,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            EhSvgIcon(
-              CupertinoIcons.chevron_right,
-              size: 14,
-              color: isLatest ? accent : palette.text3.resolveFrom(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _IncrementalUpdateEntryRow extends StatelessWidget {
-  const _IncrementalUpdateEntryRow({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = L10n.of(context);
-    final accent = EhPalette.accent.resolveFrom(context);
-    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-    return EhPressable(
-      onPressed: onTap,
-      borderRadius: BorderRadius.zero,
-      child: ColoredBox(
-        color: accent.withValues(alpha: dark ? 0.11 : 0.07),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 28,
-                height: 28,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: EhPalette.accentSoft.resolveFrom(context),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: EhSvgIcon(
-                  CupertinoIcons.arrow_2_circlepath,
-                  size: 15,
-                  color: accent,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  l10n.incremental_update_entry,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: accent,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              EhSvgIcon(
-                CupertinoIcons.chevron_right,
-                size: 14,
-                color: accent,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

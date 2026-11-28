@@ -66,4 +66,8 @@ class DownloadState {
   // 正在执行增量更新的画廊复用页统计
   final RxMap<int, GalleryIncrementalProgress> incrementalProgressMap =
       <int, GalleryIncrementalProgress>{}.obs;
+
+  // 由更新流程创建的活跃下载任务 GID（含 0 复用或 SAF 降级全量下载场景），
+  // 用于在「仅看可更新」筛选模式下持续展示正在进行的更新任务。
+  final RxSet<int> updateCreatedTaskGids = <int>{}.obs;
 }

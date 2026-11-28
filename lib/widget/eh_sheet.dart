@@ -7,11 +7,12 @@ import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 import 'package:eros_fe/widget/flutter_glass.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:get/get.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
-import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 /// Strengths of the sheet material, tuned for text legibility.
 ///
@@ -76,8 +77,20 @@ Future<T?> showEhSheet<T>({
     0,
     EhSheetTokens.dimAlpha(dark: dark),
   );
+  final triggerGlobalOffset = _triggerGlobalOffsetOf(context);
+  final triggerGlobalX = triggerGlobalOffset?.dx;
+  final triggerGlobalY = triggerGlobalOffset?.dy;
+  final rootNavigator = Navigator.of(context, rootNavigator: true);
+  final triggerViewportSize =
+      MediaQuery.maybeSizeOf(rootNavigator.context) ??
+      MediaQuery.maybeSizeOf(context);
+  final triggerViewportWidth = triggerViewportSize?.width;
+  final triggerViewportHeight = triggerViewportSize?.height;
+  final inheritedEnv =
+      AdaptiveEnvironmentScope.maybeOf(rootNavigator.context) ??
+      AdaptiveEnvironmentScope.maybeOf(context);
   if (!PlatformCapabilities.uiKitGlass) {
-    final navigator = Navigator.of(context, rootNavigator: true);
+    final navigator = rootNavigator;
     final themes = InheritedTheme.capture(from: context, to: navigator.context);
     return navigator.push<T>(
       RawDialogRoute<T>(
@@ -90,8 +103,16 @@ Future<T?> showEhSheet<T>({
         transitionDuration: MediaQuery.disableAnimationsOf(context)
             ? Duration.zero
             : const Duration(milliseconds: 180),
-        pageBuilder: (sheetContext, _, _) =>
-            themes.wrap(EhSheetFrame(child: Builder(builder: builder))),
+        pageBuilder: (sheetContext, _, _) => themes.wrap(
+          EhSheetFrame(
+            triggerGlobalX: triggerGlobalX,
+            triggerGlobalY: triggerGlobalY,
+            triggerViewportWidth: triggerViewportWidth,
+            triggerViewportHeight: triggerViewportHeight,
+            environmentOverride: inheritedEnv,
+            child: Builder(builder: builder),
+          ),
+        ),
         transitionBuilder: (context, animation, _, child) {
           final fade = animation.drive(CurveTween(curve: Curves.easeOut));
           final centered =
@@ -117,31 +138,273 @@ Future<T?> showEhSheet<T>({
     context: context,
     barrierDismissible: barrierDismissible,
     barrierColor: barrierColor,
-    builder: (sheetContext) => EhSheetFrame(child: builder(sheetContext)),
+    builder: (sheetContext) => EhSheetFrame(
+      triggerGlobalX: triggerGlobalX,
+      triggerGlobalY: triggerGlobalY,
+      triggerViewportWidth: triggerViewportWidth,
+      triggerViewportHeight: triggerViewportHeight,
+      environmentOverride: inheritedEnv,
+      child: builder(sheetContext),
+    ),
   );
 }
 
+Offset? _triggerGlobalOffsetOf(BuildContext context) {
+  final renderObject = context.findRenderObject();
+  if (renderObject is RenderBox &&
+      renderObject.attached &&
+      renderObject.hasSize) {
+    return renderObject.localToGlobal(renderObject.size.center(Offset.zero));
+  }
+  return null;
+}
+
+/// Resolved positioning metrics for [EhSheetFrame], keeping sheets off foldable
+/// hinges such as an unfolded iPhone Duo (both vertical and tabletop poses).
+@immutable
+class EhSheetPlacement {
+  const EhSheetPlacement({
+    required this.padding,
+    required this.alignment,
+    required this.maxWidth,
+    this.maxHeight,
+    required this.avoidsFold,
+  });
+
+  final EdgeInsets padding;
+  final Alignment alignment;
+  final double maxWidth;
+  final double? maxHeight;
+  final bool avoidsFold;
+}
+
 /// Positions the sheet: bottom-floating on phones, centred on wide windows,
+/// aligned to a safe half-pane on unfolded/tabletop foldable displays, and
 /// lifted above the keyboard.
 class EhSheetFrame extends StatelessWidget {
-  const EhSheetFrame({super.key, required this.child});
+  const EhSheetFrame({
+    super.key,
+    required this.child,
+    this.triggerGlobalX,
+    this.triggerGlobalY,
+    this.triggerViewportWidth,
+    this.triggerViewportHeight,
+    this.environmentOverride,
+  });
+
+  /// Minimum width treated as an unfolded Duo inner display when native
+  /// division regions are absent (e.g. laid flat at 180°).
+  static const double duoInnerMinWidth = 900;
+  static const double _duoMinAvoidWidth = 27;
+  static const double _minHalfPaneWidth = 260;
+  static const double _minHalfPaneHeight = 200;
 
   final Widget child;
+  final double? triggerGlobalX;
+  final double? triggerGlobalY;
+  final double? triggerViewportWidth;
+  final double? triggerViewportHeight;
+  final AdaptiveEnvironmentSnapshot? environmentOverride;
+
+  static EhSheetPlacement? _placeAroundFold({
+    required Size viewportSize,
+    required EdgeInsets safeArea,
+    required double avoidLeft,
+    required double avoidRight,
+    required double? effectiveTriggerX,
+  }) {
+    const inset = EhSheetTokens.inset;
+    final topPad = math.max(safeArea.top, inset);
+    final bottomPad = math.max(safeArea.bottom, inset);
+    final leftUsableStart = math.max(safeArea.left, 0.0);
+    final rightUsableEnd = viewportSize.width - math.max(safeArea.right, 0.0);
+    final leftPaneWidth = avoidLeft - leftUsableStart;
+    final rightPaneWidth = rightUsableEnd - avoidRight;
+    if (leftPaneWidth < _minHalfPaneWidth ||
+        rightPaneWidth < _minHalfPaneWidth) {
+      return null;
+    }
+    final useLeft =
+        effectiveTriggerX != null && effectiveTriggerX < avoidLeft;
+    final paneStart = useLeft ? leftUsableStart : avoidRight;
+    final paneEnd = useLeft ? avoidLeft : rightUsableEnd;
+    final paneWidth = math.max(0.0, paneEnd - paneStart - inset * 2);
+    return EhSheetPlacement(
+      padding: EdgeInsets.fromLTRB(
+        paneStart + inset,
+        topPad,
+        (viewportSize.width - paneEnd) + inset,
+        bottomPad,
+      ),
+      alignment: Alignment.bottomCenter,
+      maxWidth: math.min(EhSheetTokens.maxWidth, paneWidth),
+      avoidsFold: true,
+    );
+  }
+
+  static EhSheetPlacement? _placeAroundHorizontalFold({
+    required Size viewportSize,
+    required EdgeInsets safeArea,
+    required double avoidTop,
+    required double avoidBottom,
+    required double? effectiveTriggerY,
+  }) {
+    const inset = EhSheetTokens.inset;
+    final leftPad = math.max(safeArea.left, inset);
+    final rightPad = math.max(safeArea.right, inset);
+    final topUsableStart = math.max(safeArea.top, 0.0);
+    final bottomUsableEnd = viewportSize.height - math.max(safeArea.bottom, 0.0);
+    final topPaneHeight = avoidTop - topUsableStart;
+    final bottomPaneHeight = bottomUsableEnd - avoidBottom;
+    final topUsable = topPaneHeight >= _minHalfPaneHeight;
+    final bottomUsable = bottomPaneHeight >= _minHalfPaneHeight;
+    if (!topUsable && !bottomUsable) {
+      return null;
+    }
+    // Prefer the lower interactive pane in tabletop/portrait horizontal-fold
+    // poses unless the trigger explicitly lives in the upper pane (or only the
+    // upper pane has enough room).
+    final useTop =
+        !bottomUsable ||
+        (topUsable &&
+            effectiveTriggerY != null &&
+            effectiveTriggerY < avoidTop);
+    final paneTop = useTop ? topUsableStart : avoidBottom;
+    final paneBottom = useTop ? avoidTop : bottomUsableEnd;
+    final usableWidth = math.max(0.0, viewportSize.width - leftPad - rightPad);
+    final paneHeight = math.max(0.0, paneBottom - paneTop - inset * 2);
+    return EhSheetPlacement(
+      padding: EdgeInsets.fromLTRB(
+        leftPad,
+        paneTop + inset,
+        rightPad,
+        (viewportSize.height - paneBottom) + inset,
+      ),
+      alignment: Alignment.bottomCenter,
+      maxWidth: math.min(EhSheetTokens.maxWidth, usableWidth),
+      maxHeight: paneHeight,
+      avoidsFold: true,
+    );
+  }
+
+  /// Resolves sheet placement for the given viewport, safe area, and optional
+  /// [environment] division regions (iOS 27.1 Duo vertical & tabletop hinges).
+  static EhSheetPlacement resolvePlacement({
+    required Size viewportSize,
+    required EdgeInsets safeArea,
+    required bool isDesktop,
+    AdaptiveEnvironmentSnapshot? environment,
+    double? triggerGlobalX,
+    double? triggerGlobalY,
+    double? triggerViewportWidth,
+    double? triggerViewportHeight,
+  }) {
+    const inset = EhSheetTokens.inset;
+    final topPad = math.max(safeArea.top, inset);
+    final bottomPad = math.max(safeArea.bottom, inset);
+    // Ignore stale trigger coordinates if posture changed substantially.
+    final effectiveTriggerX =
+        (triggerViewportWidth != null &&
+            (viewportSize.width - triggerViewportWidth).abs() > 100)
+        ? null
+        : triggerGlobalX;
+    final effectiveTriggerY =
+        (triggerViewportHeight != null &&
+            (viewportSize.height - triggerViewportHeight).abs() > 100)
+        ? null
+        : triggerGlobalY;
+
+    if (environment != null) {
+      for (final region in environment.activeDivisionRegions) {
+        final fold = region.frame;
+        if (fold.width <= 0 && fold.height <= 0) {
+          continue;
+        }
+        if (fold.height > fold.width) {
+          final foldCenter = (fold.left + fold.right) / 2;
+          final halfAvoid = math.max(fold.width, _duoMinAvoidWidth) / 2;
+          final splitPlacement = _placeAroundFold(
+            viewportSize: viewportSize,
+            safeArea: safeArea,
+            avoidLeft: foldCenter - halfAvoid,
+            avoidRight: foldCenter + halfAvoid,
+            effectiveTriggerX: effectiveTriggerX,
+          );
+          if (splitPlacement != null) {
+            return splitPlacement;
+          }
+        } else {
+          final foldCenter = (fold.top + fold.bottom) / 2;
+          final halfAvoid = math.max(fold.height, _duoMinAvoidWidth) / 2;
+          final tabletopPlacement = _placeAroundHorizontalFold(
+            viewportSize: viewportSize,
+            safeArea: safeArea,
+            avoidTop: foldCenter - halfAvoid,
+            avoidBottom: foldCenter + halfAvoid,
+            effectiveTriggerY: effectiveTriggerY,
+          );
+          if (tabletopPlacement != null) {
+            return tabletopPlacement;
+          }
+        }
+      }
+
+      // When laid flat (180°), UIKit does not report an active division region
+      // on iPhone Duo, so split strictly around the physical midline (±13.5pt)
+      // only when confirmed to be an unfolded Duo inner display.
+      if (environment.nativeSupported &&
+          environment.duoVerticalBar &&
+          viewportSize.width >= duoInnerMinWidth) {
+        final midline = viewportSize.width / 2;
+        const halfAvoid = _duoMinAvoidWidth / 2;
+        final splitPlacement = _placeAroundFold(
+          viewportSize: viewportSize,
+          safeArea: safeArea,
+          avoidLeft: midline - halfAvoid,
+          avoidRight: midline + halfAvoid,
+          effectiveTriggerX: effectiveTriggerX,
+        );
+        if (splitPlacement != null) {
+          return splitPlacement;
+        }
+      }
+    }
+
+    final centered = isDesktop || viewportSize.width >= EhSheetTokens.centeredFrom;
+    final leftPad = math.max(safeArea.left, inset);
+    final rightPad = math.max(safeArea.right, inset);
+    final usableWidth = math.max(0.0, viewportSize.width - leftPad - rightPad);
+    return EhSheetPlacement(
+      padding: EdgeInsets.fromLTRB(leftPad, topPad, rightPad, bottomPad),
+      alignment: centered ? Alignment.center : Alignment.bottomCenter,
+      maxWidth: math.min(EhSheetTokens.maxWidth, usableWidth),
+      avoidsFold: false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final env = AdaptiveEnvironment.maybeOf(context);
-    final bookFoldedPane = env != null &&
-            env.isBookFolded &&
-            env.paneRects.length >= 2
-        ? env.paneRects.last
+    final liveServiceEnv = Get.isRegistered<AdaptiveEnvironmentService>()
+        ? Get.find<AdaptiveEnvironmentService>().snapshot.value
         : null;
-    final centered =
-        bookFoldedPane == null &&
-        (PlatformCapabilities.isDesktop ||
-            media.size.width >= EhSheetTokens.centeredFrom);
-    final content = AnimatedPadding(
+    final env =
+        AdaptiveEnvironmentScope.maybeOf(context) ??
+        (liveServiceEnv != null && !liveServiceEnv.size.isEmpty
+            ? liveServiceEnv
+            : null) ??
+        environmentOverride;
+    final placement = resolvePlacement(
+      viewportSize: media.size,
+      safeArea: media.padding,
+      isDesktop: PlatformCapabilities.isDesktop,
+      environment: env,
+      triggerGlobalX: triggerGlobalX,
+      triggerGlobalY: triggerGlobalY,
+      triggerViewportWidth: triggerViewportWidth,
+      triggerViewportHeight: triggerViewportHeight,
+    );
+    return AnimatedPadding(
       duration: media.disableAnimations
           ? Duration.zero
           : const Duration(milliseconds: 180),
@@ -150,19 +413,22 @@ class EhSheetFrame extends StatelessWidget {
       child: MediaQuery.removeViewInsets(
         context: context,
         removeBottom: true,
-        child: SafeArea(
-          minimum: const EdgeInsets.all(EhSheetTokens.inset),
+        child: Padding(
+          padding: placement.padding,
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final maxHeight = placement.maxHeight != null
+                  ? math.min(placement.maxHeight!, constraints.maxHeight)
+                  : constraints.maxHeight;
               return Align(
-                alignment: centered ? Alignment.center : Alignment.bottomCenter,
+                alignment: placement.alignment,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     maxWidth: math.min(
-                      EhSheetTokens.maxWidth,
+                      placement.maxWidth,
                       constraints.maxWidth,
                     ),
-                    maxHeight: constraints.maxHeight,
+                    maxHeight: maxHeight,
                   ),
                   child: EhSheetSurface(child: child),
                 ),
@@ -171,26 +437,6 @@ class EhSheetFrame extends StatelessWidget {
           ),
         ),
       ),
-    );
-    if (bookFoldedPane == null) {
-      return content;
-    }
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        Positioned(
-          left: bookFoldedPane.left,
-          top: 0,
-          width: bookFoldedPane.width,
-          bottom: 0,
-          child: MediaQuery.removePadding(
-            context: context,
-            removeLeft: true,
-            removeRight: true,
-            child: content,
-          ),
-        ),
-      ],
     );
   }
 }

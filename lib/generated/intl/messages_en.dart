@@ -30,163 +30,171 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(site) => "Current ${site}";
 
-  static String m5(reused) => "Reused ${reused}";
+  static String m5(checked, total) => "Checking updates ${checked} / ${total}";
 
-  static String m6(checked, found, failed) =>
+  static String m6(done, total) => "Downloading ${done} / ${total}";
+
+  static String m7(reused) => "Paused · ${reused} reused";
+
+  static String m8(reused) => "Updating · ${reused} reused";
+
+  static String m9(checked, found, failed) =>
       "Checked ${checked} · ${found} updates (${failed} failed)";
 
-  static String m7(count) => "${count} galleries have newer versions";
+  static String m10(count) => "${count} failed";
 
-  static String m8(favcat) => "Moved to \"${favcat}\"";
+  static String m11(count) => "${count} updates";
 
-  static String m9(ok, fail) => "${ok} moved, ${fail} failed";
+  static String m12(count) => "All up to date · ${count} checked";
 
-  static String m10(ok, fail) => "${ok} removed, ${fail} failed";
+  static String m13(favcat) => "Moved to \"${favcat}\"";
 
-  static String m11(notes) =>
+  static String m14(ok, fail) => "${ok} moved, ${fail} failed";
+
+  static String m15(ok, fail) => "${ok} removed, ${fail} failed";
+
+  static String m16(notes) =>
       "${notes} notes will also be deleted. This cannot be undone.";
 
-  static String m12(count) => "Remove ${count} favorites?";
+  static String m17(count) => "Remove ${count} favorites?";
 
-  static String m13(count) => "Removed ${count} favorites";
+  static String m18(count) => "Removed ${count} favorites";
 
-  static String m14(folder) => "Already in \"${folder}\"";
+  static String m19(folder) => "Already in \"${folder}\"";
 
-  static String m15(count) => "Used in ${count} rules";
+  static String m20(count) => "Used in ${count} rules";
 
-  static String m16(count) => "${count}";
+  static String m21(count) => "${count}";
 
-  static String m17(category) => "New rule for \"${category}\"";
+  static String m22(category) => "New rule for \"${category}\"";
 
-  static String m18(count) => "${count} galleries";
+  static String m23(count) => "${count} galleries";
 
-  static String m19(count) => "${count} galleries matched in history";
+  static String m24(count) => "${count} galleries matched in history";
 
-  static String m20(count) => "${count} galleries match in history";
+  static String m25(count) => "${count} galleries match in history";
 
-  static String m21(count) => "Matched ${count} times";
+  static String m26(count) => "Matched ${count} times";
 
-  static String m22(count, time) => "Matched ${count} times · Last ${time}";
+  static String m27(count, time) => "Matched ${count} times · Last ${time}";
 
-  static String m23(count) => "${count} tags";
+  static String m28(count) => "${count} tags";
 
-  static String m24(folder) => "Kept in \"${folder}\"";
+  static String m29(folder) => "Kept in \"${folder}\"";
 
-  static String m25(folder) => "Move to \"${folder}\"";
+  static String m30(folder) => "Move to \"${folder}\"";
 
-  static String m26(from, to) => "Moved from \"${from}\" to \"${to}\"";
+  static String m31(from, to) => "Moved from \"${from}\" to \"${to}\"";
 
-  static String m27(rules) => "Also matched \"${rules}\" (lower priority)";
+  static String m32(rules) => "Also matched \"${rules}\" (lower priority)";
 
-  static String m28(rule) => "Rule \"${rule}\"";
+  static String m33(rule) => "Rule \"${rule}\"";
 
-  static String m29(rule, tag) => "Rule \"${rule}\" · ${tag}";
+  static String m34(rule, tag) => "Rule \"${rule}\" · ${tag}";
 
-  static String m30(folder) => "Save to \"${folder}\"";
+  static String m35(folder) => "Save to \"${folder}\"";
 
-  static String m31(folder) => "Saved to \"${folder}\"";
+  static String m36(folder) => "Saved to \"${folder}\"";
 
-  static String m32(count) => "On · ${count}";
+  static String m37(count) => "On · ${count}";
 
-  static String m33(fallback) => "Fallback action: ${fallback}";
+  static String m38(fallback) => "Fallback action: ${fallback}";
 
-  static String m34(count) => "${count} total";
+  static String m39(count) => "${count} total";
 
-  static String m35(favcat) => "Saved in ${favcat}";
+  static String m40(favcat) => "Saved in ${favcat}";
 
-  static String m36(count, scope) => "${count} results in ${scope}";
+  static String m41(count, scope) => "${count} results in ${scope}";
 
-  static String m37(query, scope) => "No \"${query}\" in ${scope}";
+  static String m42(query, scope) => "No \"${query}\" in ${scope}";
 
-  static String m38(favcat) => "Search in ${favcat}";
+  static String m43(favcat) => "Search in ${favcat}";
 
-  static String m39(count) => "${count} selected";
+  static String m44(count) => "${count} selected";
 
-  static String m40(favcat, total) => "${favcat} · ${total} items";
+  static String m45(favcat, total) => "${favcat} · ${total} items";
 
-  static String m41(gid) => "Parent #${gid}";
-
-  static String m42(count) =>
+  static String m46(count) =>
       "${Intl.plural(count, one: '${count} rating', other: '${count} ratings')}";
 
-  static String m43(count) => "${count} newer versions";
+  static String m47(count) => "${count} versions";
 
-  static String m44(gid) => "Current version #${gid}";
+  static String m48(count) => "From parent · ${count} versions";
 
-  static String m45(value) => "Peak ${value}";
+  static String m49(count) => "${count} newer versions";
 
-  static String m46(value) => "Avg ${value}";
+  static String m50(gid) => "Current version #${gid}";
 
-  static String m47(period, percent) => "${period} · ${percent}%";
+  static String m51(value) => "Peak ${value}";
 
-  static String m48(value) => "Total ${value}";
+  static String m52(value) => "Avg ${value}";
 
-  static String m49(score) => "Score ${score}";
+  static String m53(period, percent) => "${period} · ${percent}%";
 
-  static String m50(date) => "Updated ${date}";
+  static String m54(value) => "Total ${value}";
 
-  static String m51(gid, reused) =>
+  static String m55(score) => "Score ${score}";
+
+  static String m56(date) => "Updated ${date}";
+
+  static String m57(count) => "Added ${count}";
+
+  static String m58(gid, reused) =>
       "Updated to #${gid} locally (${reused} pages reused)";
 
-  static String m52(gid) =>
-      "Reuse unchanged local images, update task to #${gid}, and map reading position.";
+  static String m59(count) => "${count} to download";
 
-  static String m53(gid) =>
-      "Create a new folder for #${gid} with reused images while keeping the old version.";
+  static String m60(count) => "~${count} revised";
 
-  static String m54(count) => "Fetch ${count} pages";
+  static String m61(count) => "Reused ${count}";
 
-  static String m55(count) => "Upgrade in place · Fetch ${count} pages";
-
-  static String m56(count) => "Create new task · Fetch ${count} pages";
-
-  static String m57(count) => "Download as new task · ${count} pages";
-
-  static String m58(reused, fetch) =>
+  static String m62(reused, fetch) =>
       "Incremental update started (reused ${reused}, fetching ${fetch})";
 
-  static String m59(count) => "${count} galleries finished downloading";
+  static String m63(count) => "${count} pages total";
 
-  static String m60(title) => "${title} finished downloading";
+  static String m64(count) => "${count} galleries finished downloading";
 
-  static String m61(count) => "Downloading ${count} galleries";
+  static String m65(title) => "${title} finished downloading";
 
-  static String m62(completed, total) => "${completed}/${total} pages";
+  static String m66(count) => "Downloading ${count} galleries";
 
-  static String m63(modelName) => "Model ${modelName}";
+  static String m67(completed, total) => "${completed}/${total} pages";
 
-  static String m64(count) => "${count} pages";
+  static String m68(modelName) => "Model ${modelName}";
 
-  static String m65(seconds) => "${seconds} s";
+  static String m69(count) => "${count} pages";
 
-  static String m66(page, total) => "Page ${page} of ${total}";
+  static String m70(seconds) => "${seconds} s";
 
-  static String m67(rating) => "${rating} ⭐";
+  static String m71(page, total) => "Page ${page} of ${total}";
 
-  static String m68(ok, total) => "${ok}/${total} reachable";
+  static String m72(rating) => "${rating} ⭐";
 
-  static String m69(name) => "Active: ${name}";
+  static String m73(ok, total) => "${ok}/${total} reachable";
 
-  static String m70(time) => "· Synced ${time}";
+  static String m74(name) => "Active: ${name}";
 
-  static String m71(tag) => "Add ${tag}";
+  static String m75(time) => "· Synced ${time}";
 
-  static String m72(count) => "${count} pages";
+  static String m76(tag) => "Add ${tag}";
 
-  static String m73(avg, count) => "Avg ${avg} · ${count} ratings";
+  static String m77(count) => "${count} pages";
 
-  static String m74(text) => "Search “${text}”";
+  static String m78(avg, count) => "Avg ${avg} · ${count} ratings";
 
-  static String m75(count) => "${count} added · separate with commas";
+  static String m79(text) => "Search “${text}”";
 
-  static String m76(count, per) => "${count} pages · ${per} per page";
+  static String m80(count) => "${count} added · separate with commas";
 
-  static String m77(count) => "Torrents · ${count}";
+  static String m81(count, per) => "${count} pages · ${per} per page";
 
-  static String m78(tagNamespace) =>
+  static String m82(count) => "Torrents · ${count}";
+
+  static String m83(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m79(version) => "Update to ${version}";
+  static String m84(version) => "Update to ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -444,14 +452,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "download_check_updates": MessageLookupByLibrary.simpleMessage(
       "Check updates",
     ),
-    "download_checking_updates": MessageLookupByLibrary.simpleMessage(
-      "Checking...",
-    ),
+    "download_checking_updates_progress": m5,
     "download_files_unavailable": MessageLookupByLibrary.simpleMessage(
       "Files temporarily unavailable",
     ),
+    "download_filter_updatable": MessageLookupByLibrary.simpleMessage(
+      "Updates only",
+    ),
     "download_has_update_badge": MessageLookupByLibrary.simpleMessage("Update"),
-    "download_incremental_reused_status": m5,
+    "download_incremental_download_progress": m6,
+    "download_incremental_failed_status": MessageLookupByLibrary.simpleMessage(
+      "Update failed",
+    ),
+    "download_incremental_paused_status": m7,
+    "download_incremental_status": m8,
     "download_incremental_updating": MessageLookupByLibrary.simpleMessage(
       "Updating",
     ),
@@ -464,12 +478,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "download_ori_image_summary": MessageLookupByLibrary.simpleMessage(
       "it is dangerous! You may get 509 error",
     ),
+    "download_stop_check": MessageLookupByLibrary.simpleMessage("Stop"),
+    "download_update_action": MessageLookupByLibrary.simpleMessage("Update"),
     "download_update_all": MessageLookupByLibrary.simpleMessage("Update all"),
-    "download_updates_checked_with_errors": m6,
-    "download_updates_found": m7,
-    "download_updates_none": MessageLookupByLibrary.simpleMessage(
-      "All downloaded galleries are up to date",
+    "download_updates_checked_with_errors": m9,
+    "download_updates_failed_count": m10,
+    "download_updates_found": m11,
+    "download_updates_no_targets": MessageLookupByLibrary.simpleMessage(
+      "No completed downloads to check",
     ),
+    "download_updates_none": m12,
     "downloaded": MessageLookupByLibrary.simpleMessage("Downloaded"),
     "downloading": MessageLookupByLibrary.simpleMessage("Downloading"),
     "edit": MessageLookupByLibrary.simpleMessage("Edit"),
@@ -498,28 +516,28 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_current": MessageLookupByLibrary.simpleMessage("Current"),
     "fav_deselect_all": MessageLookupByLibrary.simpleMessage("Deselect all"),
     "fav_move_to": MessageLookupByLibrary.simpleMessage("Move to…"),
-    "fav_moved_to": m8,
+    "fav_moved_to": m13,
     "fav_note_add": MessageLookupByLibrary.simpleMessage("Add note"),
     "fav_note_edit": MessageLookupByLibrary.simpleMessage("Edit note"),
-    "fav_partial_failed": m9,
-    "fav_partial_remove_failed": m10,
+    "fav_partial_failed": m14,
+    "fav_partial_remove_failed": m15,
     "fav_remove_irreversible": MessageLookupByLibrary.simpleMessage(
       "This cannot be undone.",
     ),
-    "fav_remove_note_warn": m11,
-    "fav_remove_title": m12,
-    "fav_removed_count": m13,
+    "fav_remove_note_warn": m16,
+    "fav_remove_title": m17,
+    "fav_removed_count": m18,
     "fav_rule_add_condition": MessageLookupByLibrary.simpleMessage(
       "Add Condition",
     ),
-    "fav_rule_already_in_folder": m14,
+    "fav_rule_already_in_folder": m19,
     "fav_rule_category_badge": MessageLookupByLibrary.simpleMessage("Category"),
-    "fav_rule_category_used_count": m15,
+    "fav_rule_category_used_count": m20,
     "fav_rule_change_folder": MessageLookupByLibrary.simpleMessage("Change"),
     "fav_rule_clear_selection": MessageLookupByLibrary.simpleMessage("Clear"),
     "fav_rule_conditions": MessageLookupByLibrary.simpleMessage("Conditions"),
-    "fav_rule_count_items": m16,
-    "fav_rule_create_by_category": m17,
+    "fav_rule_count_items": m21,
+    "fav_rule_create_by_category": m22,
     "fav_rule_create_from_gallery": MessageLookupByLibrary.simpleMessage(
       "New rule from this gallery",
     ),
@@ -575,25 +593,25 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_fetch_tags_failed": MessageLookupByLibrary.simpleMessage(
       "Could not fetch full tags",
     ),
-    "fav_rule_gallery_count": m18,
+    "fav_rule_gallery_count": m23,
     "fav_rule_history_empty_save_ok": MessageLookupByLibrary.simpleMessage(
       "No galleries in your history match yet; the rule will still take effect once saved.",
     ),
-    "fav_rule_history_hits_count": m19,
+    "fav_rule_history_hits_count": m24,
     "fav_rule_history_hits_empty": MessageLookupByLibrary.simpleMessage(
       "No galleries in your history match this rule yet.",
     ),
-    "fav_rule_history_hits_matched": m20,
-    "fav_rule_hit_stats": m21,
-    "fav_rule_hit_stats_with_time": m22,
-    "fav_rule_hit_tag_count": m23,
+    "fav_rule_history_hits_matched": m25,
+    "fav_rule_hit_stats": m26,
+    "fav_rule_hit_stats_with_time": m27,
+    "fav_rule_hit_tag_count": m28,
     "fav_rule_invalid_condition": MessageLookupByLibrary.simpleMessage(
       "Invalid condition or regular expression",
     ),
     "fav_rule_invalid_regex": MessageLookupByLibrary.simpleMessage(
       "Invalid regular expression",
     ),
-    "fav_rule_kept_in_folder": m24,
+    "fav_rule_kept_in_folder": m29,
     "fav_rule_last_used_badge": MessageLookupByLibrary.simpleMessage("Last"),
     "fav_rule_list_footer": MessageLookupByLibrary.simpleMessage(
       "Long-press to reorder, swipe left to delete.",
@@ -636,8 +654,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "fav_rule_mode_category": MessageLookupByLibrary.simpleMessage("Category"),
     "fav_rule_mode_tag": MessageLookupByLibrary.simpleMessage("Tag"),
-    "fav_rule_move_to_folder": m25,
-    "fav_rule_moved_folder": m26,
+    "fav_rule_move_to_folder": m30,
+    "fav_rule_moved_folder": m31,
     "fav_rule_my_tags_short": MessageLookupByLibrary.simpleMessage("My Tags"),
     "fav_rule_name_placeholder": MessageLookupByLibrary.simpleMessage(
       "Rule name (generated from condition if empty)",
@@ -666,7 +684,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_order_hint": MessageLookupByLibrary.simpleMessage(
       "Top to bottom, first match wins",
     ),
-    "fav_rule_other_hits_note": m27,
+    "fav_rule_other_hits_note": m32,
     "fav_rule_pick_one_folder_hint": MessageLookupByLibrary.simpleMessage(
       "Select a folder",
     ),
@@ -684,8 +702,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Wheel Picker",
     ),
     "fav_rule_preview": MessageLookupByLibrary.simpleMessage("Preview"),
-    "fav_rule_reason_only": m28,
-    "fav_rule_reason_with_tag": m29,
+    "fav_rule_reason_only": m33,
+    "fav_rule_reason_with_tag": m34,
     "fav_rule_regex_placeholder": MessageLookupByLibrary.simpleMessage(
       "Regular expression, e.g. ^foot.*",
     ),
@@ -696,8 +714,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Rule created",
     ),
     "fav_rule_save_into_lead": MessageLookupByLibrary.simpleMessage("Save to"),
-    "fav_rule_save_to_folder": m30,
-    "fav_rule_saved_to_folder": m31,
+    "fav_rule_save_to_folder": m35,
+    "fav_rule_saved_to_folder": m36,
     "fav_rule_search_this_category": MessageLookupByLibrary.simpleMessage(
       "Search Category",
     ),
@@ -713,13 +731,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "fav_rule_status_disabled": MessageLookupByLibrary.simpleMessage("Off"),
     "fav_rule_status_enabled": MessageLookupByLibrary.simpleMessage("On"),
-    "fav_rule_status_enabled_count": m32,
+    "fav_rule_status_enabled_count": m37,
     "fav_rule_tag_namespace": MessageLookupByLibrary.simpleMessage("Namespace"),
     "fav_rule_target_folder": MessageLookupByLibrary.simpleMessage("Save To"),
     "fav_rule_test_custom_tags": MessageLookupByLibrary.simpleMessage(
       "Custom Tags",
     ),
-    "fav_rule_test_fallback_desc": m33,
+    "fav_rule_test_fallback_desc": m38,
     "fav_rule_test_from_history": MessageLookupByLibrary.simpleMessage(
       "From History",
     ),
@@ -737,7 +755,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "fav_rule_test_title": MessageLookupByLibrary.simpleMessage("Test Rules"),
     "fav_rule_title": MessageLookupByLibrary.simpleMessage("Rule Favorites"),
-    "fav_rule_total_count": m34,
+    "fav_rule_total_count": m39,
     "fav_rule_trigger": MessageLookupByLibrary.simpleMessage("Trigger Gesture"),
     "fav_rule_trigger_long_press": MessageLookupByLibrary.simpleMessage(
       "Long-press Favorite",
@@ -752,7 +770,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_value_placeholder": MessageLookupByLibrary.simpleMessage(
       "Enter tag or keyword",
     ),
-    "fav_saved_in": m35,
+    "fav_saved_in": m40,
     "fav_scope_all": MessageLookupByLibrary.simpleMessage("All"),
     "fav_scope_note": MessageLookupByLibrary.simpleMessage("Note"),
     "fav_scope_tag": MessageLookupByLibrary.simpleMessage("Tag"),
@@ -763,12 +781,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_search_all_folders": MessageLookupByLibrary.simpleMessage(
       "Search all folders",
     ),
-    "fav_search_count": m36,
-    "fav_search_empty": m37,
-    "fav_search_in": m38,
+    "fav_search_count": m41,
+    "fav_search_empty": m42,
+    "fav_search_in": m43,
     "fav_select": MessageLookupByLibrary.simpleMessage("Select"),
-    "fav_selected_count": m39,
-    "fav_selected_scope": m40,
+    "fav_selected_count": m44,
+    "fav_selected_scope": m45,
     "favcat": MessageLookupByLibrary.simpleMessage("Favorites"),
     "favorite_note_hint": MessageLookupByLibrary.simpleMessage(
       "Note (optional)",
@@ -806,9 +824,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_comments": MessageLookupByLibrary.simpleMessage(
       "Gallery Comments",
     ),
-    "gallery_from_parent_hint": m41,
-    "gallery_has_parent_hint": MessageLookupByLibrary.simpleMessage(
-      "Has parent",
+    "gallery_downloaded_has_update": MessageLookupByLibrary.simpleMessage(
+      "Downloaded, newer version available",
     ),
     "gallery_info": MessageLookupByLibrary.simpleMessage("Gallery info"),
     "gallery_info_category": MessageLookupByLibrary.simpleMessage("Category"),
@@ -827,7 +844,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Could not open link in browser",
     ),
     "gallery_info_posted": MessageLookupByLibrary.simpleMessage("Posted"),
-    "gallery_info_rating_votes": m42,
+    "gallery_info_rating_votes": m46,
     "gallery_info_section_details": MessageLookupByLibrary.simpleMessage(
       "Details",
     ),
@@ -840,14 +857,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_info_visible": MessageLookupByLibrary.simpleMessage("Visible"),
     "gallery_latest_version": MessageLookupByLibrary.simpleMessage("Latest"),
     "gallery_lineage": MessageLookupByLibrary.simpleMessage("Version Lineage"),
-    "gallery_lineage_tap_hint": MessageLookupByLibrary.simpleMessage(
-      "Tap to open · Long press to copy",
+    "gallery_lineage_copy_hint": MessageLookupByLibrary.simpleMessage(
+      "Tap to open gallery · Long press to copy link",
+    ),
+    "gallery_lineage_count": m47,
+    "gallery_lineage_current": MessageLookupByLibrary.simpleMessage("Current"),
+    "gallery_lineage_from_parent": m48,
+    "gallery_lineage_newer": MessageLookupByLibrary.simpleMessage(
+      "Newer version",
     ),
     "gallery_metadata": MessageLookupByLibrary.simpleMessage("Metadata"),
-    "gallery_metadata_copy_hint": MessageLookupByLibrary.simpleMessage(
-      "Tap to copy",
-    ),
-    "gallery_newer_version_count": m43,
+    "gallery_newer_version_count": m49,
     "gallery_newer_version_single": MessageLookupByLibrary.simpleMessage(
       "Newer version available",
     ),
@@ -868,7 +888,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_stats": MessageLookupByLibrary.simpleMessage("Gallery Stats"),
     "gallery_stats_all_time": MessageLookupByLibrary.simpleMessage("All-Time"),
     "gallery_stats_collapse": MessageLookupByLibrary.simpleMessage("Hide"),
-    "gallery_stats_current_version": m44,
+    "gallery_stats_current_version": m50,
     "gallery_stats_daily": MessageLookupByLibrary.simpleMessage("Daily"),
     "gallery_stats_daily_avg": MessageLookupByLibrary.simpleMessage(
       "Daily Avg",
@@ -912,16 +932,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_stats_past_year": MessageLookupByLibrary.simpleMessage(
       "Past Year",
     ),
-    "gallery_stats_peak": m45,
-    "gallery_stats_period_avg": m46,
-    "gallery_stats_period_share": m47,
-    "gallery_stats_period_total": m48,
+    "gallery_stats_peak": m51,
+    "gallery_stats_period_avg": m52,
+    "gallery_stats_period_share": m53,
+    "gallery_stats_period_total": m54,
     "gallery_stats_ranking": MessageLookupByLibrary.simpleMessage("Rankings"),
     "gallery_stats_refresh": MessageLookupByLibrary.simpleMessage(
       "Refresh stats",
     ),
     "gallery_stats_retry": MessageLookupByLibrary.simpleMessage("Retry"),
-    "gallery_stats_score": m49,
+    "gallery_stats_score": m55,
     "gallery_stats_total_visits": MessageLookupByLibrary.simpleMessage(
       "Total Visits",
     ),
@@ -932,10 +952,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Yesterday",
     ),
     "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage("Updatable"),
-    "gallery_updated_on": m50,
-    "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage(
-      "View lineage",
-    ),
+    "gallery_updated_on": m56,
     "glass_effect": MessageLookupByLibrary.simpleMessage("Glass effect"),
     "glass_material": MessageLookupByLibrary.simpleMessage("Glass material"),
     "glass_material_frosted": MessageLookupByLibrary.simpleMessage(
@@ -1004,72 +1021,80 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "import_export": MessageLookupByLibrary.simpleMessage("Import and export"),
     "incremental_update_added": MessageLookupByLibrary.simpleMessage("Added"),
+    "incremental_update_added_pages": m57,
     "incremental_update_all_reused": MessageLookupByLibrary.simpleMessage(
       "All pages reused locally",
     ),
     "incremental_update_applying": MessageLookupByLibrary.simpleMessage(
       "Applying update…",
     ),
+    "incremental_update_cannot_reuse": MessageLookupByLibrary.simpleMessage(
+      "Cannot reuse",
+    ),
     "incremental_update_compare_failed": MessageLookupByLibrary.simpleMessage(
-      "Failed to analyze newer version",
+      "Failed to compare newer version",
     ),
     "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
-      "Analyzing page differences...",
+      "Comparing newer pages…",
     ),
-    "incremental_update_completed_locally": m51,
+    "incremental_update_completed_locally": m58,
     "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
       "Incremental update downloaded gallery",
     ),
-    "incremental_update_local_tag": MessageLookupByLibrary.simpleMessage(
-      "Local",
-    ),
     "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
-      "Upgrade in place & keep progress",
+      "Replace",
     ),
-    "incremental_update_mode_inplace_desc": m52,
+    "incremental_update_mode_inplace_desc": MessageLookupByLibrary.simpleMessage(
+      "Replaces the old folder with the newer version and maps your reading position.",
+    ),
     "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
-      "Download as new task (keep old)",
+      "Keep as new task",
     ),
-    "incremental_update_mode_new_desc": m53,
-    "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
-      "Update mode",
+    "incremental_update_mode_new_desc": MessageLookupByLibrary.simpleMessage(
+      "Creates a new task reusing unchanged pages while keeping the old version.",
     ),
-    "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage(
-      "Newer",
+    "incremental_update_mode_new_saf_desc": MessageLookupByLibrary.simpleMessage(
+      "Downloads the newer version as a new task while keeping the old version.",
     ),
-    "incremental_update_only_download": m54,
-    "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
-      "Recommended",
+    "incremental_update_need_download": m59,
+    "incremental_update_old_version": MessageLookupByLibrary.simpleMessage(
+      "Old Version",
     ),
-    "incremental_update_replaced": MessageLookupByLibrary.simpleMessage(
-      "Replaced",
-    ),
+    "incremental_update_replaced_approx": m60,
     "incremental_update_reused": MessageLookupByLibrary.simpleMessage("Reused"),
+    "incremental_update_reused_pages": m61,
     "incremental_update_saf_inplace_unsupported":
         MessageLookupByLibrary.simpleMessage(
           "SAF storage does not support local reuse or in-place upgrade; all pages will be downloaded as a new task.",
         ),
-    "incremental_update_start_inplace": m55,
-    "incremental_update_start_new": m56,
-    "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
-      "Complete update locally (0 pages to fetch)",
+    "incremental_update_saf_short_note": MessageLookupByLibrary.simpleMessage(
+      "Current SAF storage cannot reuse local files",
     ),
-    "incremental_update_start_saf_full": m57,
-    "incremental_update_started": m58,
+    "incremental_update_start": MessageLookupByLibrary.simpleMessage(
+      "Start Update",
+    ),
+    "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
+      "Complete Update Now",
+    ),
+    "incremental_update_start_saf_full": MessageLookupByLibrary.simpleMessage(
+      "Download Full New Version",
+    ),
+    "incremental_update_started": m62,
     "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
-      "Reuse unchanged local images",
+      "Reuse unchanged local pages",
     ),
     "incremental_update_target_version": MessageLookupByLibrary.simpleMessage(
       "Target version",
     ),
     "incremental_update_title": MessageLookupByLibrary.simpleMessage(
-      "Incremental Update",
+      "Update Downloaded Gallery",
     ),
-    "incremental_update_version_compare": MessageLookupByLibrary.simpleMessage(
-      "Version comparison",
+    "incremental_update_to_latest": MessageLookupByLibrary.simpleMessage(
+      "Update to Latest",
     ),
+    "incremental_update_total_pages": m63,
     "incremental_update_view_newer": MessageLookupByLibrary.simpleMessage(
-      "View newer gallery details",
+      "View Newer Details",
     ),
     "inner_display": MessageLookupByLibrary.simpleMessage("Inner Display"),
     "input_empty": MessageLookupByLibrary.simpleMessage("Input empty"),
@@ -1078,19 +1103,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "ios_bg_download": MessageLookupByLibrary.simpleMessage(
       "Background download",
     ),
-    "ios_bg_download_complete_multi": m59,
-    "ios_bg_download_complete_single": m60,
+    "ios_bg_download_complete_multi": m64,
+    "ios_bg_download_complete_single": m65,
     "ios_bg_download_complete_title": MessageLookupByLibrary.simpleMessage(
       "Download complete",
     ),
-    "ios_bg_download_multi_title": m61,
+    "ios_bg_download_multi_title": m66,
     "ios_bg_download_notify": MessageLookupByLibrary.simpleMessage(
       "Completion notification",
     ),
     "ios_bg_download_notify_subtitle": MessageLookupByLibrary.simpleMessage(
       "Send a local notification when background downloads finish",
     ),
-    "ios_bg_download_progress_pages": m62,
+    "ios_bg_download_progress_pages": m67,
     "ios_bg_download_subtitle": MessageLookupByLibrary.simpleMessage(
       "Keep gallery downloads running in the background without interrupting music playback",
     ),
@@ -1153,7 +1178,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("Sign in on the Web"),
     "max_history": MessageLookupByLibrary.simpleMessage("Maximum History"),
     "min": MessageLookupByLibrary.simpleMessage("min"),
-    "model": m63,
+    "model": m68,
     "more_actions": MessageLookupByLibrary.simpleMessage("More"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("More Thumbnails"),
     "multi_download": MessageLookupByLibrary.simpleMessage("Multi download"),
@@ -1210,7 +1235,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("Rate"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("Similar"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("Torrent"),
-    "page_count": m64,
+    "page_count": m69,
     "page_range": MessageLookupByLibrary.simpleMessage("Page range"),
     "page_range_error": MessageLookupByLibrary.simpleMessage(
       "Page range error",
@@ -1268,10 +1293,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage(
       "Fill screen in portrait",
     ),
-    "reader_interval_seconds": m65,
+    "reader_interval_seconds": m70,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("Next page"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("Page Layout"),
-    "reader_page_of": m66,
+    "reader_page_of": m71,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage(
       "Previous page",
     ),
@@ -1349,7 +1374,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "s_and": MessageLookupByLibrary.simpleMessage("and"),
     "s_pages": MessageLookupByLibrary.simpleMessage("pages"),
-    "s_stars": m67,
+    "s_stars": m72,
     "save": MessageLookupByLibrary.simpleMessage("Save"),
     "save_current_image": MessageLookupByLibrary.simpleMessage(
       "Save current image",
@@ -1440,10 +1465,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_diag_section": MessageLookupByLibrary.simpleMessage(
       "Connectivity Diagnostics",
     ),
-    "sni_diag_summary_ok": m68,
+    "sni_diag_summary_ok": m73,
     "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("Tap to test"),
     "sni_doh_auto": MessageLookupByLibrary.simpleMessage("Automatic"),
-    "sni_doh_auto_selected": m69,
+    "sni_doh_auto_selected": m74,
     "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("Polluted"),
     "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH Servers"),
     "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("Test"),
@@ -1454,7 +1479,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
       "DoH server list updated",
     ),
-    "sni_doh_synced_at": m70,
+    "sni_doh_synced_at": m75,
     "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("Syncing…"),
     "sni_doh_testing": MessageLookupByLibrary.simpleMessage("Testing…"),
     "sni_mode_compat": MessageLookupByLibrary.simpleMessage("Compatibility"),
@@ -1482,7 +1507,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage(
       "Add to quick searches",
     ),
-    "sp_add_tag": m71,
+    "sp_add_tag": m76,
     "sp_all": MessageLookupByLibrary.simpleMessage("All"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("All favorites"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage(
@@ -1532,7 +1557,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("Last"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("Next"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("Prev"),
-    "sp_page_total": m72,
+    "sp_page_total": m77,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage(
       "Tap to choose an image",
     ),
@@ -1540,12 +1565,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Quick searches",
     ),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("Submit rating"),
-    "sp_rating_summary": m73,
+    "sp_rating_summary": m78,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("Recent"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("Refresh"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("Reset"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("Retry"),
-    "sp_search_for": m74,
+    "sp_search_for": m79,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "Search titles, tags or paste a link",
     ),
@@ -1562,14 +1587,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("Similarity scan"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("Search"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("Suggestions"),
-    "sp_tags_added": m75,
+    "sp_tags_added": m80,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "e.g. female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage(
       "Go to preview page",
     ),
-    "sp_thumbs_per_page": m76,
+    "sp_thumbs_per_page": m81,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("Done"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage(
       "Download torrent",
@@ -1580,7 +1605,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("Share magnet"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("Peers"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("Seeds"),
-    "sp_torrent_title": m77,
+    "sp_torrent_title": m82,
     "sp_translate": MessageLookupByLibrary.simpleMessage("Translate"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage(
       "Split, set by divider",
@@ -1614,7 +1639,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("Watched"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("Tabbar setting"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("Tablet layout"),
-    "tagNamespace": m78,
+    "tagNamespace": m83,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("Add to Mytags"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default Color",
@@ -1882,7 +1907,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "undo": MessageLookupByLibrary.simpleMessage("Undo"),
     "unlimited": MessageLookupByLibrary.simpleMessage("Unlimited"),
-    "update_to_version": m79,
+    "update_to_version": m84,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("Upload Avatar"),
     "uploader": MessageLookupByLibrary.simpleMessage("Uploader"),
     "user_login": MessageLookupByLibrary.simpleMessage("User Sign"),
