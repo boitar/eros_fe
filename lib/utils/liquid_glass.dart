@@ -224,6 +224,23 @@ class LiquidGlassAccessibilitySettings {
 
   static ValueListenable<bool?> get reduceTransparency => _reduceTransparency;
 
+  /// Whether glass surfaces should degrade to an opaque card because either
+  /// system "Reduce Transparency" or "Increase Contrast" is active.
+  ///
+  /// On UIKit hosts, `null` (before the first native channel event) defaults
+  /// conservatively to `true`; on non-UIKit hosts without the iOS bridge, only
+  /// an explicit `true` triggers the reduce-transparency fallback.
+  static bool shouldUseOpaqueFallback(
+    BuildContext context, {
+    bool? reduceTransparencyOverride,
+  }) {
+    if (MediaQuery.highContrastOf(context)) {
+      return true;
+    }
+    final value = reduceTransparencyOverride ?? _reduceTransparency.value;
+    return PlatformCapabilities.uiKitGlass ? value != false : value == true;
+  }
+
   static void watch() {
     if (!PlatformCapabilities.uiKitGlass || _subscription != null) {
       return;

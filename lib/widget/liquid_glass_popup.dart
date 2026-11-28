@@ -131,102 +131,110 @@ class LiquidGlassPopupSurface extends StatelessWidget {
     if (mode == GlassMode.off) {
       return child;
     }
-    if (mode == GlassMode.flutter &&
-        FlutterGlassRuntime.available &&
-        !MediaQuery.highContrastOf(context)) {
-      return FlutterGlassPanel(borderRadius: borderRadius, child: child);
-    }
-    return _buildLegacy(context);
-  }
-
-  Widget _buildLegacy(BuildContext context) {
-    if (!(enabled ?? liquidGlassPopupsEnabled)) {
-      return child;
-    }
     LiquidGlassAccessibilitySettings.watch();
     return ValueListenableBuilder<bool?>(
       valueListenable: LiquidGlassAccessibilitySettings.reduceTransparency,
       builder: (context, reduceTransparency, _) {
-        final opaque =
-            reduceTransparency != false || MediaQuery.highContrastOf(context);
-        final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-        final fill = CupertinoDynamicColor.resolve(
-          CupertinoColors.secondarySystemBackground,
+        final preferOpaque =
+            LiquidGlassAccessibilitySettings.shouldUseOpaqueFallback(
           context,
+          reduceTransparencyOverride: reduceTransparency,
         );
-        final background = DecoratedBox(
-          decoration: BoxDecoration(
-            color: fill.withValues(alpha: opaque ? 1 : (dark ? .9 : .82)),
+        if (mode == GlassMode.flutter &&
+            FlutterGlassRuntime.available &&
+            !preferOpaque) {
+          return FlutterGlassPanel(
             borderRadius: borderRadius,
-            border: Border.all(
-              color: CupertinoDynamicColor.resolve(
-                CupertinoColors.separator,
-                context,
-              ).withValues(alpha: opaque ? .45 : .24),
-              width: .5,
+            variant: FlutterGlassVariant.readable,
+            child: DefaultTextStyle(
+              style: EhPopupTextStyles.body(context),
+              textAlign: TextAlign.start,
+              child: child,
             ),
+          );
+        }
+        return _buildLegacy(context, opaque: preferOpaque);
+      },
+    );
+  }
+
+  Widget _buildLegacy(BuildContext context, {required bool opaque}) {
+    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final fill = CupertinoDynamicColor.resolve(
+      CupertinoColors.secondarySystemBackground,
+      context,
+    );
+    final background = DecoratedBox(
+      decoration: BoxDecoration(
+        color: fill.withValues(alpha: opaque ? 1 : (dark ? .9 : .82)),
+        borderRadius: borderRadius,
+        border: Border.all(
+          color: CupertinoDynamicColor.resolve(
+            CupertinoColors.separator,
+            context,
+          ).withValues(alpha: opaque ? .45 : .24),
+          width: .5,
+        ),
+      ),
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x24000000),
+            blurRadius: 32,
+            offset: Offset(0, 10),
           ),
-        );
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x24000000),
-                blurRadius: 32,
-                offset: Offset(0, 10),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: IgnorePointer(
+                child: opaque
+                    ? background
+                    : BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                        child: background,
+                      ),
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: borderRadius,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: opaque
-                        ? background
-                        : BackdropFilter(
-                            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                            child: background,
-                          ),
-                  ),
-                ),
-                if (!opaque)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: borderRadius,
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              CupertinoColors.white.withValues(alpha: .10),
-                              const Color(0x00FFFFFF),
-                              CupertinoColors.black.withValues(alpha: .025),
-                            ],
-                          ),
-                          border: Border.all(
-                            color: CupertinoColors.white.withValues(
-                              alpha: dark ? .20 : .62,
-                            ),
-                            width: .75,
-                          ),
+            ),
+            if (!opaque)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: borderRadius,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          CupertinoColors.white.withValues(alpha: .10),
+                          const Color(0x00FFFFFF),
+                          CupertinoColors.black.withValues(alpha: .025),
+                        ],
+                      ),
+                      border: Border.all(
+                        color: CupertinoColors.white.withValues(
+                          alpha: dark ? .20 : .62,
                         ),
+                        width: .75,
                       ),
                     ),
                   ),
-                DefaultTextStyle(
-                  style: EhPopupTextStyles.body(context),
-                  textAlign: TextAlign.start,
-                  child: child,
                 ),
-              ],
+              ),
+            DefaultTextStyle(
+              style: EhPopupTextStyles.body(context),
+              textAlign: TextAlign.start,
+              child: child,
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

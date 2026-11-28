@@ -4,6 +4,7 @@ import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/eh_palette.dart';
+import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/cupertino/sliver_list_section.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:flutter/cupertino.dart';
@@ -310,9 +311,9 @@ Rect resolveSinglePaneSafeBounds(
 }
 
 /// Renders [LiquidGlassPopupSurface] when Liquid Glass popups are active, and
-/// paints a clean superellipse raised-card fallback when Liquid Glass is off
-/// (e.g. Android, Windows, or when the user disabled Liquid Glass in settings)
-/// so popup content never floats naked over the screen.
+/// paints a clean superellipse raised-card fallback when Liquid Glass is off,
+/// or when "Reduce Transparency" / "Increase Contrast" is enabled, so popup
+/// content never floats naked or illegibly over colorful backdrops.
 Widget buildFavRuleGlassOrCardSurface({
   Key? key,
   required BuildContext context,
@@ -322,52 +323,72 @@ Widget buildFavRuleGlassOrCardSurface({
   final glassActive = liquidGlassPopupsEnabled &&
       GlassMode.of(context).forComponent(flutterImplemented: true) !=
           GlassMode.off;
-
-  Widget effectiveChild = child;
-  if (!glassActive) {
-    final palette = ehTheme.palette;
-    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-    final raised = CupertinoDynamicColor.resolve(palette.raised, context);
-    final borderColor = dark
-        ? CupertinoDynamicColor.resolve(palette.edgeLight, context)
-        : CupertinoDynamicColor.resolve(palette.hairline, context);
-
-    effectiveChild = DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: borderRadius,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, dark ? 0.44 : 0.16),
-            blurRadius: 30,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, dark ? 0.20 : 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRSuperellipse(
-        borderRadius: borderRadius,
-        child: DecoratedBox(
-          decoration: ShapeDecoration(
-            color: raised,
-            shape: RoundedSuperellipseBorder(
-              borderRadius: borderRadius,
-              side: BorderSide(color: borderColor, width: 0.5),
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
+  if (glassActive) {
+    LiquidGlassAccessibilitySettings.watch();
   }
 
-  return LiquidGlassPopupSurface(
-    key: key,
-    borderRadius: borderRadius,
-    child: effectiveChild,
+  return ValueListenableBuilder<bool?>(
+    valueListenable: LiquidGlassAccessibilitySettings.reduceTransparency,
+    builder: (context, reduceTransparency, _) {
+      final preferOpaque = glassActive &&
+          LiquidGlassAccessibilitySettings.shouldUseOpaqueFallback(
+            context,
+            reduceTransparencyOverride: reduceTransparency,
+          );
+      final useGlass = glassActive && !preferOpaque;
+
+      Widget effectiveChild = child;
+      if (!useGlass) {
+        final palette = ehTheme.palette;
+        final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+        final raised = CupertinoDynamicColor.resolve(palette.raised, context);
+        final borderColor = dark
+            ? CupertinoDynamicColor.resolve(palette.edgeLight, context)
+            : CupertinoDynamicColor.resolve(palette.hairline, context);
+
+        effectiveChild = DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Color.fromRGBO(0, 0, 0, dark ? 0.44 : 0.16),
+                blurRadius: 30,
+                offset: const Offset(0, 12),
+              ),
+              BoxShadow(
+                color: Color.fromRGBO(0, 0, 0, dark ? 0.20 : 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRSuperellipse(
+            borderRadius: borderRadius,
+            child: DecoratedBox(
+              decoration: ShapeDecoration(
+                color: raised,
+                shape: RoundedSuperellipseBorder(
+                  borderRadius: borderRadius,
+                  side: BorderSide(color: borderColor, width: 0.5),
+                ),
+              ),
+              child: DefaultTextStyle(
+                style: EhPopupTextStyles.body(context),
+                textAlign: TextAlign.start,
+                child: child,
+              ),
+            ),
+          ),
+        );
+      }
+
+      return LiquidGlassPopupSurface(
+        key: key,
+        enabled: useGlass,
+        borderRadius: borderRadius,
+        child: effectiveChild,
+      );
+    },
   );
 }
 

@@ -856,7 +856,7 @@ void main() {
     final backdropBox = tester.widget<ColoredBox>(
       find.byKey(kGalleryContextMenuBackdropKey),
     );
-    expect(backdropBox.color.toARGB32(), 0x45000000);
+    expect(backdropBox.color.toARGB32(), 0x66000000);
 
     final liftedRect = tester.getRect(
       find.byKey(kGalleryContextMenuLiftedCardKey),
@@ -1015,7 +1015,10 @@ void main() {
     final lightBackdrop = tester.widget<ColoredBox>(
       find.byKey(kGalleryContextMenuBackdropKey),
     );
-    expect(lightBackdrop.color.toARGB32(), 0x22000000);
+    expect(
+      lightBackdrop.color.toARGB32(),
+      const Color(0xFFF2F3F6).withValues(alpha: 0.30).toARGB32(),
+    );
 
     final liftedLeft = tester.getRect(
       find.byKey(kGalleryContextMenuLiftedCardKey),
