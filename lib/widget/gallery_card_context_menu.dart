@@ -329,8 +329,7 @@ Widget buildRuleFavMenuBanner({
   final l10n = L10n.of(context);
   final zh = Localizations.localeOf(context).languageCode == 'zh';
   final palette = ehTheme.palette;
-  final text2 = CupertinoDynamicColor.resolve(palette.text2, context);
-  final text3 = CupertinoDynamicColor.resolve(palette.text3, context);
+  final secondaryColor = EhPopupTextStyles.secondary(context).color!;
   final horizontalPad = insetPadding ? 16.0 : 18.0;
 
   if (snapshot.state == RuleMenuEvalState.loading) {
@@ -349,9 +348,8 @@ Widget buildRuleFavMenuBanner({
               l10n.fav_rule_matching_tags,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: EhPopupTextStyles.body(context).copyWith(
+              style: EhPopupTextStyles.secondary(context).copyWith(
                 fontSize: 13.5,
-                color: text2,
               ),
             ),
           ),
@@ -368,7 +366,7 @@ Widget buildRuleFavMenuBanner({
           EhSvgIcon(
             CupertinoIcons.exclamationmark_circle,
             size: 18,
-            color: text3,
+            color: secondaryColor,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -376,9 +374,8 @@ Widget buildRuleFavMenuBanner({
               l10n.fav_rule_fetch_tags_failed,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: EhPopupTextStyles.body(context).copyWith(
+              style: EhPopupTextStyles.secondary(context).copyWith(
                 fontSize: 13,
-                color: text3,
               ),
             ),
           ),
@@ -433,7 +430,7 @@ Widget buildRuleFavMenuBanner({
         : firstHit.tag.title;
     final reasonStyle = EhPopupTextStyles.secondary(context).copyWith(
       fontSize: 11.5,
-      color: text2,
+      color: secondaryColor,
     );
     reasonWidget = LayoutBuilder(
       builder: (context, constraints) {
@@ -470,7 +467,7 @@ Widget buildRuleFavMenuBanner({
     reasonWidget: reasonWidget,
     favColor: favColor,
     text1: text1,
-    text2: text2,
+    text2: secondaryColor,
     horizontalPadding: horizontalPad,
     onTap: () => onApplyRule(eval),
   );
@@ -1329,10 +1326,11 @@ class _FloatingGalleryContextMenuOverlayState
           !_initialHasRuleSlot && widget.onCreateRuleFromGallery != null,
     );
 
-    final backdropTint =
-        dark ? const Color(0x45000000) : const Color(0x22000000);
     final pageSlotColor =
         CupertinoDynamicColor.resolve(ehTheme.palette.canvas, context);
+    final backdropTint = dark
+        ? const Color(0x66000000)
+        : pageSlotColor.withValues(alpha: 0.30);
     final sectionBandColor =
         dark ? const Color(0x33000000) : const Color(0x0D14161C);
     final separatorColor = CupertinoDynamicColor.resolve(
