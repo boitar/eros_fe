@@ -281,23 +281,10 @@ jobs:
             test "$actual_code" = "${expected_code}"
           }
 
-          expected_abi_code() {
-            local base="$1"
-            case "$base" in
-              *-armeabi-v7a-release*.apk) echo $((1000 + 10#${build_number})) ;;
-              *-arm64-v8a-release*.apk)   echo $((2000 + 10#${build_number})) ;;
-              *-x86_64-release*.apk)      echo $((4000 + 10#${build_number})) ;;
-              *-universal-release*.apk)   echo $((10#${build_number})) ;;
-              *)
-                echo "Unexpected APK filename for ABI offset: $base" >&2
-                return 1
-                ;;
-            esac
-          }
-
           if [ "$is_tag_release" = "true" ]; then
             # Tag release: build unsigned APKs here (zero secrets in build job);
             # isolated Sign_and_publish job handles 16KB alignment + release signing.
+            # Note: build.gradle uses splits.abi (without --split-per-abi), so all 4 APKs carry versionCode=${build_number}.
             ANDROID_UNSIGNED_RELEASE=true flutter build apk --release --no-pub \
               --build-name="${build_name}" \
               --build-number="${build_number}"
@@ -309,8 +296,7 @@ jobs:
               exit 1
             fi
             for apk in "${apks[@]}"; do
-              base="$(basename "$apk")"
-              verify_apk_version "$apk" "$(expected_abi_code "$base")"
+              verify_apk_version "$apk" "${build_number}"
               cp "$apk" "$out_dir/"
             done
           elif [ "$android_only_arm64" = "true" ]; then
@@ -343,7 +329,7 @@ jobs:
             fi
             for apk in "${apks[@]}"; do
               base="$(basename "$apk")"
-              verify_apk_version "$apk" "$(expected_abi_code "$base")"
+              verify_apk_version "$apk" "${build_number}"
               "$build_tools/apksigner" verify --verbose "$apk"
               cp "$apk" "${out_dir}/${base%.apk}_${build_date}_ci${GITHUB_RUN_NUMBER}.apk"
             done
@@ -614,22 +600,10 @@ jobs:
           for unsigned_apk in "${unsigned_apks[@]}"; do
             base="$(basename "$unsigned_apk")"
             case "$base" in
-              *-arm64-v8a-release-unsigned.apk)
-                abi="arm64-v8a"
-                expected_code=$((2000 + 10#${build_number}))
-                ;;
-              *-armeabi-v7a-release-unsigned.apk)
-                abi="armeabi-v7a"
-                expected_code=$((1000 + 10#${build_number}))
-                ;;
-              *-x86_64-release-unsigned.apk)
-                abi="x86_64"
-                expected_code=$((4000 + 10#${build_number}))
-                ;;
-              *-universal-release-unsigned.apk)
-                abi="universal"
-                expected_code=$((10#${build_number}))
-                ;;
+              *-arm64-v8a-release-unsigned.apk)   abi="arm64-v8a" ;;
+              *-armeabi-v7a-release-unsigned.apk) abi="armeabi-v7a" ;;
+              *-x86_64-release-unsigned.apk)      abi="x86_64" ;;
+              *-universal-release-unsigned.apk)   abi="universal" ;;
               *)
                 echo "Unexpected APK filename: $base" >&2
                 exit 1
@@ -656,7 +630,7 @@ jobs:
             actual_code="$(printf '%s' "$badging" | sed -nE "s/.*versionCode='([^']+)'.*/\1/p")"
             echo "Signed APK $(basename "$signed_apk") | versionName=${actual_name} | versionCode=${actual_code}"
             test "$actual_name" = "${build_name}"
-            test "$actual_code" = "${expected_code}"
+            test "$actual_code" = "${build_number}"
           done
 
           # Copy iOS, macOS, and Windows raw release artifacts into final staging directory
