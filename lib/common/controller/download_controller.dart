@@ -600,19 +600,24 @@ class DownloadController extends GetxController {
             dState.unavailableGalleryFiles.remove(oldGid);
             dState.errInfoMap.remove(oldGid);
             dState.incrementalProgressMap.remove(oldGid);
+            dState.updateCreatedTaskGids.remove(oldGid);
           }
 
           if (completedLocally) {
             dState.incrementalProgressMap.remove(newGid);
-          } else if (reusedCount > 0) {
-            dState.incrementalProgressMap[newGid] = GalleryIncrementalProgress(
-              gid: newGid,
-              reusedCount: reusedCount,
-              totalCount: newFileCount,
-              mode: mode,
-            );
+            dState.updateCreatedTaskGids.remove(newGid);
           } else {
-            dState.incrementalProgressMap.remove(newGid);
+            dState.updateCreatedTaskGids.add(newGid);
+            if (reusedCount > 0) {
+              dState.incrementalProgressMap[newGid] = GalleryIncrementalProgress(
+                gid: newGid,
+                reusedCount: reusedCount,
+                totalCount: newFileCount,
+                mode: mode,
+              );
+            } else {
+              dState.incrementalProgressMap.remove(newGid);
+            }
           }
           _refreshDownloadGalleryList();
 
@@ -800,6 +805,7 @@ class DownloadController extends GetxController {
 
     if (task?.status == TaskStatus.complete.value) {
       dState.incrementalProgressMap.remove(gid);
+      dState.updateCreatedTaskGids.remove(gid);
       // 原子记录完成事件，避免并发完成时在等待槽位回调期间错失通知记账
       iosBackgroundDownloadService.recordGalleryCompleted(
         gid: gid,
@@ -990,6 +996,7 @@ class DownloadController extends GetxController {
   }) async {
     await _completionLockFor(gid).synchronized(() async {
       dState.incrementalProgressMap.remove(gid);
+      dState.updateCreatedTaskGids.remove(gid);
       _removeBackgroundSuspendedGid(gid);
       _cancelDownloadStateChkTimer(gid);
       // 清理该画廊的所有重试计数

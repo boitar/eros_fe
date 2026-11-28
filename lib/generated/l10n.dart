@@ -5458,6 +5458,56 @@ class L10n {
     );
   }
 
+  /// `Current`
+  String get gallery_lineage_current {
+    return Intl.message(
+      'Current',
+      name: 'gallery_lineage_current',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Newer version`
+  String get gallery_lineage_newer {
+    return Intl.message(
+      'Newer version',
+      name: 'gallery_lineage_newer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} versions`
+  String gallery_lineage_count(Object count) {
+    return Intl.message(
+      '$count versions',
+      name: 'gallery_lineage_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `From parent · {count} versions`
+  String gallery_lineage_from_parent(Object count) {
+    return Intl.message(
+      'From parent · $count versions',
+      name: 'gallery_lineage_from_parent',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Tap to open gallery · Long press to copy link`
+  String get gallery_lineage_copy_hint {
+    return Intl.message(
+      'Tap to open gallery · Long press to copy link',
+      name: 'gallery_lineage_copy_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Open Latest Version`
   String get gallery_open_latest_version {
     return Intl.message(
@@ -5473,6 +5523,16 @@ class L10n {
     return Intl.message(
       'Open Parent Gallery',
       name: 'gallery_open_parent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Downloaded, newer version available`
+  String get gallery_downloaded_has_update {
+    return Intl.message(
+      'Downloaded, newer version available',
+      name: 'gallery_downloaded_has_update',
       desc: '',
       args: [],
     );
@@ -5498,36 +5558,6 @@ class L10n {
     );
   }
 
-  /// `Has parent`
-  String get gallery_has_parent_hint {
-    return Intl.message(
-      'Has parent',
-      name: 'gallery_has_parent_hint',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Parent #{gid}`
-  String gallery_from_parent_hint(Object gid) {
-    return Intl.message(
-      'Parent #$gid',
-      name: 'gallery_from_parent_hint',
-      desc: '',
-      args: [gid],
-    );
-  }
-
-  /// `View lineage`
-  String get gallery_view_lineage_hint {
-    return Intl.message(
-      'View lineage',
-      name: 'gallery_view_lineage_hint',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Updatable`
   String get gallery_updatable_hint {
     return Intl.message(
@@ -5548,26 +5578,6 @@ class L10n {
     );
   }
 
-  /// `Tap to open · Long press to copy`
-  String get gallery_lineage_tap_hint {
-    return Intl.message(
-      'Tap to open · Long press to copy',
-      name: 'gallery_lineage_tap_hint',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Tap to copy`
-  String get gallery_metadata_copy_hint {
-    return Intl.message(
-      'Tap to copy',
-      name: 'gallery_metadata_copy_hint',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Check updates`
   String get download_check_updates {
     return Intl.message(
@@ -5578,31 +5588,61 @@ class L10n {
     );
   }
 
-  /// `Checking...`
-  String get download_checking_updates {
+  /// `Checking updates {checked} / {total}`
+  String download_checking_updates_progress(Object checked, Object total) {
     return Intl.message(
-      'Checking...',
-      name: 'download_checking_updates',
+      'Checking updates $checked / $total',
+      name: 'download_checking_updates_progress',
+      desc: '',
+      args: [checked, total],
+    );
+  }
+
+  /// `Stop`
+  String get download_stop_check {
+    return Intl.message(
+      'Stop',
+      name: 'download_stop_check',
       desc: '',
       args: [],
     );
   }
 
-  /// `{count} galleries have newer versions`
+  /// `{count} updates`
   String download_updates_found(Object count) {
     return Intl.message(
-      '$count galleries have newer versions',
+      '$count updates',
       name: 'download_updates_found',
       desc: '',
       args: [count],
     );
   }
 
-  /// `All downloaded galleries are up to date`
-  String get download_updates_none {
+  /// `{count} failed`
+  String download_updates_failed_count(Object count) {
     return Intl.message(
-      'All downloaded galleries are up to date',
+      '$count failed',
+      name: 'download_updates_failed_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `All up to date · {count} checked`
+  String download_updates_none(Object count) {
+    return Intl.message(
+      'All up to date · $count checked',
       name: 'download_updates_none',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `No completed downloads to check`
+  String get download_updates_no_targets {
+    return Intl.message(
+      'No completed downloads to check',
+      name: 'download_updates_no_targets',
       desc: '',
       args: [],
     );
@@ -5622,11 +5662,31 @@ class L10n {
     );
   }
 
+  /// `Updates only`
+  String get download_filter_updatable {
+    return Intl.message(
+      'Updates only',
+      name: 'download_filter_updatable',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Update`
   String get download_has_update_badge {
     return Intl.message(
       'Update',
       name: 'download_has_update_badge',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update`
+  String get download_update_action {
+    return Intl.message(
+      'Update',
+      name: 'download_update_action',
       desc: '',
       args: [],
     );
@@ -5642,13 +5702,43 @@ class L10n {
     );
   }
 
-  /// `Reused {reused}`
-  String download_incremental_reused_status(Object reused) {
+  /// `Updating · {reused} reused`
+  String download_incremental_status(Object reused) {
     return Intl.message(
-      'Reused $reused',
-      name: 'download_incremental_reused_status',
+      'Updating · $reused reused',
+      name: 'download_incremental_status',
       desc: '',
       args: [reused],
+    );
+  }
+
+  /// `Paused · {reused} reused`
+  String download_incremental_paused_status(Object reused) {
+    return Intl.message(
+      'Paused · $reused reused',
+      name: 'download_incremental_paused_status',
+      desc: '',
+      args: [reused],
+    );
+  }
+
+  /// `Downloading {done} / {total}`
+  String download_incremental_download_progress(Object done, Object total) {
+    return Intl.message(
+      'Downloading $done / $total',
+      name: 'download_incremental_download_progress',
+      desc: '',
+      args: [done, total],
+    );
+  }
+
+  /// `Update failed`
+  String get download_incremental_failed_status {
+    return Intl.message(
+      'Update failed',
+      name: 'download_incremental_failed_status',
+      desc: '',
+      args: [],
     );
   }
 
@@ -5662,20 +5752,20 @@ class L10n {
     );
   }
 
-  /// `Incremental Update`
+  /// `Update Downloaded Gallery`
   String get incremental_update_title {
     return Intl.message(
-      'Incremental Update',
+      'Update Downloaded Gallery',
       name: 'incremental_update_title',
       desc: '',
       args: [],
     );
   }
 
-  /// `Reuse unchanged local images`
+  /// `Reuse unchanged local pages`
   String get incremental_update_subtitle {
     return Intl.message(
-      'Reuse unchanged local images',
+      'Reuse unchanged local pages',
       name: 'incremental_update_subtitle',
       desc: '',
       args: [],
@@ -5692,31 +5782,31 @@ class L10n {
     );
   }
 
-  /// `Analyzing page differences...`
+  /// `Update to Latest`
+  String get incremental_update_to_latest {
+    return Intl.message(
+      'Update to Latest',
+      name: 'incremental_update_to_latest',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Comparing newer pages…`
   String get incremental_update_comparing {
     return Intl.message(
-      'Analyzing page differences...',
+      'Comparing newer pages…',
       name: 'incremental_update_comparing',
       desc: '',
       args: [],
     );
   }
 
-  /// `Failed to analyze newer version`
+  /// `Failed to compare newer version`
   String get incremental_update_compare_failed {
     return Intl.message(
-      'Failed to analyze newer version',
+      'Failed to compare newer version',
       name: 'incremental_update_compare_failed',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Version comparison`
-  String get incremental_update_version_compare {
-    return Intl.message(
-      'Version comparison',
-      name: 'incremental_update_version_compare',
       desc: '',
       args: [],
     );
@@ -5732,23 +5822,23 @@ class L10n {
     );
   }
 
-  /// `Local`
-  String get incremental_update_local_tag {
+  /// `{count} to download`
+  String incremental_update_need_download(Object count) {
     return Intl.message(
-      'Local',
-      name: 'incremental_update_local_tag',
+      '$count to download',
+      name: 'incremental_update_need_download',
       desc: '',
-      args: [],
+      args: [count],
     );
   }
 
-  /// `Newer`
-  String get incremental_update_newer_tag {
+  /// `{count} pages total`
+  String incremental_update_total_pages(Object count) {
     return Intl.message(
-      'Newer',
-      name: 'incremental_update_newer_tag',
+      '$count pages total',
+      name: 'incremental_update_total_pages',
       desc: '',
-      args: [],
+      args: [count],
     );
   }
 
@@ -5762,6 +5852,16 @@ class L10n {
     );
   }
 
+  /// `Reused {count}`
+  String incremental_update_reused_pages(Object count) {
+    return Intl.message(
+      'Reused $count',
+      name: 'incremental_update_reused_pages',
+      desc: '',
+      args: [count],
+    );
+  }
+
   /// `Added`
   String get incremental_update_added {
     return Intl.message(
@@ -5772,21 +5872,21 @@ class L10n {
     );
   }
 
-  /// `Replaced`
-  String get incremental_update_replaced {
+  /// `Added {count}`
+  String incremental_update_added_pages(Object count) {
     return Intl.message(
-      'Replaced',
-      name: 'incremental_update_replaced',
+      'Added $count',
+      name: 'incremental_update_added_pages',
       desc: '',
-      args: [],
+      args: [count],
     );
   }
 
-  /// `Fetch {count} pages`
-  String incremental_update_only_download(Object count) {
+  /// `~{count} revised`
+  String incremental_update_replaced_approx(Object count) {
     return Intl.message(
-      'Fetch $count pages',
-      name: 'incremental_update_only_download',
+      '~$count revised',
+      name: 'incremental_update_replaced_approx',
       desc: '',
       args: [count],
     );
@@ -5802,100 +5902,120 @@ class L10n {
     );
   }
 
-  /// `Update mode`
-  String get incremental_update_mode_title {
+  /// `Cannot reuse`
+  String get incremental_update_cannot_reuse {
     return Intl.message(
-      'Update mode',
-      name: 'incremental_update_mode_title',
+      'Cannot reuse',
+      name: 'incremental_update_cannot_reuse',
       desc: '',
       args: [],
     );
   }
 
-  /// `Upgrade in place & keep progress`
+  /// `Current SAF storage cannot reuse local files`
+  String get incremental_update_saf_short_note {
+    return Intl.message(
+      'Current SAF storage cannot reuse local files',
+      name: 'incremental_update_saf_short_note',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Old Version`
+  String get incremental_update_old_version {
+    return Intl.message(
+      'Old Version',
+      name: 'incremental_update_old_version',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Replace`
   String get incremental_update_mode_inplace {
     return Intl.message(
-      'Upgrade in place & keep progress',
+      'Replace',
       name: 'incremental_update_mode_inplace',
       desc: '',
       args: [],
     );
   }
 
-  /// `Reuse unchanged local images, update task to #{gid}, and map reading position.`
-  String incremental_update_mode_inplace_desc(Object gid) {
+  /// `Replaces the old folder with the newer version and maps your reading position.`
+  String get incremental_update_mode_inplace_desc {
     return Intl.message(
-      'Reuse unchanged local images, update task to #$gid, and map reading position.',
+      'Replaces the old folder with the newer version and maps your reading position.',
       name: 'incremental_update_mode_inplace_desc',
       desc: '',
-      args: [gid],
+      args: [],
     );
   }
 
-  /// `Download as new task (keep old)`
+  /// `Keep as new task`
   String get incremental_update_mode_new {
     return Intl.message(
-      'Download as new task (keep old)',
+      'Keep as new task',
       name: 'incremental_update_mode_new',
       desc: '',
       args: [],
     );
   }
 
-  /// `Create a new folder for #{gid} with reused images while keeping the old version.`
-  String incremental_update_mode_new_desc(Object gid) {
+  /// `Creates a new task reusing unchanged pages while keeping the old version.`
+  String get incremental_update_mode_new_desc {
     return Intl.message(
-      'Create a new folder for #$gid with reused images while keeping the old version.',
+      'Creates a new task reusing unchanged pages while keeping the old version.',
       name: 'incremental_update_mode_new_desc',
-      desc: '',
-      args: [gid],
-    );
-  }
-
-  /// `Recommended`
-  String get incremental_update_recommended {
-    return Intl.message(
-      'Recommended',
-      name: 'incremental_update_recommended',
       desc: '',
       args: [],
     );
   }
 
-  /// `Upgrade in place · Fetch {count} pages`
-  String incremental_update_start_inplace(Object count) {
+  /// `Downloads the newer version as a new task while keeping the old version.`
+  String get incremental_update_mode_new_saf_desc {
     return Intl.message(
-      'Upgrade in place · Fetch $count pages',
-      name: 'incremental_update_start_inplace',
+      'Downloads the newer version as a new task while keeping the old version.',
+      name: 'incremental_update_mode_new_saf_desc',
       desc: '',
-      args: [count],
+      args: [],
     );
   }
 
-  /// `Create new task · Fetch {count} pages`
-  String incremental_update_start_new(Object count) {
+  /// `Start Update`
+  String get incremental_update_start {
     return Intl.message(
-      'Create new task · Fetch $count pages',
-      name: 'incremental_update_start_new',
+      'Start Update',
+      name: 'incremental_update_start',
       desc: '',
-      args: [count],
+      args: [],
     );
   }
 
-  /// `Complete update locally (0 pages to fetch)`
+  /// `Complete Update Now`
   String get incremental_update_start_reuse_only {
     return Intl.message(
-      'Complete update locally (0 pages to fetch)',
+      'Complete Update Now',
       name: 'incremental_update_start_reuse_only',
       desc: '',
       args: [],
     );
   }
 
-  /// `View newer gallery details`
+  /// `Download Full New Version`
+  String get incremental_update_start_saf_full {
+    return Intl.message(
+      'Download Full New Version',
+      name: 'incremental_update_start_saf_full',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View Newer Details`
   String get incremental_update_view_newer {
     return Intl.message(
-      'View newer gallery details',
+      'View Newer Details',
       name: 'incremental_update_view_newer',
       desc: '',
       args: [],
@@ -5939,16 +6059,6 @@ class L10n {
       name: 'incremental_update_applying',
       desc: '',
       args: [],
-    );
-  }
-
-  /// `Download as new task · {count} pages`
-  String incremental_update_start_saf_full(Object count) {
-    return Intl.message(
-      'Download as new task · $count pages',
-      name: 'incremental_update_start_saf_full',
-      desc: '',
-      args: [count],
     );
   }
 

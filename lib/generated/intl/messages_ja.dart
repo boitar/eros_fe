@@ -30,157 +30,167 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(site) => "Current ${site}";
 
-  static String m5(reused) => "${reused} ページ再利用";
+  static String m5(checked, total) => "更新を確認中 ${checked} / ${total}";
 
-  static String m6(checked, found, failed) =>
+  static String m6(done, total) => "取得 ${done} / ${total}";
+
+  static String m7(reused) => "一時停止 · ${reused} ページ再利用";
+
+  static String m8(reused) => "更新中 · ${reused} ページ再利用";
+
+  static String m9(checked, found, failed) =>
       "${checked} 件確認 · ${found} 件更新あり（${failed} 件失敗）";
 
-  static String m7(count) => "${count} 件のギャラリーに新しいバージョンがあります";
+  static String m10(count) => "${count} 件失敗";
 
-  static String m8(favcat) => "「${favcat}」に移動しました";
+  static String m11(count) => "${count} 件に新版あり";
 
-  static String m9(ok, fail) => "${ok} 件を移動、${fail} 件失敗";
+  static String m12(count) => "すべて最新です · ${count} 件確認";
 
-  static String m10(ok, fail) => "${ok} 件を削除、${fail} 件失敗";
+  static String m13(favcat) => "「${favcat}」に移動しました";
 
-  static String m11(notes) => "${notes} 件のメモも同時に削除されます。元に戻せません。";
+  static String m14(ok, fail) => "${ok} 件を移動、${fail} 件失敗";
 
-  static String m12(count) => "${count} 件をお気に入りから削除しますか？";
+  static String m15(ok, fail) => "${ok} 件を削除、${fail} 件失敗";
 
-  static String m13(count) => "${count} 件のお気に入りを削除しました";
+  static String m16(notes) => "${notes} 件のメモも同時に削除されます。元に戻せません。";
 
-  static String m14(folder) => "既に「${folder}」に登録済み";
+  static String m17(count) => "${count} 件をお気に入りから削除しますか？";
 
-  static String m15(count) => "${count} 件のルールで使用中";
+  static String m18(count) => "${count} 件のお気に入りを削除しました";
 
-  static String m16(count) => "${count} 件";
+  static String m19(folder) => "既に「${folder}」に登録済み";
 
-  static String m17(category) => "「${category}」で新規ルール";
+  static String m20(count) => "${count} 件のルールで使用中";
 
-  static String m18(count) => "${count} 件";
+  static String m21(count) => "${count} 件";
 
-  static String m19(count) => "履歴内の ${count} 件が一致";
+  static String m22(category) => "「${category}」で新規ルール";
 
-  static String m20(count) => "履歴内の ${count} 件が一致";
+  static String m23(count) => "${count} 件";
 
-  static String m21(count) => "${count} 回一致";
+  static String m24(count) => "履歴内の ${count} 件が一致";
 
-  static String m22(count, time) => "${count} 回一致 · 前回 ${time}";
+  static String m25(count) => "履歴内の ${count} 件が一致";
 
-  static String m23(count) => "${count} タグ一致";
+  static String m26(count) => "${count} 回一致";
 
-  static String m24(folder) => "「${folder}」のまま維持しました";
+  static String m27(count, time) => "${count} 回一致 · 前回 ${time}";
 
-  static String m25(folder) => "「${folder}」へ移動";
+  static String m28(count) => "${count} タグ一致";
 
-  static String m26(from, to) => "「${from}」から「${to}」へ移動しました";
+  static String m29(folder) => "「${folder}」のまま維持しました";
 
-  static String m27(rules) => "他にも「${rules}」が一致（優先順により未適用）";
+  static String m30(folder) => "「${folder}」へ移動";
 
-  static String m28(rule) => "ルール「${rule}」";
+  static String m31(from, to) => "「${from}」から「${to}」へ移動しました";
 
-  static String m29(rule, tag) => "ルール「${rule}」· ${tag}";
+  static String m32(rules) => "他にも「${rules}」が一致（優先順により未適用）";
 
-  static String m30(folder) => "「${folder}」へ保存";
+  static String m33(rule) => "ルール「${rule}」";
 
-  static String m31(folder) => "「${folder}」に保存しました";
+  static String m34(rule, tag) => "ルール「${rule}」· ${tag}";
 
-  static String m32(count) => "オン · ${count} 件";
+  static String m35(folder) => "「${folder}」へ保存";
 
-  static String m33(fallback) => "フォールバック動作: ${fallback}";
+  static String m36(folder) => "「${folder}」に保存しました";
 
-  static String m34(count) => "全 ${count} 件";
+  static String m37(count) => "オン · ${count} 件";
 
-  static String m35(favcat) => "${favcat} に保存済み";
+  static String m38(fallback) => "フォールバック動作: ${fallback}";
 
-  static String m36(count, scope) => "${scope} で ${count} 件";
+  static String m39(count) => "全 ${count} 件";
 
-  static String m37(query, scope) => "${scope} に「${query}」は見つかりません";
+  static String m40(favcat) => "${favcat} に保存済み";
 
-  static String m38(favcat) => "${favcat} 内を検索";
+  static String m41(count, scope) => "${scope} で ${count} 件";
 
-  static String m39(count) => "${count} 件選択中";
+  static String m42(query, scope) => "${scope} に「${query}」は見つかりません";
 
-  static String m40(favcat, total) => "${favcat} · ${total} 件";
+  static String m43(favcat) => "${favcat} 内を検索";
 
-  static String m41(gid) => "親ギャラリー #${gid}";
+  static String m44(count) => "${count} 件選択中";
 
-  static String m42(count) => "${count} 件の評価";
+  static String m45(favcat, total) => "${favcat} · ${total} 件";
 
-  static String m43(count) => "新しいバージョンが ${count} 件";
+  static String m46(count) => "${count} 件の評価";
 
-  static String m44(gid) => "現在のバージョン #${gid}";
+  static String m47(count) => "全 ${count} バージョン";
 
-  static String m45(value) => "ピーク ${value}";
+  static String m48(count) => "親ギャラリーあり · 全 ${count} 件";
 
-  static String m46(value) => "期間平均 ${value}";
+  static String m49(count) => "新しいバージョンが ${count} 件";
 
-  static String m47(period, percent) => "${period} · ${percent}%";
+  static String m50(gid) => "現在のバージョン #${gid}";
 
-  static String m48(value) => "期間合計 ${value}";
+  static String m51(value) => "ピーク ${value}";
 
-  static String m49(score) => "スコア ${score}";
+  static String m52(value) => "期間平均 ${value}";
 
-  static String m50(date) => "${date} 更新";
+  static String m53(period, percent) => "${period} · ${percent}%";
 
-  static String m51(gid, reused) => "#${gid} へローカル更新完了（${reused} ページ再利用）";
+  static String m54(value) => "期間合計 ${value}";
 
-  static String m52(gid) => "未変更画像を再利用して #${gid} へ更新し、読書位置を自動引き継ぎします。";
+  static String m55(score) => "スコア ${score}";
 
-  static String m53(gid) => "#${gid} 用のフォルダを作成して再利用し、旧版をそのまま残します。";
+  static String m56(date) => "${date} 更新";
 
-  static String m54(count) => "${count} ページのみ取得";
+  static String m57(count) => "追加 ${count}";
 
-  static String m55(count) => "上書き差分更新 · ${count} ページ取得";
+  static String m58(gid, reused) => "#${gid} へローカル更新完了（${reused} ページ再利用）";
 
-  static String m56(count) => "新規タスクで差分更新 · ${count} ページ取得";
+  static String m59(count) => "${count} ページ取得";
 
-  static String m57(count) => "新規タスクで全件取得 · ${count} ページ";
+  static String m60(count) => "改訂約 ${count}";
 
-  static String m58(reused, fetch) => "差分更新を開始しました（再利用 ${reused}、取得 ${fetch}）";
+  static String m61(count) => "再利用 ${count} ページ";
 
-  static String m59(count) => "${count} 件のギャラリーのダウンロードが完了しました";
+  static String m62(reused, fetch) => "差分更新を開始しました（再利用 ${reused}、取得 ${fetch}）";
 
-  static String m60(title) => "「${title}」のダウンロードが完了しました";
+  static String m63(count) => "新版 全 ${count} ページ";
 
-  static String m61(count) => "${count} 件のギャラリーをダウンロード中";
+  static String m64(count) => "${count} 件のギャラリーのダウンロードが完了しました";
 
-  static String m62(completed, total) => "${completed}/${total} ページ完了";
+  static String m65(title) => "「${title}」のダウンロードが完了しました";
 
-  static String m63(modelName) => "モデル${modelName}";
+  static String m66(count) => "${count} 件のギャラリーをダウンロード中";
 
-  static String m64(count) => "${count} ページ";
+  static String m67(completed, total) => "${completed}/${total} ページ完了";
 
-  static String m65(seconds) => "${seconds} 秒";
+  static String m68(modelName) => "モデル${modelName}";
 
-  static String m66(page, total) => "${page} / ${total} ページ";
+  static String m69(count) => "${count} ページ";
 
-  static String m67(rating) => "${rating} ⭐";
+  static String m70(seconds) => "${seconds} 秒";
 
-  static String m68(ok, total) => "${ok}/${total} 接続可能";
+  static String m71(page, total) => "${page} / ${total} ページ";
 
-  static String m69(name) => "現在：${name}";
+  static String m72(rating) => "${rating} ⭐";
 
-  static String m70(time) => "· ${time} 同期";
+  static String m73(ok, total) => "${ok}/${total} 接続可能";
 
-  static String m71(tag) => "${tag} を追加";
+  static String m74(name) => "現在：${name}";
 
-  static String m72(count) => "全 ${count} ページ";
+  static String m75(time) => "· ${time} 同期";
 
-  static String m73(avg, count) => "平均 ${avg} · ${count} 件";
+  static String m76(tag) => "${tag} を追加";
 
-  static String m74(text) => "「${text}」を検索";
+  static String m77(count) => "全 ${count} ページ";
 
-  static String m75(count) => "${count} 件追加 · カンマ区切り";
+  static String m78(avg, count) => "平均 ${avg} · ${count} 件";
 
-  static String m76(count, per) => "全 ${count} ページ · 1ページ ${per} 枚";
+  static String m79(text) => "「${text}」を検索";
 
-  static String m77(count) => "トレント · ${count} 件";
+  static String m80(count) => "${count} 件追加 · カンマ区切り";
 
-  static String m78(tagNamespace) =>
+  static String m81(count, per) => "全 ${count} ページ · 1ページ ${per} 枚";
+
+  static String m82(count) => "トレント · ${count} 件";
+
+  static String m83(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': 'reclass', 'language': 'language', 'parody': 'parody', 'character': 'character', 'group': 'group', 'artist': 'artist', 'male': 'male', 'female': 'female', 'mixed': 'mixed', 'cosplayer': 'cosplayer', 'other': 'other', 'temp': 'temp'})}";
 
-  static String m79(version) => "アップデート利用可能！【${version}】";
+  static String m84(version) => "アップデート利用可能！【${version}】";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -361,15 +371,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "double_click_back": MessageLookupByLibrary.simpleMessage("一度押して終了します"),
     "double_page_model": MessageLookupByLibrary.simpleMessage("両ページモード"),
     "download": MessageLookupByLibrary.simpleMessage("ダウンロード"),
-    "download_check_updates": MessageLookupByLibrary.simpleMessage("更新確認"),
-    "download_checking_updates": MessageLookupByLibrary.simpleMessage("確認中…"),
+    "download_check_updates": MessageLookupByLibrary.simpleMessage("更新を確認"),
+    "download_checking_updates_progress": m5,
     "download_files_unavailable": MessageLookupByLibrary.simpleMessage(
       "ファイルは一時的に利用できません",
     ),
+    "download_filter_updatable": MessageLookupByLibrary.simpleMessage("新版のみ"),
     "download_has_update_badge": MessageLookupByLibrary.simpleMessage("新版あり"),
-    "download_incremental_reused_status": m5,
+    "download_incremental_download_progress": m6,
+    "download_incremental_failed_status": MessageLookupByLibrary.simpleMessage(
+      "更新に失敗しました",
+    ),
+    "download_incremental_paused_status": m7,
+    "download_incremental_status": m8,
     "download_incremental_updating": MessageLookupByLibrary.simpleMessage(
-      "差分更新中",
+      "更新中",
     ),
     "download_location": MessageLookupByLibrary.simpleMessage("ダウンロードパス"),
     "download_ori_image": MessageLookupByLibrary.simpleMessage(
@@ -378,12 +394,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "download_ori_image_summary": MessageLookupByLibrary.simpleMessage(
       "危険です！509エラー発生可能性するがあります",
     ),
+    "download_stop_check": MessageLookupByLibrary.simpleMessage("停止"),
+    "download_update_action": MessageLookupByLibrary.simpleMessage("更新"),
     "download_update_all": MessageLookupByLibrary.simpleMessage("すべて更新"),
-    "download_updates_checked_with_errors": m6,
-    "download_updates_found": m7,
-    "download_updates_none": MessageLookupByLibrary.simpleMessage(
-      "ダウンロード済みギャラリーはすべて最新です",
+    "download_updates_checked_with_errors": m9,
+    "download_updates_failed_count": m10,
+    "download_updates_found": m11,
+    "download_updates_no_targets": MessageLookupByLibrary.simpleMessage(
+      "確認できる完了済みダウンロードがありません",
     ),
+    "download_updates_none": m12,
     "downloaded": MessageLookupByLibrary.simpleMessage("ダウンロード済み"),
     "downloading": MessageLookupByLibrary.simpleMessage("ダウンロード中"),
     "edit": MessageLookupByLibrary.simpleMessage("編集"),
@@ -410,26 +430,26 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_current": MessageLookupByLibrary.simpleMessage("現在"),
     "fav_deselect_all": MessageLookupByLibrary.simpleMessage("選択解除"),
     "fav_move_to": MessageLookupByLibrary.simpleMessage("移動先…"),
-    "fav_moved_to": m8,
+    "fav_moved_to": m13,
     "fav_note_add": MessageLookupByLibrary.simpleMessage("メモを追加"),
     "fav_note_edit": MessageLookupByLibrary.simpleMessage("メモを編集"),
-    "fav_partial_failed": m9,
-    "fav_partial_remove_failed": m10,
+    "fav_partial_failed": m14,
+    "fav_partial_remove_failed": m15,
     "fav_remove_irreversible": MessageLookupByLibrary.simpleMessage(
       "この操作は元に戻せません。",
     ),
-    "fav_remove_note_warn": m11,
-    "fav_remove_title": m12,
-    "fav_removed_count": m13,
+    "fav_remove_note_warn": m16,
+    "fav_remove_title": m17,
+    "fav_removed_count": m18,
     "fav_rule_add_condition": MessageLookupByLibrary.simpleMessage("条件を追加"),
-    "fav_rule_already_in_folder": m14,
+    "fav_rule_already_in_folder": m19,
     "fav_rule_category_badge": MessageLookupByLibrary.simpleMessage("カテゴリ"),
-    "fav_rule_category_used_count": m15,
+    "fav_rule_category_used_count": m20,
     "fav_rule_change_folder": MessageLookupByLibrary.simpleMessage("変更"),
     "fav_rule_clear_selection": MessageLookupByLibrary.simpleMessage("クリア"),
     "fav_rule_conditions": MessageLookupByLibrary.simpleMessage("条件"),
-    "fav_rule_count_items": m16,
-    "fav_rule_create_by_category": m17,
+    "fav_rule_count_items": m21,
+    "fav_rule_create_by_category": m22,
     "fav_rule_create_from_gallery": MessageLookupByLibrary.simpleMessage(
       "このギャラリーから新規ルール",
     ),
@@ -469,23 +489,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_fetch_tags_failed": MessageLookupByLibrary.simpleMessage(
       "タグを取得できませんでした",
     ),
-    "fav_rule_gallery_count": m18,
+    "fav_rule_gallery_count": m23,
     "fav_rule_history_empty_save_ok": MessageLookupByLibrary.simpleMessage(
       "履歴に一致する作品はまだありませんが、保存後は通常どおり有効になります。",
     ),
-    "fav_rule_history_hits_count": m19,
+    "fav_rule_history_hits_count": m24,
     "fav_rule_history_hits_empty": MessageLookupByLibrary.simpleMessage(
       "履歴に一致するギャラリーはありません。",
     ),
-    "fav_rule_history_hits_matched": m20,
-    "fav_rule_hit_stats": m21,
-    "fav_rule_hit_stats_with_time": m22,
-    "fav_rule_hit_tag_count": m23,
+    "fav_rule_history_hits_matched": m25,
+    "fav_rule_hit_stats": m26,
+    "fav_rule_hit_stats_with_time": m27,
+    "fav_rule_hit_tag_count": m28,
     "fav_rule_invalid_condition": MessageLookupByLibrary.simpleMessage(
       "無効な条件または正規表現が含まれています",
     ),
     "fav_rule_invalid_regex": MessageLookupByLibrary.simpleMessage("正規表現が無効です"),
-    "fav_rule_kept_in_folder": m24,
+    "fav_rule_kept_in_folder": m29,
     "fav_rule_last_used_badge": MessageLookupByLibrary.simpleMessage("前回"),
     "fav_rule_list_footer": MessageLookupByLibrary.simpleMessage(
       "長押しで並び替え、左スワイプで削除。",
@@ -526,8 +546,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "fav_rule_mode_category": MessageLookupByLibrary.simpleMessage("カテゴリ"),
     "fav_rule_mode_tag": MessageLookupByLibrary.simpleMessage("タグ"),
-    "fav_rule_move_to_folder": m25,
-    "fav_rule_moved_folder": m26,
+    "fav_rule_move_to_folder": m30,
+    "fav_rule_moved_folder": m31,
     "fav_rule_my_tags_short": MessageLookupByLibrary.simpleMessage("マイタグ"),
     "fav_rule_name_placeholder": MessageLookupByLibrary.simpleMessage(
       "ルール名（空欄なら自動生成）",
@@ -556,7 +576,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_order_hint": MessageLookupByLibrary.simpleMessage(
       "上から順に評価し最初に一致したものを適用",
     ),
-    "fav_rule_other_hits_note": m27,
+    "fav_rule_other_hits_note": m32,
     "fav_rule_pick_one_folder_hint": MessageLookupByLibrary.simpleMessage(
       "フォルダを選択",
     ),
@@ -568,8 +588,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "fav_rule_picker_wheel": MessageLookupByLibrary.simpleMessage("ホイールピッカー"),
     "fav_rule_preview": MessageLookupByLibrary.simpleMessage("プレビュー"),
-    "fav_rule_reason_only": m28,
-    "fav_rule_reason_with_tag": m29,
+    "fav_rule_reason_only": m33,
+    "fav_rule_reason_with_tag": m34,
     "fav_rule_regex_placeholder": MessageLookupByLibrary.simpleMessage(
       "正規表現を入力 (例: ^foot.*)",
     ),
@@ -578,8 +598,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "ルールを作成しました",
     ),
     "fav_rule_save_into_lead": MessageLookupByLibrary.simpleMessage("保存先"),
-    "fav_rule_save_to_folder": m30,
-    "fav_rule_saved_to_folder": m31,
+    "fav_rule_save_to_folder": m35,
+    "fav_rule_saved_to_folder": m36,
     "fav_rule_search_this_category": MessageLookupByLibrary.simpleMessage(
       "このカテゴリを検索",
     ),
@@ -593,13 +613,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_select_category": MessageLookupByLibrary.simpleMessage("カテゴリを選択"),
     "fav_rule_status_disabled": MessageLookupByLibrary.simpleMessage("オフ"),
     "fav_rule_status_enabled": MessageLookupByLibrary.simpleMessage("オン"),
-    "fav_rule_status_enabled_count": m32,
+    "fav_rule_status_enabled_count": m37,
     "fav_rule_tag_namespace": MessageLookupByLibrary.simpleMessage("タグ種別"),
     "fav_rule_target_folder": MessageLookupByLibrary.simpleMessage("保存先"),
     "fav_rule_test_custom_tags": MessageLookupByLibrary.simpleMessage(
       "タグを手動入力",
     ),
-    "fav_rule_test_fallback_desc": m33,
+    "fav_rule_test_fallback_desc": m38,
     "fav_rule_test_from_history": MessageLookupByLibrary.simpleMessage(
       "履歴から選択",
     ),
@@ -617,7 +637,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "fav_rule_test_title": MessageLookupByLibrary.simpleMessage("ルールテスト"),
     "fav_rule_title": MessageLookupByLibrary.simpleMessage("ルールお気に入り"),
-    "fav_rule_total_count": m34,
+    "fav_rule_total_count": m39,
     "fav_rule_trigger": MessageLookupByLibrary.simpleMessage("トリガー操作"),
     "fav_rule_trigger_long_press": MessageLookupByLibrary.simpleMessage(
       "お気に入りボタンを長押し",
@@ -632,7 +652,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_value_placeholder": MessageLookupByLibrary.simpleMessage(
       "タグまたはキーワードを入力",
     ),
-    "fav_saved_in": m35,
+    "fav_saved_in": m40,
     "fav_scope_all": MessageLookupByLibrary.simpleMessage("すべて"),
     "fav_scope_note": MessageLookupByLibrary.simpleMessage("メモ"),
     "fav_scope_tag": MessageLookupByLibrary.simpleMessage("タグ"),
@@ -641,12 +661,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_search_all_folders": MessageLookupByLibrary.simpleMessage(
       "すべてのお気に入りから検索",
     ),
-    "fav_search_count": m36,
-    "fav_search_empty": m37,
-    "fav_search_in": m38,
+    "fav_search_count": m41,
+    "fav_search_empty": m42,
+    "fav_search_in": m43,
     "fav_select": MessageLookupByLibrary.simpleMessage("選択"),
-    "fav_selected_count": m39,
-    "fav_selected_scope": m40,
+    "fav_selected_count": m44,
+    "fav_selected_scope": m45,
     "favcat": MessageLookupByLibrary.simpleMessage("お気に入り"),
     "favorite_note_hint": MessageLookupByLibrary.simpleMessage("メモ（任意）"),
     "favorites_order": MessageLookupByLibrary.simpleMessage("お気に入り並べ替え"),
@@ -676,8 +696,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "fullscreen": MessageLookupByLibrary.simpleMessage("フルスクリーン"),
     "galery_site": MessageLookupByLibrary.simpleMessage("ギャラリーサイト"),
     "gallery_comments": MessageLookupByLibrary.simpleMessage("コメント"),
-    "gallery_from_parent_hint": m41,
-    "gallery_has_parent_hint": MessageLookupByLibrary.simpleMessage("親ギャラリーあり"),
+    "gallery_downloaded_has_update": MessageLookupByLibrary.simpleMessage(
+      "ダウンロード済み、新しいバージョンあり",
+    ),
     "gallery_info": MessageLookupByLibrary.simpleMessage("ギャラリー情報"),
     "gallery_info_category": MessageLookupByLibrary.simpleMessage("カテゴリ"),
     "gallery_info_cover_url": MessageLookupByLibrary.simpleMessage("カバー URL"),
@@ -695,7 +716,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "ブラウザでリンクを開けませんでした",
     ),
     "gallery_info_posted": MessageLookupByLibrary.simpleMessage("投稿日時"),
-    "gallery_info_rating_votes": m42,
+    "gallery_info_rating_votes": m46,
     "gallery_info_section_details": MessageLookupByLibrary.simpleMessage(
       "詳細情報",
     ),
@@ -706,14 +727,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_info_visible": MessageLookupByLibrary.simpleMessage("公開状態"),
     "gallery_latest_version": MessageLookupByLibrary.simpleMessage("最新"),
     "gallery_lineage": MessageLookupByLibrary.simpleMessage("バージョン履歴"),
-    "gallery_lineage_tap_hint": MessageLookupByLibrary.simpleMessage(
-      "タップで移動 · 長押しでコピー",
+    "gallery_lineage_copy_hint": MessageLookupByLibrary.simpleMessage(
+      "タップで開く · 長押しでリンクをコピー",
     ),
+    "gallery_lineage_count": m47,
+    "gallery_lineage_current": MessageLookupByLibrary.simpleMessage("現在"),
+    "gallery_lineage_from_parent": m48,
+    "gallery_lineage_newer": MessageLookupByLibrary.simpleMessage("新しいバージョン"),
     "gallery_metadata": MessageLookupByLibrary.simpleMessage("メタデータ"),
-    "gallery_metadata_copy_hint": MessageLookupByLibrary.simpleMessage(
-      "タップでコピー",
-    ),
-    "gallery_newer_version_count": m43,
+    "gallery_newer_version_count": m49,
     "gallery_newer_version_single": MessageLookupByLibrary.simpleMessage(
       "新しいバージョンあり",
     ),
@@ -728,7 +750,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_stats": MessageLookupByLibrary.simpleMessage("ギャラリー統計"),
     "gallery_stats_all_time": MessageLookupByLibrary.simpleMessage("全期間"),
     "gallery_stats_collapse": MessageLookupByLibrary.simpleMessage("閉じる"),
-    "gallery_stats_current_version": m44,
+    "gallery_stats_current_version": m50,
     "gallery_stats_daily": MessageLookupByLibrary.simpleMessage("日別"),
     "gallery_stats_daily_avg": MessageLookupByLibrary.simpleMessage("日平均"),
     "gallery_stats_empty_body": MessageLookupByLibrary.simpleMessage(
@@ -766,22 +788,21 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "gallery_stats_past_month": MessageLookupByLibrary.simpleMessage("過去1か月"),
     "gallery_stats_past_year": MessageLookupByLibrary.simpleMessage("過去1年"),
-    "gallery_stats_peak": m45,
-    "gallery_stats_period_avg": m46,
-    "gallery_stats_period_share": m47,
-    "gallery_stats_period_total": m48,
+    "gallery_stats_peak": m51,
+    "gallery_stats_period_avg": m52,
+    "gallery_stats_period_share": m53,
+    "gallery_stats_period_total": m54,
     "gallery_stats_ranking": MessageLookupByLibrary.simpleMessage("ランキング"),
     "gallery_stats_refresh": MessageLookupByLibrary.simpleMessage("統計を更新"),
     "gallery_stats_retry": MessageLookupByLibrary.simpleMessage("再試行"),
-    "gallery_stats_score": m49,
+    "gallery_stats_score": m55,
     "gallery_stats_total_visits": MessageLookupByLibrary.simpleMessage("総閲覧数"),
     "gallery_stats_unranked": MessageLookupByLibrary.simpleMessage("圏外"),
     "gallery_stats_visits": MessageLookupByLibrary.simpleMessage("閲覧数"),
     "gallery_stats_yearly": MessageLookupByLibrary.simpleMessage("年別"),
     "gallery_stats_yesterday": MessageLookupByLibrary.simpleMessage("昨日"),
     "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage("差分更新可"),
-    "gallery_updated_on": m50,
-    "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage("履歴を見る"),
+    "gallery_updated_on": m56,
     "glass_effect": MessageLookupByLibrary.simpleMessage("ガラス効果"),
     "glass_material": MessageLookupByLibrary.simpleMessage("ガラスの素材"),
     "glass_material_frosted": MessageLookupByLibrary.simpleMessage("すりガラス"),
@@ -840,66 +861,74 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "import_export": MessageLookupByLibrary.simpleMessage("インポートとエクスポート"),
     "incremental_update_added": MessageLookupByLibrary.simpleMessage("追加ページ"),
+    "incremental_update_added_pages": m57,
     "incremental_update_all_reused": MessageLookupByLibrary.simpleMessage(
       "全ページをローカル再利用可能",
     ),
     "incremental_update_applying": MessageLookupByLibrary.simpleMessage(
       "更新を適用中…",
     ),
+    "incremental_update_cannot_reuse": MessageLookupByLibrary.simpleMessage(
+      "再利用不可",
+    ),
     "incremental_update_compare_failed": MessageLookupByLibrary.simpleMessage(
-      "新バージョンの解析に失敗しました",
+      "新バージョンの比較に失敗しました",
     ),
     "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
-      "ページ差分を解析中…",
+      "新版ページを比較中…",
     ),
-    "incremental_update_completed_locally": m51,
+    "incremental_update_completed_locally": m58,
     "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
       "ダウンロード済みギャラリーを差分更新",
     ),
-    "incremental_update_local_tag": MessageLookupByLibrary.simpleMessage("現在"),
     "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
-      "上書き更新（読書進捗を保持）",
+      "置換",
     ),
-    "incremental_update_mode_inplace_desc": m52,
+    "incremental_update_mode_inplace_desc":
+        MessageLookupByLibrary.simpleMessage("旧版フォルダを新版に置き換え、読書位置を自動で引き継ぎます。"),
     "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
-      "新規タスクとして保存（旧版を保持）",
+      "残して新規保存",
     ),
-    "incremental_update_mode_new_desc": m53,
-    "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
-      "更新方法",
+    "incremental_update_mode_new_desc": MessageLookupByLibrary.simpleMessage(
+      "未変更ページを再利用して新規タスクを作成し、旧版を残します。",
     ),
-    "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage("新版"),
-    "incremental_update_only_download": m54,
-    "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
-      "推奨",
+    "incremental_update_mode_new_saf_desc":
+        MessageLookupByLibrary.simpleMessage("新規タスクとして全ページを取得し、旧版をそのまま残します。"),
+    "incremental_update_need_download": m59,
+    "incremental_update_old_version": MessageLookupByLibrary.simpleMessage(
+      "旧バージョン",
     ),
-    "incremental_update_replaced": MessageLookupByLibrary.simpleMessage(
-      "差替ページ",
-    ),
+    "incremental_update_replaced_approx": m60,
     "incremental_update_reused": MessageLookupByLibrary.simpleMessage("再利用"),
+    "incremental_update_reused_pages": m61,
     "incremental_update_saf_inplace_unsupported":
         MessageLookupByLibrary.simpleMessage(
           "SAF ストレージはローカル再利用・上書き更新に未対応のため、新規タスクとして全ページ取得します。",
         ),
-    "incremental_update_start_inplace": m55,
-    "incremental_update_start_new": m56,
-    "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
-      "ローカルで更新完了（ダウンロード不要）",
+    "incremental_update_saf_short_note": MessageLookupByLibrary.simpleMessage(
+      "現在の SAF 保存先ではローカル再利用できません",
     ),
-    "incremental_update_start_saf_full": m57,
-    "incremental_update_started": m58,
+    "incremental_update_start": MessageLookupByLibrary.simpleMessage("更新を開始"),
+    "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
+      "今すぐ更新を完了",
+    ),
+    "incremental_update_start_saf_full": MessageLookupByLibrary.simpleMessage(
+      "新版をすべて取得",
+    ),
+    "incremental_update_started": m62,
     "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
-      "未変更のローカル画像を再利用",
+      "未変更のローカルページを再利用",
     ),
     "incremental_update_target_version": MessageLookupByLibrary.simpleMessage(
       "更新先バージョン",
     ),
     "incremental_update_title": MessageLookupByLibrary.simpleMessage(
-      "ギャラリー差分更新",
+      "ダウンロード済みギャラリーを更新",
     ),
-    "incremental_update_version_compare": MessageLookupByLibrary.simpleMessage(
-      "バージョン比較",
+    "incremental_update_to_latest": MessageLookupByLibrary.simpleMessage(
+      "最新版へ差分更新",
     ),
+    "incremental_update_total_pages": m63,
     "incremental_update_view_newer": MessageLookupByLibrary.simpleMessage(
       "新バージョンの詳細を見る",
     ),
@@ -908,19 +937,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "input_error": MessageLookupByLibrary.simpleMessage("入力エラー"),
     "instantly": MessageLookupByLibrary.simpleMessage("即刻"),
     "ios_bg_download": MessageLookupByLibrary.simpleMessage("バックグラウンドダウンロード"),
-    "ios_bg_download_complete_multi": m59,
-    "ios_bg_download_complete_single": m60,
+    "ios_bg_download_complete_multi": m64,
+    "ios_bg_download_complete_single": m65,
     "ios_bg_download_complete_title": MessageLookupByLibrary.simpleMessage(
       "ダウンロード完了",
     ),
-    "ios_bg_download_multi_title": m61,
+    "ios_bg_download_multi_title": m66,
     "ios_bg_download_notify": MessageLookupByLibrary.simpleMessage(
       "ダウンロード完了通知",
     ),
     "ios_bg_download_notify_subtitle": MessageLookupByLibrary.simpleMessage(
       "バックグラウンドダウンロード完了時にローカル通知でお知らせします",
     ),
-    "ios_bg_download_progress_pages": m62,
+    "ios_bg_download_progress_pages": m67,
     "ios_bg_download_subtitle": MessageLookupByLibrary.simpleMessage(
       "音楽再生を中断せずにバックグラウンドでギャラリーのダウンロードを継続します",
     ),
@@ -977,7 +1006,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("Webでログイン"),
     "max_history": MessageLookupByLibrary.simpleMessage("最大履歴"),
     "min": MessageLookupByLibrary.simpleMessage("分"),
-    "model": m63,
+    "model": m68,
     "more_actions": MessageLookupByLibrary.simpleMessage("その他"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("他のサムネイル"),
     "multi_download": MessageLookupByLibrary.simpleMessage("マルチダウンロード"),
@@ -1026,7 +1055,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("評価"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("類似のギャラリー"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("トレント"),
-    "page_count": m64,
+    "page_count": m69,
     "page_range": MessageLookupByLibrary.simpleMessage("ページ範囲"),
     "page_range_error": MessageLookupByLibrary.simpleMessage("入力範囲エラー"),
     "page_view_type": MessageLookupByLibrary.simpleMessage("Page View Type"),
@@ -1068,10 +1097,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("横向きで全画面表示"),
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("縦向きで全画面表示"),
-    "reader_interval_seconds": m65,
+    "reader_interval_seconds": m70,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("次のページ"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("ページレイアウト"),
-    "reader_page_of": m66,
+    "reader_page_of": m71,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage("前のページ"),
     "reader_single_page": MessageLookupByLibrary.simpleMessage("単ページ"),
     "reader_surface_standard": MessageLookupByLibrary.simpleMessage("標準"),
@@ -1129,7 +1158,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "s_Show_Expunged_Galleries": MessageLookupByLibrary.simpleMessage("削除済み"),
     "s_and": MessageLookupByLibrary.simpleMessage("〜"),
     "s_pages": MessageLookupByLibrary.simpleMessage("ページ"),
-    "s_stars": m67,
+    "s_stars": m72,
     "save": MessageLookupByLibrary.simpleMessage("保存"),
     "save_current_image": MessageLookupByLibrary.simpleMessage("表示中の画像を保存"),
     "save_into_album": MessageLookupByLibrary.simpleMessage("保存"),
@@ -1192,10 +1221,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_diag_eh_nodes": MessageLookupByLibrary.simpleMessage("E-Hentai ノード確認"),
     "sni_diag_retest": MessageLookupByLibrary.simpleMessage("再テスト"),
     "sni_diag_section": MessageLookupByLibrary.simpleMessage("接続診断"),
-    "sni_diag_summary_ok": m68,
+    "sni_diag_summary_ok": m73,
     "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("タップして確認"),
     "sni_doh_auto": MessageLookupByLibrary.simpleMessage("自動選択"),
-    "sni_doh_auto_selected": m69,
+    "sni_doh_auto_selected": m74,
     "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("汚染の疑い"),
     "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH サーバー"),
     "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("速度計測"),
@@ -1206,7 +1235,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
       "最新の DoH リストを同期しました",
     ),
-    "sni_doh_synced_at": m70,
+    "sni_doh_synced_at": m75,
     "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("同期中…"),
     "sni_doh_testing": MessageLookupByLibrary.simpleMessage("計測中…"),
     "sni_mode_compat": MessageLookupByLibrary.simpleMessage("互換モード"),
@@ -1228,7 +1257,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_status_untested": MessageLookupByLibrary.simpleMessage("未計測"),
     "sni_switch_to_standard": MessageLookupByLibrary.simpleMessage("標準接続に戻す"),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("クイック検索に追加"),
-    "sp_add_tag": m71,
+    "sp_add_tag": m76,
     "sp_all": MessageLookupByLibrary.simpleMessage("すべて"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("すべてのお気に入り"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage("オリジナルアーカイブ"),
@@ -1266,16 +1295,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("最後"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("次へ"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("前へ"),
-    "sp_page_total": m72,
+    "sp_page_total": m77,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage("タップして画像を選択"),
     "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("クイック検索一覧"),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("評価を送信"),
-    "sp_rating_summary": m73,
+    "sp_rating_summary": m78,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("最近の検索"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("更新"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("リセット"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("再試行"),
-    "sp_search_for": m74,
+    "sp_search_for": m79,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "タイトル・タグを検索、またはリンクを貼り付け",
     ),
@@ -1290,19 +1319,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("類似スキャン"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("検索"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("候補"),
-    "sp_tags_added": m75,
+    "sp_tags_added": m80,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "例: female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("プレビューページへ"),
-    "sp_thumbs_per_page": m76,
+    "sp_thumbs_per_page": m81,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("完了"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage("トレントをダウンロード"),
     "sp_torrent_empty": MessageLookupByLibrary.simpleMessage("利用できるトレントはありません"),
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("マグネットを共有"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("ピア"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("シード"),
-    "sp_torrent_title": m77,
+    "sp_torrent_title": m82,
     "sp_translate": MessageLookupByLibrary.simpleMessage("翻訳"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage("分割・仕切りで変化"),
     "sync_group": MessageLookupByLibrary.simpleMessage("グループ同期"),
@@ -1326,7 +1355,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("登録"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("カテゴリー設定"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("タブレットUI"),
-    "tagNamespace": m78,
+    "tagNamespace": m83,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("マイタグに追加"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage(
       "Default Color",
@@ -1542,7 +1571,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "undo": MessageLookupByLibrary.simpleMessage("元に戻す"),
     "unlimited": MessageLookupByLibrary.simpleMessage("無制限"),
-    "update_to_version": m79,
+    "update_to_version": m84,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("アバターをアップロード"),
     "uploader": MessageLookupByLibrary.simpleMessage("アップローダー"),
     "user_login": MessageLookupByLibrary.simpleMessage("ユーザーログイン"),

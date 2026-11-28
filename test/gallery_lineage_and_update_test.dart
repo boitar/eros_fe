@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/common/controller/download/download_path_manager.dart';
 import 'package:eros_fe/common/controller/download/gallery_update_service.dart';
 import 'package:eros_fe/common/controller/download/storage_adapter.dart';
@@ -13,6 +14,7 @@ import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
+import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
@@ -21,11 +23,16 @@ import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_incremental_update_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_info_page.dart';
+import 'package:eros_fe/pages/gallery/view/gallery_lineage_chain.dart';
+import 'package:eros_fe/pages/gallery/view/gallery_lineage_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/sliver/gallery_hero.dart';
 import 'package:eros_fe/pages/item/download_gallery_item.dart';
 import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
+import 'package:eros_fe/pages/tab/view/download_page.dart';
 import 'package:eros_fe/store/db/entity/gallery_image_task.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
+import 'package:eros_fe/widget/eh_buttons.dart';
+import 'package:eros_fe/widget/eh_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -76,6 +83,45 @@ class _FakeDownloadController extends GetxController
   final DownloadState dState = DownloadState();
 
   @override
+  Future<void> get downloadInitialization => Future<void>.value();
+
+  final List<int> resumedGids = <int>[];
+  final List<({int gid, bool shouldDeleteContent})> removedCalls =
+      <({int gid, bool shouldDeleteContent})>[];
+  Future<GalleryIncrementalExecutionResult?> Function(
+    GalleryIncrementalPlan plan,
+    GalleryIncrementalUpdateMode mode,
+  )?
+  onExecuteIncrementalUpdate;
+
+  @override
+  Future<void> galleryTaskResume(int gid, {bool userInitiated = false}) async {
+    resumedGids.add(gid);
+  }
+
+  @override
+  Future<void> removeDownloadGalleryTask({
+    required int gid,
+    bool shouldDeleteContent = true,
+  }) async {
+    removedCalls.add((gid: gid, shouldDeleteContent: shouldDeleteContent));
+    dState.galleryTaskMap.remove(gid);
+    dState.incrementalProgressMap.remove(gid);
+    dState.updateCreatedTaskGids.remove(gid);
+  }
+
+  @override
+  Future<GalleryIncrementalExecutionResult?> executeIncrementalUpdate(
+    GalleryIncrementalPlan plan, {
+    required GalleryIncrementalUpdateMode mode,
+  }) async {
+    if (onExecuteIncrementalUpdate != null) {
+      return onExecuteIncrementalUpdate!(plan, mode);
+    }
+    return null;
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -97,20 +143,49 @@ class _FakeDownloadViewController extends GetxController
   @override
   final galleryTaskMap = <int, GalleryTask>{};
 
+  final List<int> resumedGids = <int>[];
+  final List<int> pausedGids = <int>[];
+
   @override
   bool filesUnavailable(int gid) => false;
+
+  @override
+  void resumeGalleryDownload(int? gid) {
+    if (gid != null) {
+      resumedGids.add(gid);
+    }
+  }
+
+  @override
+  void pauseGalleryDownload(int? gid) {
+    if (gid != null) {
+      pausedGids.add(gid);
+    }
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _TestableDownloadViewController extends DownloadViewController {
+  _TestableDownloadViewController({super.updateService});
+
+  @override
+  // ignore: must_call_super
+  void onInit() {
+    tabTag = 'download';
+  }
+}
+
 Widget _wrapCupertinoApp({
+  Key? appKey,
   required Widget child,
   Locale locale = const Locale('zh', 'CN'),
   Brightness brightness = Brightness.dark,
 }) {
   return oktoast.OKToast(
     child: GetCupertinoApp(
+      key: appKey,
       locale: locale,
       supportedLocales: L10n.delegate.supportedLocales,
       localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
@@ -1174,6 +1249,7 @@ void main() {
     tearDown(Get.reset);
 
     testWidgets('GalleryLineageWhisper hides when empty and stays compact when present', (tester) async {
+      // Case 1: neither newer versions nor parent -> hidden (SizedBox.shrink).
       await tester.pumpWidget(
         _wrapCupertinoApp(
           child: CupertinoPageScaffold(
@@ -1186,7 +1262,10 @@ void main() {
         ),
       );
       expect(find.byType(GestureDetector), findsNothing);
+      expect(tester.getSize(find.byType(GalleryLineageWhisper)).height, 0);
 
+      // Case 2: newer versions -> >= 44pt height, accentSoft radial glow,
+      // crisp text1/text2 with zero text shadows, single-line message.
       var tapped = false;
       await tester.pumpWidget(
         _wrapCupertinoApp(
@@ -1216,7 +1295,7 @@ void main() {
                       ),
                     ],
                   ),
-                  isDownloadedComplete: false,
+                  isDownloadedComplete: true,
                   onTap: () => tapped = true,
                 ),
               ),
@@ -1226,27 +1305,393 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('有 2 个更新版本'), findsOneWidget);
-      expect(find.text('含父画廊'), findsOneWidget);
-      final whisperHeight = tester.getSize(find.byType(GalleryLineageWhisper)).height;
-      expect(whisperHeight, lessThanOrEqualTo(44));
+      expect(find.text('有新版本'), findsOneWidget);
+      expect(find.text('04-01 修订 · 可增量更新'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('gallery-lineage-whisper-glow')),
+        findsOneWidget,
+      );
+      final whisperCtx = tester.element(find.text('有新版本'));
+      final primaryTextWidget = tester.widget<Text>(find.text('有新版本'));
+      final secondaryTextWidget = tester.widget<Text>(
+        find.text('04-01 修订 · 可增量更新'),
+      );
+      expect(primaryTextWidget.style?.shadows, isNull);
+      expect(secondaryTextWidget.style?.shadows, isNull);
+      expect(
+        primaryTextWidget.style?.color,
+        ehTheme.palette.text1.resolveFrom(whisperCtx),
+      );
+      expect(
+        secondaryTextWidget.style?.color,
+        ehTheme.palette.text2.resolveFrom(whisperCtx),
+      );
+      final glowBox = tester.widget<DecoratedBox>(
+        find.byKey(const ValueKey<String>('gallery-lineage-whisper-glow')),
+      );
+      final glowGradient =
+          (glowBox.decoration as BoxDecoration).gradient! as RadialGradient;
+      expect(
+        glowGradient.colors.first,
+        EhPalette.accentSoft.resolveFrom(whisperCtx),
+      );
+      final newerHitHeight =
+          tester.getSize(find.byType(GestureDetector)).height;
+      expect(newerHitHeight, greaterThanOrEqualTo(44));
 
       await tester.tap(find.byType(GalleryLineageWhisper));
       expect(tapped, isTrue);
+
+      // Case 3: parent only -> >= 44pt height, NO glow, quiet text2 + icon.
+      await tester.pumpWidget(
+        _wrapCupertinoApp(
+          brightness: Brightness.light,
+          child: CupertinoPageScaffold(
+            child: Center(
+              child: SizedBox(
+                width: 340,
+                child: GalleryLineageWhisper(
+                  provider: const GalleryProvider(
+                    gid: '201',
+                    parent: '100',
+                    parentHref: 'https://e-hentai.org/g/100/aabbccddee/',
+                  ),
+                  isDownloadedComplete: false,
+                  onTap: () {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('源自父画廊 · 共 2 个版本'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('gallery-lineage-whisper-glow')),
+        findsNothing,
+      );
+      final parentCtx = tester.element(find.text('源自父画廊 · 共 2 个版本'));
+      final parentTextWidget = tester.widget<Text>(find.text('源自父画廊 · 共 2 个版本'));
+      expect(parentTextWidget.style?.shadows, isNull);
+      expect(
+        parentTextWidget.style?.color,
+        ehTheme.palette.text2.resolveFrom(parentCtx),
+      );
+      expect(
+        tester.getSize(find.byType(GestureDetector)).height,
+        greaterThanOrEqualTo(44),
+      );
     });
 
-    testWidgets('GalleryInfoPage renders clickable Parent, Newer Versions and incremental entry', (tester) async {
-      final dlCtrl = Get.put<DownloadController>(_FakeDownloadController());
-      dlCtrl.dState.galleryTaskMap[3104821] = GalleryTask(
-        gid: 3104821,
-        token: '9a4f2c1b8e',
-        title: 'Yoimachi',
-        dirPath: '/tmp/yoimachi',
-        fileCount: 48,
-        completCount: 48,
-        status: TaskStatus.complete.value,
-      );
+    testWidgets(
+      'GalleryLineageChain orders Latest -> Intermediate -> Current (non-tappable) -> Parent',
+      (tester) async {
+        const provider = GalleryProvider(
+          gid: '3104821',
+          token: '9a4f2c1b8e',
+          url: 'https://e-hentai.org/g/3104821/9a4f2c1b8e/',
+          englishTitle: 'Current Gallery Title',
+          postTime: '2026-11-03 14:22',
+          parent: '2841029',
+          parentHref: 'https://e-hentai.org/g/2841029/fedcba9876/',
+          newerVersions: <GalleryNewerVersion>[
+            GalleryNewerVersion(
+              gid: '3298500',
+              token: '1111111111',
+              url: 'https://e-hentai.org/g/3298500/1111111111/',
+              title: 'Intermediate Revision',
+              addedDate: '2026-11-08 09:41',
+            ),
+            GalleryNewerVersion(
+              gid: '3298510',
+              token: '1234567890',
+              url: 'https://e-hentai.org/g/3298510/1234567890/',
+              title: 'Latest Revision',
+              addedDate: '2026-11-22 14:03',
+            ),
+          ],
+        );
 
+        final openedUrls = <String>[];
+        final copiedValues = <String>[];
+
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: CupertinoPageScaffold(
+              child: GalleryLineageChain(
+                provider: provider,
+                currentTitle: 'Current Gallery Title',
+                isDownloaded: true,
+                onOpen: openedUrls.add,
+                onCopy: copiedValues.add,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final latestY = tester.getTopLeft(find.text('Latest Revision')).dy;
+        final midY = tester.getTopLeft(find.text('Intermediate Revision')).dy;
+        final currentY =
+            tester.getTopLeft(find.text('Current Gallery Title')).dy;
+        final parentY = tester.getTopLeft(find.text('父画廊')).dy;
+
+        expect(latestY, lessThan(midY));
+        expect(midY, lessThan(currentY));
+        expect(currentY, lessThan(parentY));
+        expect(find.text('最新'), findsOneWidget);
+        expect(find.text('当前'), findsOneWidget);
+        expect(find.text('11-03 · 已下载'), findsOneWidget);
+
+        // Current row is NOT tappable.
+        await tester.tap(find.text('Current Gallery Title'));
+        expect(openedUrls, isEmpty);
+
+        // Latest, intermediate, and parent rows ARE tappable.
+        await tester.tap(find.text('Latest Revision'));
+        await tester.tap(find.text('Intermediate Revision'));
+        await tester.tap(find.text('父画廊'));
+        expect(openedUrls, <String>[
+          'https://e-hentai.org/g/3298510/1234567890/',
+          'https://e-hentai.org/g/3298500/1111111111/',
+          'https://e-hentai.org/g/2841029/fedcba9876/',
+        ]);
+
+        // Long press copies normalized URL.
+        await tester.longPress(find.text('Latest Revision'));
+        expect(copiedValues, <String>[
+          'https://e-hentai.org/g/3298510/1234567890/',
+        ]);
+      },
+    );
+
+    testWidgets(
+      'GalleryLineageSheet adapts primary CTA for downloaded / not-downloaded / parent-only',
+      (tester) async {
+        const withNewer = GalleryProvider(
+          gid: '3104821',
+          token: '9a4f2c1b8e',
+          englishTitle: 'Base Gallery',
+          parent: '2841029',
+          parentHref: 'https://e-hentai.org/g/2841029/fedcba9876/',
+          newerVersions: <GalleryNewerVersion>[
+            GalleryNewerVersion(
+              gid: '3298510',
+              token: '1234567890',
+              url: 'https://e-hentai.org/g/3298510/1234567890/',
+              title: 'Latest Gallery',
+              addedDate: '2026-11-22 14:03',
+            ),
+          ],
+        );
+        final downloadedTask = GalleryTask(
+          gid: 3104821,
+          token: '9a4f2c1b8e',
+          title: 'Base Gallery',
+          dirPath: '/tmp/base',
+          fileCount: 20,
+          completCount: 20,
+          status: TaskStatus.complete.value,
+        );
+
+        // Downloaded + newer -> primary button is "增量更新到最新版".
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: CupertinoPageScaffold(
+              child: GalleryLineageSheet(
+                provider: withNewer,
+                downloadedTask: downloadedTask,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('版本血缘'), findsOneWidget);
+        expect(find.text('共 3 个版本'), findsOneWidget);
+        expect(find.text('增量更新到最新版'), findsOneWidget);
+
+        // Not downloaded + newer -> primary button is "打开最新版本".
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: const CupertinoPageScaffold(
+              child: GalleryLineageSheet(provider: withNewer),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('打开最新版本'), findsOneWidget);
+
+        // Parent only -> NO primary prominent button.
+        const parentOnly = GalleryProvider(
+          gid: '3298510',
+          token: '1234567890',
+          englishTitle: 'Latest Gallery',
+          parent: '3104821',
+          parentHref: 'https://e-hentai.org/g/3104821/9a4f2c1b8e/',
+        );
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: const CupertinoPageScaffold(
+              child: GalleryLineageSheet(provider: parentOnly),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('共 2 个版本'), findsOneWidget);
+        expect(find.text('增量更新到最新版'), findsNothing);
+        expect(find.text('打开最新版本'), findsNothing);
+
+        // When the newer version is already in galleryTaskMap, hide incremental CTA.
+        final dlCtrl = Get.put<DownloadController>(_FakeDownloadController());
+        dlCtrl.dState.galleryTaskMap[3298510] = GalleryTask(
+          gid: 3298510,
+          token: '1234567890',
+          title: 'Latest Gallery',
+          dirPath: '/tmp/latest',
+          fileCount: 24,
+          completCount: 24,
+          status: TaskStatus.complete.value,
+        );
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: CupertinoPageScaffold(
+              child: GalleryLineageSheet(
+                provider: withNewer,
+                downloadedTask: downloadedTask,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('增量更新到最新版'), findsNothing);
+        expect(find.text('打开最新版本'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'formatLineageDistinguishingTitle preserves distinguishing version suffix in chain and menu',
+      (tester) async {
+        const currentTitle = 'dekamofuchan/@chiiko_tanunu Updated 10/14/2026';
+        const latestTitle = 'dekamofuchan/@chiiko_tanunu Updated 10/28/2026';
+        const midTitle = 'dekamofuchan/@chiiko_tanunu Updated 10/20/2026';
+
+        expect(
+          formatLineageDistinguishingTitle(
+            title: latestTitle,
+            currentTitle: currentTitle,
+          ),
+          contains('Updated 10/28/2026'),
+        );
+        expect(
+          formatLineageDistinguishingTitle(
+            title: currentTitle,
+            currentTitle: currentTitle,
+          ),
+          currentTitle,
+        );
+        expect(
+          formatLineageDistinguishingTitle(
+            title: 'Short V2',
+            currentTitle: 'Short V1',
+          ),
+          'Short V2',
+        );
+
+        const versions = <GalleryNewerVersion>[
+          GalleryNewerVersion(
+            gid: '4288330',
+            token: '254131c601',
+            url: 'https://e-hentai.org/g/4288330/254131c601/',
+            title: latestTitle,
+            addedDate: '2026-10-28 12:00',
+          ),
+          GalleryNewerVersion(
+            gid: '4269523',
+            token: '23e7918173',
+            url: 'https://e-hentai.org/g/4269523/23e7918173/',
+            title: midTitle,
+            addedDate: '2026-10-20 12:00',
+          ),
+        ];
+
+        // 1. GalleryLineageChain displays distinguishing suffix with maxLines == 2.
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: const CupertinoPageScaffold(
+              child: SizedBox(
+                width: 320,
+                child: GalleryLineageChain(
+                  provider: GalleryProvider(
+                    gid: '4255250',
+                    token: '65441d5197',
+                    englishTitle: currentTitle,
+                    postTime: '2026-10-14 22:21',
+                    newerVersions: versions,
+                  ),
+                  currentTitle: currentTitle,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final latestTextFinder = find.textContaining('Updated 10/28/2026');
+        expect(latestTextFinder, findsOneWidget);
+        expect(tester.widget<Text>(latestTextFinder).maxLines, 2);
+        expect(find.textContaining('Updated 10/20/2026'), findsOneWidget);
+
+        // 2. GalleryIncrementalUpdateSheet target menu also shows distinguishing suffix.
+        final task = GalleryTask(
+          gid: 4255250,
+          token: '65441d5197',
+          title: currentTitle,
+          dirPath: '/tmp/deka',
+          fileCount: 40,
+          completCount: 40,
+          status: TaskStatus.complete.value,
+        );
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: CupertinoPageScaffold(
+              child: GalleryIncrementalUpdateSheet(
+                oldTask: task,
+                newerVersions: versions,
+                analyzePlan: ({required oldTask, required targetVersion, cancelToken}) async =>
+                    GalleryIncrementalPlan(
+                      oldTask: oldTask,
+                      targetVersion: targetVersion,
+                      targetProvider: GalleryProvider(
+                        gid: targetVersion.gid,
+                        token: targetVersion.token,
+                        filecount: '48',
+                      ),
+                      targetImages: const <GalleryImage>[],
+                      reusedPages: const <GalleryPageReuse>[],
+                      pagesToDownload: const <GalleryImage>[],
+                      addedCount: 8,
+                      replacedCount: 0,
+                      totalNewPages: 48,
+                      firstPageCount: 40,
+                    ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('目标版本'));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Updated 10/28/2026'), findsOneWidget);
+        expect(find.textContaining('Updated 10/20/2026'), findsOneWidget);
+        expect(find.text('10-28 · #4288330'), findsOneWidget);
+        expect(find.text('10-20 · #4269523'), findsOneWidget);
+      },
+    );
+
+    testWidgets('GalleryInfoPage renders shared chain, tonal CTA, and stable height placeholder', (tester) async {
+      final dlCtrl = Get.put<DownloadController>(_FakeDownloadController());
       final state = GalleryPageState()
         ..galleryProvider = const GalleryProvider(
           gid: '3104821',
@@ -1277,6 +1722,7 @@ void main() {
       final openedUrls = <String>[];
       var incrementalOpened = false;
 
+      // 1. Never downloaded: no reserved empty placeholder at bottom of card.
       await tester.pumpWidget(
         _wrapCupertinoApp(
           child: GalleryInfoPage(
@@ -1288,24 +1734,66 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('版本血缘'), findsOneWidget);
+      expect(find.text('点按跳转 · 长按复制'), findsNothing);
+      expect(find.text('增量更新到最新版'), findsNothing);
+      final detailsYUndownloaded = tester.getTopLeft(find.text('画廊属性')).dy;
+
+      // 2. Active in-progress download: 44pt slot is reserved to prevent jump on completion.
+      dlCtrl.dState.galleryTaskMap[3104821] = GalleryTask(
+        gid: 3104821,
+        token: '9a4f2c1b8e',
+        title: 'Yoimachi',
+        dirPath: '/tmp/yoimachi',
+        fileCount: 48,
+        completCount: 20,
+        status: TaskStatus.running.value,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('增量更新到最新版'), findsNothing);
+      final detailsYBefore = tester.getTopLeft(find.text('画廊属性')).dy;
+      expect(detailsYBefore, greaterThan(detailsYUndownloaded + 40));
+
+      // 3. After download completes: tonal CTA appears without shifting section Y.
+      dlCtrl.dState.galleryTaskMap[3104821] = dlCtrl
+          .dState
+          .galleryTaskMap[3104821]!
+          .copyWith(completCount: 48, status: TaskStatus.complete.value);
+      await tester.pumpAndSettle();
+
+      final detailsYAfter = tester.getTopLeft(find.text('画廊属性')).dy;
+      expect(detailsYAfter, closeTo(detailsYBefore, 1.0));
       expect(find.text('#2841029'), findsOneWidget);
       expect(find.text('Yoimachi [Expanded]'), findsOneWidget);
       expect(find.text('最新'), findsOneWidget);
-      expect(find.text('增量更新已下载画廊'), findsOneWidget);
+      expect(find.text('增量更新到最新版'), findsOneWidget);
 
       await tester.tap(find.text('#2841029'));
       await tester.tap(find.text('Yoimachi [Expanded]'));
-      await tester.tap(find.text('增量更新已下载画廊'));
+      await tester.tap(find.text('增量更新到最新版'));
 
       expect(openedUrls, <String>[
         'https://e-hentai.org/g/2841029/fedcba9876/',
         'https://e-hentai.org/g/3298510/1234567890/',
       ]);
       expect(incrementalOpened, isTrue);
+
+      // 4. Once the newer version itself is downloaded, incremental CTA hides.
+      dlCtrl.dState.galleryTaskMap[3298510] = GalleryTask(
+        gid: 3298510,
+        token: '1234567890',
+        title: 'Yoimachi [Expanded]',
+        dirPath: '/tmp/yoimachi2',
+        fileCount: 52,
+        completCount: 52,
+        status: TaskStatus.complete.value,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('增量更新到最新版'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('GalleryIncrementalUpdateSheet displays diff and executes selected mode', (tester) async {
+    testWidgets('GalleryIncrementalUpdateSheet covers loading, error, 0-page, and normal states', (tester) async {
       final oldTask = GalleryTask(
         gid: 3104821,
         token: '9a4f2c1b8e',
@@ -1322,7 +1810,7 @@ void main() {
         title: 'Yoimachi [Expanded]',
         addedDate: '2026-03-14 08:20',
       );
-      final fakePlan = GalleryIncrementalPlan(
+      final normalPlan = GalleryIncrementalPlan(
         oldTask: oldTask,
         targetVersion: targetVersion,
         targetProvider: const GalleryProvider(
@@ -1352,6 +1840,9 @@ void main() {
         mappedReadingIndex: 17,
       );
 
+      // 1. Loading -> Error -> Retry -> Normal.
+      var attempt = 0;
+      final firstCompleter = Completer<GalleryIncrementalPlan>();
       GalleryIncrementalUpdateMode? executedMode;
 
       await tester.pumpWidget(
@@ -1360,8 +1851,13 @@ void main() {
             child: GalleryIncrementalUpdateSheet(
               oldTask: oldTask,
               newerVersions: const <GalleryNewerVersion>[targetVersion],
-              analyzePlan: ({required oldTask, required targetVersion, cancelToken}) async =>
-                  fakePlan,
+              analyzePlan: ({required oldTask, required targetVersion, cancelToken}) {
+                attempt++;
+                if (attempt == 1) {
+                  return firstCompleter.future;
+                }
+                return Future<GalleryIncrementalPlan>.value(normalPlan);
+              },
               executePlan: (plan, {required mode}) async {
                 executedMode = mode;
                 return GalleryIncrementalExecutionResult(
@@ -1375,22 +1871,119 @@ void main() {
           ),
         ),
       );
+      await tester.pump();
+
+      // Loading state: spinner + text, no x/N progress, primary CTA disabled.
+      expect(find.text('正在比对新版页面…'), findsOneWidget);
+      expect(find.text('开始更新'), findsOneWidget);
+      final loadingPrimary = tester.widget<EhButton>(
+        find.widgetWithText(EhButton, '开始更新'),
+      );
+      expect(loadingPrimary.onPressed, isNull);
+      final loadingGroupHeight =
+          tester.getSize(find.byType(EhSheetGroup).at(1)).height;
+
+      // Fail first attempt -> error state keeps card height stable.
+      firstCompleter.completeError(Exception('network timeout'));
       await tester.pumpAndSettle();
+      expect(find.text('比对新版页面失败'), findsOneWidget);
+      expect(find.text('重试'), findsOneWidget);
+      final errorGroupHeight =
+          tester.getSize(find.byType(EhSheetGroup).at(1)).height;
+      expect(errorGroupHeight, greaterThanOrEqualTo(112));
+      expect((errorGroupHeight - loadingGroupHeight).abs(), lessThan(24));
 
-      expect(find.text('46'), findsOneWidget);
-      expect(find.text('+8'), findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
-
-      // Switch to newTask mode and tap confirm.
-      await tester.tap(find.text('作为新任务下载（保留旧版）'));
+      // Retry -> loads normal plan with approx replaced label & two-mode segment.
+      await tester.tap(find.text('重试'));
       await tester.pumpAndSettle();
-      expect(find.text('新建任务并复用 · 拉取 10 页'), findsOneWidget);
+      expect(find.text('新版共 56 页'), findsOneWidget);
+      expect(find.text('复用 46 页'), findsOneWidget);
+      expect(find.text('新增 8 · 修订约 2'), findsOneWidget);
+      expect(find.text('开始更新'), findsOneWidget);
+      // Verify the 8pt two-color diff bar segments actually paint at full 8pt height.
+      final diffColoredBoxes = tester
+          .widgetList<ColoredBox>(find.byType(ColoredBox))
+          .where((box) => box.child is SizedBox)
+          .toList();
+      expect(diffColoredBoxes.length, greaterThanOrEqualTo(2));
+      for (final finder in <Finder>[
+        find.byWidget(diffColoredBoxes.first),
+        find.byWidget(diffColoredBoxes.last),
+      ]) {
+        expect(tester.getSize(finder).height, 8);
+      }
 
-      await tester.tap(find.text('新建任务并复用 · 拉取 10 页'));
+      // Switch segment to newTask and verify footnote changes.
+      await tester.tap(find.text('保留，另存新任务'));
+      await tester.pumpAndSettle();
+      expect(find.text('新建任务并复用未改动页面，旧版保持不变。'), findsOneWidget);
+
+      await tester.tap(find.text('开始更新'));
       await tester.pumpAndSettle();
       oktoast.dismissAllToast();
       await tester.pump(const Duration(seconds: 4));
       expect(executedMode, GalleryIncrementalUpdateMode.newTask);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('GalleryIncrementalUpdateSheet shows reuse-only CTA for 0-page updates', (tester) async {
+      final oldTask = GalleryTask(
+        gid: 3104821,
+        token: '9a4f2c1b8e',
+        title: 'Yoimachi',
+        dirPath: '/tmp/yoimachi',
+        fileCount: 48,
+        completCount: 48,
+        status: TaskStatus.complete.value,
+      );
+      const targetVersion = GalleryNewerVersion(
+        gid: '3298510',
+        token: '1234567890',
+        url: 'https://e-hentai.org/g/3298510/1234567890/',
+        title: 'Yoimachi [Expanded]',
+        addedDate: '2026-03-14 08:20',
+      );
+      final zeroFetchPlan = GalleryIncrementalPlan(
+        oldTask: oldTask,
+        targetVersion: targetVersion,
+        targetProvider: const GalleryProvider(
+          gid: '3298510',
+          token: '1234567890',
+          filecount: '48',
+        ),
+        targetImages: const <GalleryImage>[],
+        reusedPages: List<GalleryPageReuse>.generate(
+          48,
+          (i) => GalleryPageReuse(
+            newSer: i + 1,
+            oldSer: i + 1,
+            oldFileName: '0001.jpg',
+            imgKey: 'key$i',
+            newImage: GalleryImage(ser: i + 1),
+          ),
+        ),
+        pagesToDownload: const <GalleryImage>[],
+        addedCount: 0,
+        replacedCount: 0,
+        totalNewPages: 48,
+        firstPageCount: 40,
+      );
+      await tester.pumpWidget(
+        _wrapCupertinoApp(
+          child: CupertinoPageScaffold(
+            child: GalleryIncrementalUpdateSheet(
+              key: const ValueKey<String>('zero-fetch-sheet'),
+              oldTask: oldTask,
+              newerVersions: const <GalleryNewerVersion>[targetVersion],
+              analyzePlan: ({required oldTask, required targetVersion, cancelToken}) async =>
+                  zeroFetchPlan,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('立即完成更新'), findsOneWidget);
+      expect(find.text('全部页面可直接复用'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -1452,7 +2045,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('GalleryIncrementalUpdateSheet forces newTask for SAF paths and cycles versions', (tester) async {
+    testWidgets('GalleryIncrementalUpdateSheet forces newTask for SAF paths and selects versions via menu', (tester) async {
       final safTask = GalleryTask(
         gid: 9001,
         token: '9999999999',
@@ -1467,14 +2060,14 @@ void main() {
           gid: '9003',
           token: '3333333333',
           url: 'https://e-hentai.org/g/9003/3333333333/',
-          title: 'SAF Gallery V3',
+          title: 'SAF Gallery [V3]',
           addedDate: '2026-04-01 00:00',
         ),
         GalleryNewerVersion(
           gid: '9002',
           token: '2222222222',
           url: 'https://e-hentai.org/g/9002/2222222222/',
-          title: 'SAF Gallery V2',
+          title: 'SAF Gallery [V2]',
           addedDate: '2026-03-01 00:00',
         ),
       ];
@@ -1536,20 +2129,23 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Default analyzes newest version (9003), SAF shows honest full-download cost.
+      // Default analyzes newest version (9003), SAF shows honest full-download CTA.
       expect(analyzedGids, <String>['9003']);
-      expect(find.text('新建任务完整下载 · 拉取 24 页'), findsOneWidget);
-      expect(find.text('0/24'), findsOneWidget);
+      expect(find.text('完整下载新版'), findsOneWidget);
+      expect(find.text('无法复用'), findsOneWidget);
+      expect(find.text('当前存储位置（SAF）不能复用本地文件'), findsOneWidget);
 
-      // Cycle version to 9002.
-      await tester.tap(find.text('#9003 (1/2) ▾'));
+      // Open target version menu and pick V2 (analyzes once).
+      await tester.tap(find.text('目标版本'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('V2'));
       await tester.pumpAndSettle();
       expect(analyzedGids, <String>['9003', '9002']);
 
-      // Tapping in-place radio should remain on newTask for SAF.
-      await tester.tap(find.text('原位升级并保留阅读进度'));
+      // Tapping in-place segment should remain on newTask for SAF.
+      await tester.tap(find.text('替换'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('新建任务完整下载 · 拉取 24 页'));
+      await tester.tap(find.text('完整下载新版'));
       await tester.pumpAndSettle();
       oktoast.dismissAllToast();
       await tester.pump(const Duration(seconds: 4));
@@ -1573,14 +2169,14 @@ void main() {
           gid: '7003',
           token: '3333333333',
           url: 'https://e-hentai.org/g/7003/3333333333/',
-          title: 'V3',
+          title: 'Race [V3]',
           addedDate: '2026-04-01 00:00',
         ),
         GalleryNewerVersion(
           gid: '7002',
           token: '2222222222',
           url: 'https://e-hentai.org/g/7002/2222222222/',
-          title: 'V2',
+          title: 'Race [V2]',
           addedDate: '2026-03-01 00:00',
         ),
       ];
@@ -1627,21 +2223,25 @@ void main() {
       );
       await tester.pump();
 
-      // Switch immediately while first request is still pending.
-      await tester.tap(find.text('#7003 (1/2) ▾'));
+      // Switch immediately via menu while first request is still pending.
+      // Loading spinner animates continuously, so use bounded pumps instead of pumpAndSettle.
+      await tester.tap(find.text('目标版本'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.text('V2'));
       await tester.pumpAndSettle();
-      expect(find.text('原位增量更新 · 拉取 12 页'), findsOneWidget);
+      expect(find.text('新版共 12 页'), findsOneWidget);
 
       // Now first request fails late with CancelException -> must NOT clobber V2 plan!
       firstCompleter.completeError(CancelException('stale cancel'));
       await tester.pumpAndSettle();
 
-      expect(find.text('原位增量更新 · 拉取 12 页'), findsOneWidget);
-      expect(find.text('差异分析失败'), findsNothing);
+      expect(find.text('新版共 12 页'), findsOneWidget);
+      expect(find.text('比对新版页面失败'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('GalleryInfoPage Russian header wraps cleanly on 320px at 1.6x text scale', (tester) async {
+    testWidgets('Russian narrow 320px at 1.6x text scale does not overflow or clip primary CTA', (tester) async {
       tester.view.physicalSize = const Size(320, 640);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -1673,12 +2273,89 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
 
+      // Also verify GalleryIncrementalUpdateSheet in Russian at 320px / 1.6x.
+      final ruTask = GalleryTask(
+        gid: 8001,
+        token: '8888888888',
+        title: 'Russian Narrow Test',
+        dirPath: '/tmp/ru',
+        fileCount: 20,
+        completCount: 20,
+        status: TaskStatus.complete.value,
+      );
+      const ruVer = GalleryNewerVersion(
+        gid: '8002',
+        token: '9999999999',
+        url: 'https://e-hentai.org/g/8002/9999999999/',
+        title: 'Russian Narrow Test [v2]',
+        addedDate: '2026-11-22 10:00',
+      );
+      await tester.pumpWidget(
+        _wrapCupertinoApp(
+          locale: const Locale('ru'),
+          child: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(320, 640),
+              textScaler: TextScaler.linear(1.6),
+            ),
+            child: CupertinoPageScaffold(
+              child: GalleryIncrementalUpdateSheet(
+                oldTask: ruTask,
+                newerVersions: const <GalleryNewerVersion>[ruVer],
+                analyzePlan: ({required oldTask, required targetVersion, cancelToken}) async =>
+                    GalleryIncrementalPlan(
+                      oldTask: oldTask,
+                      targetVersion: targetVersion,
+                      targetProvider: const GalleryProvider(
+                        gid: '8002',
+                        token: '9999999999',
+                        filecount: '24',
+                      ),
+                      targetImages: const <GalleryImage>[],
+                      reusedPages: List<GalleryPageReuse>.generate(
+                        20,
+                        (i) => GalleryPageReuse(
+                          newSer: i + 1,
+                          oldSer: i + 1,
+                          oldFileName: '0001.jpg',
+                          imgKey: 'k$i',
+                          newImage: GalleryImage(ser: i + 1),
+                        ),
+                      ),
+                      pagesToDownload: List<GalleryImage>.generate(
+                        4,
+                        (i) => GalleryImage(ser: 21 + i),
+                      ),
+                      addedCount: 4,
+                      replacedCount: 0,
+                      totalNewPages: 24,
+                      firstPageCount: 24,
+                    ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final ctaFinder = find.text('Обновить');
+      expect(ctaFinder, findsOneWidget);
+      final ctaText = tester.widget<Text>(ctaFinder);
+      final tp = TextPainter(
+        text: TextSpan(text: ctaText.data, style: ctaText.style),
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+        textScaler: const TextScaler.linear(1.6),
+      )..layout(maxWidth: tester.getSize(ctaFinder).width + 1);
+      expect(tp.didExceedMaxLines, isFalse);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('DownloadGalleryItem displays update badge and incremental dual-bar cleanly', (tester) async {
-      final view = Get.put<DownloadViewController>(_FakeDownloadViewController());
+    testWidgets('DownloadGalleryItem displays _UpdateRow, incremental progress, and failed retry cleanly', (tester) async {
+      final view = _FakeDownloadViewController();
+      Get.put<DownloadViewController>(view);
       final completeTask = GalleryTask(
         gid: 100,
         token: 'tok100',
@@ -1703,8 +2380,46 @@ void main() {
         uploader: 'uploader',
         addTime: 0,
       );
+      final pausedTask = GalleryTask(
+        gid: 250,
+        token: 'tok250',
+        title: 'Incremental Paused Gallery',
+        dirPath: null,
+        fileCount: 56,
+        completCount: 50,
+        status: TaskStatus.paused.value,
+        uploader: 'uploader',
+        addTime: 0,
+      );
+      final failedTask = GalleryTask(
+        gid: 300,
+        token: 'tok300',
+        title: 'Incremental Failed Gallery',
+        dirPath: null,
+        fileCount: 64,
+        completCount: 61,
+        status: TaskStatus.failed.value,
+        uploader: 'uploader',
+        addTime: 0,
+      );
+      final plainCompleteTask = GalleryTask(
+        gid: 400,
+        token: 'tok400',
+        title: 'Plain Complete Gallery',
+        dirPath: null,
+        fileCount: 20,
+        completCount: 20,
+        status: TaskStatus.complete.value,
+        rating: 4.5,
+        category: 'Non-H',
+        uploader: 'uploader',
+        addTime: 0,
+      );
       view.galleryTaskMap[100] = completeTask;
       view.galleryTaskMap[200] = updatingTask;
+      view.galleryTaskMap[250] = pausedTask;
+      view.galleryTaskMap[300] = failedTask;
+      view.galleryTaskMap[400] = plainCompleteTask;
 
       var tappedUpdate = false;
       await tester.pumpWidget(
@@ -1723,6 +2438,7 @@ void main() {
                         token: 'tok200',
                         url: 'https://e-hentai.org/g/200/tok200/',
                         title: 'Newer',
+                        addedDate: '2026-03-14 08:00',
                       ),
                     ],
                     checkedAt: DateTime(2026, 3, 14),
@@ -1740,6 +2456,31 @@ void main() {
                     mode: GalleryIncrementalUpdateMode.inPlace,
                   ),
                 ),
+                DownloadGalleryItem(
+                  galleryTask: pausedTask,
+                  taskIndex: 2,
+                  incrementalProgress: const GalleryIncrementalProgress(
+                    gid: 250,
+                    reusedCount: 46,
+                    totalCount: 56,
+                    mode: GalleryIncrementalUpdateMode.inPlace,
+                  ),
+                ),
+                DownloadGalleryItem(
+                  galleryTask: failedTask,
+                  taskIndex: 3,
+                  errInfo: '3 页下载出错',
+                  incrementalProgress: const GalleryIncrementalProgress(
+                    gid: 300,
+                    reusedCount: 60,
+                    totalCount: 64,
+                    mode: GalleryIncrementalUpdateMode.inPlace,
+                  ),
+                ),
+                DownloadGalleryItem(
+                  galleryTask: plainCompleteTask,
+                  taskIndex: 4,
+                ),
               ],
             ),
           ),
@@ -1747,14 +2488,762 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('有新版'), findsOneWidget);
-      expect(find.text('有新版 ›'), findsOneWidget);
-      expect(find.text('增量中'), findsOneWidget);
-      expect(find.text('复用 46 页'), findsOneWidget);
+      // Old cover badge & rating-row pill are gone.
+      expect(find.text('有新版 ›'), findsNothing);
+      expect(find.text('增量中'), findsNothing);
+      // New _UpdateRow with 44pt target + tonal "更新" button.
+      final updateTarget = find.byKey(
+        const ValueKey<String>('download-card-update-action'),
+      );
+      expect(updateTarget, findsOneWidget);
+      expect(tester.getSize(updateTarget).height, greaterThanOrEqualTo(44));
+      expect(find.text('更新'), findsOneWidget);
 
-      await tester.tap(find.text('有新版 ›'));
+      await tester.tap(updateTarget);
       expect(tappedUpdate, isTrue);
+
+      // Incremental running status, speed, delta progress, and >=44pt pause control.
+      expect(find.text('更新中 · 复用 46 页'), findsOneWidget);
+      expect(find.text('2.4 MB/s · 下载 4 / 10'), findsOneWidget);
+      final controlTargets = find.byKey(
+        const ValueKey<String>('download-incremental-control'),
+      );
+      expect(controlTargets, findsNWidgets(2));
+      expect(tester.getSize(controlTargets.at(0)).width, greaterThanOrEqualTo(44));
+      expect(tester.getSize(controlTargets.at(0)).height, greaterThanOrEqualTo(44));
+      await tester.tap(controlTargets.at(0));
+      expect(view.pausedGids, <int>[200]);
+
+      // Incremental paused status & >=44pt resume control.
+      expect(find.text('已暂停 · 复用 46 页'), findsOneWidget);
+      expect(find.text('下载 4 / 10'), findsOneWidget);
+      expect(tester.getSize(controlTargets.at(1)).width, greaterThanOrEqualTo(44));
+      expect(tester.getSize(controlTargets.at(1)).height, greaterThanOrEqualTo(44));
+      await tester.tap(controlTargets.at(1));
+      expect(view.resumedGids, <int>[250]);
+
+      // Failed incremental status & retry button.
+      expect(find.text('更新失败 · 3 页下载出错'), findsOneWidget);
+      expect(find.text('重试'), findsOneWidget);
+      await tester.tap(find.text('重试'));
+      expect(view.resumedGids, <int>[250, 300]);
+
+      // Complete task checkmark uses EhPalette.accent instead of activeBlue.
+      final completeItem = find.byWidgetPredicate(
+        (w) => w is DownloadGalleryItem && w.galleryTask.gid == 400,
+      );
+      final completeTheme = tester.widget<CupertinoTheme>(
+        find.descendant(
+          of: completeItem,
+          matching: find.byType(CupertinoTheme),
+        ).first,
+      );
+      final completeCtx = tester.element(completeItem);
+      expect(
+        completeTheme.data.primaryColor,
+        EhPalette.accent.resolveFrom(completeCtx),
+      );
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('DownloadGalleryView supports stop, filter (with updating/failed), dismiss, and no-targets', (tester) async {
+      final dlCtrl = _FakeDownloadController();
+      Get.put<DownloadController>(dlCtrl);
+
+      final blockCheck = Completer<GalleryProvider?>();
+      final service = GalleryUpdateService(
+        fetchDetail: ({
+          required String url,
+          bool refresh = false,
+          CancelToken? cancelToken,
+        }) async {
+          cancelToken?.whenCancel.then((_) {
+            if (!blockCheck.isCompleted) {
+              blockCheck.completeError(
+                DioException.requestCancelled(
+                  requestOptions: RequestOptions(path: url),
+                  reason: 'cancelled',
+                ),
+              );
+            }
+          });
+          return blockCheck.future;
+        },
+      );
+      final viewCtrl = _TestableDownloadViewController(updateService: service);
+      Get.put<DownloadViewController>(viewCtrl);
+
+      await tester.pumpWidget(
+        _wrapCupertinoApp(
+          child: const CupertinoPageScaffold(child: DownloadGalleryView()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. No completed targets -> shows download_updates_no_targets, not "all up to date".
+      final buildCtx = tester.element(find.byType(DownloadGalleryView));
+      final emptyResult = await viewCtrl.checkAllGalleryUpdates(context: buildCtx);
+      await tester.pump();
+      expect(emptyResult?.checkedCount, 0);
+      expect(viewCtrl.hasCompletedUpdateCheck.value, isFalse);
+      oktoast.dismissAllToast();
+      await tester.pump(const Duration(seconds: 4));
+
+      // 2. Add tasks and start check -> strip shows progress & Stop button (>= 44pt).
+      final t1 = GalleryTask(
+        gid: 101,
+        token: 'aaaaaaaaaa',
+        url: 'https://e-hentai.org/g/101/aaaaaaaaaa/',
+        title: 'Task Updatable',
+        dirPath: null,
+        fileCount: 20,
+        completCount: 20,
+        status: TaskStatus.complete.value,
+        addTime: 300,
+      );
+      final t2 = GalleryTask(
+        gid: 102,
+        token: 'bbbbbbbbbb',
+        url: 'https://e-hentai.org/g/102/bbbbbbbbbb/',
+        title: 'Task Plain Complete',
+        dirPath: null,
+        fileCount: 15,
+        completCount: 15,
+        status: TaskStatus.complete.value,
+        addTime: 200,
+      );
+      final t3 = GalleryTask(
+        gid: 103,
+        token: 'cccccccccc',
+        url: 'https://e-hentai.org/g/103/cccccccccc/',
+        title: 'Task Incremental Failed',
+        dirPath: null,
+        fileCount: 30,
+        completCount: 25,
+        status: TaskStatus.failed.value,
+        addTime: 100,
+      );
+      dlCtrl.dState.galleryTaskMap[101] = t1;
+      dlCtrl.dState.galleryTaskMap[102] = t2;
+      dlCtrl.dState.galleryTaskMap[103] = t3;
+      dlCtrl.dState.incrementalProgressMap[103] = const GalleryIncrementalProgress(
+        gid: 103,
+        reusedCount: 20,
+        totalCount: 30,
+        mode: GalleryIncrementalUpdateMode.inPlace,
+      );
+      viewCtrl.galleryListRevision.value++;
+      // Remount DownloadGalleryView so AnimatedList initializes with all 3 tasks.
+      await tester.pumpWidget(
+        _wrapCupertinoApp(
+          appKey: const ValueKey<String>('populated-dl-app'),
+          child: const CupertinoPageScaffold(
+            key: ValueKey<String>('populated-dl-view'),
+            child: DownloadGalleryView(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final populatedCtx = tester.element(find.byType(DownloadGalleryView));
+      final checkFuture = viewCtrl.checkAllGalleryUpdates(context: populatedCtx);
+      await tester.pump();
+
+      final stopFinder = find.byKey(const ValueKey<String>('download-update-stop'));
+      expect(stopFinder, findsOneWidget);
+      expect(tester.getSize(stopFinder).height, greaterThanOrEqualTo(44));
+      expect(find.text('正在检查更新 0 / 2'), findsOneWidget);
+
+      await tester.tap(stopFinder);
+      final stopResult = await checkFuture;
+      await tester.pumpAndSettle();
+      expect(stopResult?.cancelled, isTrue);
+
+      // 3. Publish update on t1 -> filter keeps t1 (updatable) + t3 (failed incremental), hides t2.
+      viewCtrl.updateInfoMap[101] = GalleryUpdateInfo(
+        sourceGid: 101,
+        newerVersions: const <GalleryNewerVersion>[
+          GalleryNewerVersion(
+            gid: '201',
+            token: 'dddddddddd',
+            url: 'https://e-hentai.org/g/201/dddddddddd/',
+            title: 'Task Updatable V2',
+            addedDate: '2026-11-22 10:00',
+          ),
+        ],
+        checkedAt: DateTime(2026, 11, 22),
+      );
+      viewCtrl.hasCompletedUpdateCheck.value = true;
+      viewCtrl.updateSummaryDismissed.value = false;
+      await tester.pumpAndSettle();
+
+      expect(find.text('Task Plain Complete'), findsOneWidget);
+      final filterFinder = find.byKey(const ValueKey<String>('download-update-filter'));
+      expect(filterFinder, findsOneWidget);
+      expect(tester.getSize(filterFinder).height, greaterThanOrEqualTo(44));
+
+      await tester.tap(filterFinder);
+      await tester.pumpAndSettle();
+      expect(viewCtrl.showOnlyUpdatable.value, isTrue);
+      expect(find.text('Task Updatable'), findsOneWidget);
+      expect(find.text('Task Incremental Failed'), findsOneWidget);
+      expect(find.text('Task Plain Complete'), findsNothing);
+
+      // 4. When filtered list becomes empty (all updates finished), auto-disable
+      // filter and return to the up-to-date status strip + full list.
+      viewCtrl.lastUpdateCheckCheckedCount.value = 2;
+      viewCtrl.updateInfoMap.remove(101);
+      dlCtrl.dState.incrementalProgressMap.remove(103);
+      await tester.pumpAndSettle();
+      expect(viewCtrl.showOnlyUpdatable.value, isFalse);
+      expect(find.text('Task Plain Complete'), findsOneWidget);
+      expect(find.text('都是最新版本 · 已检查 2 部'), findsOneWidget);
+      expect(find.text('0 部有新版'), findsNothing);
+
+      // 4b. When updatesFound == 0 but failedCount > 0, never show false all-clear.
+      viewCtrl.lastUpdateCheckFailedCount.value = 1;
+      await tester.pumpAndSettle();
+      expect(find.text('都是最新版本 · 已检查 2 部'), findsNothing);
+      expect(find.text('已检查 2 部 · 0 部有新版（1 部失败）'), findsOneWidget);
+      viewCtrl.lastUpdateCheckFailedCount.value = 0;
+      await tester.pumpAndSettle();
+
+      // 5. Dismiss strip -> hides strip and restores full list.
+      final dismissFinder = find.byKey(const ValueKey<String>('download-update-dismiss'));
+      expect(tester.getSize(dismissFinder).width, greaterThanOrEqualTo(44));
+      expect(tester.getSize(dismissFinder).height, greaterThanOrEqualTo(44));
+      await tester.tap(dismissFinder);
+      await tester.pumpAndSettle();
+      expect(viewCtrl.updateSummaryDismissed.value, isTrue);
+      expect(viewCtrl.showOnlyUpdatable.value, isFalse);
+      expect(find.text('Task Plain Complete'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    test('EhSheetFrame.resolvePlacement keeps sheets off unfolded iPhone Duo hinge without affecting iPad/landscape iPhone', () {
+      const duoEnv = AdaptiveEnvironmentSnapshot(
+        size: Size(951, 669),
+        safeArea: EdgeInsets.only(right: 84),
+        reservedRegions: <AdaptiveRegion>[
+          AdaptiveRegion(
+            frame: Rect.fromLTWH(462, 0, 27, 669),
+            kind: AdaptiveRegionKind.division,
+            active: true,
+          ),
+        ],
+        systemBarEdge: 'right',
+        duoVerticalBar: true,
+        nativeSupported: true,
+      );
+
+      // 1. Triggered on right half (detail pane) -> left >= 497, right <= 859.
+      final rightPlacement = EhSheetFrame.resolvePlacement(
+        viewportSize: const Size(951, 669),
+        safeArea: const EdgeInsets.only(right: 84),
+        isDesktop: false,
+        environment: duoEnv,
+        triggerGlobalX: 680,
+      );
+      expect(rightPlacement.avoidsFold, isTrue);
+      expect(rightPlacement.padding.left, greaterThanOrEqualTo(497));
+      expect(951 - rightPlacement.padding.right, lessThanOrEqualTo(859));
+      expect(rightPlacement.padding.left + rightPlacement.maxWidth, lessThanOrEqualTo(859));
+
+      // 2. Triggered on left half -> left >= 8, right <= 454.
+      final leftPlacement = EhSheetFrame.resolvePlacement(
+        viewportSize: const Size(951, 669),
+        safeArea: const EdgeInsets.only(right: 84),
+        isDesktop: false,
+        environment: duoEnv,
+        triggerGlobalX: 200,
+      );
+      expect(leftPlacement.avoidsFold, isTrue);
+      expect(leftPlacement.padding.left, greaterThanOrEqualTo(8));
+      expect(951 - leftPlacement.padding.right, lessThanOrEqualTo(454));
+
+      // 3. Zero-width division region (flat 180°) uses 27pt avoidance band (±13.5pt).
+      const zeroWidthFoldEnv = AdaptiveEnvironmentSnapshot(
+        size: Size(951, 669),
+        safeArea: EdgeInsets.only(right: 84),
+        reservedRegions: <AdaptiveRegion>[
+          AdaptiveRegion(
+            frame: Rect.fromLTWH(475.5, 0, 0, 669),
+            kind: AdaptiveRegionKind.division,
+            active: true,
+          ),
+        ],
+        systemBarEdge: 'right',
+        duoVerticalBar: true,
+        nativeSupported: true,
+      );
+      final flatFoldRight = EhSheetFrame.resolvePlacement(
+        viewportSize: const Size(951, 669),
+        safeArea: const EdgeInsets.only(right: 84),
+        isDesktop: false,
+        environment: zeroWidthFoldEnv,
+        triggerGlobalX: 680,
+      );
+      expect(flatFoldRight.avoidsFold, isTrue);
+      expect(flatFoldRight.padding.left, greaterThanOrEqualTo(497));
+      expect(951 - flatFoldRight.padding.right, lessThanOrEqualTo(859));
+
+      // 4. Unfolded Duo inner display with duoVerticalBar=true and NO division regions.
+      const duoNoRegionEnv = AdaptiveEnvironmentSnapshot(
+        size: Size(951, 669),
+        safeArea: EdgeInsets.only(right: 84),
+        systemBarEdge: 'right',
+        duoVerticalBar: true,
+        nativeSupported: true,
+      );
+      final duoNoRegionRight = EhSheetFrame.resolvePlacement(
+        viewportSize: const Size(951, 669),
+        safeArea: const EdgeInsets.only(right: 84),
+        isDesktop: false,
+        environment: duoNoRegionEnv,
+        triggerGlobalX: 680,
+      );
+      expect(duoNoRegionRight.avoidsFold, isTrue);
+      expect(duoNoRegionRight.padding.left, greaterThanOrEqualTo(497));
+      expect(951 - duoNoRegionRight.padding.right, lessThanOrEqualTo(859));
+      expect(
+        duoNoRegionRight.padding.left + duoNoRegionRight.maxWidth,
+        lessThanOrEqualTo(859),
+      );
+
+      final duoNoRegionLeft = EhSheetFrame.resolvePlacement(
+        viewportSize: const Size(951, 669),
+        safeArea: const EdgeInsets.only(right: 84),
+        isDesktop: false,
+        environment: duoNoRegionEnv,
+        triggerGlobalX: 200,
+      );
+      expect(duoNoRegionLeft.avoidsFold, isTrue);
+      expect(duoNoRegionLeft.padding.left, greaterThanOrEqualTo(8));
+      expect(951 - duoNoRegionLeft.padding.right, lessThanOrEqualTo(454));
+
+      // 5. Non-Duo wide devices (iPad 1180x820, landscape iPhone 932x430) stay centered @ 440pt.
+      final ipadPlacement = EhSheetFrame.resolvePlacement(
+        viewportSize: const Size(1180, 820),
+        safeArea: const EdgeInsets.only(top: 24, bottom: 20),
+        isDesktop: false,
+        environment: const AdaptiveEnvironmentSnapshot(
+          size: Size(1180, 820),
+          nativeSupported: true,
+          duoVerticalBar: false,
+        ),
+        triggerGlobalX: 800,
+      );
+      expect(ipadPlacement.avoidsFold, isFalse);
+      expect(ipadPlacement.alignment, Alignment.center);
+      expect(ipadPlacement.maxWidth, 440);
+
+      final landscapePhonePlacement = EhSheetFrame.resolvePlacement(
+        viewportSize: const Size(932, 430),
+        safeArea: const EdgeInsets.symmetric(horizontal: 59),
+        isDesktop: false,
+        environment: const AdaptiveEnvironmentSnapshot(
+          size: Size(932, 430),
+          nativeSupported: true,
+          duoVerticalBar: false,
+        ),
+        triggerGlobalX: 700,
+      );
+      expect(landscapePhonePlacement.avoidsFold, isFalse);
+      expect(landscapePhonePlacement.alignment, Alignment.center);
+      expect(landscapePhonePlacement.maxWidth, 440);
+
+      // 6. Stale folded triggerX is ignored after unfolding -> defaults to right detail pane.
+      final postureChanged = EhSheetFrame.resolvePlacement(
+        viewportSize: const Size(951, 669),
+        safeArea: const EdgeInsets.only(right: 84),
+        isDesktop: false,
+        environment: duoNoRegionEnv,
+        triggerGlobalX: 190,
+        triggerViewportWidth: 466,
+      );
+      expect(postureChanged.avoidsFold, isTrue);
+      expect(postureChanged.padding.left, greaterThanOrEqualTo(497));
+      expect(
+        postureChanged.padding.left + postureChanged.maxWidth,
+        lessThanOrEqualTo(859),
+      );
+    });
+
+    testWidgets(
+      'filtered list long-press deletion removes the selected task by identity',
+      (tester) async {
+        Get.testMode = true;
+        final settings = _FakeSettings();
+        final theme = _FakeTheme();
+        final dlCtrl = _FakeDownloadController();
+        Get.put<EhSettingService>(settings);
+        Get.put<ThemeService>(theme);
+        Get.put<DownloadController>(dlCtrl);
+        final viewCtrl = _TestableDownloadViewController();
+        Get.put<DownloadViewController>(viewCtrl);
+
+        // Full list order (descending addTime): [101 (plain), 102 (updatable), 103 (updatable)].
+        // Under "updates only" filter, filtered index 0 is gid 102 (NOT gid 101!).
+        dlCtrl.dState.galleryTaskMap[101] = GalleryTask(
+          gid: 101,
+          token: '1111111111',
+          url: 'https://e-hentai.org/g/101/1111111111/',
+          title: 'Innocent First Task',
+          dirPath: null,
+          fileCount: 10,
+          completCount: 10,
+          status: TaskStatus.complete.value,
+          addTime: 300,
+        );
+        dlCtrl.dState.galleryTaskMap[102] = GalleryTask(
+          gid: 102,
+          token: '2222222222',
+          url: 'https://e-hentai.org/g/102/2222222222/',
+          title: 'Filtered Target One',
+          dirPath: null,
+          fileCount: 12,
+          completCount: 12,
+          status: TaskStatus.complete.value,
+          addTime: 200,
+        );
+        dlCtrl.dState.galleryTaskMap[103] = GalleryTask(
+          gid: 103,
+          token: '3333333333',
+          url: 'https://e-hentai.org/g/103/3333333333/',
+          title: 'Filtered Target Two',
+          dirPath: null,
+          fileCount: 14,
+          completCount: 14,
+          status: TaskStatus.complete.value,
+          addTime: 100,
+        );
+        viewCtrl.updateInfoMap[102] = GalleryUpdateInfo(
+          sourceGid: 102,
+          newerVersions: const <GalleryNewerVersion>[
+            GalleryNewerVersion(
+              gid: '202',
+              token: 'aaaaaaaaaa',
+              url: 'https://e-hentai.org/g/202/aaaaaaaaaa/',
+              title: 'Filtered Target One V2',
+            ),
+          ],
+          checkedAt: DateTime(2026, 11, 28),
+        );
+        viewCtrl.updateInfoMap[103] = GalleryUpdateInfo(
+          sourceGid: 103,
+          newerVersions: const <GalleryNewerVersion>[
+            GalleryNewerVersion(
+              gid: '203',
+              token: 'bbbbbbbbbb',
+              url: 'https://e-hentai.org/g/203/bbbbbbbbbb/',
+              title: 'Filtered Target Two V2',
+            ),
+          ],
+          checkedAt: DateTime(2026, 11, 28),
+        );
+        viewCtrl.hasCompletedUpdateCheck.value = true;
+        viewCtrl.showOnlyUpdatable.value = true;
+
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: const CupertinoPageScaffold(child: DownloadGalleryView()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Innocent First Task'), findsNothing);
+        expect(find.text('Filtered Target One'), findsOneWidget);
+        expect(find.text('Filtered Target Two'), findsOneWidget);
+
+        // 1. Long-press first filtered item (gid 102) -> Delete -> Delete task only.
+        await tester.longPress(find.text('Filtered Target One'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('删除'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('仅删除任务'));
+        await tester.pumpAndSettle();
+
+        expect(dlCtrl.removedCalls, hasLength(1));
+        expect(dlCtrl.removedCalls.single.gid, 102);
+        expect(dlCtrl.removedCalls.single.shouldDeleteContent, isFalse);
+        expect(dlCtrl.dState.galleryTaskMap.containsKey(101), isTrue);
+        expect(dlCtrl.dState.galleryTaskMap.containsKey(102), isFalse);
+        expect(dlCtrl.dState.galleryTaskMap.containsKey(103), isTrue);
+        expect(find.text('Filtered Target One'), findsNothing);
+        expect(find.text('Filtered Target Two'), findsOneWidget);
+
+        // 2. Long-press remaining filtered item (gid 103) -> Delete -> Delete task and content.
+        await tester.longPress(find.text('Filtered Target Two'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('删除'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('删除任务和下载内容'));
+        await tester.pumpAndSettle();
+
+        expect(dlCtrl.removedCalls, hasLength(2));
+        expect(dlCtrl.removedCalls.last.gid, 103);
+        expect(dlCtrl.removedCalls.last.shouldDeleteContent, isTrue);
+        // Innocent first task (gid 101) is untouched and restored once filter auto-exits.
+        expect(dlCtrl.dState.galleryTaskMap.containsKey(101), isTrue);
+        expect(dlCtrl.dState.galleryTaskMap.containsKey(103), isFalse);
+        expect(viewCtrl.showOnlyUpdatable.value, isFalse);
+        expect(find.text('Innocent First Task'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'zero-reuse new-task update stays visible in updatable filter while another update remains',
+      (tester) async {
+        Get.testMode = true;
+        final settings = _FakeSettings();
+        final theme = _FakeTheme();
+        final dlCtrl = _FakeDownloadController();
+        Get.put<EhSettingService>(settings);
+        Get.put<ThemeService>(theme);
+        Get.put<DownloadController>(dlCtrl);
+        final viewCtrl = _TestableDownloadViewController();
+        Get.put<DownloadViewController>(viewCtrl);
+
+        final plainTask = GalleryTask(
+          gid: 100,
+          token: '0000000000',
+          url: 'https://e-hentai.org/g/100/0000000000/',
+          title: 'Plain Completed Gallery',
+          dirPath: null,
+          fileCount: 10,
+          completCount: 10,
+          status: TaskStatus.complete.value,
+          addTime: 300,
+        );
+        final sourceTask = GalleryTask(
+          gid: 101,
+          token: '1111111111',
+          url: 'https://e-hentai.org/g/101/1111111111/',
+          title: 'Source Gallery One',
+          dirPath: null,
+          fileCount: 18,
+          completCount: 18,
+          status: TaskStatus.complete.value,
+          addTime: 200,
+        );
+        final otherUpdatableTask = GalleryTask(
+          gid: 102,
+          token: '2222222222',
+          url: 'https://e-hentai.org/g/102/2222222222/',
+          title: 'Other Updatable Gallery',
+          dirPath: null,
+          fileCount: 20,
+          completCount: 20,
+          status: TaskStatus.complete.value,
+          addTime: 100,
+        );
+        dlCtrl.dState.galleryTaskMap[100] = plainTask;
+        dlCtrl.dState.galleryTaskMap[101] = sourceTask;
+        dlCtrl.dState.galleryTaskMap[102] = otherUpdatableTask;
+
+        const targetVersion = GalleryNewerVersion(
+          gid: '201',
+          token: 'aaaaaaaaaa',
+          url: 'https://e-hentai.org/g/201/aaaaaaaaaa/',
+          title: 'Zero Reuse Target V2',
+        );
+        viewCtrl.updateInfoMap[101] = GalleryUpdateInfo(
+          sourceGid: 101,
+          newerVersions: const <GalleryNewerVersion>[targetVersion],
+          checkedAt: DateTime(2026, 11, 28),
+        );
+        viewCtrl.updateInfoMap[102] = GalleryUpdateInfo(
+          sourceGid: 102,
+          newerVersions: const <GalleryNewerVersion>[
+            GalleryNewerVersion(
+              gid: '202',
+              token: 'bbbbbbbbbb',
+              url: 'https://e-hentai.org/g/202/bbbbbbbbbb/',
+              title: 'Other Updatable V2',
+            ),
+          ],
+          checkedAt: DateTime(2026, 11, 28),
+        );
+        viewCtrl.hasCompletedUpdateCheck.value = true;
+        viewCtrl.showOnlyUpdatable.value = true;
+
+        // Simulate zero-reuse / SAF fallback: new task is created WITHOUT an
+        // incrementalProgressMap entry, while source gid 101 gets pruned.
+        dlCtrl.onExecuteIncrementalUpdate = (plan, mode) async {
+          final created = GalleryTask(
+            gid: 201,
+            token: 'aaaaaaaaaa',
+            url: 'https://e-hentai.org/g/201/aaaaaaaaaa/',
+            title: 'Zero Reuse Target V2',
+            dirPath: null,
+            fileCount: 18,
+            completCount: 0,
+            status: TaskStatus.running.value,
+            addTime: 400,
+          );
+          dlCtrl.dState.galleryTaskMap[201] = created;
+          dlCtrl.dState.incrementalProgressMap.remove(201);
+          dlCtrl.dState.updateCreatedTaskGids.add(201);
+          return GalleryIncrementalExecutionResult(
+            task: created,
+            reusedCount: 0,
+            downloadCount: 18,
+            completedLocally: false,
+          );
+        };
+
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: const CupertinoPageScaffold(child: DownloadGalleryView()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final plan = GalleryIncrementalPlan(
+          oldTask: sourceTask,
+          targetVersion: targetVersion,
+          targetProvider: const GalleryProvider(
+            gid: '201',
+            token: 'aaaaaaaaaa',
+            englishTitle: 'Zero Reuse Target V2',
+            filecount: '18',
+          ),
+          targetImages: const <GalleryImage>[],
+          reusedPages: const <GalleryPageReuse>[],
+          pagesToDownload: const <GalleryImage>[],
+          addedCount: 0,
+          replacedCount: 18,
+          totalNewPages: 18,
+          firstPageCount: 18,
+          canReuseLocalFiles: false,
+        );
+        await viewCtrl.executeIncrementalUpdate(
+          plan,
+          mode: GalleryIncrementalUpdateMode.newTask,
+        );
+        await tester.pumpAndSettle();
+
+        // Source badge was pruned, another updatable task keeps filter active,
+        // and the zero-reuse active target task remains visible in the list.
+        expect(viewCtrl.updateInfoMap.containsKey(101), isFalse);
+        expect(viewCtrl.showOnlyUpdatable.value, isTrue);
+        expect(dlCtrl.dState.incrementalProgressMap.containsKey(201), isFalse);
+        expect(find.text('Zero Reuse Target V2'), findsOneWidget);
+        expect(find.text('Other Updatable Gallery'), findsOneWidget);
+        expect(find.text('Plain Completed Gallery'), findsNothing);
+
+        // Once the zero-reuse task completes, it exits the filtered view.
+        dlCtrl.dState.galleryTaskMap[201] = dlCtrl.dState.galleryTaskMap[201]!
+            .copyWith(completCount: 18, status: TaskStatus.complete.value);
+        dlCtrl.dState.updateCreatedTaskGids.remove(201);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Zero Reuse Target V2'), findsNothing);
+        expect(find.text('Other Updatable Gallery'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'EhSheetFrame avoids horizontal folds (tabletop/portrait) and constrains sheet height',
+      (tester) async {
+        Get.testMode = true;
+        Get.put<EhSettingService>(_FakeSettings());
+        Get.put<ThemeService>(_FakeTheme());
+
+        const tabletopEnv = AdaptiveEnvironmentSnapshot(
+          size: Size(700, 960),
+          safeArea: EdgeInsets.only(top: 24, bottom: 20),
+          reservedRegions: <AdaptiveRegion>[
+            AdaptiveRegion(
+              frame: Rect.fromLTWH(0, 470, 700, 20),
+              kind: AdaptiveRegionKind.division,
+              active: true,
+            ),
+          ],
+          nativeSupported: true,
+        );
+
+        // 1. Default horizontal fold places sheet in lower pane and bounds maxHeight.
+        // Fold center = 480, min avoid = 27 -> avoidTop = 466.5, avoidBottom = 493.5.
+        final lowerPlacement = EhSheetFrame.resolvePlacement(
+          viewportSize: const Size(700, 960),
+          safeArea: const EdgeInsets.only(top: 24, bottom: 20),
+          isDesktop: false,
+          environment: tabletopEnv,
+        );
+        expect(lowerPlacement.avoidsFold, isTrue);
+        expect(lowerPlacement.padding.top, closeTo(493.5 + 8, 0.01));
+        expect(lowerPlacement.padding.bottom, closeTo(20 + 8, 0.01));
+        expect(lowerPlacement.maxHeight, isNotNull);
+        expect(lowerPlacement.maxHeight!, closeTo(940 - 493.5 - 16, 0.01));
+
+        // 2. Thin active horizontal fold (1pt) still expands to the 27pt avoidance band.
+        const thinHorizontalEnv = AdaptiveEnvironmentSnapshot(
+          size: Size(700, 960),
+          safeArea: EdgeInsets.only(top: 24, bottom: 20),
+          reservedRegions: <AdaptiveRegion>[
+            AdaptiveRegion(
+              frame: Rect.fromLTWH(0, 479.5, 700, 1),
+              kind: AdaptiveRegionKind.division,
+              active: true,
+            ),
+          ],
+          nativeSupported: true,
+        );
+        final thinLower = EhSheetFrame.resolvePlacement(
+          viewportSize: const Size(700, 960),
+          safeArea: const EdgeInsets.only(top: 24, bottom: 20),
+          isDesktop: false,
+          environment: thinHorizontalEnv,
+        );
+        expect(thinLower.avoidsFold, isTrue);
+        expect(thinLower.padding.top, closeTo(493.5 + 8, 0.01));
+
+        // 3. Explicit upper-pane trigger places sheet strictly above the fold.
+        final upperPlacement = EhSheetFrame.resolvePlacement(
+          viewportSize: const Size(700, 960),
+          safeArea: const EdgeInsets.only(top: 24, bottom: 20),
+          isDesktop: false,
+          environment: tabletopEnv,
+          triggerGlobalY: 200,
+        );
+        expect(upperPlacement.avoidsFold, isTrue);
+        expect(960 - upperPlacement.padding.bottom, lessThanOrEqualTo(466.5 - 8));
+        expect(upperPlacement.maxHeight!, closeTo(466.5 - 24 - 16, 0.01));
+
+        // 4. Widget layout check: tall sheet content stays strictly below the fold.
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(700, 960);
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(
+          _wrapCupertinoApp(
+            child: const MediaQuery(
+              data: MediaQueryData(
+                size: Size(700, 960),
+                padding: EdgeInsets.only(top: 24, bottom: 20),
+              ),
+              child: AdaptiveEnvironmentScope(
+                snapshot: tabletopEnv,
+                child: EhSheetFrame(
+                  child: SingleChildScrollView(
+                    child: SizedBox(height: 800, width: 400),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final sheetRect = tester.getRect(find.byType(EhSheetSurface));
+        expect(sheetRect.top, greaterThanOrEqualTo(493.5));
+        expect(sheetRect.bottom, lessThanOrEqualTo(960 - 20));
+        expect(sheetRect.height, lessThanOrEqualTo(940 - 493.5 - 16 + 0.5));
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

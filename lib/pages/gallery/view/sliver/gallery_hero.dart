@@ -18,6 +18,8 @@ import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_state.dart';
 import 'package:eros_fe/pages/gallery/view/favorite_note_edit_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_incremental_update_sheet.dart';
+import 'package:eros_fe/pages/gallery/view/gallery_lineage_chain.dart';
+import 'package:eros_fe/pages/gallery/view/gallery_lineage_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_title_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/rate_dialog.dart';
 import 'package:eros_fe/pages/gallery/view/taginfo_dialog.dart';
@@ -236,14 +238,39 @@ class _GalleryHero extends StatelessWidget {
             const SizedBox(height: 18),
           ],
           _DataStrip(provider: provider, state: state),
-          GalleryLineageWhisper(
-            provider: provider,
-            isDownloadedComplete:
-                state.downloadState == TaskStatus.complete,
-            onTap: () => Get.toNamed(
-              EHRoutes.galleryInfo,
-              id: detailNavigatorId,
-            ),
+          Builder(
+            builder: (whisperContext) {
+              final gid = int.tryParse(state.gid) ?? 0;
+              final dlTaskMap = Get.isRegistered<DownloadController>()
+                  ? Get.find<DownloadController>().dState.galleryTaskMap
+                  : null;
+              final task =
+                  (state.downloadState == TaskStatus.complete &&
+                      dlTaskMap != null)
+                  ? dlTaskMap[gid]
+                  : null;
+              final updatableNewer = filterUndownloadedNewerVersions(
+                provider.newerVersionsNewestFirst,
+                dlTaskMap,
+              );
+              final canIncrementalUpdate =
+                  state.downloadState == TaskStatus.complete &&
+                  task != null &&
+                  updatableNewer.isNotEmpty;
+              return GalleryLineageWhisper(
+                provider: provider,
+                isDownloadedComplete: canIncrementalUpdate,
+                onTap: () {
+                  showGalleryLineageSheet(
+                    whisperContext,
+                    provider: provider,
+                    downloadedTask: task,
+                    updatableNewerVersions: updatableNewer,
+                    currentTitle: fullTitle,
+                  );
+                },
+              );
+            },
           ),
         ],
       );
@@ -1198,19 +1225,24 @@ class _DownloadCircle extends StatelessWidget {
         final provider = state.galleryProvider;
         final newerVersions =
             provider?.newerVersionsNewestFirst ?? const <GalleryNewerVersion>[];
-        final task = _downloads.dState.galleryTaskMap[gid];
+        final taskMap = _downloads.dState.galleryTaskMap;
+        final task = taskMap[gid];
+        final updatableNewer = filterUndownloadedNewerVersions(
+          newerVersions,
+          taskMap,
+        );
         final canIncrementalUpdate =
-            newerVersions.isNotEmpty && task != null;
+            updatableNewer.isNotEmpty && task != null;
         return _RoundAction(
           docked: docked,
           label: canIncrementalUpdate
-              ? l10n.incremental_update_title
+              ? l10n.gallery_downloaded_has_update
               : l10n.downloaded,
           onTap: canIncrementalUpdate
               ? () => showGalleryIncrementalUpdateSheet(
                     context,
                     oldTask: task,
-                    newerVersions: newerVersions,
+                    newerVersions: updatableNewer,
                   )
               : null,
           child: Stack(
@@ -1218,19 +1250,17 @@ class _DownloadCircle extends StatelessWidget {
             alignment: Alignment.center,
             children: <Widget>[
               EhSvgIcon(
-                canIncrementalUpdate
-                    ? CupertinoIcons.arrow_down_to_line
-                    : CupertinoIcons.checkmark_alt,
+                CupertinoIcons.checkmark_alt,
                 size: 23,
                 color: CupertinoDynamicColor.resolve(EhPalette.accent, context),
               ),
               if (canIncrementalUpdate)
                 Positioned(
-                  top: -9,
-                  right: -9,
+                  top: -7,
+                  right: -7,
                   child: Container(
-                    width: 9,
-                    height: 9,
+                    width: 8,
+                    height: 8,
                     decoration: BoxDecoration(
                       color: CupertinoDynamicColor.resolve(
                         EhPalette.accent,
@@ -1281,9 +1311,9 @@ class _DownloadCircle extends StatelessWidget {
   }
 }
 
-/// Single-line, borderless, soft-glow version lineage cue placed directly
-/// below [_DataStrip]. Takes ~28pt so the first rows of tags remain visible
-/// above the fold even on compact viewports such as a folded iPhone Duo.
+/// Single-line, borderless version lineage cue placed directly below
+/// [_DataStrip]. Glows softly behind the text only when newer versions exist;
+/// parent-only lineage stays quiet without any ambient glow.
 class GalleryLineageWhisper extends StatelessWidget {
   const GalleryLineageWhisper({
     super.key,
@@ -1300,144 +1330,173 @@ class GalleryLineageWhisper extends StatelessWidget {
   Widget build(BuildContext context) {
     final newerVersions = provider.newerVersionsNewestFirst;
     final hasNewer = newerVersions.isNotEmpty;
-    final hasParent = provider.hasParentLink;
+    final hasParent = galleryHasParentDisplay(provider);
     if (!hasNewer && !hasParent) {
       return const SizedBox.shrink();
     }
 
     final l10n = L10n.of(context);
-    final dark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final palette = ehTheme.palette;
+    final text1 = palette.text1.resolveFrom(context);
+    final text2 = palette.text2.resolveFrom(context);
+    final text3 = palette.text3.resolveFrom(context);
+    final accent = EhPalette.accent.resolveFrom(context);
+    final accentSoft = EhPalette.accentSoft.resolveFrom(context);
+    final baseStyle = CupertinoTheme.of(context).textTheme.textStyle;
 
-    late final String primaryText;
-    late final String secondaryText;
+    final String semanticLabel;
+    final Widget rowContent;
+
     if (hasNewer) {
-      primaryText = newerVersions.length == 1
-          ? l10n.gallery_newer_version_single
-          : l10n.gallery_newer_version_count(newerVersions.length);
-      if (isDownloadedComplete) {
-        secondaryText = l10n.gallery_updatable_hint;
-      } else if (hasParent) {
-        secondaryText = l10n.gallery_has_parent_hint;
-      } else {
-        final date = newerVersions.first.shortDate;
-        secondaryText = date.isNotEmpty
-            ? l10n.gallery_updated_on(date)
-            : l10n.gallery_view_lineage_hint;
-      }
+      final latestDate = newerVersions.first.shortMonthDay;
+      final secondaryParts = <String>[
+        if (latestDate.isNotEmpty) l10n.gallery_updated_on(latestDate),
+        if (isDownloadedComplete) l10n.gallery_updatable_hint,
+      ];
+      final secondaryText = secondaryParts.join(' · ');
+      semanticLabel = secondaryText.isEmpty
+          ? l10n.gallery_lineage_newer
+          : '${l10n.gallery_lineage_newer} · $secondaryText';
+
+      rowContent = Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: accent,
+              shape: BoxShape.circle,
+              boxShadow: <BoxShadow>[
+                BoxShadow(color: accentSoft, spreadRadius: 3),
+              ],
+            ),
+          ),
+          const SizedBox(width: 7),
+          Flexible(
+            flex: 0,
+            child: Text(
+              l10n.gallery_lineage_newer,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: baseStyle.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0,
+                color: text1,
+              ),
+            ),
+          ),
+          if (secondaryText.isNotEmpty) ...<Widget>[
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                secondaryText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: baseStyle.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0,
+                  color: text2,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(width: 4),
+          EhSvgIcon(
+            CupertinoIcons.chevron_right,
+            size: 12,
+            color: text3,
+          ),
+        ],
+      );
     } else {
-      final parentGid = provider.parentGid ?? '';
-      primaryText = parentGid.isNotEmpty
-          ? l10n.gallery_from_parent_hint(parentGid)
-          : l10n.gallery_parent;
-      secondaryText = l10n.gallery_view_lineage_hint;
+      final totalVersions = galleryLineageTotalCount(provider);
+      final parentLabel = l10n.gallery_lineage_from_parent(totalVersions);
+      semanticLabel = parentLabel;
+      rowContent = Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          EhSvgIcon(
+            CupertinoIcons.arrow_turn_up_left,
+            size: 13,
+            color: text3,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              parentLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: baseStyle.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0,
+                color: text2,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          EhSvgIcon(
+            CupertinoIcons.chevron_right,
+            size: 12,
+            color: text3,
+          ),
+        ],
+      );
     }
 
-    // Style A (极简中心柔光): borderless centered radial glow + soft-focus silver-gray text.
-    final Color primaryColor = dark
-        ? const Color(0xDBD2D7E2)
-        : const Color(0xCC4B5263);
-    final Color secondaryColor = dark
-        ? const Color(0xB8B0B6C4)
-        : const Color(0x9E5E6577);
-    final Color chevronColor = dark
-        ? const Color(0x8FBEC4D4)
-        : const Color(0x855E6577);
-    final List<Shadow> glowShadows = dark
-        ? const <Shadow>[
-            Shadow(color: Color(0x73DAE1F5), blurRadius: 8),
-            Shadow(color: Color(0x3D9AA8FF), blurRadius: 18),
-          ]
-        : const <Shadow>[
-            Shadow(color: Color(0x2E4A5BD8), blurRadius: 8),
-            Shadow(color: Color(0x1C4A5BD8), blurRadius: 16),
-          ];
-
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.only(top: 4),
       child: Semantics(
         button: true,
-        label: '$primaryText $secondaryText',
+        label: semanticLabel,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
-          child: SizedBox(
-            width: double.infinity,
-            child: Stack(
-              alignment: Alignment.center,
-              children: <Widget>[
-                // Borderless soft radial ambient mist (no side edges, no divider).
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment.center,
-                          radius: 2.2,
-                          colors: dark
-                              ? const <Color>[
-                                  Color(0x1CCAD2EC),
-                                  Color(0x0BA8B2DC),
-                                  Color(0x00000000),
-                                ]
-                              : const <Color>[
-                                  Color(0x124A5BD8),
-                                  Color(0x064A5BD8),
-                                  Color(0x00000000),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: SizedBox(
+              width: double.infinity,
+              child: Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    if (hasNewer)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            key: const ValueKey<String>(
+                              'gallery-lineage-whisper-glow',
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                center: Alignment.center,
+                                radius: 1.6,
+                                colors: <Color>[
+                                  accentSoft,
+                                  accentSoft.withValues(alpha: 0),
                                 ],
-                          stops: const <double>[0.0, 0.45, 0.85],
+                                stops: const <double>[0.0, 1.0],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      child: rowContent,
                     ),
-                  ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Flexible(
-                        child: Text(
-                          primaryText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.2,
-                            color: primaryColor,
-                            shadows: glowShadows,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          secondaryText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 0.15,
-                            color: secondaryColor,
-                            shadows: glowShadows,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        CupertinoIcons.chevron_right,
-                        size: 12,
-                        color: chevronColor,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),

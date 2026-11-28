@@ -15,6 +15,7 @@ import 'package:eros_fe/network/api.dart';
 import 'package:eros_fe/pages/tab/controller/download_view_controller.dart';
 import 'package:eros_fe/store/db/entity/gallery_image_task.dart';
 import 'package:eros_fe/store/db/entity/gallery_task.dart';
+import 'package:eros_fe/widget/eh_buttons.dart';
 import 'package:eros_fe/widget/image/extended_saf_image_privider.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
@@ -259,59 +260,16 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
 
   // 封面
   Widget _buildCover({bool cardType = false}) {
-    final status = TaskStatus(galleryTask.status ?? 0);
-    final isComplete = status == TaskStatus.complete;
-    final showUpdateBadge = isComplete && updateInfo != null;
-    final showIncrementalBadge = !isComplete && incrementalProgress != null;
-
     return GestureDetector(
       child: Padding(
         padding: const EdgeInsets.only(right: 8.0),
-        child: Stack(
-          children: <Widget>[
-            DownloadItemCoverImage(
-              filePath: buildDownloadFilePath(
-                directoryPath: galleryTask.realDirPath,
-                fileName: galleryTask.coverImage,
-              ),
-              url: galleryTask.coverUrl,
-              cardType: cardType,
-            ),
-            if (showUpdateBadge || showIncrementalBadge)
-              Positioned(
-                top: 5,
-                left: 5,
-                child: Builder(
-                  builder: (context) {
-                    final l10n = L10n.of(context);
-                    final bg = showIncrementalBadge
-                        ? const Color(0xFF4CD98B)
-                        : EhPalette.accent.resolveFrom(context);
-                    final fg = EhPalette.onAccent.resolveFrom(context);
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: bg,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        showIncrementalBadge
-                            ? l10n.download_incremental_updating
-                            : l10n.download_has_update_badge,
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: fg,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-          ],
+        child: DownloadItemCoverImage(
+          filePath: buildDownloadFilePath(
+            directoryPath: galleryTask.realDirPath,
+            fileName: galleryTask.coverImage,
+          ),
+          url: galleryTask.coverUrl,
+          cardType: cardType,
         ),
       ),
       onTap: () async {
@@ -333,6 +291,15 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
     bool isComplete, {
     String? addTime,
   }) {
+    final status = TaskStatus(galleryTask.status ?? 0);
+    final isIncremental = !isComplete && incrementalProgress != null;
+    final isIncrementalFailed =
+        isIncremental &&
+        (status == TaskStatus.failed ||
+            (errInfo != null && errInfo!.isNotEmpty));
+    final showUpdateRow =
+        isComplete && updateInfo != null && onTapUpdate != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -355,92 +322,76 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            galleryTask.uploader ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: ehTheme.palette.text2.resolveFrom(context),
-                            ),
-                          ),
-                        ),
-                        // 任务添加时间
-                        Flexible(
-                          flex: 2,
-                          child: Text(
-                            addTime ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: ehTheme.palette.text2.resolveFrom(context),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    // 进度条
-                    if (!isComplete)
-                      _buildProgressIndicator(context)
-                    else
+                    if (!isIncremental)
                       Row(
-                        children: <Widget>[
-                          Expanded(child: _buildRating(galleryTask.rating)),
-                          if (updateInfo != null && onTapUpdate != null)
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: onTapUpdate,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: EhPalette.accentSoft.resolveFrom(
-                                    context,
-                                  ),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  '${L10n.of(context).download_has_update_badge} ›',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: EhPalette.accent.resolveFrom(
-                                      context,
-                                    ),
-                                  ),
-                                ),
+                        children: [
+                          Expanded(
+                            child: Text(
+                              galleryTask.uploader ?? '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color:
+                                    ehTheme.palette.text2.resolveFrom(context),
                               ),
                             ),
+                          ),
+                          // 任务添加时间
+                          Flexible(
+                            flex: 2,
+                            child: Text(
+                              addTime ?? '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color:
+                                    ehTheme.palette.text2.resolveFrom(context),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                    // 下载速度 下载进度
-                    Row(
-                      children: [
-                        if (!isComplete || (errInfo?.isNotEmpty ?? false))
-                          Expanded(child: _buildDownloadCtl(context))
-                        else
-                          _buildCategory(galleryTask.category),
-                        const Spacer(),
-                        Text(
-                          isComplete
-                              ? '${galleryTask.fileCount}'
-                              : '${galleryTask.completCount ?? 0}/${galleryTask.fileCount}',
-                          style: TextStyle(
+                    const Spacer(),
+                    if (showUpdateRow)
+                      _UpdateRow(
+                        updateInfo: updateInfo!,
+                        onTapUpdate: onTapUpdate!,
+                      )
+                    else if (isIncremental)
+                      _buildIncrementalProgressBlock(
+                        context,
+                        failed: isIncrementalFailed,
+                      )
+                    else ...[
+                      if (!isComplete)
+                        _buildProgressIndicator(context)
+                      else
+                        _buildRating(galleryTask.rating),
+                      // 下载速度 下载进度
+                      Row(
+                        children: [
+                          if (!isComplete || (errInfo?.isNotEmpty ?? false))
+                            Expanded(child: _buildDownloadCtl(context))
+                          else
+                            _buildCategory(galleryTask.category),
+                          const Spacer(),
+                          Text(
+                            isComplete
+                                ? '${galleryTask.fileCount}'
+                                : '${galleryTask.completCount ?? 0}/${galleryTask.fileCount}',
+                            style: TextStyle(
                               fontSize: 13,
                               color:
-                                  ehTheme.palette.text2.resolveFrom(context)),
-                        ),
-                        // 控制按钮
-                        _getIcon(),
-                      ],
-                    ),
+                                  ehTheme.palette.text2.resolveFrom(context),
+                            ),
+                          ),
+                          // 控制按钮
+                          _getIcon(),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -451,63 +402,162 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
     );
   }
 
+  Widget _buildIncrementalProgressBlock(
+    BuildContext context, {
+    required bool failed,
+  }) {
+    final l10n = L10n.of(context);
+    final palette = ehTheme.palette;
+    final accent = EhPalette.accent.resolveFrom(context);
+    final reuseGrey = palette.text3.resolveFrom(context).withValues(alpha: 0.45);
+    final trackColor = palette.fillPressed.resolveFrom(context);
+    final text2 = palette.text2.resolveFrom(context);
+    final danger = CupertinoDynamicColor.resolve(
+      CupertinoColors.systemRed,
+      context,
+    );
+
+    final total = math.max(1, galleryTask.fileCount);
+    final completed = (galleryTask.completCount ?? 0).clamp(0, total);
+    final reused = (incrementalProgress?.reusedCount ?? 0).clamp(0, total);
+    final deltaTotal = math.max(0, total - reused);
+    final deltaDone = math.max(0, completed - reused).clamp(0, deltaTotal);
+    final remaining = math.max(0, total - completed);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: Container(
+            height: 5,
+            color: trackColor,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                if (reused > 0)
+                  Expanded(
+                    flex: reused,
+                    child: ColoredBox(
+                      color: reuseGrey,
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                if (reused > 0 && (deltaDone > 0 || remaining > 0))
+                  const SizedBox(width: 1.5),
+                if (deltaDone > 0)
+                  Expanded(
+                    flex: deltaDone,
+                    child: ColoredBox(
+                      color: accent,
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                if (deltaDone > 0 && remaining > 0) const SizedBox(width: 1.5),
+                if (remaining > 0)
+                  Expanded(
+                    flex: remaining,
+                    child: ColoredBox(
+                      color: trackColor,
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        if (failed)
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  (errInfo != null && errInfo!.isNotEmpty)
+                      ? '${l10n.download_incremental_failed_status} · $errInfo'
+                      : l10n.download_incremental_failed_status,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: danger,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              _CardActionTarget(
+                onTap: () => controller.resumeGalleryDownload(galleryTask.gid),
+                child: EhButton(
+                  label: l10n.sp_retry,
+                  style: EhButtonStyle.destructive,
+                  size: 30,
+                  onPressed: () =>
+                      controller.resumeGalleryDownload(galleryTask.gid),
+                ),
+              ),
+            ],
+          )
+        else ...<Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      galleryTask.status == TaskStatus.paused.value
+                          ? l10n.download_incremental_paused_status(reused)
+                          : l10n.download_incremental_status(reused),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: text2,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      (galleryTask.status != TaskStatus.paused.value &&
+                              speed != null &&
+                              speed!.isNotEmpty)
+                          ? '$speed/s · ${l10n.download_incremental_download_progress(deltaDone, deltaTotal)}'
+                          : l10n.download_incremental_download_progress(
+                              deltaDone,
+                              deltaTotal,
+                            ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: palette.text3.resolveFrom(context),
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
+              ConstrainedBox(
+                key: const ValueKey<String>('download-incremental-control'),
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                child: Center(
+                  child: _getIcon(context: context, minTargetSize: 44),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildProgressIndicator(BuildContext context) {
     final total = math.max(1, galleryTask.fileCount);
     final completed = (galleryTask.completCount ?? 0).clamp(0, total);
-    final inc = incrementalProgress;
-    if (inc != null && inc.reusedCount > 0) {
-      final reused = inc.reusedCount.clamp(0, total);
-      final delta = math.max(0, completed - reused);
-      final remaining = math.max(0, total - completed);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(
-            L10n.of(context).download_incremental_reused_status(reused),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF4CD98B),
-            ),
-          ),
-          const SizedBox(height: 2),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: SizedBox(
-              height: 5,
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    flex: reused,
-                    child: const ColoredBox(color: Color(0xFF4CD98B)),
-                  ),
-                  if (delta > 0)
-                    Expanded(
-                      flex: delta,
-                      child: ColoredBox(
-                        color: EhPalette.accent.resolveFrom(context),
-                      ),
-                    ),
-                  if (remaining > 0)
-                    Expanded(
-                      flex: remaining,
-                      child: ColoredBox(
-                        color: CupertinoDynamicColor.resolve(
-                          CupertinoColors.secondarySystemFill,
-                          context,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+    final accent = EhPalette.accent.resolveFrom(context);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
@@ -517,9 +567,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
           CupertinoColors.secondarySystemFill,
           context,
         ),
-        valueColor: AlwaysStoppedAnimation<Color>(
-          CupertinoDynamicColor.resolve(CupertinoColors.activeBlue, context),
-        ),
+        valueColor: AlwaysStoppedAnimation<Color>(accent),
       ),
     );
   }
@@ -597,21 +645,24 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
     );
   }
 
-  Widget _getIcon() {
+  Widget _getIcon({BuildContext? context, double minTargetSize = 30.0}) {
     final GalleryTask? _taskInfo = controller.galleryTaskMap[galleryTask.gid];
-    const minSize = 30.0;
+    final minSize = minTargetSize;
     const iconSize = 18.0;
-    const buttonPadding = EdgeInsets.only(left: 8.0);
+    final buttonPadding =
+        minTargetSize >= 44.0 ? EdgeInsets.zero : const EdgeInsets.only(left: 8.0);
+    final resolvedContext = context ?? Get.context!;
+    final accentColor = EhPalette.accent.resolveFrom(resolvedContext);
 
     if (controller.filesUnavailable(galleryTask.gid)) {
       return Semantics(
-        label: L10n.of(Get.context!).check_download_files_and_continue,
+        label: L10n.of(resolvedContext).check_download_files_and_continue,
         child: CupertinoTheme(
           data: const CupertinoThemeData(
               primaryColor: CupertinoColors.activeGreen),
           child: CupertinoButton(
             padding: buttonPadding,
-            minimumSize: const Size(minSize, minSize),
+            minimumSize: Size(minSize, minSize),
             child: const EhSvgFaIcon(FontAwesomeIcons.play, size: iconSize),
             onPressed: () => controller.resumeGalleryDownload(galleryTask.gid),
           ),
@@ -625,23 +676,22 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         data: const CupertinoThemeData(primaryColor: CupertinoColors.systemRed),
         child: CupertinoButton(
           padding: buttonPadding,
-          minSize: minSize,
+          minimumSize: Size(minSize, minSize),
           child: const EhSvgFaIcon(
             FontAwesomeIcons.pause,
             size: iconSize,
           ),
           onPressed: () {
-            controller.pauseGalleryDownload(_taskInfo?.gid);
+            controller.pauseGalleryDownload(_taskInfo?.gid ?? galleryTask.gid);
           },
         ),
       ),
       // 完成时 按下无动作
       TaskStatus.complete: CupertinoTheme(
-        data:
-            const CupertinoThemeData(primaryColor: CupertinoColors.activeBlue),
+        data: CupertinoThemeData(primaryColor: accentColor),
         child: CupertinoButton(
           padding: buttonPadding,
-          minSize: minSize,
+          minimumSize: Size(minSize, minSize),
           child: const EhSvgFaIcon(
             FontAwesomeIcons.check,
             size: iconSize,
@@ -655,20 +705,20 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
             const CupertinoThemeData(primaryColor: CupertinoColors.activeGreen),
         child: CupertinoButton(
           padding: buttonPadding,
-          minSize: minSize,
+          minimumSize: Size(minSize, minSize),
           child: const EhSvgFaIcon(
             FontAwesomeIcons.play,
             size: iconSize,
           ),
           onPressed: () {
-            controller.resumeGalleryDownload(_taskInfo?.gid);
+            controller.resumeGalleryDownload(_taskInfo?.gid ?? galleryTask.gid);
           },
         ),
       ),
       // 失败时 显示重试按钮。按下重试任务
       TaskStatus.failed: CupertinoButton(
         padding: buttonPadding,
-        minSize: minSize,
+        minimumSize: Size(minSize, minSize),
         child: const EhSvgFaIcon(
           FontAwesomeIcons.play,
           size: iconSize,
@@ -680,7 +730,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
       // 取消状态 显示重试按钮。按下重试任务
       TaskStatus.canceled: CupertinoButton(
         padding: buttonPadding,
-        minSize: minSize,
+        minimumSize: Size(minSize, minSize),
         child: const EhSvgFaIcon(
           FontAwesomeIcons.redo,
           size: iconSize,
@@ -694,7 +744,7 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
         data: const CupertinoThemeData(primaryColor: CupertinoColors.systemRed),
         child: CupertinoButton(
           padding: buttonPadding,
-          minimumSize: const Size(minSize, minSize),
+          minimumSize: Size(minSize, minSize),
           child: const EhSvgFaIcon(
             FontAwesomeIcons.pause,
             size: iconSize,
@@ -715,6 +765,105 @@ class DownloadGalleryItem extends GetView<DownloadViewController> {
 
     final currentStatus = _taskInfo?.status ?? galleryTask.status ?? 0;
     return statusMap[TaskStatus(currentStatus)] ?? const SizedBox(width: 40);
+  }
+}
+
+class _UpdateRow extends StatelessWidget {
+  const _UpdateRow({
+    required this.updateInfo,
+    required this.onTapUpdate,
+  });
+
+  final GalleryUpdateInfo updateInfo;
+  final VoidCallback onTapUpdate;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
+    final accent = EhPalette.accent.resolveFrom(context);
+    final text2 = ehTheme.palette.text2.resolveFrom(context);
+    final date = updateInfo.newerVersions.isNotEmpty
+        ? updateInfo.newerVersions.first.shortMonthDay
+        : '';
+
+    return Row(
+      children: <Widget>[
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: accent,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                TextSpan(
+                  text: l10n.download_has_update_badge,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: accent,
+                  ),
+                ),
+                if (date.isNotEmpty)
+                  TextSpan(
+                    text: ' · $date',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: text2,
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 6),
+        _CardActionTarget(
+          key: const ValueKey<String>('download-card-update-action'),
+          onTap: onTapUpdate,
+          child: EhButton(
+            label: l10n.download_update_action,
+            style: EhButtonStyle.tonal,
+            selected: true,
+            size: 30,
+            onPressed: onTapUpdate,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CardActionTarget extends StatelessWidget {
+  const _CardActionTarget({
+    super.key,
+    required this.onTap,
+    required this.child,
+  });
+
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+        child: Center(child: child),
+      ),
+    );
   }
 }
 

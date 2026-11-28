@@ -30,157 +30,167 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m4(site) => "当前 ${site}";
 
-  static String m5(reused) => "复用 ${reused} 页";
+  static String m5(checked, total) => "正在检查更新 ${checked} / ${total}";
 
-  static String m6(checked, found, failed) =>
-      "已检测 ${checked} 部 · ${found} 部有新版（${failed} 部失败）";
+  static String m6(done, total) => "下载 ${done} / ${total}";
 
-  static String m7(count) => "发现 ${count} 部画廊有更新版本";
+  static String m7(reused) => "已暂停 · 复用 ${reused} 页";
 
-  static String m8(favcat) => "已移到「${favcat}」";
+  static String m8(reused) => "更新中 · 复用 ${reused} 页";
 
-  static String m9(ok, fail) => "${ok} 项已移动，${fail} 项失败";
+  static String m9(checked, found, failed) =>
+      "已检查 ${checked} 部 · ${found} 部有新版（${failed} 部失败）";
 
-  static String m10(ok, fail) => "${ok} 项已移出，${fail} 项失败";
+  static String m10(count) => "${count} 部失败";
 
-  static String m11(notes) => "其中 ${notes} 条备注会一起删除，无法撤销。";
+  static String m11(count) => "${count} 部有新版";
 
-  static String m12(count) => "移出 ${count} 个收藏？";
+  static String m12(count) => "都是最新版本 · 已检查 ${count} 部";
 
-  static String m13(count) => "已移出 ${count} 个收藏";
+  static String m13(favcat) => "已移到「${favcat}」";
 
-  static String m14(folder) => "已在「${folder}」";
+  static String m14(ok, fail) => "${ok} 项已移动，${fail} 项失败";
 
-  static String m15(count) => "已有 ${count} 条规则用到这个分类";
+  static String m15(ok, fail) => "${ok} 项已移出，${fail} 项失败";
 
-  static String m16(count) => "${count} 个";
+  static String m16(notes) => "其中 ${notes} 条备注会一起删除，无法撤销。";
 
-  static String m17(category) => "按「${category}」新建规则";
+  static String m17(count) => "移出 ${count} 个收藏？";
 
-  static String m18(count) => "${count} 个画廊";
+  static String m18(count) => "已移出 ${count} 个收藏";
 
-  static String m19(count) => "浏览历史中 ${count} 个画廊命中";
+  static String m19(folder) => "已在「${folder}」";
 
-  static String m20(count) => "浏览历史中 ${count} 个画廊符合";
+  static String m20(count) => "已有 ${count} 条规则用到这个分类";
 
-  static String m21(count) => "已命中 ${count} 次";
+  static String m21(count) => "${count} 个";
 
-  static String m22(count, time) => "已命中 ${count} 次 · 上次 ${time}";
+  static String m22(category) => "按「${category}」新建规则";
 
-  static String m23(count) => "命中 ${count} 个";
+  static String m23(count) => "${count} 个画廊";
 
-  static String m24(folder) => "已在「${folder}」（未移动）";
+  static String m24(count) => "浏览历史中 ${count} 个画廊命中";
 
-  static String m25(folder) => "移到「${folder}」";
+  static String m25(count) => "浏览历史中 ${count} 个画廊符合";
 
-  static String m26(from, to) => "已从「${from}」移到「${to}」";
+  static String m26(count) => "已命中 ${count} 次";
 
-  static String m27(rules) => "另有「${rules}」也命中，按顺序未采用";
+  static String m27(count, time) => "已命中 ${count} 次 · 上次 ${time}";
 
-  static String m28(rule) => "规则「${rule}」";
+  static String m28(count) => "命中 ${count} 个";
 
-  static String m29(rule, tag) => "规则「${rule}」· ${tag}";
+  static String m29(folder) => "已在「${folder}」（未移动）";
 
-  static String m30(folder) => "收进「${folder}」";
+  static String m30(folder) => "移到「${folder}」";
 
-  static String m31(folder) => "已收进「${folder}」";
+  static String m31(from, to) => "已从「${from}」移到「${to}」";
 
-  static String m32(count) => "已开启 · ${count} 条";
+  static String m32(rules) => "另有「${rules}」也命中，按顺序未采用";
 
-  static String m33(fallback) => "将执行兜底策略：${fallback}";
+  static String m33(rule) => "规则「${rule}」";
 
-  static String m34(count) => "全部 ${count} 个";
+  static String m34(rule, tag) => "规则「${rule}」· ${tag}";
 
-  static String m35(favcat) => "收藏于 ${favcat}";
+  static String m35(folder) => "收进「${folder}」";
 
-  static String m36(count, scope) => "${scope}中 ${count} 个结果";
+  static String m36(folder) => "已收进「${folder}」";
 
-  static String m37(query, scope) => "${scope}里没有“${query}”";
+  static String m37(count) => "已开启 · ${count} 条";
 
-  static String m38(favcat) => "在 ${favcat} 中搜索";
+  static String m38(fallback) => "将执行兜底策略：${fallback}";
 
-  static String m39(count) => "已选 ${count} 项";
+  static String m39(count) => "全部 ${count} 个";
 
-  static String m40(favcat, total) => "${favcat} · ${total} 项";
+  static String m40(favcat) => "收藏于 ${favcat}";
 
-  static String m41(gid) => "源自父画廊 #${gid}";
+  static String m41(count, scope) => "${scope}中 ${count} 个结果";
 
-  static String m42(count) => "${count} 人评分";
+  static String m42(query, scope) => "${scope}里没有“${query}”";
 
-  static String m43(count) => "有 ${count} 个更新版本";
+  static String m43(favcat) => "在 ${favcat} 中搜索";
 
-  static String m44(gid) => "当前版本 #${gid}";
+  static String m44(count) => "已选 ${count} 项";
 
-  static String m45(value) => "峰值 ${value}";
+  static String m45(favcat, total) => "${favcat} · ${total} 项";
 
-  static String m46(value) => "周期均值 ${value}";
+  static String m46(count) => "${count} 人评分";
 
-  static String m47(period, percent) => "${period} · 占比 ${percent}%";
+  static String m47(count) => "共 ${count} 个版本";
 
-  static String m48(value) => "周期总计 ${value}";
+  static String m48(count) => "源自父画廊 · 共 ${count} 个版本";
 
-  static String m49(score) => "积分 ${score}";
+  static String m49(count) => "有 ${count} 个更新版本";
 
-  static String m50(date) => "${date} 修订";
+  static String m50(gid) => "当前版本 #${gid}";
 
-  static String m51(gid, reused) => "已本地升级至 #${gid}（全部复用 ${reused} 页）";
+  static String m51(value) => "峰值 ${value}";
 
-  static String m52(gid) => "复用本地未改动原图，任务更新至 #${gid} 并自动映射阅读进度。";
+  static String m52(value) => "周期均值 ${value}";
 
-  static String m53(gid) => "新建 #${gid} 目录并复用未改动图片，旧版目录保持不变。";
+  static String m53(period, percent) => "${period} · 占比 ${percent}%";
 
-  static String m54(count) => "仅需拉取 ${count} 页";
+  static String m54(value) => "周期总计 ${value}";
 
-  static String m55(count) => "原位增量更新 · 拉取 ${count} 页";
+  static String m55(score) => "积分 ${score}";
 
-  static String m56(count) => "新建任务并复用 · 拉取 ${count} 页";
+  static String m56(date) => "${date} 修订";
 
-  static String m57(count) => "新建任务完整下载 · 拉取 ${count} 页";
+  static String m57(count) => "新增 ${count}";
 
-  static String m58(reused, fetch) => "已启动增量更新：复用 ${reused} 页，拉取 ${fetch} 页";
+  static String m58(gid, reused) => "已本地升级至 #${gid}（全部复用 ${reused} 页）";
 
-  static String m59(count) => "已完成 ${count} 个画廊的下载";
+  static String m59(count) => "${count} 页需下载";
 
-  static String m60(title) => "《${title}》已下载完成";
+  static String m60(count) => "修订约 ${count}";
 
-  static String m61(count) => "正在下载 ${count} 个画廊";
+  static String m61(count) => "复用 ${count} 页";
 
-  static String m62(completed, total) => "已完成 ${completed}/${total} 页";
+  static String m62(reused, fetch) => "已启动增量更新：复用 ${reused} 页，拉取 ${fetch} 页";
 
-  static String m63(modelName) => "模式 ${modelName}";
+  static String m63(count) => "新版共 ${count} 页";
 
-  static String m64(count) => "${count} 页";
+  static String m64(count) => "已完成 ${count} 个画廊的下载";
 
-  static String m65(seconds) => "${seconds} 秒";
+  static String m65(title) => "《${title}》已下载完成";
 
-  static String m66(page, total) => "第 ${page} 页，共 ${total} 页";
+  static String m66(count) => "正在下载 ${count} 个画廊";
 
-  static String m67(rating) => "${rating} ⭐";
+  static String m67(completed, total) => "已完成 ${completed}/${total} 页";
 
-  static String m68(ok, total) => "${ok}/${total} 可达";
+  static String m68(modelName) => "模式 ${modelName}";
 
-  static String m69(name) => "当前：${name}";
+  static String m69(count) => "${count} 页";
 
-  static String m70(time) => "· ${time} 同步";
+  static String m70(seconds) => "${seconds} 秒";
 
-  static String m71(tag) => "添加 ${tag}";
+  static String m71(page, total) => "第 ${page} 页，共 ${total} 页";
 
-  static String m72(count) => "共 ${count} 页";
+  static String m72(rating) => "${rating} ⭐";
 
-  static String m73(avg, count) => "均分 ${avg} · ${count} 人评分";
+  static String m73(ok, total) => "${ok}/${total} 可达";
 
-  static String m74(text) => "搜索 “${text}”";
+  static String m74(name) => "当前：${name}";
 
-  static String m75(count) => "已添加 ${count} 个 · 用逗号分隔";
+  static String m75(time) => "· ${time} 同步";
 
-  static String m76(count, per) => "共 ${count} 页 · 每页 ${per} 张";
+  static String m76(tag) => "添加 ${tag}";
 
-  static String m77(count) => "种子 · ${count} 个";
+  static String m77(count) => "共 ${count} 页";
 
-  static String m78(tagNamespace) =>
+  static String m78(avg, count) => "均分 ${avg} · ${count} 人评分";
+
+  static String m79(text) => "搜索 “${text}”";
+
+  static String m80(count) => "已添加 ${count} 个 · 用逗号分隔";
+
+  static String m81(count, per) => "共 ${count} 页 · 每页 ${per} 张";
+
+  static String m82(count) => "种子 · ${count} 个";
+
+  static String m83(tagNamespace) =>
       "${Intl.select(tagNamespace, {'reclass': '重新分类', 'language': '语言', 'parody': '原作', 'character': '角色', 'group': '社团', 'artist': '艺术家', 'male': '男性', 'female': '女性', 'mixed': '混杂', 'cosplayer': '扮演者', 'other': '其它', 'temp': '临时'})}";
 
-  static String m79(version) => "可更新到 ${version}";
+  static String m84(version) => "可更新到 ${version}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -351,27 +361,37 @@ class MessageLookup extends MessageLookupByLibrary {
     "double_click_back": MessageLookupByLibrary.simpleMessage("再按一次返回退出"),
     "double_page_model": MessageLookupByLibrary.simpleMessage("双页模式"),
     "download": MessageLookupByLibrary.simpleMessage("下载"),
-    "download_check_updates": MessageLookupByLibrary.simpleMessage("检测更新"),
-    "download_checking_updates": MessageLookupByLibrary.simpleMessage("检测中…"),
+    "download_check_updates": MessageLookupByLibrary.simpleMessage("检查更新"),
+    "download_checking_updates_progress": m5,
     "download_files_unavailable": MessageLookupByLibrary.simpleMessage(
       "文件暂不可用",
     ),
+    "download_filter_updatable": MessageLookupByLibrary.simpleMessage("只看有新版"),
     "download_has_update_badge": MessageLookupByLibrary.simpleMessage("有新版"),
-    "download_incremental_reused_status": m5,
+    "download_incremental_download_progress": m6,
+    "download_incremental_failed_status": MessageLookupByLibrary.simpleMessage(
+      "更新失败",
+    ),
+    "download_incremental_paused_status": m7,
+    "download_incremental_status": m8,
     "download_incremental_updating": MessageLookupByLibrary.simpleMessage(
-      "增量中",
+      "更新中",
     ),
     "download_location": MessageLookupByLibrary.simpleMessage("下载路径"),
     "download_ori_image": MessageLookupByLibrary.simpleMessage("下载原图"),
     "download_ori_image_summary": MessageLookupByLibrary.simpleMessage(
       "危险! 会导致下载配额迅速流失, 出现 509 错误",
     ),
+    "download_stop_check": MessageLookupByLibrary.simpleMessage("停止"),
+    "download_update_action": MessageLookupByLibrary.simpleMessage("更新"),
     "download_update_all": MessageLookupByLibrary.simpleMessage("全部更新"),
-    "download_updates_checked_with_errors": m6,
-    "download_updates_found": m7,
-    "download_updates_none": MessageLookupByLibrary.simpleMessage(
-      "所有已下载画廊均为最新版本",
+    "download_updates_checked_with_errors": m9,
+    "download_updates_failed_count": m10,
+    "download_updates_found": m11,
+    "download_updates_no_targets": MessageLookupByLibrary.simpleMessage(
+      "没有已完成的下载可以检查",
     ),
+    "download_updates_none": m12,
     "downloaded": MessageLookupByLibrary.simpleMessage("已下载"),
     "downloading": MessageLookupByLibrary.simpleMessage("下载中"),
     "edit": MessageLookupByLibrary.simpleMessage("编辑"),
@@ -396,24 +416,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_current": MessageLookupByLibrary.simpleMessage("当前"),
     "fav_deselect_all": MessageLookupByLibrary.simpleMessage("取消全选"),
     "fav_move_to": MessageLookupByLibrary.simpleMessage("移动到…"),
-    "fav_moved_to": m8,
+    "fav_moved_to": m13,
     "fav_note_add": MessageLookupByLibrary.simpleMessage("添加备注"),
     "fav_note_edit": MessageLookupByLibrary.simpleMessage("编辑备注"),
-    "fav_partial_failed": m9,
-    "fav_partial_remove_failed": m10,
+    "fav_partial_failed": m14,
+    "fav_partial_remove_failed": m15,
     "fav_remove_irreversible": MessageLookupByLibrary.simpleMessage("此操作无法撤销。"),
-    "fav_remove_note_warn": m11,
-    "fav_remove_title": m12,
-    "fav_removed_count": m13,
+    "fav_remove_note_warn": m16,
+    "fav_remove_title": m17,
+    "fav_removed_count": m18,
     "fav_rule_add_condition": MessageLookupByLibrary.simpleMessage("添加条件"),
-    "fav_rule_already_in_folder": m14,
+    "fav_rule_already_in_folder": m19,
     "fav_rule_category_badge": MessageLookupByLibrary.simpleMessage("分类"),
-    "fav_rule_category_used_count": m15,
+    "fav_rule_category_used_count": m20,
     "fav_rule_change_folder": MessageLookupByLibrary.simpleMessage("更改"),
     "fav_rule_clear_selection": MessageLookupByLibrary.simpleMessage("清除"),
     "fav_rule_conditions": MessageLookupByLibrary.simpleMessage("条件"),
-    "fav_rule_count_items": m16,
-    "fav_rule_create_by_category": m17,
+    "fav_rule_count_items": m21,
+    "fav_rule_create_by_category": m22,
     "fav_rule_create_from_gallery": MessageLookupByLibrary.simpleMessage(
       "用这个画廊新建规则",
     ),
@@ -445,23 +465,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_fetch_tags_failed": MessageLookupByLibrary.simpleMessage(
       "无法获取完整标签",
     ),
-    "fav_rule_gallery_count": m18,
+    "fav_rule_gallery_count": m23,
     "fav_rule_history_empty_save_ok": MessageLookupByLibrary.simpleMessage(
       "浏览历史里还没有画廊符合这条规则，保存后照常生效。",
     ),
-    "fav_rule_history_hits_count": m19,
+    "fav_rule_history_hits_count": m24,
     "fav_rule_history_hits_empty": MessageLookupByLibrary.simpleMessage(
       "当前浏览历史中没有画廊命中此规则。",
     ),
-    "fav_rule_history_hits_matched": m20,
-    "fav_rule_hit_stats": m21,
-    "fav_rule_hit_stats_with_time": m22,
-    "fav_rule_hit_tag_count": m23,
+    "fav_rule_history_hits_matched": m25,
+    "fav_rule_hit_stats": m26,
+    "fav_rule_hit_stats_with_time": m27,
+    "fav_rule_hit_tag_count": m28,
     "fav_rule_invalid_condition": MessageLookupByLibrary.simpleMessage(
       "存在无效的匹配条件或正则表达式",
     ),
     "fav_rule_invalid_regex": MessageLookupByLibrary.simpleMessage("正则表达式格式无效"),
-    "fav_rule_kept_in_folder": m24,
+    "fav_rule_kept_in_folder": m29,
     "fav_rule_last_used_badge": MessageLookupByLibrary.simpleMessage("上次"),
     "fav_rule_list_footer": MessageLookupByLibrary.simpleMessage(
       "长按拖动排序，左滑删除。",
@@ -496,8 +516,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_miss_title": MessageLookupByLibrary.simpleMessage("没有规则命中"),
     "fav_rule_mode_category": MessageLookupByLibrary.simpleMessage("画廊分类"),
     "fav_rule_mode_tag": MessageLookupByLibrary.simpleMessage("标签"),
-    "fav_rule_move_to_folder": m25,
-    "fav_rule_moved_folder": m26,
+    "fav_rule_move_to_folder": m30,
+    "fav_rule_moved_folder": m31,
     "fav_rule_my_tags_short": MessageLookupByLibrary.simpleMessage("我的标签"),
     "fav_rule_name_placeholder": MessageLookupByLibrary.simpleMessage(
       "规则名称（留空使用条件生成）",
@@ -522,7 +542,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_op_equals": MessageLookupByLibrary.simpleMessage("完全一致"),
     "fav_rule_op_regex": MessageLookupByLibrary.simpleMessage("正则"),
     "fav_rule_order_hint": MessageLookupByLibrary.simpleMessage("从上往下匹配，命中即停"),
-    "fav_rule_other_hits_note": m27,
+    "fav_rule_other_hits_note": m32,
     "fav_rule_pick_one_folder_hint": MessageLookupByLibrary.simpleMessage(
       "选一个收藏夹",
     ),
@@ -532,8 +552,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_picker_switched": MessageLookupByLibrary.simpleMessage("已切换样式"),
     "fav_rule_picker_wheel": MessageLookupByLibrary.simpleMessage("滚轮选择"),
     "fav_rule_preview": MessageLookupByLibrary.simpleMessage("预览"),
-    "fav_rule_reason_only": m28,
-    "fav_rule_reason_with_tag": m29,
+    "fav_rule_reason_only": m33,
+    "fav_rule_reason_with_tag": m34,
     "fav_rule_regex_placeholder": MessageLookupByLibrary.simpleMessage(
       "输入正则表达式，例如 ^foot.*",
     ),
@@ -542,8 +562,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "已新建规则",
     ),
     "fav_rule_save_into_lead": MessageLookupByLibrary.simpleMessage("收进"),
-    "fav_rule_save_to_folder": m30,
-    "fav_rule_saved_to_folder": m31,
+    "fav_rule_save_to_folder": m35,
+    "fav_rule_saved_to_folder": m36,
     "fav_rule_search_this_category": MessageLookupByLibrary.simpleMessage(
       "搜索此分类",
     ),
@@ -553,11 +573,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_select_category": MessageLookupByLibrary.simpleMessage("选择分类"),
     "fav_rule_status_disabled": MessageLookupByLibrary.simpleMessage("未开启"),
     "fav_rule_status_enabled": MessageLookupByLibrary.simpleMessage("已开启"),
-    "fav_rule_status_enabled_count": m32,
+    "fav_rule_status_enabled_count": m37,
     "fav_rule_tag_namespace": MessageLookupByLibrary.simpleMessage("标签类型"),
     "fav_rule_target_folder": MessageLookupByLibrary.simpleMessage("收藏到"),
     "fav_rule_test_custom_tags": MessageLookupByLibrary.simpleMessage("手动输入标签"),
-    "fav_rule_test_fallback_desc": m33,
+    "fav_rule_test_fallback_desc": m38,
     "fav_rule_test_from_history": MessageLookupByLibrary.simpleMessage(
       "从浏览历史选",
     ),
@@ -575,7 +595,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "fav_rule_test_title": MessageLookupByLibrary.simpleMessage("测试规则"),
     "fav_rule_title": MessageLookupByLibrary.simpleMessage("规则收藏"),
-    "fav_rule_total_count": m34,
+    "fav_rule_total_count": m39,
     "fav_rule_trigger": MessageLookupByLibrary.simpleMessage("触发方式"),
     "fav_rule_trigger_long_press": MessageLookupByLibrary.simpleMessage(
       "长按收藏按钮",
@@ -588,19 +608,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "fav_rule_value_placeholder": MessageLookupByLibrary.simpleMessage(
       "输入标签或关键词",
     ),
-    "fav_saved_in": m35,
+    "fav_saved_in": m40,
     "fav_scope_all": MessageLookupByLibrary.simpleMessage("全部"),
     "fav_scope_note": MessageLookupByLibrary.simpleMessage("备注"),
     "fav_scope_tag": MessageLookupByLibrary.simpleMessage("标签"),
     "fav_scope_title": MessageLookupByLibrary.simpleMessage("标题"),
     "fav_search_all_fields": MessageLookupByLibrary.simpleMessage("在全部字段中搜索"),
     "fav_search_all_folders": MessageLookupByLibrary.simpleMessage("在全部收藏夹中搜索"),
-    "fav_search_count": m36,
-    "fav_search_empty": m37,
-    "fav_search_in": m38,
+    "fav_search_count": m41,
+    "fav_search_empty": m42,
+    "fav_search_in": m43,
     "fav_select": MessageLookupByLibrary.simpleMessage("选择"),
-    "fav_selected_count": m39,
-    "fav_selected_scope": m40,
+    "fav_selected_count": m44,
+    "fav_selected_scope": m45,
     "favcat": MessageLookupByLibrary.simpleMessage("收藏夹"),
     "favorite_note_hint": MessageLookupByLibrary.simpleMessage("备注（可选）"),
     "favorites_order": MessageLookupByLibrary.simpleMessage("收藏夹排序"),
@@ -630,8 +650,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "fullscreen": MessageLookupByLibrary.simpleMessage("全屏"),
     "galery_site": MessageLookupByLibrary.simpleMessage("画廊站点"),
     "gallery_comments": MessageLookupByLibrary.simpleMessage("画廊评论"),
-    "gallery_from_parent_hint": m41,
-    "gallery_has_parent_hint": MessageLookupByLibrary.simpleMessage("含父画廊"),
+    "gallery_downloaded_has_update": MessageLookupByLibrary.simpleMessage(
+      "已下载，有新版本",
+    ),
     "gallery_info": MessageLookupByLibrary.simpleMessage("画廊信息"),
     "gallery_info_category": MessageLookupByLibrary.simpleMessage("分类"),
     "gallery_info_cover_url": MessageLookupByLibrary.simpleMessage("封面链接"),
@@ -645,7 +666,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "无法在浏览器中打开链接",
     ),
     "gallery_info_posted": MessageLookupByLibrary.simpleMessage("发布时间"),
-    "gallery_info_rating_votes": m42,
+    "gallery_info_rating_votes": m46,
     "gallery_info_section_details": MessageLookupByLibrary.simpleMessage(
       "画廊属性",
     ),
@@ -656,27 +677,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "gallery_info_visible": MessageLookupByLibrary.simpleMessage("可见性"),
     "gallery_latest_version": MessageLookupByLibrary.simpleMessage("最新"),
     "gallery_lineage": MessageLookupByLibrary.simpleMessage("版本血缘"),
-    "gallery_lineage_tap_hint": MessageLookupByLibrary.simpleMessage(
-      "点按跳转 · 长按复制",
+    "gallery_lineage_copy_hint": MessageLookupByLibrary.simpleMessage(
+      "点按打开对应画廊 · 长按复制链接",
     ),
+    "gallery_lineage_count": m47,
+    "gallery_lineage_current": MessageLookupByLibrary.simpleMessage("当前"),
+    "gallery_lineage_from_parent": m48,
+    "gallery_lineage_newer": MessageLookupByLibrary.simpleMessage("有新版本"),
     "gallery_metadata": MessageLookupByLibrary.simpleMessage("基础元数据"),
-    "gallery_metadata_copy_hint": MessageLookupByLibrary.simpleMessage("点按复制"),
-    "gallery_newer_version_count": m43,
+    "gallery_newer_version_count": m49,
     "gallery_newer_version_single": MessageLookupByLibrary.simpleMessage(
       "有 1 个更新版本",
     ),
     "gallery_newer_versions": MessageLookupByLibrary.simpleMessage("更新版本"),
     "gallery_open_latest_version": MessageLookupByLibrary.simpleMessage(
-      "前往最新版本",
+      "打开最新版本",
     ),
-    "gallery_open_parent": MessageLookupByLibrary.simpleMessage("前往父画廊"),
+    "gallery_open_parent": MessageLookupByLibrary.simpleMessage("打开父画廊"),
     "gallery_parent": MessageLookupByLibrary.simpleMessage("父画廊"),
     "gallery_parent_none": MessageLookupByLibrary.simpleMessage("无"),
     "gallery_parent_unavailable": MessageLookupByLibrary.simpleMessage("已不可用"),
     "gallery_stats": MessageLookupByLibrary.simpleMessage("画廊统计"),
     "gallery_stats_all_time": MessageLookupByLibrary.simpleMessage("历史总榜"),
     "gallery_stats_collapse": MessageLookupByLibrary.simpleMessage("收起"),
-    "gallery_stats_current_version": m44,
+    "gallery_stats_current_version": m50,
     "gallery_stats_daily": MessageLookupByLibrary.simpleMessage("按日"),
     "gallery_stats_daily_avg": MessageLookupByLibrary.simpleMessage("历史日均"),
     "gallery_stats_empty_body": MessageLookupByLibrary.simpleMessage(
@@ -712,22 +736,21 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "gallery_stats_past_month": MessageLookupByLibrary.simpleMessage("月度榜单"),
     "gallery_stats_past_year": MessageLookupByLibrary.simpleMessage("年度榜单"),
-    "gallery_stats_peak": m45,
-    "gallery_stats_period_avg": m46,
-    "gallery_stats_period_share": m47,
-    "gallery_stats_period_total": m48,
+    "gallery_stats_peak": m51,
+    "gallery_stats_period_avg": m52,
+    "gallery_stats_period_share": m53,
+    "gallery_stats_period_total": m54,
     "gallery_stats_ranking": MessageLookupByLibrary.simpleMessage("榜单排名"),
     "gallery_stats_refresh": MessageLookupByLibrary.simpleMessage("刷新统计"),
     "gallery_stats_retry": MessageLookupByLibrary.simpleMessage("重新获取"),
-    "gallery_stats_score": m49,
+    "gallery_stats_score": m55,
     "gallery_stats_total_visits": MessageLookupByLibrary.simpleMessage("总浏览"),
     "gallery_stats_unranked": MessageLookupByLibrary.simpleMessage("未上榜"),
     "gallery_stats_visits": MessageLookupByLibrary.simpleMessage("浏览量"),
     "gallery_stats_yearly": MessageLookupByLibrary.simpleMessage("按年"),
     "gallery_stats_yesterday": MessageLookupByLibrary.simpleMessage("昨日榜单"),
     "gallery_updatable_hint": MessageLookupByLibrary.simpleMessage("可增量更新"),
-    "gallery_updated_on": m50,
-    "gallery_view_lineage_hint": MessageLookupByLibrary.simpleMessage("查看血缘"),
+    "gallery_updated_on": m56,
     "glass_effect": MessageLookupByLibrary.simpleMessage("玻璃效果"),
     "glass_material": MessageLookupByLibrary.simpleMessage("玻璃材质"),
     "glass_material_frosted": MessageLookupByLibrary.simpleMessage("毛玻璃"),
@@ -778,81 +801,93 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "import_export": MessageLookupByLibrary.simpleMessage("导入与导出"),
     "incremental_update_added": MessageLookupByLibrary.simpleMessage("新增页面"),
+    "incremental_update_added_pages": m57,
     "incremental_update_all_reused": MessageLookupByLibrary.simpleMessage(
       "全部页面可直接复用",
     ),
     "incremental_update_applying": MessageLookupByLibrary.simpleMessage(
       "正在应用更新…",
     ),
+    "incremental_update_cannot_reuse": MessageLookupByLibrary.simpleMessage(
+      "无法复用",
+    ),
     "incremental_update_compare_failed": MessageLookupByLibrary.simpleMessage(
-      "分析新版页面失败",
+      "比对新版页面失败",
     ),
     "incremental_update_comparing": MessageLookupByLibrary.simpleMessage(
-      "正在分析版本页面差异…",
+      "正在比对新版页面…",
     ),
-    "incremental_update_completed_locally": m51,
+    "incremental_update_completed_locally": m58,
     "incremental_update_entry": MessageLookupByLibrary.simpleMessage(
       "增量更新已下载画廊",
     ),
-    "incremental_update_local_tag": MessageLookupByLibrary.simpleMessage("本地"),
     "incremental_update_mode_inplace": MessageLookupByLibrary.simpleMessage(
-      "原位升级并保留阅读进度",
+      "替换",
     ),
-    "incremental_update_mode_inplace_desc": m52,
+    "incremental_update_mode_inplace_desc":
+        MessageLookupByLibrary.simpleMessage("旧版目录会换成新版，阅读进度自动对到新版的同一页。"),
     "incremental_update_mode_new": MessageLookupByLibrary.simpleMessage(
-      "作为新任务下载（保留旧版）",
+      "保留，另存新任务",
     ),
-    "incremental_update_mode_new_desc": m53,
-    "incremental_update_mode_title": MessageLookupByLibrary.simpleMessage(
-      "更新方式",
+    "incremental_update_mode_new_desc": MessageLookupByLibrary.simpleMessage(
+      "新建任务并复用未改动页面，旧版保持不变。",
     ),
-    "incremental_update_newer_tag": MessageLookupByLibrary.simpleMessage("新版"),
-    "incremental_update_only_download": m54,
-    "incremental_update_recommended": MessageLookupByLibrary.simpleMessage(
-      "推荐",
+    "incremental_update_mode_new_saf_desc":
+        MessageLookupByLibrary.simpleMessage("会新建一个任务完整下载，旧版保持不变。"),
+    "incremental_update_need_download": m59,
+    "incremental_update_old_version": MessageLookupByLibrary.simpleMessage(
+      "旧版本",
     ),
-    "incremental_update_replaced": MessageLookupByLibrary.simpleMessage("修订替换"),
+    "incremental_update_replaced_approx": m60,
     "incremental_update_reused": MessageLookupByLibrary.simpleMessage("直接复用"),
+    "incremental_update_reused_pages": m61,
     "incremental_update_saf_inplace_unsupported":
         MessageLookupByLibrary.simpleMessage(
           "SAF 存储暂不支持本地文件复用或原位升级，将以新任务方式完整下载。",
         ),
-    "incremental_update_start_inplace": m55,
-    "incremental_update_start_new": m56,
-    "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
-      "直接完成本地升级（无需下载）",
+    "incremental_update_saf_short_note": MessageLookupByLibrary.simpleMessage(
+      "当前存储位置（SAF）不能复用本地文件",
     ),
-    "incremental_update_start_saf_full": m57,
-    "incremental_update_started": m58,
+    "incremental_update_start": MessageLookupByLibrary.simpleMessage("开始更新"),
+    "incremental_update_start_reuse_only": MessageLookupByLibrary.simpleMessage(
+      "立即完成更新",
+    ),
+    "incremental_update_start_saf_full": MessageLookupByLibrary.simpleMessage(
+      "完整下载新版",
+    ),
+    "incremental_update_started": m62,
     "incremental_update_subtitle": MessageLookupByLibrary.simpleMessage(
-      "复用本地未改动页面",
+      "复用本地没有变动的页面",
     ),
     "incremental_update_target_version": MessageLookupByLibrary.simpleMessage(
       "目标版本",
     ),
-    "incremental_update_title": MessageLookupByLibrary.simpleMessage("画廊增量更新"),
-    "incremental_update_version_compare": MessageLookupByLibrary.simpleMessage(
-      "版本对比",
+    "incremental_update_title": MessageLookupByLibrary.simpleMessage(
+      "更新已下载的画廊",
     ),
+    "incremental_update_to_latest": MessageLookupByLibrary.simpleMessage(
+      "增量更新到最新版",
+    ),
+    "incremental_update_total_pages": m63,
     "incremental_update_view_newer": MessageLookupByLibrary.simpleMessage(
-      "先查看新版详情页",
+      "先看看新版详情",
     ),
     "inner_display": MessageLookupByLibrary.simpleMessage("内屏"),
     "input_empty": MessageLookupByLibrary.simpleMessage("输入空"),
     "input_error": MessageLookupByLibrary.simpleMessage("输入格式有误"),
     "instantly": MessageLookupByLibrary.simpleMessage("立即"),
     "ios_bg_download": MessageLookupByLibrary.simpleMessage("后台下载"),
-    "ios_bg_download_complete_multi": m59,
-    "ios_bg_download_complete_single": m60,
+    "ios_bg_download_complete_multi": m64,
+    "ios_bg_download_complete_single": m65,
     "ios_bg_download_complete_title": MessageLookupByLibrary.simpleMessage(
       "下载完成",
     ),
-    "ios_bg_download_multi_title": m61,
+    "ios_bg_download_multi_title": m66,
     "ios_bg_download_notify": MessageLookupByLibrary.simpleMessage("下载完成通知"),
     "ios_bg_download_notify_subtitle": MessageLookupByLibrary.simpleMessage(
       "后台下载完成后发送本地通知提醒",
     ),
-    "ios_bg_download_progress_pages": m62,
+    "ios_bg_download_progress_pages": m67,
     "ios_bg_download_subtitle": MessageLookupByLibrary.simpleMessage(
       "切后台继续下载画廊，不打断音乐播放",
     ),
@@ -905,7 +940,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "login_web": MessageLookupByLibrary.simpleMessage("通过网页登录"),
     "max_history": MessageLookupByLibrary.simpleMessage("最大历史记录"),
     "min": MessageLookupByLibrary.simpleMessage("分钟"),
-    "model": m63,
+    "model": m68,
     "more_actions": MessageLookupByLibrary.simpleMessage("更多"),
     "more_thumbnails": MessageLookupByLibrary.simpleMessage("更多缩略图"),
     "multi_download": MessageLookupByLibrary.simpleMessage("同时下载图片数量"),
@@ -946,7 +981,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "p_Rate": MessageLookupByLibrary.simpleMessage("评分"),
     "p_Similar": MessageLookupByLibrary.simpleMessage("相似"),
     "p_Torrent": MessageLookupByLibrary.simpleMessage("种子"),
-    "page_count": m64,
+    "page_count": m69,
     "page_range": MessageLookupByLibrary.simpleMessage("跳转范围"),
     "page_range_error": MessageLookupByLibrary.simpleMessage("输入范围有误"),
     "page_view_type": MessageLookupByLibrary.simpleMessage("页面视图类型"),
@@ -982,10 +1017,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "reader_fill_landscape": MessageLookupByLibrary.simpleMessage("横屏铺满全屏"),
     "reader_fill_portrait": MessageLookupByLibrary.simpleMessage("竖屏铺满全屏"),
-    "reader_interval_seconds": m65,
+    "reader_interval_seconds": m70,
     "reader_next_page": MessageLookupByLibrary.simpleMessage("下一页"),
     "reader_page_layout": MessageLookupByLibrary.simpleMessage("页面版式"),
-    "reader_page_of": m66,
+    "reader_page_of": m71,
     "reader_previous_page": MessageLookupByLibrary.simpleMessage("上一页"),
     "reader_single_page": MessageLookupByLibrary.simpleMessage("单页"),
     "reader_surface_standard": MessageLookupByLibrary.simpleMessage("标准"),
@@ -1039,7 +1074,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "s_and": MessageLookupByLibrary.simpleMessage("到"),
     "s_pages": MessageLookupByLibrary.simpleMessage("页数"),
-    "s_stars": m67,
+    "s_stars": m72,
     "save": MessageLookupByLibrary.simpleMessage("保存"),
     "save_current_image": MessageLookupByLibrary.simpleMessage("保存当前图片"),
     "save_into_album": MessageLookupByLibrary.simpleMessage("保存到相册"),
@@ -1100,10 +1135,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_diag_eh_nodes": MessageLookupByLibrary.simpleMessage("E 站节点检测"),
     "sni_diag_retest": MessageLookupByLibrary.simpleMessage("重测"),
     "sni_diag_section": MessageLookupByLibrary.simpleMessage("连通性诊断"),
-    "sni_diag_summary_ok": m68,
+    "sni_diag_summary_ok": m73,
     "sni_diag_tap_to_test": MessageLookupByLibrary.simpleMessage("点击检测"),
     "sni_doh_auto": MessageLookupByLibrary.simpleMessage("自动选择"),
-    "sni_doh_auto_selected": m69,
+    "sni_doh_auto_selected": m74,
     "sni_doh_polluted": MessageLookupByLibrary.simpleMessage("疑似污染"),
     "sni_doh_section": MessageLookupByLibrary.simpleMessage("DoH 服务器"),
     "sni_doh_speed_test": MessageLookupByLibrary.simpleMessage("测速"),
@@ -1114,7 +1149,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_doh_sync_success": MessageLookupByLibrary.simpleMessage(
       "已同步最新 DoH 列表",
     ),
-    "sni_doh_synced_at": m70,
+    "sni_doh_synced_at": m75,
     "sni_doh_syncing": MessageLookupByLibrary.simpleMessage("同步中…"),
     "sni_doh_testing": MessageLookupByLibrary.simpleMessage("测速中…"),
     "sni_mode_compat": MessageLookupByLibrary.simpleMessage("兼容模式"),
@@ -1136,7 +1171,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sni_status_untested": MessageLookupByLibrary.simpleMessage("未测"),
     "sni_switch_to_standard": MessageLookupByLibrary.simpleMessage("切回标准连接"),
     "sp_add_quick_search": MessageLookupByLibrary.simpleMessage("加入快速搜索"),
-    "sp_add_tag": m71,
+    "sp_add_tag": m76,
     "sp_all": MessageLookupByLibrary.simpleMessage("全部"),
     "sp_all_favcats": MessageLookupByLibrary.simpleMessage("全部收藏"),
     "sp_archive_original": MessageLookupByLibrary.simpleMessage("原图归档"),
@@ -1172,16 +1207,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_page_last": MessageLookupByLibrary.simpleMessage("末页"),
     "sp_page_next": MessageLookupByLibrary.simpleMessage("下一页"),
     "sp_page_prev": MessageLookupByLibrary.simpleMessage("上一页"),
-    "sp_page_total": m72,
+    "sp_page_total": m77,
     "sp_pick_image": MessageLookupByLibrary.simpleMessage("点击选择图片"),
     "sp_quick_search_list": MessageLookupByLibrary.simpleMessage("快速搜索列表"),
     "sp_rate_submit": MessageLookupByLibrary.simpleMessage("提交评分"),
-    "sp_rating_summary": m73,
+    "sp_rating_summary": m78,
     "sp_recent_searches": MessageLookupByLibrary.simpleMessage("最近搜索"),
     "sp_refresh": MessageLookupByLibrary.simpleMessage("刷新"),
     "sp_reset": MessageLookupByLibrary.simpleMessage("重置"),
     "sp_retry": MessageLookupByLibrary.simpleMessage("重试"),
-    "sp_search_for": m74,
+    "sp_search_for": m79,
     "sp_search_placeholder": MessageLookupByLibrary.simpleMessage(
       "搜索标题、标签或粘贴链接",
     ),
@@ -1196,19 +1231,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "sp_similar_scan": MessageLookupByLibrary.simpleMessage("相似扫描"),
     "sp_start_search": MessageLookupByLibrary.simpleMessage("开始搜索"),
     "sp_suggestions": MessageLookupByLibrary.simpleMessage("建议"),
-    "sp_tags_added": m75,
+    "sp_tags_added": m80,
     "sp_tags_example": MessageLookupByLibrary.simpleMessage(
       "例如 female:glasses, full color",
     ),
     "sp_thumbs_jump": MessageLookupByLibrary.simpleMessage("跳到预览页"),
-    "sp_thumbs_per_page": m76,
+    "sp_thumbs_per_page": m81,
     "sp_torrent_completed": MessageLookupByLibrary.simpleMessage("完成"),
     "sp_torrent_download": MessageLookupByLibrary.simpleMessage("下载种子"),
     "sp_torrent_empty": MessageLookupByLibrary.simpleMessage("没有可用的种子"),
     "sp_torrent_magnet": MessageLookupByLibrary.simpleMessage("分享磁力"),
     "sp_torrent_peers": MessageLookupByLibrary.simpleMessage("下载中"),
     "sp_torrent_seeds": MessageLookupByLibrary.simpleMessage("做种"),
-    "sp_torrent_title": m77,
+    "sp_torrent_title": m82,
     "sp_translate": MessageLookupByLibrary.simpleMessage("翻译"),
     "split_follows_divider": MessageLookupByLibrary.simpleMessage("分栏随分割条"),
     "sync_group": MessageLookupByLibrary.simpleMessage("同步分组"),
@@ -1232,7 +1267,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "tab_watched": MessageLookupByLibrary.simpleMessage("订阅"),
     "tabbar_setting": MessageLookupByLibrary.simpleMessage("主页栏位设置"),
     "tablet_layout": MessageLookupByLibrary.simpleMessage("平板布局"),
-    "tagNamespace": m78,
+    "tagNamespace": m83,
     "tag_add_to_mytag": MessageLookupByLibrary.simpleMessage("管理标签"),
     "tag_dialog_Default_color": MessageLookupByLibrary.simpleMessage("默认颜色"),
     "tag_dialog_Hide": MessageLookupByLibrary.simpleMessage("隐藏"),
@@ -1438,7 +1473,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "undo": MessageLookupByLibrary.simpleMessage("撤销"),
     "unlimited": MessageLookupByLibrary.simpleMessage("不限制"),
-    "update_to_version": m79,
+    "update_to_version": m84,
     "upload_avatar": MessageLookupByLibrary.simpleMessage("上传头像"),
     "uploader": MessageLookupByLibrary.simpleMessage("上传者"),
     "user_login": MessageLookupByLibrary.simpleMessage("用户登录"),

@@ -418,7 +418,7 @@ void main() {
       await tester.pumpWidget(_wrapApp(child: const GalleryInfoPage()));
       await tester.pumpAndSettle();
 
-      expect(find.text('增量更新已下载画廊'), findsNothing);
+      expect(find.text('增量更新到最新版'), findsNothing);
 
       // Simulate download completing while the metadata page remains open.
       dlCtrl.dState.galleryTaskMap[3104821] = dlCtrl
@@ -427,7 +427,7 @@ void main() {
           .copyWith(completCount: 48, status: TaskStatus.complete.value);
       await tester.pumpAndSettle();
 
-      expect(find.text('增量更新已下载画廊'), findsOneWidget);
+      expect(find.text('增量更新到最新版'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

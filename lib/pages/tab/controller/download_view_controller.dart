@@ -50,6 +50,9 @@ const String idDownloadArchiverItem = 'DownloadArchiverItem';
 const String viewTypeStoreKey = 'DownloadView.viewType';
 
 class DownloadViewController extends GetxController {
+  DownloadViewController({GalleryUpdateService? updateService})
+    : updateService = updateService ?? GalleryUpdateService();
+
   ArchiverDownloadController get _archiverDownloadController => Get.find();
 
   final DownloadController _downloadController = Get.find();
@@ -64,12 +67,18 @@ class DownloadViewController extends GetxController {
   final RxInt galleryListRevision = 0.obs;
 
   /// Update-check state for downloaded galleries.
-  final GalleryUpdateService updateService = GalleryUpdateService();
+  final GalleryUpdateService updateService;
   final RxMap<int, GalleryUpdateInfo> updateInfoMap =
       <int, GalleryUpdateInfo>{}.obs;
   final RxBool isCheckingUpdates = false.obs;
   final RxInt updateCheckCompleted = 0.obs;
   final RxInt updateCheckTotal = 0.obs;
+  final RxBool showOnlyUpdatable = false.obs;
+  final RxBool updateSummaryDismissed = false.obs;
+  final RxInt lastUpdateCheckCheckedCount = 0.obs;
+  final RxInt lastUpdateCheckFailedCount = 0.obs;
+  final RxBool hasCompletedUpdateCheck = false.obs;
+  DateTime? lastUpdateCheckAt;
   CancelToken? _updateCheckCancelToken;
 
   GalleryUpdateInfo? updateInfoFor(int gid) => updateInfoMap[gid];
@@ -78,6 +87,60 @@ class DownloadViewController extends GetxController {
       _downloadController.dState.incrementalProgressMap[gid];
 
   int get availableUpdatesCount => updateInfoMap.length;
+
+  /// Cancels an in-flight batch update check.
+  void cancelUpdateCheck() {
+    _updateCheckCancelToken?.cancel('user_cancelled');
+  }
+
+  /// Toggles filtering the gallery download list to updatable / updating /
+  /// failed incremental tasks.
+  void toggleShowOnlyUpdatable() {
+    showOnlyUpdatable.value = !showOnlyUpdatable.value;
+  }
+
+  /// Dismisses the inline update summary strip and restores the full list.
+  void dismissUpdateSummary() {
+    updateSummaryDismissed.value = true;
+    showOnlyUpdatable.value = false;
+  }
+
+  /// Whether [task] should stay visible when [showOnlyUpdatable] is enabled:
+  /// tasks with a discovered newer version, active/failed incremental updates,
+  /// or any active download created by an update action (including zero-reuse
+  /// or SAF full-download fallbacks).
+  bool isUpdatableFilterMatch(GalleryTask task) {
+    final gid = task.gid;
+    if (updateInfoMap.containsKey(gid)) {
+      return true;
+    }
+    if (incrementalProgressFor(gid) != null) {
+      return true;
+    }
+    if (_downloadController.dState.updateCreatedTaskGids.contains(gid) &&
+        task.status != TaskStatus.complete.value) {
+      return true;
+    }
+    return false;
+  }
+
+  List<GalleryTask> get filteredGalleryTasks =>
+      galleryTasks.where(isUpdatableFilterMatch).toList();
+
+  /// Automatically turns off the "updatable only" filter when no tasks remain
+  /// matching it (for example after the last updatable task finishes updating),
+  /// returning to the full list with the up-to-date status strip.
+  void syncUpdatableFilterIfEmpty() {
+    if (!showOnlyUpdatable.value) {
+      return;
+    }
+    if (filteredGalleryTasks.isEmpty) {
+      showOnlyUpdatable.value = false;
+      if (!isCheckingUpdates.value) {
+        hasCompletedUpdateCheck.value = true;
+      }
+    }
+  }
 
   /// Records newer versions discovered while browsing a gallery detail page.
   void registerDiscoveredUpdate(
@@ -138,6 +201,18 @@ class DownloadViewController extends GetxController {
       updateInfoMap.remove(gid);
       update(['${idDownloadGalleryItem}_$gid']);
     }
+    final staleUpdateCreated = _downloadController.dState.updateCreatedTaskGids
+        .where((gid) {
+          final task = activeTasks[gid];
+          return task == null || task.status == TaskStatus.complete.value;
+        })
+        .toList();
+    if (staleUpdateCreated.isNotEmpty) {
+      _downloadController.dState.updateCreatedTaskGids.removeAll(
+        staleUpdateCreated,
+      );
+    }
+    syncUpdatableFilterIfEmpty();
   }
 
   /// Checks all completed downloaded galleries for `#gnd` newer versions.
@@ -157,7 +232,7 @@ class DownloadViewController extends GetxController {
         .toList();
     if (targets.isEmpty) {
       if (context != null && context.mounted) {
-        showToast(L10n.of(context).download_updates_none);
+        showToast(L10n.of(context).download_updates_no_targets);
       }
       return const GalleryUpdateBatchResult(
         checkedCount: 0,
@@ -167,10 +242,40 @@ class DownloadViewController extends GetxController {
     }
 
     isCheckingUpdates.value = true;
+    updateSummaryDismissed.value = false;
+    lastUpdateCheckFailedCount.value = 0;
     updateCheckCompleted.value = 0;
     updateCheckTotal.value = targets.length;
     final cancelToken = CancelToken();
     _updateCheckCancelToken = cancelToken;
+
+    void publishTaskResult(int gid, GalleryUpdateInfo? discovered) {
+      final liveTask = galleryTaskMap[gid];
+      if (liveTask == null ||
+          liveTask.status != TaskStatus.complete.value ||
+          filesUnavailable(gid)) {
+        updateInfoMap.remove(gid);
+        update(['${idDownloadGalleryItem}_$gid']);
+        return;
+      }
+      if (discovered != null) {
+        final availableVersions = discovered.newerVersions
+            .where((v) => !galleryTaskMap.containsKey(v.gidInt))
+            .toList();
+        if (availableVersions.isNotEmpty) {
+          updateInfoMap[gid] = GalleryUpdateInfo(
+            sourceGid: gid,
+            newerVersions: availableVersions,
+            checkedAt: discovered.checkedAt,
+          );
+        } else {
+          updateInfoMap.remove(gid);
+        }
+      } else {
+        updateInfoMap.remove(gid);
+      }
+      update(['${idDownloadGalleryItem}_$gid']);
+    }
 
     try {
       final result = await updateService.checkTasksForUpdates(
@@ -180,59 +285,26 @@ class DownloadViewController extends GetxController {
           updateCheckCompleted.value = completed;
           updateCheckTotal.value = total;
         },
+        onTaskChecked: publishTaskResult,
       );
 
-      // Publish only confirmed results for tasks that still exist and remain
+      // Reconcile confirmed results for tasks that still exist and remain
       // complete, clearing stale badges for confirmed-up-to-date tasks even
       // when unrelated tasks in the batch failed.
-      var publishedFound = 0;
       for (final gid in result.checkedGids) {
-        final liveTask = galleryTaskMap[gid];
-        if (liveTask == null ||
-            liveTask.status != TaskStatus.complete.value ||
-            filesUnavailable(gid)) {
-          updateInfoMap.remove(gid);
-          update(['${idDownloadGalleryItem}_$gid']);
-          continue;
-        }
-        final discovered = result.updates[gid];
-        if (discovered != null) {
-          final availableVersions = discovered.newerVersions
-              .where((v) => !galleryTaskMap.containsKey(v.gidInt))
-              .toList();
-          if (availableVersions.isNotEmpty) {
-            updateInfoMap[gid] = GalleryUpdateInfo(
-              sourceGid: gid,
-              newerVersions: availableVersions,
-              checkedAt: discovered.checkedAt,
-            );
-            publishedFound++;
-          } else {
-            updateInfoMap.remove(gid);
-          }
-        } else {
-          updateInfoMap.remove(gid);
-        }
-        update(['${idDownloadGalleryItem}_$gid']);
+        publishTaskResult(gid, result.updates[gid]);
       }
       _pruneStaleUpdateEntries();
+      lastUpdateCheckCheckedCount.value = result.checkedCount;
+      lastUpdateCheckFailedCount.value = result.failedCount;
+      lastUpdateCheckAt = DateTime.now();
 
-      if (!result.cancelled && context != null && context.mounted) {
-        final l10n = L10n.of(context);
-        if (result.failedCount > 0) {
-          showToast(
-            l10n.download_updates_checked_with_errors(
-              result.checkedCount,
-              publishedFound,
-              result.failedCount,
-            ),
-          );
-        } else if (publishedFound > 0) {
-          showToast(l10n.download_updates_found(publishedFound));
-        } else {
-          showToast(l10n.download_updates_none);
-        }
+      if (!result.cancelled) {
+        hasCompletedUpdateCheck.value = true;
+      } else if (updateInfoMap.isEmpty) {
+        hasCompletedUpdateCheck.value = false;
       }
+      syncUpdatableFilterIfEmpty();
       return result;
     } finally {
       if (identical(_updateCheckCancelToken, cancelToken)) {
@@ -280,6 +352,16 @@ class DownloadViewController extends GetxController {
     if (result != null) {
       if (mode == GalleryIncrementalUpdateMode.inPlace) {
         updateInfoMap.remove(plan.oldTask.gid);
+        _downloadController.dState.updateCreatedTaskGids.remove(
+          plan.oldTask.gid,
+        );
+      }
+      if (result.completedLocally) {
+        _downloadController.dState.updateCreatedTaskGids.remove(
+          result.task.gid,
+        );
+      } else {
+        _downloadController.dState.updateCreatedTaskGids.add(result.task.gid);
       }
       _pruneStaleUpdateEntries();
       update(['${idDownloadGalleryItem}_${plan.oldTask.gid}']);
@@ -469,17 +551,34 @@ class DownloadViewController extends GetxController {
   void removeGalleryTask(
     int index, {
     bool shouldDeleteContent = true,
+    int? gid,
   }) {
-    final GalleryTask task = galleryTasks[index];
+    final tasks = galleryTasks;
+    final resolvedIndex = gid != null
+        ? tasks.indexWhere((t) => t.gid == gid)
+        : (index >= 0 && index < tasks.length ? index : -1);
+    if (resolvedIndex < 0) {
+      return;
+    }
+    final GalleryTask task = tasks[resolvedIndex];
+    final wasFiltered = showOnlyUpdatable.value;
     updateInfoMap.remove(task.gid);
+    _downloadController.dState.incrementalProgressMap.remove(task.gid);
+    _downloadController.dState.updateCreatedTaskGids.remove(task.gid);
     _downloadController.removeDownloadGalleryTask(
       gid: task.gid,
       shouldDeleteContent: shouldDeleteContent,
     );
-    animatedGalleryListKey.currentState?.removeItem(
-        index,
+    if (wasFiltered) {
+      refreshGalleryList();
+    } else {
+      animatedGalleryListKey.currentState?.removeItem(
+        resolvedIndex,
         (context, animation) =>
-            downloadDelItemBuilder(context, index, animation));
+            downloadDelItemBuilder(context, resolvedIndex, animation),
+      );
+    }
+    syncUpdatableFilterIfEmpty();
     update([idDownloadGalleryView]);
   }
 
@@ -567,7 +666,7 @@ class DownloadViewController extends GetxController {
               CupertinoActionSheetAction(
                 onPressed: () {
                   Get.back();
-                  _showDeleteSheet(taskIndex, type);
+                  _showDeleteSheet(taskIndex, type, task: task);
                 },
                 child: Text(
                   L10n.of(context).delete,
@@ -579,7 +678,11 @@ class DownloadViewController extends GetxController {
         });
   }
 
-  Future<void> _showDeleteSheet(int taskIndex, DownloadType type) async {
+  Future<void> _showDeleteSheet(
+    int taskIndex,
+    DownloadType type, {
+    GalleryTask? task,
+  }) async {
     await showCupertinoModalPopup<void>(
         context: Get.overlayContext!,
         builder: (BuildContext context) {
@@ -597,8 +700,11 @@ class DownloadViewController extends GetxController {
                   type == DownloadType.archiver
                       ? removeArchiverTask(taskIndex,
                           shouldDeleteContent: false)
-                      : removeGalleryTask(taskIndex,
-                          shouldDeleteContent: false);
+                      : removeGalleryTask(
+                          taskIndex,
+                          shouldDeleteContent: false,
+                          gid: task?.gid,
+                        );
                 },
                 child: Text(
                   L10n.of(context).delete_task_only,
@@ -610,7 +716,7 @@ class DownloadViewController extends GetxController {
                   Get.back();
                   type == DownloadType.archiver
                       ? removeArchiverTask(taskIndex)
-                      : removeGalleryTask(taskIndex);
+                      : removeGalleryTask(taskIndex, gid: task?.gid);
                 },
                 child: Text(
                   L10n.of(context).delete_task_and_content,
@@ -622,7 +728,11 @@ class DownloadViewController extends GetxController {
         });
   }
 
-  Future<void> _showDeleteDialog(int taskIndex, DownloadType type) async {
+  Future<void> _showDeleteDialog(
+    int taskIndex,
+    DownloadType type, {
+    GalleryTask? task,
+  }) async {
     return showCupertinoDialog<void>(
       context: Get.overlayContext!,
       barrierDismissible: true,
@@ -635,7 +745,11 @@ class DownloadViewController extends GetxController {
                 Get.back();
                 type == DownloadType.archiver
                     ? removeArchiverTask(taskIndex, shouldDeleteContent: false)
-                    : removeGalleryTask(taskIndex, shouldDeleteContent: false);
+                    : removeGalleryTask(
+                        taskIndex,
+                        shouldDeleteContent: false,
+                        gid: task?.gid,
+                      );
               },
               child: Text(
                 L10n.of(context).delete_task_only,
@@ -647,7 +761,7 @@ class DownloadViewController extends GetxController {
                 Get.back();
                 type == DownloadType.archiver
                     ? removeArchiverTask(taskIndex)
-                    : removeGalleryTask(taskIndex);
+                    : removeGalleryTask(taskIndex, gid: task?.gid);
               },
               child: Text(
                 L10n.of(context).delete_task_and_content,

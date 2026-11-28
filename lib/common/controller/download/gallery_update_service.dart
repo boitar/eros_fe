@@ -1054,6 +1054,7 @@ class GalleryUpdateService {
     Duration delayBetweenRequests = const Duration(milliseconds: 220),
     CancelToken? cancelToken,
     void Function(int completed, int total)? onProgress,
+    void Function(int gid, GalleryUpdateInfo? info)? onTaskChecked,
   }) async {
     final updates = <int, GalleryUpdateInfo>{};
     final checkedGids = <int>{};
@@ -1076,6 +1077,7 @@ class GalleryUpdateService {
         if (info != null) {
           updates[task.gid] = info;
         }
+        onTaskChecked?.call(task.gid, info);
       } on Object catch (e) {
         if (isCancelError(e) || cancelToken?.isCancelled == true) {
           cancelled = true;

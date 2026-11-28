@@ -20,6 +20,7 @@ import 'package:eros_fe/store/db/entity/gallery_task.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/utils/logger.dart';
 import 'package:eros_fe/utils/share_service.dart';
+import 'package:eros_fe/widget/eh_svg_icon.dart';
 import 'package:eros_fe/widget/liquid_glass_popup.dart';
 import 'package:eros_fe/widget/liquid_glass_rail.dart';
 import 'package:eros_fe/widget/scroll_edge_progress.dart';
@@ -28,7 +29,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:eros_fe/widget/eh_svg_icon.dart';
 
 const Color _kDefaultNavBarBorderColor = Color(0x4D000000);
 
@@ -145,7 +145,7 @@ class _DownloadTabState extends State<DownloadTab> {
                 NativeNavigationAction(
                   id: 'checkUpdates',
                   title: L10n.of(context).download_check_updates,
-                  symbol: 'arrow.triangle.2.circlepath',
+                  symbol: 'arrow.up.circle',
                   enabled: !controller.isCheckingUpdates.value,
                   onPressed: () =>
                       controller.checkAllGalleryUpdates(context: context),
@@ -227,7 +227,7 @@ class _DownloadTabState extends State<DownloadTab> {
             children: [
               if (currIndex == 0)
                 CupertinoButton(
-                  minimumSize: const Size(38, 38),
+                  minimumSize: const Size(44, 44),
                   padding: const EdgeInsets.all(0),
                   onPressed: controller.isCheckingUpdates.value
                       ? null
@@ -236,12 +236,13 @@ class _DownloadTabState extends State<DownloadTab> {
                           ),
                   child: Semantics(
                     label: L10n.of(context).download_check_updates,
-                    child: controller.isCheckingUpdates.value
-                        ? const CupertinoActivityIndicator(radius: 10)
-                        : const EhSvgIcon(
-                            CupertinoIcons.arrow_2_circlepath,
-                            size: 22,
-                          ),
+                    child: Opacity(
+                      opacity: controller.isCheckingUpdates.value ? 0.35 : 1.0,
+                      child: const EhSvgIcon(
+                        CupertinoIcons.arrow_up_circle,
+                        size: 22,
+                      ),
+                    ),
                   ),
                 ),
               if (!kReleaseMode)
@@ -516,7 +517,7 @@ class DownloadGlassHeader extends StatelessWidget {
         trailing: [
           if (onCheckUpdates != null)
             LiquidGlassRailAction(
-              icon: CupertinoIcons.arrow_2_circlepath,
+              icon: CupertinoIcons.arrow_up_circle,
               label: L10n.of(context).download_check_updates,
               onPressed: onCheckUpdates!,
             ),
@@ -640,7 +641,35 @@ class _DownloadGalleryViewState extends State<DownloadGalleryView>
           final checked = controller.updateCheckCompleted.value;
           final total = controller.updateCheckTotal.value;
           final updatesFound = controller.updateInfoMap.length;
-          final showUpdateBanner = checking || updatesFound > 0;
+          final filterOnly = controller.showOnlyUpdatable.value;
+          final dismissed = controller.updateSummaryDismissed.value;
+          final hasCompleted = controller.hasCompletedUpdateCheck.value;
+          final lastCheckedCount = controller.lastUpdateCheckCheckedCount.value;
+          final failedCount = controller.lastUpdateCheckFailedCount.value;
+          // Observe incrementalProgressMap, updateCreatedTaskGids, and
+          // galleryTaskMap changes so the updatable filter stays live.
+          downloadController.dState.incrementalProgressMap.length;
+          downloadController.dState.updateCreatedTaskGids.length;
+          downloadController.dState.galleryTaskMap.length;
+
+          final filteredTasks = filterOnly
+              ? controller.filteredGalleryTasks
+              : const <GalleryTask>[];
+          if (filterOnly && filteredTasks.isEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              controller.syncUpdatableFilterIfEmpty();
+            });
+          }
+          final effectiveFilterOnly = filterOnly && filteredTasks.isNotEmpty;
+          final effectiveHasCompleted =
+              hasCompleted || (filterOnly && filteredTasks.isEmpty);
+
+          final showUpdateStrip =
+              checking ||
+              (!dismissed &&
+                  (updatesFound > 0 ||
+                      effectiveHasCompleted ||
+                      effectiveFilterOnly));
           final topPadding =
               context.mediaQueryPadding.top -
               (NativeNavigationScope.isEnabled(context) ||
@@ -654,31 +683,54 @@ class _DownloadGalleryViewState extends State<DownloadGalleryView>
             bottom: false,
             child: Column(
               children: <Widget>[
-                if (showUpdateBanner)
+                if (showUpdateStrip)
                   Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      10,
-                      topPadding + 4,
-                      10,
-                      4,
-                    ),
-                    child: _DownloadUpdateStatusBanner(
+                    padding: EdgeInsets.only(top: topPadding + 2),
+                    child: _DownloadUpdateStrip(
                       checking: checking,
                       checked: checked,
                       total: total,
                       updatesFound: updatesFound,
+                      failedCount: failedCount,
+                      checkedCount: lastCheckedCount,
+                      filterOnly: effectiveFilterOnly,
+                      onStop: controller.cancelUpdateCheck,
+                      onToggleFilter: controller.toggleShowOnlyUpdatable,
+                      onDismiss: controller.dismissUpdateSummary,
                     ),
                   ),
                 Expanded(
-                  child: AnimatedList(
-                    key: controller.animatedGalleryListKey,
-                    padding: EdgeInsets.only(
-                      top: showUpdateBanner ? 4 : topPadding,
-                      bottom: context.mediaQueryPadding.bottom,
-                    ),
-                    initialItemCount: controller.galleryTasks.length,
-                    itemBuilder: downloadItemBuilder,
-                  ),
+                  child: effectiveFilterOnly
+                      ? ListView.builder(
+                          key: const ValueKey<String>(
+                            'download-gallery-filtered-list',
+                          ),
+                          padding: EdgeInsets.only(
+                            top: showUpdateStrip ? 2 : topPadding,
+                            bottom: context.mediaQueryPadding.bottom,
+                          ),
+                          itemCount: filteredTasks.length,
+                          itemBuilder: (context, index) {
+                            final task = filteredTasks[index];
+                            final fullIndex = controller.galleryTasks.indexWhere(
+                              (t) => t.gid == task.gid,
+                            );
+                            return _downloadTaskItemBuilder(
+                              context,
+                              task,
+                              fullIndex >= 0 ? fullIndex : index,
+                            );
+                          },
+                        )
+                      : AnimatedList(
+                          key: controller.animatedGalleryListKey,
+                          padding: EdgeInsets.only(
+                            top: showUpdateStrip ? 2 : topPadding,
+                            bottom: context.mediaQueryPadding.bottom,
+                          ),
+                          initialItemCount: controller.galleryTasks.length,
+                          itemBuilder: downloadItemBuilder,
+                        ),
                 ),
               ],
             ),
@@ -741,14 +793,25 @@ Widget _downloadItemBuilder(BuildContext context, int taskIndex) {
   if (controller.galleryTasks.length - 1 < taskIndex) {
     return const SizedBox.shrink();
   }
+  return _downloadTaskItemBuilder(
+    context,
+    controller.galleryTasks[taskIndex],
+    taskIndex,
+  );
+}
 
-  final gid = controller.galleryTasks[taskIndex].gid;
+Widget _downloadTaskItemBuilder(
+  BuildContext context,
+  GalleryTask initialTask,
+  int taskIndex,
+) {
+  final gid = initialTask.gid;
   return GetBuilder<DownloadViewController>(
     id: '${idDownloadGalleryItem}_$gid',
     builder: (logic) {
       logger.t('rebuild DownloadGalleryItem_$gid');
 
-      final GalleryTask taskInfo = logic.galleryTasks[taskIndex];
+      final GalleryTask taskInfo = logic.galleryTaskMap[gid] ?? initialTask;
       final String? speed = logic.downloadSpeedMap[taskInfo.gid];
       final String? errInfo = logic.errInfoMap[taskInfo.gid];
       final GalleryUpdateInfo? updateInfo = logic.updateInfoFor(taskInfo.gid);
@@ -838,74 +901,249 @@ Widget _buildAnimatedListItem(
   );
 }
 
-class _DownloadUpdateStatusBanner extends StatelessWidget {
-  const _DownloadUpdateStatusBanner({
+class _DownloadUpdateStrip extends StatelessWidget {
+  const _DownloadUpdateStrip({
     required this.checking,
     required this.checked,
     required this.total,
     required this.updatesFound,
+    required this.failedCount,
+    required this.checkedCount,
+    required this.filterOnly,
+    required this.onStop,
+    required this.onToggleFilter,
+    required this.onDismiss,
   });
 
   final bool checking;
   final int checked;
   final int total;
   final int updatesFound;
+  final int failedCount;
+  final int checkedCount;
+  final bool filterOnly;
+  final VoidCallback onStop;
+  final VoidCallback onToggleFilter;
+  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
     final l10n = L10n.of(context);
+    final palette = ehTheme.palette;
     final accent = EhPalette.accent.resolveFrom(context);
-    final text1 = ehTheme.palette.text1.resolveFrom(context);
-    final text2 = ehTheme.palette.text2.resolveFrom(context);
+    final accentSoft = EhPalette.accentSoft.resolveFrom(context);
+    final text1 = palette.text1.resolveFrom(context);
+    final text2 = palette.text2.resolveFrom(context);
+    final text3 = palette.text3.resolveFrom(context);
+    final baseStyle = CupertinoTheme.of(context).textTheme.textStyle;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: EhPalette.accentSoft.resolveFrom(context),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.34),
-          width: 0.5,
+    if (checking) {
+      final progress = total > 0 ? (checked / total).clamp(0.0, 1.0) : 0.0;
+      return Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 12, 0),
+        child: Stack(
+          children: <Widget>[
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Row(
+                children: <Widget>[
+                  const CupertinoActivityIndicator(radius: 8.5),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      l10n.download_checking_updates_progress(checked, total),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: baseStyle.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0,
+                        color: text1,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
+                    ),
+                  ),
+                  CupertinoButton(
+                    key: const ValueKey<String>('download-update-stop'),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(44, 44),
+                    onPressed: onStop,
+                    child: Text(
+                      l10n.download_stop_check,
+                      style: baseStyle.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0,
+                        color: accent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 8,
+              bottom: 2,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(1),
+                child: SizedBox(
+                  height: 2,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      ColoredBox(color: palette.fillPressed.resolveFrom(context)),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: FractionallySizedBox(
+                          widthFactor: progress,
+                          child: ColoredBox(color: accent),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
-      child: Row(
-        children: <Widget>[
-          if (checking)
-            const CupertinoActivityIndicator(radius: 8)
-          else
-            Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: accent,
-                shape: BoxShape.circle,
+      );
+    }
+
+    final hasUpdates = updatesFound > 0;
+    final hasPartialFailures = !hasUpdates && failedCount > 0;
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 8, 0),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Row(
+          children: <Widget>[
+            if (!hasUpdates) ...<Widget>[
+              EhSvgIcon(
+                hasPartialFailures
+                    ? CupertinoIcons.exclamationmark_circle
+                    : CupertinoIcons.checkmark_circle,
+                size: 17,
+                color: hasPartialFailures
+                    ? CupertinoColors.systemOrange.resolveFrom(context)
+                    : text2,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: hasUpdates
+                  ? Text.rich(
+                      TextSpan(
+                        children: <InlineSpan>[
+                          TextSpan(
+                            text: l10n.download_updates_found(updatesFound),
+                            style: baseStyle.copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0,
+                              color: text1,
+                            ),
+                          ),
+                          if (failedCount > 0)
+                            TextSpan(
+                              text:
+                                  ' · ${l10n.download_updates_failed_count(failedCount)}',
+                              style: baseStyle.copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 0,
+                                color: text2,
+                              ),
+                            ),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : Text(
+                      hasPartialFailures
+                          ? l10n.download_updates_checked_with_errors(
+                              checkedCount,
+                              0,
+                              failedCount,
+                            )
+                          : l10n.download_updates_none(checkedCount),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: baseStyle.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0,
+                        color: text2,
+                      ),
+                    ),
+            ),
+            if (hasUpdates)
+              Semantics(
+                button: true,
+                toggled: filterOnly,
+                label: l10n.download_filter_updatable,
+                child: GestureDetector(
+                  key: const ValueKey<String>('download-update-filter'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onToggleFilter,
+                  child: SizedBox(
+                    height: 44,
+                    child: Center(
+                      child: Container(
+                        height: 32,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: filterOnly
+                              ? accentSoft
+                              : palette.fill.resolveFrom(context),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            EhSvgIcon(
+                              CupertinoIcons.line_horizontal_3_decrease,
+                              size: 13,
+                              color: filterOnly ? accent : text1,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              l10n.download_filter_updatable,
+                              style: baseStyle.copyWith(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0,
+                                color: filterOnly ? accent : text1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Semantics(
+              button: true,
+              label: CupertinoLocalizations.of(context)
+                  .modalBarrierDismissLabel,
+              child: CupertinoButton(
+                key: const ValueKey<String>('download-update-dismiss'),
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(44, 44),
+                onPressed: onDismiss,
+                child: EhSvgIcon(
+                  CupertinoIcons.xmark,
+                  size: 13,
+                  color: text3,
+                ),
               ),
             ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              checking
-                  ? '${l10n.download_checking_updates} ($checked/$total)'
-                  : l10n.download_updates_found(updatesFound),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: text1,
-              ),
-            ),
-          ),
-          if (!checking && updatesFound > 0)
-            Text(
-              l10n.download_has_update_badge,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: text2,
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

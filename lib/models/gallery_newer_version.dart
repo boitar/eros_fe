@@ -131,6 +131,15 @@ class GalleryNewerVersion {
     return raw.split(' ').first;
   }
 
+  /// Month-day portion (`MM-dd`) when [shortDate] is `YYYY-MM-DD`, else [shortDate].
+  String get shortMonthDay {
+    final date = shortDate;
+    if (date.length >= 10 && date[4] == '-' && date[7] == '-') {
+      return date.substring(5, 10);
+    }
+    return date;
+  }
+
   Map<String, dynamic> toJson() => <String, dynamic>{
     'gid': gid,
     'token': token,
