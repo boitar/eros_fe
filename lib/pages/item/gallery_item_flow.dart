@@ -4,6 +4,8 @@ import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/item/favorite_icon.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_controller.dart';
+import 'package:eros_fe/widget/favorite_selection_chrome.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
@@ -26,8 +28,12 @@ class GalleryItemFlow extends StatelessWidget {
   GalleryItemController get galleryProviderController =>
       Get.find(tag: galleryProvider.gid);
 
-  Widget _buildFavcatIcon() {
+  Widget _buildFavcatIcon(BuildContext context) {
+    final selection = FavoriteListScope.maybeOf(context)?.selection;
     return Obx(() {
+      if (selection?.selecting.value == true) {
+        return const SizedBox.shrink();
+      }
       // logger.d('${_galleryProviderController.isFav}');
       return Container(
         child: galleryProviderController.hasFavoriteColor
@@ -104,17 +110,38 @@ class GalleryItemFlow extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(left: 4, bottom: 4, child: _buildFavcatIcon()),
+            Positioned(left: 4, bottom: 4, child: _buildFavcatIcon(context)),
           ],
         ),
       );
 
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        child: container,
-        onTap: () => galleryProviderController.onTap(tabTag),
-        onLongPress: galleryProviderController.onLongPress,
-      ).autoCompressKeyboard(context);
+      final favScope = FavoriteListScope.maybeOf(context);
+      return FavoriteSelectableCard(
+        provider: galleryProvider,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          child: FavoriteCoverSelectionChrome(
+            gid: galleryProvider.gid,
+            radius: BorderRadius.circular(kRadius),
+            child: container,
+          ),
+          onTap: () {
+            final current = galleryProviderController.galleryProvider;
+            if (favScope?.selection?.selecting.value == true) {
+              favScope!.selection!.toggle(current);
+              return;
+            }
+            if (favScope?.onPreviewSelect != null) {
+              favScope!.onPreviewSelect!(current);
+              return;
+            }
+            galleryProviderController.onTap(tabTag);
+          },
+          onLongPress: () => galleryProviderController.onLongPress(
+            selectionController: favScope?.selection,
+          ),
+        ).autoCompressKeyboard(context),
+      );
     });
 
     return item;

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:eros_fe/adaptive/adaptive_environment.dart';
 import 'package:eros_fe/adaptive/platform_capabilities.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/eh_palette.dart';
@@ -130,10 +131,17 @@ class EhSheetFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
+    final env = AdaptiveEnvironment.maybeOf(context);
+    final bookFoldedPane = env != null &&
+            env.isBookFolded &&
+            env.paneRects.length >= 2
+        ? env.paneRects.last
+        : null;
     final centered =
-        PlatformCapabilities.isDesktop ||
-        media.size.width >= EhSheetTokens.centeredFrom;
-    return AnimatedPadding(
+        bookFoldedPane == null &&
+        (PlatformCapabilities.isDesktop ||
+            media.size.width >= EhSheetTokens.centeredFrom);
+    final content = AnimatedPadding(
       duration: media.disableAnimations
           ? Duration.zero
           : const Duration(milliseconds: 180),
@@ -163,6 +171,26 @@ class EhSheetFrame extends StatelessWidget {
           ),
         ),
       ),
+    );
+    if (bookFoldedPane == null) {
+      return content;
+    }
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        Positioned(
+          left: bookFoldedPane.left,
+          top: 0,
+          width: bookFoldedPane.width,
+          bottom: 0,
+          child: MediaQuery.removePadding(
+            context: context,
+            removeLeft: true,
+            removeRight: true,
+            child: content,
+          ),
+        ),
+      ],
     );
   }
 }

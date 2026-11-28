@@ -12,7 +12,11 @@ import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
 import 'package:eros_fe/pages/filter/filter.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/fav_search_scope.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_controller.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
+import 'package:eros_fe/pages/tab/view/favorite_batch_widgets.dart';
+import 'package:eros_fe/pages/tab/view/favorite_search_widgets.dart';
 import 'package:eros_fe/pages/tab/view/gallery_base.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/pages/tab/view/search_more_sheet.dart';
@@ -48,6 +52,10 @@ class GallerySearchPage extends StatefulWidget {
 class _GallerySearchPageState extends State<GallerySearchPage> {
   late final String _tag;
   late SearchPageController controller;
+  final FavoriteSelectionController _selection = FavoriteSelectionController();
+  final FavoriteSelectableRegistry _selectionRegistry =
+      FavoriteSelectableRegistry();
+  final ScrollController _resultsScrollController = ScrollController();
   final Map<int, double> _keyboardFreeHeights = <int, double>{};
   final GlobalKey _searchFieldKey = GlobalKey();
   final GlobalKey _nativeSearchRowKey = GlobalKey();
@@ -67,8 +75,12 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     required bool nativeBar,
   }) {
     final media = MediaQuery.of(context);
+    final isFavSearch = controller.isFavoriteSearch;
+    final selecting = isFavSearch && _selection.selecting.value;
+    final unfoldedDetail = _isUnfoldedFavListDetail(context);
     return '${media.size.width}|${media.textScaler}|${media.devicePixelRatio}|'
-        '${Localizations.localeOf(context)}|$keyboardVisible|$nativeBar';
+        '${Localizations.localeOf(context)}|$keyboardVisible|$nativeBar|'
+        '$isFavSearch|$selecting|$unfoldedDetail';
   }
 
   void _scheduleNativeSearchRowMeasure() {
@@ -144,9 +156,48 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
 
   @override
   void dispose() {
+    _selection.onClose();
+    _resultsScrollController.dispose();
     controller.searchTextController.removeListener(_onNativeSearchTextChanged);
     super.dispose();
     Get.delete<SearchPageController>(tag: _tag);
+  }
+
+  bool _isUnfoldedFavListDetail(BuildContext context) {
+    if (!controller.isFavoriteSearch || _selection.selecting.value) {
+      return false;
+    }
+    if (BrowsePaneScope.isSplit(context)) {
+      return false;
+    }
+    final env = AdaptiveEnvironment.maybeOf(context);
+    if (env != null && env.isBookFolded) {
+      return false;
+    }
+    return MediaQuery.sizeOf(context).width >= 760;
+  }
+
+  Future<void> _onBatchMove() async {
+    await runBatchMoveFlow(
+      context: context,
+      selection: _selection,
+      currentFavcat: controller.favSearchCat.value,
+      onRemoveFromCurrentView: controller.removeGidsLocally,
+      onRefreshCurrentView: () {
+        if (mounted && !controller.isClosed) {
+          controller.onEditingComplete(clear: false);
+        }
+      },
+    );
+  }
+
+  Future<void> _onBatchRemove() async {
+    await runBatchRemoveFlow(
+      context: context,
+      selection: _selection,
+      currentFavcat: controller.favSearchCat.value,
+      onRemoveFromCurrentView: controller.removeGidsLocally,
+    );
   }
 
   CupertinoNavigationBar getNavigationBar(
@@ -204,49 +255,117 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         return RetainedDraft(
           controller: controller.searchTextController,
           child: Obx(
-            () => NativeNavigationPage(
-              chrome: NativePageChrome(
-                title: controller.placeholderText,
-                navigationBarVisible: native,
-                ownBar: !native,
-                actions: [
-                  if (softwareKeyboardVisible)
-                    NativeNavigationAction(
-                      id: 'dismissKeyboard',
-                      title: L10n.of(context).sp_hide_keyboard,
-                      symbol: 'keyboard.chevron.compact.down',
-                      onPressed: controller.searchFocusNode.unfocus,
+            () {
+              final isFavSearch = controller.isFavoriteSearch;
+              final selecting = isFavSearch && _selection.selecting.value;
+              final hasSelection =
+                  _selection.hasSelection && !_selection.busy.value;
+              final l10n = L10n.of(context);
+              final unfoldedDetail = _isUnfoldedFavListDetail(context);
+              final activePreview = controller.selectedPreviewGallery.value;
+              return FavoriteListScope(
+                selection: isFavSearch ? _selection : null,
+                registry: isFavSearch ? _selectionRegistry : null,
+                showFavNote: isFavSearch,
+                hideTagsInWaterfall: false,
+                favNoteMaxLines: 2,
+                highlightQuery: isFavSearch ? controller.searchText : '',
+                onPreviewSelect: unfoldedDetail
+                    ? (provider) =>
+                        controller.selectedPreviewGallery.value = provider
+                    : null,
+                activePreviewGid: unfoldedDetail ? activePreview?.gid : null,
+                child: NativeNavigationPage(
+                  chrome: selecting
+                      ? NativePageChrome(
+                          title: l10n.fav_selected_count(_selection.count),
+                          titleMonospacedDigits: true,
+                          navigationBarVisible: native,
+                          ownBar: !native,
+                          actions: [
+                            NativeNavigationAction(
+                              id: 'select.done',
+                              title: l10n.done,
+                              symbol: 'xmark',
+                              prominent: true,
+                              priority: NativeBarItemPriority.high,
+                              onPressed: _selection.exit,
+                            ),
+                          ],
+                          toolbarActions: [
+                            NativeNavigationAction(
+                              id: 'fav.batch.move',
+                              title: l10n.fav_move_to,
+                              symbol: 'folder',
+                              enabled: hasSelection,
+                              onPressed: _onBatchMove,
+                            ),
+                            NativeNavigationAction(
+                              id: 'fav.batch.remove',
+                              title: l10n.remove_from_favorites,
+                              symbol: 'heart.slash',
+                              enabled: hasSelection,
+                              onPressed: _onBatchRemove,
+                            ),
+                          ],
+                        )
+                      : NativePageChrome(
+                          title: controller.placeholderText,
+                          navigationBarVisible: native,
+                          ownBar: !native,
+                          actions: [
+                            if (softwareKeyboardVisible)
+                              NativeNavigationAction(
+                                id: 'dismissKeyboard',
+                                title: l10n.sp_hide_keyboard,
+                                symbol: 'keyboard.chevron.compact.down',
+                                onPressed: controller.searchFocusNode.unfocus,
+                              ),
+                            if (!isFavSearch)
+                              NativeNavigationAction(
+                                id: 'filter',
+                                title: l10n.sp_filter,
+                                symbol: 'line.3.horizontal.decrease',
+                                onPressed: showFilterSetting,
+                              ),
+                            NativeNavigationAction(
+                              id: 'search.more',
+                              title: l10n.more_actions,
+                              symbol: 'ellipsis',
+                              children: _moreActions(context),
+                            ),
+                          ],
+                        ),
+                  child: offlineDuoRouteProbe(
+                    id: 'search',
+                    listenable: controller.searchTextController,
+                    label: () =>
+                        'native=$native;'
+                        'split=${BrowsePaneScope.isSplit(context)};tag=$_tag;'
+                        'draft=${controller.searchTextController.text}',
+                    child: CupertinoPageScaffold(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: <Widget>[
+                          _buildFloatingBody(
+                            context,
+                            nativeBar: native,
+                            keyboardVisible: softwareKeyboardVisible,
+                            unfoldedDetail: unfoldedDetail,
+                          ),
+                          if (isFavSearch && !native)
+                            FavoriteBatchActionBar(
+                              selection: _selection,
+                              onMove: _onBatchMove,
+                              onRemove: _onBatchRemove,
+                            ),
+                        ],
+                      ),
                     ),
-                  NativeNavigationAction(
-                    id: 'filter',
-                    title: L10n.of(context).sp_filter,
-                    symbol: 'line.3.horizontal.decrease',
-                    onPressed: showFilterSetting,
-                  ),
-                  NativeNavigationAction(
-                    id: 'search.more',
-                    title: L10n.of(context).more_actions,
-                    symbol: 'ellipsis',
-                    children: _moreActions(context),
-                  ),
-                ],
-              ),
-              child: offlineDuoRouteProbe(
-                id: 'search',
-                listenable: controller.searchTextController,
-                label: () =>
-                    'native=$native;'
-                    'split=${BrowsePaneScope.isSplit(context)};tag=$_tag;'
-                    'draft=${controller.searchTextController.text}',
-                child: CupertinoPageScaffold(
-                  child: _buildFloatingBody(
-                    context,
-                    nativeBar: native,
-                    keyboardVisible: softwareKeyboardVisible,
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         );
       },
@@ -257,18 +376,22 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     BuildContext context, {
     required bool nativeBar,
     required bool keyboardVisible,
+    bool unfoldedDetail = false,
   }) {
     _nativeKeyboardVisible = keyboardVisible;
     _nativeBarActive = nativeBar;
     _scheduleNativeSearchRowMeasure();
     final safeTop = MediaQuery.viewPaddingOf(context).top;
     final contentTopGap = NativeTopTabHeader.contentGapFor(context);
+    final isFavSearch = controller.isFavoriteSearch;
+    final selecting = isFavSearch && _selection.selecting.value;
     final layoutSignature = _nativeSearchLayoutSignature(
       context,
       keyboardVisible: keyboardVisible,
       nativeBar: nativeBar,
     );
-    return NativeSingleBarEdge(
+
+    final listColumn = NativeSingleBarEdge(
       enabled: true,
       inset: safeTop,
       bars: _nativeSearchRowHeight,
@@ -292,28 +415,96 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                     context,
                     keyboardVisible: keyboardVisible,
                   ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(14, nativeBar ? 4 : 2, 14, 4),
-                  child: SearchTextFieldIn(
-                    key: _searchFieldKey,
-                    iconOpacity: 1,
-                    multiline: true,
-                    keyboardVisible: keyboardVisible,
+                if (selecting)
+                  FavSelectionHeader(
+                    selection: _selection,
+                    scopeTitle: resolveFavSearchFolderLabel(
+                      context,
+                      controller.favSearchCat.value,
+                    ),
+                    scopeFavId: controller.favSearchCat.value,
+                    totalCount: controller.state?.length ?? 0,
+                    loadedItemsProvider: () =>
+                        controller.state ?? const <GalleryProvider>[],
+                  )
+                else ...[
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(14, nativeBar ? 4 : 2, 14, 4),
+                    child: SearchTextFieldIn(
+                      key: _searchFieldKey,
+                      iconOpacity: 1,
+                      multiline: true,
+                      keyboardVisible: keyboardVisible,
+                    ),
                   ),
-                ),
+                  if (isFavSearch)
+                    FavSearchScopeControls(controller: controller),
+                ],
               ],
             ),
           ),
         ),
       ),
-      child: _buildSearchResult(
-        context,
-        topPadding: safeTop + _nativeSearchRowHeight + contentTopGap,
-        visible:
-            _nativeSearchRowMeasured &&
-            _nativeSearchRowLayoutSignature == layoutSignature &&
-            _nativeSearchRowHeight > 0,
-      ),
+      child: isFavSearch
+          ? FavoriteSwipeSelectRegion(
+              selection: _selection,
+              registry: _selectionRegistry,
+              scrollControllerProvider: () => _resultsScrollController,
+              child: _buildSearchResult(
+                context,
+                topPadding: safeTop + _nativeSearchRowHeight + contentTopGap,
+                visible:
+                    _nativeSearchRowMeasured &&
+                    _nativeSearchRowLayoutSignature == layoutSignature &&
+                    _nativeSearchRowHeight > 0,
+              ),
+            )
+          : _buildSearchResult(
+              context,
+              topPadding: safeTop + _nativeSearchRowHeight + contentTopGap,
+              visible:
+                  _nativeSearchRowMeasured &&
+                  _nativeSearchRowLayoutSignature == layoutSignature &&
+                  _nativeSearchRowHeight > 0,
+            ),
+    );
+
+    if (!unfoldedDetail ||
+        controller.listType != ListType.gallery ||
+        (controller.state?.isEmpty ?? true)) {
+      return listColumn;
+    }
+
+    return Row(
+      children: <Widget>[
+        SizedBox(
+          width: 400,
+          child: MediaQuery.removePadding(
+            context: context,
+            removeRight: true,
+            child: MediaQuery.removeViewPadding(
+              context: context,
+              removeRight: true,
+              child: listColumn,
+            ),
+          ),
+        ),
+        Container(
+          width: 0.5,
+          color: ehTheme.palette.hairline.resolveFrom(context),
+        ),
+        Expanded(
+          child: Obx(
+            () => FavSearchPreviewPane(
+              provider: controller.selectedPreviewGallery.value ??
+                  controller.state?.firstOrNull,
+              highlightQuery: controller.searchText,
+              tabTag: controller.heroTag,
+              onNoteUpdated: (_) => controller.update([controller.listViewId]),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -325,26 +516,35 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
     BuildContext context, {
     required bool keyboardVisible,
   }) {
+    final selecting = controller.isFavoriteSearch && _selection.selecting.value;
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    final backLabel = CupertinoLocalizations.of(context).backButtonLabel;
+    final l10n = L10n.of(context);
+    final backLabel = selecting
+        ? l10n.done
+        : CupertinoLocalizations.of(context).backButtonLabel;
     final palette = ehTheme.palette;
     final glassOff = GlassMode.of(context) == GlassMode.off;
     final followSystemTransparency = _followSystemTransparency;
+    final leadingIcon =
+        selecting ? CupertinoIcons.xmark : CupertinoIcons.chevron_back;
+    final VoidCallback? leadingAction = selecting
+        ? _selection.exit
+        : (canPop ? () => Navigator.of(context).maybePop() : null);
     return Padding(
       key: const ValueKey('search.floatingTopBar'),
       padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
       child: SizedBox(
         height: 44,
         child: NavigationToolbar(
-          leading: canPop
+          leading: leadingAction != null
               ? (glassOff
                     ? EhButton(
                         key: const ValueKey('search.splitBack'),
-                        icon: CupertinoIcons.chevron_back,
+                        icon: leadingIcon,
                         style: EhButtonStyle.glass,
                         size: 44,
                         semanticLabel: backLabel,
-                        onPressed: () => Navigator.of(context).maybePop(),
+                        onPressed: leadingAction,
                       )
                     : SizedBox.square(
                         key: const ValueKey('search.splitBack'),
@@ -362,11 +562,11 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                               borderRadius: BorderRadius.circular(22),
                               onPressed: () {
                                 liquidGlassFeedback(vibrateUtil.light);
-                                Navigator.of(context).maybePop();
+                                leadingAction();
                               },
                               child: Center(
                                 child: EhSvgIcon(
-                                  CupertinoIcons.chevron_back,
+                                  leadingIcon,
                                   size: 22,
                                   color: palette.text1.resolveFrom(context),
                                 ),
@@ -383,7 +583,9 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
             style: CupertinoTheme.of(context).textTheme.navTitleTextStyle
                 .copyWith(color: palette.text1.resolveFrom(context)),
           ),
-          trailing: _buildTrailing(context, keyboardVisible: keyboardVisible),
+          trailing: selecting
+              ? null
+              : _buildTrailing(context, keyboardVisible: keyboardVisible),
         ),
       ),
     );
@@ -398,6 +600,7 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       key: const ValueKey('search.nativeResultsVisibility'),
       offstage: !visible,
       child: CustomScrollView(
+        controller: _resultsScrollController,
         // cacheExtent: context.height * 2,
         slivers: <Widget>[
           if (topPadding != null)
@@ -430,6 +633,46 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
             );
           }),
           SliverPadding(padding: EdgeInsets.zero, key: centerKey),
+          Obx(() {
+            if (!controller.isFavoriteSearch ||
+                controller.listType != ListType.gallery) {
+              return const SliverToBoxAdapter(child: SizedBox.shrink());
+            }
+            return GetBuilder<SearchPageController>(
+              global: false,
+              init: controller,
+              id: controller.listViewId,
+              builder: (logic) {
+                final items = logic.state ?? const <GalleryProvider>[];
+                if (!logic.status.isSuccess || items.isEmpty) {
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                }
+                return SliverSafeArea(
+                  top: false,
+                  bottom: false,
+                  sliver: SliverToBoxAdapter(
+                    child: Obx(
+                      () {
+                        final scope = controller.favSearchScope.value;
+                        final scopeLabel = scope != FavSearchScope.all
+                            ? resolveFavSearchScopeLabel(context, scope)
+                            : resolveFavSearchFolderLabel(
+                                context,
+                                controller.favSearchCat.value,
+                              );
+                        return FavSearchResultHeader(
+                          scopeLabel: scopeLabel,
+                          count: items.length,
+                          selecting: _selection.selecting.value,
+                          onEnterSelection: _selection.enter,
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
+            );
+          }),
           Obx(
             () => SliverSafeArea(
               // key: UniqueKey(),
@@ -665,6 +908,19 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
       builder: (SearchPageController sPageController) {
         final l10n = L10n.of(context);
         final history = sPageController.searchHistory;
+        if (sPageController.isFavoriteSearch) {
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: FavRecentSearchList(
+                history: history,
+                onTapQuery: sPageController.applyFavoriteRecentSearch,
+                onRemoveQuery: sPageController.removeHistory,
+                onClearAll: sPageController.clearHistory,
+              ),
+            ),
+          );
+        }
         final translate =
             sPageController.isTagTranslat &&
             sPageController.translateSearchHistory;
@@ -808,6 +1064,25 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
         }
 
         if (status.isSuccess) {
+          final items = logic.state ?? const <GalleryProvider>[];
+          if (controller.isFavoriteSearch && items.isEmpty) {
+            final scope = controller.favSearchScope.value;
+            final favcat = controller.favSearchCat.value;
+            final scopeLabel = scope != FavSearchScope.all
+                ? resolveFavSearchScopeLabel(context, scope)
+                : resolveFavSearchFolderLabel(context, favcat);
+            return SliverFillRemaining(
+              hasScrollBody: false,
+              child: FavSearchEmptyState(
+                scopeLabel: scopeLabel,
+                query: controller.searchText,
+                canWidenFields: scope != FavSearchScope.all,
+                canWidenFolders: favcat != 'a',
+                onSearchAllFields: controller.searchInAllFields,
+                onSearchAllFolders: controller.searchInAllFolders,
+              ).autoCompressKeyboard(context),
+            );
+          }
           logger.t(
             '>>>>>>> controller.keepPosition ${controller.keepPosition}',
           );
@@ -953,13 +1228,15 @@ class _GallerySearchPageState extends State<GallerySearchPage> {
                   ),
                   hairline(),
                 ],
-                actionButton(
-                  CupertinoIcons.line_horizontal_3_decrease,
-                  l10n.sp_filter,
-                  showFilterSetting,
-                  key: const ValueKey('search.filterAction'),
-                ),
-                hairline(),
+                if (!controller.isFavoriteSearch) ...[
+                  actionButton(
+                    CupertinoIcons.line_horizontal_3_decrease,
+                    l10n.sp_filter,
+                    showFilterSetting,
+                    key: const ValueKey('search.filterAction'),
+                  ),
+                  hairline(),
+                ],
                 actionButton(
                   CupertinoIcons.ellipsis,
                   l10n.more_actions,

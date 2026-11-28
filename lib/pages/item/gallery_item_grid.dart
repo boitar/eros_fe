@@ -2,6 +2,8 @@ import 'package:blur/blur.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/pages/item/favorite_icon.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_controller.dart';
+import 'package:eros_fe/widget/favorite_selection_chrome.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -145,7 +147,12 @@ class GalleryItemGrid extends StatelessWidget {
                         bottom: 4,
                         right: 4,
                         child: Row(
-                          children: [_buildFavCatIcon(), _buildCount()],
+                          children: [
+                            Builder(
+                              builder: (ctx) => _buildFavCatIcon(ctx),
+                            ),
+                            _buildCount(),
+                          ],
                         ),
                       ),
                     ],
@@ -215,18 +222,43 @@ class GalleryItemGrid extends StatelessWidget {
           ),
         );
 
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          child: container,
-          onTap: () => galleryProviderController.onTap(tabTag),
-          onLongPress: galleryProviderController.onLongPress,
-        ).autoCompressKeyboard(context);
+        final favScope = FavoriteListScope.maybeOf(context);
+        return FavoriteSelectableCard(
+          provider: galleryProviderController.galleryProvider,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            child: FavoriteCoverSelectionChrome(
+              gid: galleryProvider.gid,
+              radius: BorderRadius.circular(kRadius),
+              child: container,
+            ),
+            onTap: () {
+              final current = galleryProviderController.galleryProvider;
+              if (favScope?.selection?.selecting.value == true) {
+                favScope!.selection!.toggle(current);
+                return;
+              }
+              if (favScope?.onPreviewSelect != null) {
+                favScope!.onPreviewSelect!(current);
+                return;
+              }
+              galleryProviderController.onTap(tabTag);
+            },
+            onLongPress: () => galleryProviderController.onLongPress(
+              selectionController: favScope?.selection,
+            ),
+          ).autoCompressKeyboard(context),
+        );
       },
     );
   }
 
-  Widget _buildFavCatIcon({bool blur = false}) {
+  Widget _buildFavCatIcon(BuildContext context, {bool blur = false}) {
+    final selection = FavoriteListScope.maybeOf(context)?.selection;
     return Obx(() {
+      if (selection?.selecting.value == true) {
+        return const SizedBox.shrink();
+      }
       Widget icon = FavoriteIcon(
         category: galleryProviderController.favCat,
         size: 12,

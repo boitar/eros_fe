@@ -10,6 +10,8 @@ import 'package:eros_fe/const/const.dart';
 import 'package:eros_fe/generated/l10n.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/network/api.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/fav_search_scope.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller.dart';
 import 'package:eros_fe/pages/tab/view/list/tab_base.dart';
 import 'package:eros_fe/route/navigator_util.dart';
 import 'package:eros_fe/route/routes.dart';
@@ -105,10 +107,103 @@ class SearchPageController extends DefaultTabViewController {
 
   set isSearchBarComp(bool val) => ehSettingService.isSearchBarComp.value = val;
 
+  /// Active field scope when [searchType] is [SearchType.favorite].
+  final Rx<FavSearchScope> favSearchScope = FavSearchScope.all.obs;
+
+  /// Active folder filter (`'a'` for all folders, or `'0'`..`'9'`) when
+  /// [searchType] is [SearchType.favorite].
+  final RxString favSearchCat = 'a'.obs;
+
+  /// Active preview item for unfolded iPhone Duo list-detail favorites search.
+  final Rx<GalleryProvider?> selectedPreviewGallery =
+      Rx<GalleryProvider?>(null);
+
+  bool get isFavoriteSearch => searchType == SearchType.favorite;
+
+  String get effectiveSearchText => isFavoriteSearch
+      ? buildFavoriteSearchQuery(searchText, favSearchScope.value)
+      : searchText;
+
+  void setFavSearchScope(FavSearchScope scope) {
+    if (favSearchScope.value == scope) {
+      return;
+    }
+    favSearchScope.value = scope;
+    if (listType == ListType.gallery && searchText.trim().isNotEmpty) {
+      _startSearch();
+    }
+  }
+
+  void setFavSearchCat(String favcat) {
+    if (favSearchCat.value == favcat) {
+      return;
+    }
+    favSearchCat.value = favcat;
+    if (listType == ListType.gallery && searchText.trim().isNotEmpty) {
+      _startSearch();
+    }
+  }
+
+  void searchInAllFields() {
+    favSearchScope.value = FavSearchScope.all;
+    if (searchText.trim().isNotEmpty) {
+      listType = ListType.gallery;
+      _startSearch();
+    }
+  }
+
+  void searchInAllFolders() {
+    favSearchCat.value = 'a';
+    if (searchText.trim().isNotEmpty) {
+      listType = ListType.gallery;
+      _startSearch();
+    }
+  }
+
+  Future<void> applyFavoriteRecentSearch(String text) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    _autoComplete = false;
+    searchTextController.value = TextEditingValue(
+      text: trimmed,
+      selection: TextSelection.collapsed(offset: trimmed.length),
+    );
+    searchFocusNode.unfocus();
+    await onEditingComplete();
+  }
+
+  void removeGidsLocally(Set<String> gids) {
+    final current = state;
+    if (current == null || gids.isEmpty) {
+      return;
+    }
+    final nextList =
+        current.where((item) => !gids.contains(item.gid)).toList();
+    if (selectedPreviewGallery.value != null &&
+        gids.contains(selectedPreviewGallery.value!.gid)) {
+      selectedPreviewGallery.value =
+          nextList.isNotEmpty ? nextList.first : null;
+    }
+    change(nextList, status: RxStatus.success());
+  }
+
   @override
   FetchListClient getFetchListClient(FetchParams fetchParams) {
+    if (isFavoriteSearch) {
+      fetchParams
+        ..galleryListType = _currListType
+        ..favcat = favSearchCat.value
+        ..searchText = buildFavoriteSearchQuery(
+          fetchParams.searchText ?? searchText,
+          favSearchScope.value,
+        );
+    } else {
+      fetchParams.galleryListType = _currListType;
+    }
     return SearchFetchListClient(
-      fetchParams: fetchParams..galleryListType = _currListType,
+      fetchParams: fetchParams,
       globalSearch: true,
     );
   }
@@ -139,7 +234,15 @@ class SearchPageController extends DefaultTabViewController {
         prevPage = rult.prevPage;
         maxPage = rult.maxPage;
 
-        change(rult.gallerys ?? [], status: RxStatus.success());
+        final results = rult.gallerys ?? [];
+        if (isFavoriteSearch) {
+          final currentPreview = selectedPreviewGallery.value?.gid;
+          selectedPreviewGallery.value = results.firstWhereOrNull(
+                (item) => item.gid == currentPreview,
+              ) ??
+              results.firstOrNull;
+        }
+        change(results, status: RxStatus.success());
       } catch (err) {
         change(null, status: RxStatus.error(err.toString()));
       }
@@ -292,6 +395,11 @@ class SearchPageController extends DefaultTabViewController {
     final searchRepository = repository ?? Get.find<SearchRepository>();
     initSearchText = searchRepository.searchText;
     searchType = searchRepository.searchType;
+    if (searchType == SearchType.favorite &&
+        Get.isRegistered<FavoriteTabBarController>()) {
+      final curr = Get.find<FavoriteTabBarController>().currFavcat;
+      favSearchCat.value = curr == 'l' ? 'a' : curr;
+    }
     _autoComplete = initSearchText?.trim().isNotEmpty ?? false;
     searchTextController.addListener(_delayedSearch);
     // searchHistory = hiveHelper.getAllSearchHistory();

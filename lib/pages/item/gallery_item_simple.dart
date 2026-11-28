@@ -5,7 +5,10 @@ import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
 import 'package:eros_fe/pages/item/favorite_icon.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_controller.dart';
 import 'package:eros_fe/widget/blur_image.dart';
+import 'package:eros_fe/widget/fav_note_line.dart';
+import 'package:eros_fe/widget/favorite_selection_chrome.dart';
 import 'package:eros_fe/widget/image/eh_network_image.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
@@ -39,44 +42,79 @@ class GalleryItemSimpleWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final favScope = FavoriteListScope.maybeOf(context);
+    final showFavNote = favScope?.showFavNote ?? false;
+    final highlightQuery = favScope?.highlightQuery ?? '';
+    final favNoteMaxLines = favScope?.favNoteMaxLines ?? 1;
     final Widget containerGallery = Obx(() {
+      final currentProvider = galleryProviderController.galleryProvider;
+      final noteText = currentProvider.favNote?.trim() ?? '';
+      final isPreviewActive = favScope?.activePreviewGid != null &&
+          favScope!.activePreviewGid == currentProvider.gid;
+      final baseHeight = showTag ? kItemHeight + 10 : kItemHeight;
+      final effectiveHeight =
+          (showFavNote && noteText.isNotEmpty) ? null : baseHeight;
       return Container(
-        color: galleryProviderController.colorTap.value,
-        height: showTag ? kItemHeight + 10 : kItemHeight,
+        color: isPreviewActive
+            ? EhPalette.accentSoft.resolveFrom(context)
+            : galleryProviderController.colorTap.value,
+        constraints: BoxConstraints(minHeight: baseHeight),
+        height: effectiveHeight,
         padding: const EdgeInsets.fromLTRB(kPaddingLeft, 10, 8, 10),
         child: Row(
           children: <Widget>[
             // 封面图片
-            _buildCoverImage(),
+            FavoriteCoverSelectionChrome(
+              gid: currentProvider.gid,
+              radius: BorderRadius.circular(6),
+              badgeInset: 4,
+              child: _buildCoverImage(),
+            ),
             const SizedBox(width: 8),
             // 右侧信息
             Expanded(
               child: Column(
+                mainAxisSize: effectiveHeight == null
+                    ? MainAxisSize.min
+                    : MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   // 标题
-                  _buildTitle(context),
+                  _buildTitle(context, highlightQuery: highlightQuery),
                   const SizedBox(height: 4),
                   // 上传者
-                  Text(
-                    galleryProvider.uploader ?? '',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: ehTheme.palette.text2.resolveFrom(context),
+                  if ((currentProvider.uploader ?? '').isNotEmpty)
+                    Text(
+                      currentProvider.uploader ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: ehTheme.palette.text2.resolveFrom(context),
+                      ),
                     ),
-                  ),
+                  if (showFavNote && noteText.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 4),
+                    FavNoteLine(
+                      note: noteText,
+                      maxLines: favNoteMaxLines,
+                      highlightQuery: highlightQuery,
+                    ),
+                  ],
                   // tag
-                  const Spacer(),
+                  if (effectiveHeight != null)
+                    const Spacer()
+                  else
+                    const SizedBox(height: 6),
                   if (showTag)
-                    // TagListViewBox(
-                    //   simpleTags:
-                    //       galleryProviderController.galleryProvider.simpleTags ?? [],
-                    // ),
                     TagWaterfallFlowViewBox(
-                      simpleTags: galleryProvider.simpleTags ?? [],
+                      simpleTags: currentProvider.simpleTags ?? [],
                       crossAxisCount: 1,
                     ),
-                  const Spacer(),
+                  if (effectiveHeight != null)
+                    const Spacer()
+                  else
+                    const SizedBox(height: 6),
                   // 评分行
                   GetBuilder(
                     init: galleryProviderController,
@@ -89,7 +127,12 @@ class GalleryItemSimpleWidget extends StatelessWidget {
                         // 占位
                         const Spacer(),
                         // 收藏图标
-                        _buildFavcatIcon(),
+                        Obx(() {
+                          if (favScope?.selection?.selecting.value == true) {
+                            return const SizedBox.shrink();
+                          }
+                          return _buildFavcatIcon();
+                        }),
                         // 图片数量
                         _buildFileCountWidget(),
                       ],
@@ -124,29 +167,61 @@ class GalleryItemSimpleWidget extends StatelessWidget {
       );
     });
 
-    return GestureDetector(
-      child: Column(
-        children: <Widget>[
-          containerGallery,
-          Divider(
-            height: 0.5,
-            indent: kPaddingLeft,
-            color: EhPalette.separator.resolveFrom(context),
-          ),
-        ],
-      ),
-      // 不可见区域点击有效
-      behavior: HitTestBehavior.opaque,
-      onTap: () => galleryProviderController.onTap(tabTag),
-      onTapDown: galleryProviderController.onTapDown,
-      onTapUp: galleryProviderController.onTapUp,
-      onTapCancel: galleryProviderController.onTapCancel,
-      onLongPress: galleryProviderController.onLongPress,
-    ).autoCompressKeyboard(context);
+    return FavoriteSelectableCard(
+      provider: galleryProviderController.galleryProvider,
+      child: GestureDetector(
+        child: Column(
+          children: <Widget>[
+            containerGallery,
+            Divider(
+              height: 0.5,
+              indent: kPaddingLeft,
+              color: EhPalette.separator.resolveFrom(context),
+            ),
+          ],
+        ),
+        // 不可见区域点击有效
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          final current = galleryProviderController.galleryProvider;
+          if (favScope?.selection?.selecting.value == true) {
+            favScope!.selection!.toggle(current);
+            return;
+          }
+          if (favScope?.onPreviewSelect != null) {
+            favScope!.onPreviewSelect!(current);
+            return;
+          }
+          galleryProviderController.onTap(tabTag);
+        },
+        onTapDown: galleryProviderController.onTapDown,
+        onTapUp: galleryProviderController.onTapUp,
+        onTapCancel: galleryProviderController.onTapCancel,
+        onLongPress: () => galleryProviderController.onLongPress(
+          selectionController: favScope?.selection,
+        ),
+      ).autoCompressKeyboard(context),
+    );
   }
 
   /// 构建标题
-  Widget _buildTitle(BuildContext context) {
+  Widget _buildTitle(BuildContext context, {String highlightQuery = ''}) {
+    if (highlightQuery.isNotEmpty) {
+      return Text.rich(
+        buildHighlightedTextSpan(
+          context: context,
+          text: galleryProviderController.title,
+          style: TextStyle(
+            fontSize: 13.5,
+            color: ehTheme.palette.text1.resolveFrom(context),
+          ),
+          highlightQuery: highlightQuery,
+        ),
+        maxLines: 2,
+        textAlign: TextAlign.left,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
     return GalleryCardTitle(
       lines: 3,
       small: true,

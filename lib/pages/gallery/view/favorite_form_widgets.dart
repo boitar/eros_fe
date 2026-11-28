@@ -94,10 +94,20 @@ class FavoriteNoteField extends StatefulWidget {
     super.key,
     required this.controller,
     this.onChanged,
+    this.minLines = 1,
+    this.maxLines = 3,
+    this.maxLength,
+    this.autofocus = false,
+    this.showLabel = true,
   });
 
   final TextEditingController controller;
   final ValueChanged<String>? onChanged;
+  final int minLines;
+  final int maxLines;
+  final int? maxLength;
+  final bool autofocus;
+  final bool showLabel;
 
   @override
   State<FavoriteNoteField> createState() => _FavoriteNoteFieldState();
@@ -127,16 +137,17 @@ class _FavoriteNoteFieldState extends State<FavoriteNoteField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ExcludeSemantics(
-          child: Padding(
-            padding: const EdgeInsetsDirectional.only(start: 4, bottom: 7),
-            child: Text(label,
-                style: EhPopupTextStyles.secondary(context).copyWith(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                )),
+        if (widget.showLabel)
+          ExcludeSemantics(
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(start: 4, bottom: 7),
+              child: Text(label,
+                  style: EhPopupTextStyles.secondary(context).copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  )),
+            ),
           ),
-        ),
         FavoriteFormGroup(
           focusColor: _focusNode.hasFocus
               ? CupertinoDynamicColor.resolve(
@@ -147,20 +158,28 @@ class _FavoriteNoteFieldState extends State<FavoriteNoteField> {
             child: CupertinoTextField(
               controller: widget.controller,
               focusNode: _focusNode,
+              autofocus: widget.autofocus,
               onChanged: widget.onChanged,
-              minLines: 1,
-              maxLines: 3,
+              minLines: widget.minLines,
+              maxLines: widget.maxLines,
+              maxLength: widget.maxLength,
+              placeholder: widget.showLabel ? null : label,
+              placeholderStyle: widget.showLabel
+                  ? null
+                  : EhPopupTextStyles.secondary(context),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               style: EhPopupTextStyles.body(context),
               decoration: null,
-              prefix: Padding(
-                padding: const EdgeInsetsDirectional.only(start: 14),
-                child: ExcludeSemantics(
-                  child: EhSvgIcon(CupertinoIcons.pencil,
-                      size: 17,
-                      color: EhPopupTextStyles.secondary(context).color),
-                ),
-              ),
+              prefix: widget.showLabel
+                  ? Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 14),
+                      child: ExcludeSemantics(
+                        child: EhSvgIcon(CupertinoIcons.pencil,
+                            size: 17,
+                            color: EhPopupTextStyles.secondary(context).color),
+                      ),
+                    )
+                  : null,
             ),
           ),
         ),

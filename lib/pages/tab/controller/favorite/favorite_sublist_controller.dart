@@ -126,4 +126,19 @@ class FavoriteSubListController extends TabViewController {
       reloadData();
     }
   }
+
+  /// Optimistically removes [gids] from the currently loaded list after a
+  /// confirmed batch move or removal.
+  void removeGidsLocally(Set<String> gids) {
+    final current = state;
+    if (current == null || gids.isEmpty) {
+      return;
+    }
+    final nextList =
+        current.where((item) => !gids.contains(item.gid)).toList();
+    change(
+      nextList,
+      status: nextList.isEmpty ? RxStatus.empty() : RxStatus.success(),
+    );
+  }
 }

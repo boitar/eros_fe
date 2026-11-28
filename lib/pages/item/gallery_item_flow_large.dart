@@ -7,7 +7,10 @@ import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/models/base/eh_models.dart';
 import 'package:eros_fe/pages/item/controller/galleryitem_controller.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_controller.dart';
 import 'package:eros_fe/utils/utility.dart';
+import 'package:eros_fe/widget/fav_note_line.dart';
+import 'package:eros_fe/widget/favorite_selection_chrome.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -54,46 +57,79 @@ class GalleryItemFlowLarge extends StatelessWidget {
     );
   }
 
+  void _handleTap(
+    BuildContext context,
+    GalleryItemController controller,
+    GalleryProvider provider,
+  ) {
+    final favScope = FavoriteListScope.maybeOf(context);
+    if (favScope?.selection?.selecting.value == true) {
+      favScope!.selection!.toggle(provider);
+      return;
+    }
+    if (favScope?.onPreviewSelect != null) {
+      favScope!.onPreviewSelect!(provider);
+      return;
+    }
+    controller.onTap(tabTag);
+  }
+
   Widget _buildStandard(BuildContext context) {
     final controller = galleryProviderController;
+    final favScope = FavoriteListScope.maybeOf(context);
     final GalleryProvider provider = controller.galleryProvider;
 
-    return _PressScale(
-      onTap: () => controller.onTap(tabTag),
-      onLongPress: controller.onLongPress,
-      child: _CardFrame(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            _Cover(provider: provider, controller: controller, tabTag: tabTag),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
-              child: _Info(controller: controller, provider: provider),
-            ),
-          ],
+    return FavoriteSelectableCard(
+      provider: provider,
+      child: _PressScale(
+        onTap: () => _handleTap(context, controller, controller.galleryProvider),
+        onLongPress: () => controller.onLongPress(
+          selectionController: favScope?.selection,
         ),
-      ),
-    ).autoCompressKeyboard(context);
+        child: _CardFrame(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _Cover(
+                provider: provider,
+                controller: controller,
+                tabTag: tabTag,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
+                child: _Info(controller: controller, provider: provider),
+              ),
+            ],
+          ),
+        ),
+      ).autoCompressKeyboard(context),
+    );
   }
 
   /// Only the cover: title and rating sit on a deeper scrim at its foot.
   Widget _buildImmersive(BuildContext context) {
     final controller = galleryProviderController;
+    final favScope = FavoriteListScope.maybeOf(context);
     final GalleryProvider provider = controller.galleryProvider;
 
-    return _PressScale(
-      onTap: () => controller.onTap(tabTag),
-      onLongPress: controller.onLongPress,
-      child: _CardFrame(
-        child: _Cover(
-          provider: provider,
-          controller: controller,
-          tabTag: tabTag,
-          immersive: true,
+    return FavoriteSelectableCard(
+      provider: provider,
+      child: _PressScale(
+        onTap: () => _handleTap(context, controller, controller.galleryProvider),
+        onLongPress: () => controller.onLongPress(
+          selectionController: favScope?.selection,
         ),
-      ),
-    ).autoCompressKeyboard(context);
+        child: _CardFrame(
+          child: _Cover(
+            provider: provider,
+            controller: controller,
+            tabTag: tabTag,
+            immersive: true,
+          ),
+        ),
+      ).autoCompressKeyboard(context),
+    );
   }
 }
 
@@ -247,13 +283,16 @@ class _Cover extends StatelessWidget {
         ? BorderRadius.circular(kCardRadius)
         : _coverRadius;
 
-    return AspectRatio(
-      aspectRatio: coverAspectRatio(
-        imgWidth: provider.imgWidth ?? 0,
-        imgHeight: provider.imgHeight ?? 0,
-        maxRatio: kMaxLargeCoverAspectRatio,
-      ),
-      child: LayoutBuilder(
+    return FavoriteCoverSelectionChrome(
+      gid: provider.gid,
+      radius: radius,
+      child: AspectRatio(
+        aspectRatio: coverAspectRatio(
+          imgWidth: provider.imgWidth ?? 0,
+          imgHeight: provider.imgHeight ?? 0,
+          maxRatio: kMaxLargeCoverAspectRatio,
+        ),
+        child: LayoutBuilder(
         builder: (context, constraints) {
           final decodeWidth = constraints.maxWidth.isFinite
               ? (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context))
@@ -343,6 +382,7 @@ class _Cover extends StatelessWidget {
             ],
           );
         },
+      ),
       ),
     );
   }
@@ -552,7 +592,11 @@ class _FavoriteBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selection = FavoriteListScope.maybeOf(context)?.selection;
     return Obx(() {
+      if (selection?.selecting.value == true) {
+        return const SizedBox.shrink();
+      }
       final color = ThemeColors.favColor[controller.favCat];
       if (color == null) {
         return const SizedBox.shrink();
@@ -586,6 +630,11 @@ class _Info extends StatelessWidget {
     // Read per build: the palette follows the dark-style setting, and these
     // widgets rebuild with the theme because they resolve colours from it.
     final palette = ehTheme.palette;
+    final favScope = FavoriteListScope.maybeOf(context);
+    final showFavNote = favScope?.showFavNote ?? false;
+    final hideTags = favScope?.hideTagsInWaterfall ?? false;
+    final highlightQuery = favScope?.highlightQuery ?? '';
+    final favNoteMaxLines = favScope?.favNoteMaxLines ?? 1;
     final text2 = CupertinoDynamicColor.resolve(palette.text2, context);
     final metaStyle = TextStyle(
       fontSize: 11,
@@ -593,41 +642,67 @@ class _Info extends StatelessWidget {
       color: text2,
       fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
     );
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        GalleryCardTitle(
-          waterfall: true,
-          immersive: false,
-          legacy: Text(
-            controller.title,
-            maxLines: kTitleMaxLines,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.3,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.1,
-              color: CupertinoDynamicColor.resolve(palette.text1, context),
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        _MetaRow(
-          controller: controller,
-          postTime: provider.postTime,
-          style: metaStyle,
-        ),
-        _CardTags(
-          simpleTags: provider.simpleTags,
-          overflowStyle: metaStyle,
-          // The cover already names the language.
-          hideLanguage: (provider.translated?.trim() ?? '').isNotEmpty,
-        ),
-      ],
+    final titleStyle = TextStyle(
+      fontSize: 14,
+      height: 1.3,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.1,
+      color: CupertinoDynamicColor.resolve(palette.text1, context),
     );
+
+    return Obx(() {
+      final currentProvider = controller.galleryProvider;
+      final noteText = currentProvider.favNote?.trim() ?? '';
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (highlightQuery.isNotEmpty)
+            Text.rich(
+              buildHighlightedTextSpan(
+                context: context,
+                text: controller.title,
+                style: titleStyle,
+                highlightQuery: highlightQuery,
+              ),
+              maxLines: kTitleMaxLines,
+              overflow: TextOverflow.ellipsis,
+            )
+          else
+            GalleryCardTitle(
+              waterfall: true,
+              immersive: false,
+              legacy: Text(
+                controller.title,
+                maxLines: kTitleMaxLines,
+                overflow: TextOverflow.ellipsis,
+                style: titleStyle,
+              ),
+            ),
+          if (showFavNote && noteText.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 5),
+            FavNoteLine(
+              note: noteText,
+              maxLines: favNoteMaxLines,
+              highlightQuery: highlightQuery,
+            ),
+          ],
+          const SizedBox(height: 6),
+          _MetaRow(
+            controller: controller,
+            postTime: currentProvider.postTime,
+            style: metaStyle,
+          ),
+          if (!hideTags)
+            _CardTags(
+              simpleTags: currentProvider.simpleTags,
+              overflowStyle: metaStyle,
+              // The cover already names the language.
+              hideLanguage: (currentProvider.translated?.trim() ?? '').isNotEmpty,
+            ),
+        ],
+      );
+    });
   }
 }
 

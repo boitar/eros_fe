@@ -6,9 +6,11 @@ import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/debug/offline_glass.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_controller.dart';
 import 'package:eros_fe/pages/tab/controller/favorite/favorite_tabbar_controller.dart';
 import 'package:eros_fe/pages/tab/controller/search_page_controller.dart';
 import 'package:eros_fe/pages/tab/controller/tabhome_controller.dart';
+import 'package:eros_fe/pages/tab/view/favorite_batch_widgets.dart';
 import 'package:eros_fe/pages/tab/view/hidden_tabs_rail_action.dart';
 import 'package:eros_fe/pages/tab/view/top_bar_layout_reset.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
@@ -48,6 +50,9 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
   final LinkScrollBarController linkScrollBarController =
       LinkScrollBarController();
   final controller = Get.find<FavoriteTabBarController>();
+  final FavoriteSelectionController _selection = FavoriteSelectionController();
+  final FavoriteSelectableRegistry _selectionRegistry =
+      FavoriteSelectableRegistry();
   late PageController pageController;
 
   final _headerScrollController = LiquidGlassScrollController();
@@ -69,10 +74,68 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
 
   @override
   void dispose() {
+    _selection.onClose();
     _topState.dispose();
     _nativeEdgeProgress.dispose();
     _headerScrollController.dispose();
     super.dispose();
+  }
+
+  List<GalleryProvider> _loadedItemsForCurrentTab() {
+    return controller.subControllerMap[controller.currFavcat]?.state ??
+        const <GalleryProvider>[];
+  }
+
+  Favcat? _currentFavcatModel() {
+    final id = controller.currFavcat;
+    for (final fav in controller.favcatList) {
+      if (fav.favId == id) {
+        return fav;
+      }
+    }
+    return null;
+  }
+
+  void _enterSelection() {
+    _selection.enter();
+  }
+
+  void _removeFromCurrentTab(Set<String> gids) {
+    controller.subControllerMap[controller.currFavcat]?.removeGidsLocally(gids);
+  }
+
+  Future<void> _onBatchMove() async {
+    await runBatchMoveFlow(
+      context: context,
+      selection: _selection,
+      currentFavcat: controller.currFavcat,
+      onRemoveFromCurrentView: _removeFromCurrentTab,
+      onRefreshCurrentView: () => controller.reloadData(),
+    );
+  }
+
+  Future<void> _onBatchRemove() async {
+    await runBatchRemoveFlow(
+      context: context,
+      selection: _selection,
+      currentFavcat: controller.currFavcat,
+      onRemoveFromCurrentView: _removeFromCurrentTab,
+    );
+  }
+
+  Widget _buildSelectionHeader(BuildContext context, {double? height}) {
+    final currentFav = _currentFavcatModel();
+    final loaded = _loadedItemsForCurrentTab();
+    final scopeTitle = currentFav?.favTitle ?? L10n.of(context).all_Favorites;
+    final totalCount = currentFav?.totNum ?? loaded.length;
+    return FavSelectionHeader(
+      selection: _selection,
+      scopeTitle: scopeTitle,
+      scopeFavId: controller.currFavcat,
+      totalCount: totalCount,
+      loadedItemsProvider: _loadedItemsForCurrentTab,
+      height: height,
+    );
   }
 
   final EhSettingService _ehSettingService = Get.find();
@@ -181,43 +244,94 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
         const <ScrollPosition>[],
     firstCardTop: _currentFirstCardTop,
     child: Obx(
-      () => NativeNavigationPage(
-        tabId: EHRoutes.favorite,
-        chrome: NativePageChrome(
-          title: L10n.of(context).tab_favorite,
-          actions: [
-            ...Get.find<TabHomeController>().nativeHiddenTabActions,
-            NativeNavigationAction(
-              id: 'search',
-              title: L10n.of(context).search,
-              symbol: 'magnifyingglass',
-              onPressed: () =>
-                  NavigatorUtil.goSearchPage(searchType: SearchType.favorite),
-            ),
-            NativeNavigationAction(
-              id: 'order',
-              title:
-                  '${L10n.of(context).favorites_order} (${controller.orderText})',
-              symbol: 'arrow.down',
-              onPressed: () => controller.setOrder(context),
-            ),
-            if (controller.afterJump)
-              NativeNavigationAction(
-                id: 'top',
-                title: L10n.of(context).back_to_top,
-                symbol: 'arrow.up.circle',
-                onPressed: controller.jumpToTop,
-              ),
-            NativeNavigationAction(
-              id: 'jump',
-              title: L10n.of(context).jump_or_seek,
-              symbol: 'arrow.uturn.down.circle',
-              onPressed: () => controller.showJumpDialog(context),
-            ),
-          ],
-        ),
-        child: _buildPage(context),
-      ),
+      () {
+        final selecting = _selection.selecting.value;
+        final hasSelection = _selection.hasSelection && !_selection.busy.value;
+        final canMove = controller.currFavcat != 'l';
+        final l10n = L10n.of(context);
+        return FavoriteListScope(
+          selection: _selection,
+          registry: _selectionRegistry,
+          showFavNote: true,
+          hideTagsInWaterfall: true,
+          favNoteMaxLines: 1,
+          child: NativeNavigationPage(
+            tabId: EHRoutes.favorite,
+            chrome: selecting
+                ? NativePageChrome(
+                    title: l10n.tab_favorite,
+                    actions: [
+                      NativeNavigationAction(
+                        id: 'select.done',
+                        title: l10n.done,
+                        symbol: 'xmark',
+                        prominent: true,
+                        priority: NativeBarItemPriority.high,
+                        onPressed: _selection.exit,
+                      ),
+                    ],
+                    toolbarActions: [
+                      if (canMove)
+                        NativeNavigationAction(
+                          id: 'fav.batch.move',
+                          title: l10n.fav_move_to,
+                          symbol: 'folder',
+                          enabled: hasSelection,
+                          onPressed: _onBatchMove,
+                        ),
+                      NativeNavigationAction(
+                        id: 'fav.batch.remove',
+                        title: l10n.remove_from_favorites,
+                        symbol: 'heart.slash',
+                        enabled: hasSelection,
+                        onPressed: _onBatchRemove,
+                      ),
+                    ],
+                  )
+                : NativePageChrome(
+                    title: l10n.tab_favorite,
+                    actions: [
+                      ...Get.find<TabHomeController>().nativeHiddenTabActions,
+                      NativeNavigationAction(
+                        id: 'select',
+                        title: l10n.fav_select,
+                        symbol: 'checkmark.circle',
+                        onPressed: _enterSelection,
+                      ),
+                      NativeNavigationAction(
+                        id: 'search',
+                        title: l10n.search,
+                        symbol: 'magnifyingglass',
+                        onPressed: () => NavigatorUtil.goSearchPage(
+                          searchType: SearchType.favorite,
+                        ),
+                      ),
+                      NativeNavigationAction(
+                        id: 'order',
+                        title:
+                            '${l10n.favorites_order} (${controller.orderText})',
+                        symbol: 'arrow.down',
+                        onPressed: () => controller.setOrder(context),
+                      ),
+                      if (controller.afterJump)
+                        NativeNavigationAction(
+                          id: 'top',
+                          title: l10n.back_to_top,
+                          symbol: 'arrow.up.circle',
+                          onPressed: controller.jumpToTop,
+                        ),
+                      NativeNavigationAction(
+                        id: 'jump',
+                        title: l10n.jump_or_seek,
+                        symbol: 'arrow.uturn.down.circle',
+                        onPressed: () => controller.showJumpDialog(context),
+                      ),
+                    ],
+                  ),
+            child: _buildPage(context),
+          ),
+        );
+      },
     ),
   );
 
@@ -246,9 +360,23 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
         layout,
       );
 
+      final content = Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          scrollView,
+          if (!native)
+            FavoriteBatchActionBar(
+              selection: _selection,
+              allowMove: controller.currFavcat != 'l',
+              onMove: _onBatchMove,
+              onRemove: _onBatchRemove,
+            ),
+        ],
+      );
+
       if (!liquidGlass) {
         return CupertinoPageScaffold(
-          child: CanvasGrain(child: SizeCacheWidget(child: scrollView)),
+          child: CanvasGrain(child: SizeCacheWidget(child: content)),
         );
       }
 
@@ -257,7 +385,7 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
         child: SizeCacheWidget(
           child: NotificationListener<ScrollNotification>(
             onNotification: _topState.handleScrollNotification,
-            child: scrollView,
+            child: content,
           ),
         ),
       );
@@ -273,15 +401,22 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
     required bool liquidGlass,
   }) {
     if (NativeNavigationScope.isEnabled(context)) {
-      return NativeTopTabHeader(
-        topInset: MediaQuery.viewPaddingOf(context).top,
-        railHeight: topTabbarHeightFor(context),
-        edgeProgress: _nativeEdgeProgress,
-        child: FavoriteTabBar(
-          pageController: pageController,
-          linkScrollBarController: linkScrollBarController,
-          controller: controller,
-          opacity: 1,
+      return Obx(
+        () => NativeTopTabHeader(
+          topInset: MediaQuery.viewPaddingOf(context).top,
+          railHeight: topTabbarHeightFor(context),
+          edgeProgress: _nativeEdgeProgress,
+          child: _selection.selecting.value
+              ? _buildSelectionHeader(
+                  context,
+                  height: topTabbarHeightFor(context),
+                )
+              : FavoriteTabBar(
+                  pageController: pageController,
+                  linkScrollBarController: linkScrollBarController,
+                  controller: controller,
+                  opacity: 1,
+                ),
         ),
       );
     }
@@ -326,11 +461,19 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
                     getNavigationBar(context, opacity: navBarOpacity),
                     Align(
                       alignment: Alignment.bottomCenter,
-                      child: FavoriteTabBar(
-                        pageController: pageController,
-                        linkScrollBarController: linkScrollBarController,
-                        controller: controller,
-                        opacity: customBarOpacity,
+                      child: Obx(
+                        () => _selection.selecting.value
+                            ? _buildSelectionHeader(
+                                context,
+                                height: topTabbarHeightFor(context),
+                              )
+                            : FavoriteTabBar(
+                                pageController: pageController,
+                                linkScrollBarController:
+                                    linkScrollBarController,
+                                controller: controller,
+                                opacity: customBarOpacity,
+                              ),
                       ),
                     ),
                   ],
@@ -348,11 +491,39 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
     double fadeProgress,
     LiquidGlassTopLayout layout,
   ) {
-    return Obx(
-      () => LiquidGlassRail(
+    return Obx(() {
+      final selecting = _selection.selecting.value;
+      final l10n = L10n.of(context);
+      if (selecting) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            LiquidGlassRail(
+              layout: _ehSettingService.liquidGlassTopBarLayout,
+              pageController: pageController,
+              title: l10n.tab_favorite,
+              safeTop: layout.safeTop,
+              fadeProgress: fadeProgress,
+              selectedIndex: controller.index,
+              followSystemTransparency: _ehSettingService.liquidGlassMaterial,
+              leading: LiquidGlassRailAction(
+                icon: CupertinoIcons.xmark,
+                label: l10n.done,
+                onPressed: _selection.exit,
+              ),
+              trailing: const <LiquidGlassRailAction>[],
+              categories: const <LiquidGlassRailCategory>[],
+              onTitleTap: _scrollToInitialContentAnchor,
+              refreshing: false,
+            ),
+            _buildSelectionHeader(context, height: 48),
+          ],
+        );
+      }
+      return LiquidGlassRail(
         layout: _ehSettingService.liquidGlassTopBarLayout,
         pageController: pageController,
-        title: L10n.of(context).tab_favorite,
+        title: l10n.tab_favorite,
         safeTop: layout.safeTop,
         fadeProgress: fadeProgress,
         selectedIndex: controller.index,
@@ -360,13 +531,18 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
         leading: hiddenTabsRailAction(context),
         trailing: <LiquidGlassRailAction>[
           LiquidGlassRailAction(
+            icon: CupertinoIcons.checkmark_circle,
+            label: l10n.fav_select,
+            onPressed: _enterSelection,
+          ),
+          LiquidGlassRailAction(
             icon: CupertinoIcons.sort_down,
-            label: '收藏排序',
+            label: l10n.favorites_order,
             onPressed: () => controller.setOrder(context),
           ),
           LiquidGlassRailAction(
             icon: CupertinoIcons.arrow_uturn_down_circle,
-            label: '跳转/搜寻',
+            label: l10n.jump_or_seek,
             onPressed: () => controller.showJumpDialog(context),
           ),
         ],
@@ -417,8 +593,8 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
             .toList(),
         onTitleTap: _scrollToInitialContentAnchor,
         refreshing: controller.isBackgroundRefresh,
-      ),
-    );
+      );
+    });
   }
 
   Widget buildNestedScrollView(
@@ -609,9 +785,11 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
             linkScrollBarController.enableScrollToItem();
           },
           child: Obx(() {
+            final selecting = _selection.selecting.value;
             final pageView = PageView(
               key: ValueKey(controller.showBarsBtn), // 登录状态变化后能刷新
               controller: pageController,
+              physics: selecting ? const NeverScrollableScrollPhysics() : null,
               children: [
                 ...controller.favcatList.map(
                   (e) => ScrollEdgeProgressListener(
@@ -645,7 +823,13 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _synchronizePageWithSelectedIndex();
             });
-            return pageView;
+            return FavoriteSwipeSelectRegion(
+              selection: _selection,
+              registry: _selectionRegistry,
+              scrollControllerProvider: () =>
+                  _nestedScrollKey.currentState?.innerController,
+              child: pageView,
+            );
           }),
         );
       },
@@ -698,14 +882,39 @@ class _FavoriteTabTabBarPageState extends State<FavoriteTabTabBarPage>
         ),
         leading: Opacity(
           opacity: opacity ?? 1.0,
-          child: controller.getLeading(context),
+          child: _selection.selecting.value
+              ? CupertinoButton(
+                  minimumSize: const Size(44, 44),
+                  padding: EdgeInsets.zero,
+                  onPressed: _selection.exit,
+                  child: Semantics(
+                    label: L10n.of(context).done,
+                    child: const EhSvgIcon(CupertinoIcons.xmark, size: 22),
+                  ),
+                )
+              : controller.getLeading(context),
         ),
         trailing: Opacity(
           opacity: opacity ?? 1.0,
-          child: Row(
+          child: _selection.selecting.value
+              ? const SizedBox.shrink()
+              : Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              // 批量选择按钮
+              CupertinoButton(
+                minimumSize: const Size(44, 44),
+                padding: EdgeInsets.zero,
+                onPressed: _enterSelection,
+                child: Semantics(
+                  label: L10n.of(context).fav_select,
+                  child: const EhSvgIcon(
+                    CupertinoIcons.checkmark_circle,
+                    size: 26,
+                  ),
+                ),
+              ),
               // 搜索按钮
               CupertinoButton(
                 minSize: 40,

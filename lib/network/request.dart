@@ -123,11 +123,15 @@ Future<GalleryList?> getGallery({
 
   /// 高级搜索处理
   if (advanceSearch != null) {
-    if (advanceSearch.param.isNotEmpty && !isPopular) {
+    if (advanceSearch.param.isNotEmpty && !isPopular && !isFav) {
       _params['advsearch'] = 1;
       _params.addAll(advanceSearch.param);
     }
-  } else if (globalSearch && searchController.enableAdvance) {
+  } else if (!isFav &&
+      !isPopular &&
+      !isTopList &&
+      globalSearch &&
+      searchController.enableAdvance) {
     _params['advsearch'] = 1;
     _params.addAll(searchController.advanceSearchMap);
   }
@@ -1142,7 +1146,12 @@ Future<void> galleryAddFavorite(
       },
     );
     checkAccount();
-    favoriteStates.commit(gid, confirmed.category!, confirmed.title);
+    favoriteStates.commit(
+      gid,
+      confirmed.category!,
+      confirmed.title,
+      note: favcat == 'favdel' ? '' : (confirmed.note ?? favnote),
+    );
     if (Get.isRegistered<GalleryCacheController>()) {
       Get.find<GalleryCacheController>().syncFavorite(gid);
     }
@@ -1155,6 +1164,208 @@ Future<void> galleryAddFavorite(
     } catch (_) {
       logger.w('Favorite saved; detail HTTP cache invalidation failed');
     }
+  });
+}
+
+/// Encodes the live `favorites.php` `#favform` batch submission payload:
+/// `ddact=<fav0..9|delete>&modifygids[]=<gid1>&modifygids[]=<gid2>...`
+String encodeFavoritesBatchForm({
+  required List<String> gids,
+  required String ddact,
+}) {
+  final parts = <String>[
+    'ddact=${Uri.encodeQueryComponent(ddact)}',
+    for (final gid in gids)
+      'modifygids%5B%5D=${Uri.encodeQueryComponent(gid)}',
+  ];
+  return parts.join('&');
+}
+
+class FavoriteBatchResult {
+  const FavoriteBatchResult({
+    required this.succeededGids,
+    required this.failedGids,
+    this.updatedFavList = const <Favcat>[],
+  });
+
+  final List<String> succeededGids;
+  final List<String> failedGids;
+  final List<Favcat> updatedFavList;
+
+  bool get allSucceeded => failedGids.isEmpty && succeededGids.isNotEmpty;
+  bool get hasFailures => failedGids.isNotEmpty;
+}
+
+/// Batch move (`ddact: 'fav0'..'fav9'`) or batch remove (`ddact: 'delete'`)
+/// via E-Hentai's `POST /favorites.php` `#favform` endpoint.
+Future<FavoriteBatchResult> favoritesBatch({
+  required List<String> gids,
+  required String ddact,
+  String? favcat,
+  String? targetFavTitle,
+}) async {
+  if (!Get.find<UserController>().isLogin) {
+    throw const FavoriteMutationException(
+        FavoriteMutationFailure.authentication);
+  }
+  final normalizedGids = <String>[];
+  for (final gid in gids) {
+    final trimmed = gid.trim();
+    if (trimmed.isNotEmpty && !normalizedGids.contains(trimmed)) {
+      normalizedGids.add(trimmed);
+    }
+  }
+  if (normalizedGids.isEmpty) {
+    return const FavoriteBatchResult(
+      succeededGids: <String>[],
+      failedGids: <String>[],
+    );
+  }
+  final isDelete = ddact == 'delete';
+  final targetCatMatch = RegExp(r'^fav([0-9])$').firstMatch(ddact);
+  if (!isDelete && targetCatMatch == null) {
+    throw ArgumentError.value(ddact, 'ddact');
+  }
+  final targetCategory = isDelete ? '' : targetCatMatch!.group(1)!;
+
+  return favoriteStates.mutateBatch(normalizedGids, () async {
+    final epoch = favoriteStates.epoch;
+    final baseUrl = Api.getBaseUrl();
+    final client = DioHttpClient(dioConfig: globalDioConfig);
+    final queryParameters = <String, dynamic>{
+      if (favcat != null && favcat.isNotEmpty && favcat != 'a' && favcat != 'l')
+        'favcat': favcat,
+    };
+
+    void checkAccount() {
+      if (epoch != favoriteStates.epoch) {
+        throw const FavoriteMutationException(
+            FavoriteMutationFailure.accountChanged);
+      }
+    }
+
+    final succeeded = <String>[];
+    final failed = <String>[];
+    var latestFavList = const <Favcat>[];
+    var resolvedTargetTitle = targetFavTitle ?? '';
+
+    const chunkSize = 50;
+    for (var start = 0; start < normalizedGids.length; start += chunkSize) {
+      final chunk = normalizedGids.sublist(
+        start,
+        start + chunkSize > normalizedGids.length
+            ? normalizedGids.length
+            : start + chunkSize,
+      );
+      checkAccount();
+      try {
+        final response = await client.post(
+          '$baseUrl/favorites.php',
+          queryParameters: queryParameters.isEmpty ? null : queryParameters,
+          data: encodeFavoritesBatchForm(gids: chunk, ddact: ddact),
+          options: _favoriteRequestOptions(form: true),
+          httpTransformer: HttpTransformerBuilder((response) async {
+            checkFavoriteResponse(response, FavoriteMutationPhase.submit);
+            if (response.statusCode != 200 || response.data is! String) {
+              return DioHttpResponse<GalleryList>.failureFromError(
+                HttpException(
+                  'Unexpected favorites batch status ${response.statusCode}',
+                  response.statusCode,
+                ),
+              );
+            }
+            final body = response.data as String;
+            final parsed = await compute(parseGalleryListOfFav, body);
+            if ((parsed.favList?.length ?? 0) != 10) {
+              return DioHttpResponse<GalleryList>.failureFromError(
+                HttpException('Unexpected favorites batch HTML response', 502),
+              );
+            }
+            return DioHttpResponse<GalleryList>.success(parsed);
+          }),
+        );
+        checkAccount();
+        if (!response.ok || response.data is! GalleryList) {
+          failed.addAll(chunk);
+          continue;
+        }
+        final parsed = response.data as GalleryList;
+        if ((parsed.favList ?? const <Favcat>[]).isNotEmpty) {
+          latestFavList = parsed.favList!;
+          if (!isDelete && resolvedTargetTitle.isEmpty) {
+            resolvedTargetTitle = latestFavList
+                    .where((f) => f.favId == targetCategory)
+                    .map((f) => f.favTitle)
+                    .firstOrNull ??
+                '';
+          }
+        }
+        final returnedByGid = <String, GalleryProvider>{
+          for (final g in parsed.gallerys ?? const <GalleryProvider>[])
+            if (g.gid != null && g.gid!.isNotEmpty) g.gid!: g,
+        };
+        for (final gid in chunk) {
+          final returned = returnedByGid[gid];
+          final stillPresent = returned != null;
+          final confirmedFailed = isDelete
+              ? stillPresent
+              : (favcat != null &&
+                      favcat != 'a' &&
+                      favcat != 'l' &&
+                      favcat != targetCategory &&
+                      stillPresent) ||
+                  (stillPresent &&
+                      (returned.favcat?.isNotEmpty ?? false) &&
+                      returned.favcat != targetCategory);
+          if (confirmedFailed) {
+            failed.add(gid);
+          } else {
+            succeeded.add(gid);
+            final returnedTitle = returned?.favTitle?.trim() ?? '';
+            favoriteStates.commit(
+              gid,
+              targetCategory,
+              isDelete
+                  ? ''
+                  : (returnedTitle.isNotEmpty
+                      ? returnedTitle
+                      : resolvedTargetTitle),
+            );
+            if (Get.isRegistered<GalleryCacheController>()) {
+              Get.find<GalleryCacheController>().syncFavorite(gid);
+            }
+          }
+        }
+      } catch (e) {
+        if (e is FavoriteMutationException &&
+            e.failure == FavoriteMutationFailure.accountChanged) {
+          rethrow;
+        }
+        logger.w('favoritesBatch chunk failed: $e');
+        failed.addAll(chunk);
+      }
+    }
+
+    if (succeeded.isNotEmpty) {
+      try {
+        for (final base in [EHConst.EH_BASE_URL, EHConst.EX_BASE_URL]) {
+          await Api.cacheOption.store
+              ?.deleteFromPath(RegExp(RegExp.escape('$base/favorites.php')));
+          for (final gid in succeeded) {
+            await Api.cacheOption.store
+                ?.deleteFromPath(RegExp(RegExp.escape('$base/g/$gid/')));
+          }
+        }
+      } catch (_) {
+        logger.w('Favorites batch saved; HTTP cache invalidation failed');
+      }
+    }
+
+    return FavoriteBatchResult(
+      succeededGids: succeeded,
+      failedGids: failed,
+      updatedFavList: latestFavList,
+    );
   });
 }
 
