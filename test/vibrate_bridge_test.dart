@@ -67,6 +67,9 @@ void main() {
     await util.error();
     await util.selection();
     await util.tabSwitch();
+    await util.contextMenuPreviewTick();
+    await util.contextMenuPop();
+    await util.contextMenuDismiss();
     await util.prepareHaptics();
     await util.pullTick(.5);
   }
@@ -82,6 +85,9 @@ void main() {
     await util.success();
     await util.error();
     await util.tabSwitch();
+    await util.contextMenuPreviewTick();
+    await util.contextMenuPop();
+    await util.contextMenuDismiss();
     await util.selection();
     expect(nativeCalls.map((c) => c.method), [
       'impact',
@@ -91,6 +97,9 @@ void main() {
       'success',
       'error',
       'tabSwitch',
+      'contextMenuPreviewTick',
+      'contextMenuPop',
+      'contextMenuDismiss',
       'selection'
     ]);
     expect(legacyCalls, isEmpty);
@@ -200,6 +209,9 @@ void main() {
       'HapticFeedbackType.errorNotification', // error
       'HapticFeedbackType.selectionClick', // selection
       'HapticFeedbackType.lightImpact', // tabSwitch
+      'HapticFeedbackType.selectionClick', // contextMenuPreviewTick
+      'HapticFeedbackType.mediumImpact', // contextMenuPop
+      'HapticFeedbackType.selectionClick', // contextMenuDismiss
       'HapticFeedbackType.selectionClick', // pullTick
     ]);
   });

@@ -41,9 +41,9 @@ class GalleryItemDebugSimple extends StatelessWidget {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      child: container,
+      child: RepaintBoundary(child: container),
       onTap: () => galleryProviderController.onTap(tabTag),
-      onLongPress: galleryProviderController.onLongPress,
+      onLongPress: () => galleryProviderController.onLongPress(context),
     ).autoCompressKeyboard(context);
   }
 }

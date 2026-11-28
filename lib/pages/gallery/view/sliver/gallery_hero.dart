@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -19,11 +20,13 @@ import 'package:eros_fe/pages/gallery/view/favorite_note_edit_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_incremental_update_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/gallery_title_sheet.dart';
 import 'package:eros_fe/pages/gallery/view/rate_dialog.dart';
+import 'package:eros_fe/pages/gallery/view/taginfo_dialog.dart';
 import 'package:eros_fe/pages/item/cover_ratio.dart';
 import 'package:eros_fe/pages/item/gallery_item.dart';
 import 'package:eros_fe/utils/gallery_title.dart';
 import 'package:eros_fe/utils/liquid_glass.dart';
 import 'package:eros_fe/widget/eh_buttons.dart';
+import 'package:eros_fe/widget/fav_rule_widgets.dart';
 import 'package:eros_fe/widget/favcat_grid.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
@@ -469,7 +472,69 @@ class _Byline extends StatelessWidget {
   }
 }
 
-/// Category dot · uploader · date.
+/// Interactive 28pt category color swatch button with a >=44×44pt hit target
+/// that opens [showCategoryInfoPopover] anchored to the button.
+class GalleryHeroCategoryButton extends StatelessWidget {
+  const GalleryHeroCategoryButton({
+    super.key,
+    required this.category,
+  });
+
+  final String category;
+
+  @override
+  Widget build(BuildContext context) {
+    return Builder(
+      builder: (btnContext) {
+        return Semantics(
+          button: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              final overlay = Overlay.maybeOf(btnContext, rootOverlay: true);
+              final overlayBox =
+                  overlay?.context.findRenderObject() as RenderBox?;
+              final btnBox = btnContext.findRenderObject() as RenderBox?;
+              Rect? rect;
+              if (btnBox != null && btnBox.hasSize && !btnBox.size.isEmpty) {
+                final topLeft = (overlayBox != null && overlayBox.hasSize)
+                    ? btnBox.localToGlobal(Offset.zero, ancestor: overlayBox)
+                    : btnBox.localToGlobal(Offset.zero);
+                rect = topLeft & btnBox.size;
+              }
+              unawaited(vibrateUtil.light());
+              unawaited(
+                showCategoryInfoPopover(
+                  btnContext,
+                  category: category,
+                  anchorRect: rect,
+                ),
+              );
+            },
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              child: Align(
+                alignment: Alignment.center,
+                widthFactor: 1.0,
+                heightFactor: 1.0,
+                child: FavCategoryBadge(
+                  category: category,
+                  label: category,
+                  height: 28,
+                  borderRadius: 9,
+                  fontSize: 13.5,
+                  horizontalPadding: 11,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Category swatch · uploader · date.
 class _MetaLine extends StatelessWidget {
   const _MetaLine({required this.provider});
 
@@ -482,26 +547,9 @@ class _MetaLine extends StatelessWidget {
     final category = provider.category?.trim() ?? '';
     final uploader = provider.uploader?.trim() ?? '';
     final date = (provider.postTime ?? '').trim().split(' ').first;
-    final dot = ThemeColors.catColor[category];
 
     final pieces = <Widget>[
-      if (category.isNotEmpty)
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            DecoratedBox(
-              decoration: ShapeDecoration(
-                color: dot == null
-                    ? text2
-                    : CupertinoDynamicColor.resolve(dot, context),
-                shape: const CircleBorder(),
-              ),
-              child: const SizedBox.square(dimension: 7),
-            ),
-            const SizedBox(width: 5),
-            Text(category, style: style),
-          ],
-        ),
+      if (category.isNotEmpty) GalleryHeroCategoryButton(category: category),
       if (uploader.isNotEmpty)
         GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -1112,7 +1160,7 @@ class _FavoriteCircle extends StatelessWidget {
       final isFav = favorites.isFav;
       return _RoundAction(
         docked: docked,
-        label: isFav ? l10n.change_to_favorites : l10n.add_to_favorites,
+        label: isFav ? l10n.remove_from_favorites : l10n.add_to_favorites,
         onTap: favorites.isLoading ? null : () => favorites.tapFav(),
         onLongPress: favorites.isLoading ? null : () => favorites.longTapFav(),
         child: favorites.isLoading

@@ -1,6 +1,7 @@
 import 'package:eros_fe/common/controller/tag_trans_controller.dart';
 import 'package:eros_fe/common/controller/user_controller.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/fav_rule_service.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/locale_service.dart';
 import 'package:eros_fe/component/setting/setting_scaffold.dart';
@@ -40,6 +41,7 @@ class ListViewEhSetting extends StatelessWidget {
   ListViewEhSetting({super.key});
 
   final EhSettingService _ehSettingService = Get.find();
+  final FavRuleService _favRuleService = Get.find();
   final UserController userController = Get.find();
   final TagTransController transController = Get.find();
   final LocaleService localeService = Get.find();
@@ -284,22 +286,29 @@ class ListViewEhSetting extends StatelessWidget {
       }),
 
       SliverCupertinoListSection.listInsetGrouped(
-          footer: Text('${L10n.of(context).one_step_favorite_desc}\n'
-              '${L10n.of(context).clipboard_detection_desc}'),
+          footer: Text(L10n.of(context).clipboard_detection_desc),
           children: [
-            EhCupertinoListTile(
-              title: Text(L10n.of(context).one_step_favorite),
-              trailing: Obx(() {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: CupertinoSwitch(
-                    value: _ehSettingService.isFavLongTap.value,
-                    onChanged: (bool val) =>
-                        _ehSettingService.isFavLongTap.value = val,
-                  ),
-                );
-              }),
-            ),
+            Obx(() {
+              final cfg = _favRuleService.config;
+              final statusText = cfg.enabled
+                  ? (cfg.rules.isEmpty
+                      ? L10n.of(context).fav_rule_status_enabled
+                      : L10n.of(context)
+                          .fav_rule_status_enabled_count(cfg.rules.length))
+                  : L10n.of(context).fav_rule_status_disabled;
+              return EhCupertinoListTile(
+                title: Text(L10n.of(context).fav_rule_title),
+                subtitle: Text(L10n.of(context).fav_rule_entry_desc),
+                additionalInfo: Text(statusText),
+                trailing: const CupertinoListTileChevron(),
+                onTap: () {
+                  Get.toNamed(
+                    EHRoutes.favRuleSetting,
+                    id: detailNavigatorId,
+                  );
+                },
+              );
+            }),
             EhCupertinoListTile(
               title: Text(L10n.of(context).clipboard_detection),
               trailing: Obx(() {

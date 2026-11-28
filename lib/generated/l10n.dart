@@ -7073,6 +7073,1141 @@ class L10n {
       args: [],
     );
   }
+
+  /// `Rule Favorites`
+  String get fav_rule_title {
+    return Intl.message(
+      'Rule Favorites',
+      name: 'fav_rule_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sort into folders by tag or category when favoriting`
+  String get fav_rule_entry_desc {
+    return Intl.message(
+      'Sort into folders by tag or category when favoriting',
+      name: 'fav_rule_entry_desc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `On`
+  String get fav_rule_status_enabled {
+    return Intl.message(
+      'On',
+      name: 'fav_rule_status_enabled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `On · {count}`
+  String fav_rule_status_enabled_count(Object count) {
+    return Intl.message(
+      'On · $count',
+      name: 'fav_rule_status_enabled_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Off`
+  String get fav_rule_status_disabled {
+    return Intl.message(
+      'Off',
+      name: 'fav_rule_status_disabled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enable Rule Favorites`
+  String get fav_rule_enable {
+    return Intl.message(
+      'Enable Rule Favorites',
+      name: 'fav_rule_enable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save directly to the matching folder when a rule hits`
+  String get fav_rule_enable_desc {
+    return Intl.message(
+      'Save directly to the matching folder when a rule hits',
+      name: 'fav_rule_enable_desc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Trigger & Fallback`
+  String get fav_rule_section_trigger {
+    return Intl.message(
+      'Trigger & Fallback',
+      name: 'fav_rule_section_trigger',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Trigger Gesture`
+  String get fav_rule_trigger {
+    return Intl.message(
+      'Trigger Gesture',
+      name: 'fav_rule_trigger',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Long-press Favorite`
+  String get fav_rule_trigger_long_press {
+    return Intl.message(
+      'Long-press Favorite',
+      name: 'fav_rule_trigger_long_press',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tap Favorite`
+  String get fav_rule_trigger_tap {
+    return Intl.message(
+      'Tap Favorite',
+      name: 'fav_rule_trigger_tap',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `When No Rule Matches`
+  String get fav_rule_fallback {
+    return Intl.message(
+      'When No Rule Matches',
+      name: 'fav_rule_fallback',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open Folder Picker`
+  String get fav_rule_fallback_picker {
+    return Intl.message(
+      'Open Folder Picker',
+      name: 'fav_rule_fallback_picker',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save to Last Used Folder`
+  String get fav_rule_fallback_last {
+    return Intl.message(
+      'Save to Last Used Folder',
+      name: 'fav_rule_fallback_last',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save to Fixed Folder`
+  String get fav_rule_fallback_fixed {
+    return Intl.message(
+      'Save to Fixed Folder',
+      name: 'fav_rule_fallback_fixed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fixed Folder`
+  String get fav_rule_fallback_folder {
+    return Intl.message(
+      'Fixed Folder',
+      name: 'fav_rule_fallback_folder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `If Already Favorited`
+  String get fav_rule_existing {
+    return Intl.message(
+      'If Already Favorited',
+      name: 'fav_rule_existing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Move to Target Folder`
+  String get fav_rule_existing_move {
+    return Intl.message(
+      'Move to Target Folder',
+      name: 'fav_rule_existing_move',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Keep Current Folder`
+  String get fav_rule_existing_keep {
+    return Intl.message(
+      'Keep Current Folder',
+      name: 'fav_rule_existing_keep',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Panel Styles`
+  String get fav_rule_section_ui_style {
+    return Intl.message(
+      'Panel Styles',
+      name: 'fav_rule_section_ui_style',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `List Long-Press Menu`
+  String get fav_rule_list_menu_style {
+    return Intl.message(
+      'List Long-Press Menu',
+      name: 'fav_rule_list_menu_style',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Floating Card Menu`
+  String get fav_rule_list_menu_context {
+    return Intl.message(
+      'Floating Card Menu',
+      name: 'fav_rule_list_menu_context',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Bottom Action Sheet`
+  String get fav_rule_list_menu_sheet {
+    return Intl.message(
+      'Bottom Action Sheet',
+      name: 'fav_rule_list_menu_sheet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Folder Picker Style`
+  String get fav_rule_picker_style {
+    return Intl.message(
+      'Folder Picker Style',
+      name: 'fav_rule_picker_style',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Color Grid`
+  String get fav_rule_picker_grid {
+    return Intl.message(
+      'Color Grid',
+      name: 'fav_rule_picker_grid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Classic List`
+  String get fav_rule_picker_list {
+    return Intl.message(
+      'Classic List',
+      name: 'fav_rule_picker_list',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wheel Picker`
+  String get fav_rule_picker_wheel {
+    return Intl.message(
+      'Wheel Picker',
+      name: 'fav_rule_picker_wheel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Picker style switched`
+  String get fav_rule_picker_switched {
+    return Intl.message(
+      'Picker style switched',
+      name: 'fav_rule_picker_switched',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rules`
+  String get fav_rule_section_rules {
+    return Intl.message(
+      'Rules',
+      name: 'fav_rule_section_rules',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Top to bottom, first match wins`
+  String get fav_rule_order_hint {
+    return Intl.message(
+      'Top to bottom, first match wins',
+      name: 'fav_rule_order_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Long-press to reorder, swipe left to delete.`
+  String get fav_rule_list_footer {
+    return Intl.message(
+      'Long-press to reorder, swipe left to delete.',
+      name: 'fav_rule_list_footer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `New Rule`
+  String get fav_rule_new_title {
+    return Intl.message(
+      'New Rule',
+      name: 'fav_rule_new_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit Rule`
+  String get fav_rule_edit_title {
+    return Intl.message(
+      'Edit Rule',
+      name: 'fav_rule_edit_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Test Rules`
+  String get fav_rule_test_title {
+    return Intl.message(
+      'Test Rules',
+      name: 'fav_rule_test_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `One-Step Favorite upgraded to Rule Favorites`
+  String get fav_rule_migrated_title {
+    return Intl.message(
+      'One-Step Favorite upgraded to Rule Favorites',
+      name: 'fav_rule_migrated_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your previous tap-to-last-folder behavior has been preserved. Add tag or category rules anytime to choose folders when favoriting.`
+  String get fav_rule_migrated_desc {
+    return Intl.message(
+      'Your previous tap-to-last-folder behavior has been preserved. Add tag or category rules anytime to choose folders when favoriting.',
+      name: 'fav_rule_migrated_desc',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rule name (generated from condition if empty)`
+  String get fav_rule_name_placeholder {
+    return Intl.message(
+      'Rule name (generated from condition if empty)',
+      name: 'fav_rule_name_placeholder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Matched {count} times`
+  String fav_rule_hit_stats(Object count) {
+    return Intl.message(
+      'Matched $count times',
+      name: 'fav_rule_hit_stats',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Matched {count} times · Last {time}`
+  String fav_rule_hit_stats_with_time(Object count, Object time) {
+    return Intl.message(
+      'Matched $count times · Last $time',
+      name: 'fav_rule_hit_stats_with_time',
+      desc: '',
+      args: [count, time],
+    );
+  }
+
+  /// `Conditions`
+  String get fav_rule_conditions {
+    return Intl.message(
+      'Conditions',
+      name: 'fav_rule_conditions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Match Any`
+  String get fav_rule_match_any {
+    return Intl.message(
+      'Match Any',
+      name: 'fav_rule_match_any',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Match All`
+  String get fav_rule_match_all {
+    return Intl.message(
+      'Match All',
+      name: 'fav_rule_match_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add Condition`
+  String get fav_rule_add_condition {
+    return Intl.message(
+      'Add Condition',
+      name: 'fav_rule_add_condition',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit Condition`
+  String get fav_rule_edit_condition {
+    return Intl.message(
+      'Edit Condition',
+      name: 'fav_rule_edit_condition',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save To`
+  String get fav_rule_target_folder {
+    return Intl.message(
+      'Save To',
+      name: 'fav_rule_target_folder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} galleries`
+  String fav_rule_gallery_count(Object count) {
+    return Intl.message(
+      '$count galleries',
+      name: 'fav_rule_gallery_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count}`
+  String fav_rule_count_items(Object count) {
+    return Intl.message(
+      '$count',
+      name: 'fav_rule_count_items',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Preview`
+  String get fav_rule_preview {
+    return Intl.message(
+      'Preview',
+      name: 'fav_rule_preview',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} galleries matched in history`
+  String fav_rule_history_hits_count(Object count) {
+    return Intl.message(
+      '$count galleries matched in history',
+      name: 'fav_rule_history_hits_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `No galleries in your history match this rule yet.`
+  String get fav_rule_history_hits_empty {
+    return Intl.message(
+      'No galleries in your history match this rule yet.',
+      name: 'fav_rule_history_hits_empty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add at least one condition`
+  String get fav_rule_need_condition {
+    return Intl.message(
+      'Add at least one condition',
+      name: 'fav_rule_need_condition',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invalid condition or regular expression`
+  String get fav_rule_invalid_condition {
+    return Intl.message(
+      'Invalid condition or regular expression',
+      name: 'fav_rule_invalid_condition',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete Rule`
+  String get fav_rule_delete_title {
+    return Intl.message(
+      'Delete Rule',
+      name: 'fav_rule_delete_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete this favorite rule?`
+  String get fav_rule_delete_confirm {
+    return Intl.message(
+      'Delete this favorite rule?',
+      name: 'fav_rule_delete_confirm',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} tags`
+  String fav_rule_hit_tag_count(Object count) {
+    return Intl.message(
+      '$count tags',
+      name: 'fav_rule_hit_tag_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Also match translated tag names`
+  String get fav_rule_match_translation_hint {
+    return Intl.message(
+      'Also match translated tag names',
+      name: 'fav_rule_match_translation_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Namespace`
+  String get fav_rule_tag_namespace {
+    return Intl.message(
+      'Namespace',
+      name: 'fav_rule_tag_namespace',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Any`
+  String get fav_rule_namespace_any {
+    return Intl.message(
+      'Any',
+      name: 'fav_rule_namespace_any',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `More`
+  String get fav_rule_namespace_more {
+    return Intl.message(
+      'More',
+      name: 'fav_rule_namespace_more',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Match Mode`
+  String get fav_rule_match_op {
+    return Intl.message(
+      'Match Mode',
+      name: 'fav_rule_match_op',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exact`
+  String get fav_rule_op_equals {
+    return Intl.message(
+      'Exact',
+      name: 'fav_rule_op_equals',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Contains`
+  String get fav_rule_op_contains {
+    return Intl.message(
+      'Contains',
+      name: 'fav_rule_op_contains',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Regex`
+  String get fav_rule_op_regex {
+    return Intl.message('Regex', name: 'fav_rule_op_regex', desc: '', args: []);
+  }
+
+  /// `Enter tag or keyword`
+  String get fav_rule_value_placeholder {
+    return Intl.message(
+      'Enter tag or keyword',
+      name: 'fav_rule_value_placeholder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Regular expression, e.g. ^foot.*`
+  String get fav_rule_regex_placeholder {
+    return Intl.message(
+      'Regular expression, e.g. ^foot.*',
+      name: 'fav_rule_regex_placeholder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invalid regular expression`
+  String get fav_rule_invalid_regex {
+    return Intl.message(
+      'Invalid regular expression',
+      name: 'fav_rule_invalid_regex',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Matching Known Tags`
+  String get fav_rule_matched_known_tags {
+    return Intl.message(
+      'Matching Known Tags',
+      name: 'fav_rule_matched_known_tags',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} total`
+  String fav_rule_total_count(Object count) {
+    return Intl.message(
+      '$count total',
+      name: 'fav_rule_total_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Tag translation database is not downloaded yet; live preview is unavailable (rules still match normally).`
+  String get fav_rule_no_tag_db_hint {
+    return Intl.message(
+      'Tag translation database is not downloaded yet; live preview is unavailable (rules still match normally).',
+      name: 'fav_rule_no_tag_db_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Type a keyword to preview matching known tags.`
+  String get fav_rule_type_to_preview_tags {
+    return Intl.message(
+      'Type a keyword to preview matching known tags.',
+      name: 'fav_rule_type_to_preview_tags',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No known tags matched in the local database; you can still save this condition.`
+  String get fav_rule_no_known_tag_matches {
+    return Intl.message(
+      'No known tags matched in the local database; you can still save this condition.',
+      name: 'fav_rule_no_known_tag_matches',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Matching favorite rules…`
+  String get fav_rule_matching_tags {
+    return Intl.message(
+      'Matching favorite rules…',
+      name: 'fav_rule_matching_tags',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not fetch full tags`
+  String get fav_rule_fetch_tags_failed {
+    return Intl.message(
+      'Could not fetch full tags',
+      name: 'fav_rule_fetch_tags_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save to "{folder}"`
+  String fav_rule_save_to_folder(Object folder) {
+    return Intl.message(
+      'Save to "$folder"',
+      name: 'fav_rule_save_to_folder',
+      desc: '',
+      args: [folder],
+    );
+  }
+
+  /// `Saved to "{folder}"`
+  String fav_rule_saved_to_folder(Object folder) {
+    return Intl.message(
+      'Saved to "$folder"',
+      name: 'fav_rule_saved_to_folder',
+      desc: '',
+      args: [folder],
+    );
+  }
+
+  /// `Move to "{folder}"`
+  String fav_rule_move_to_folder(Object folder) {
+    return Intl.message(
+      'Move to "$folder"',
+      name: 'fav_rule_move_to_folder',
+      desc: '',
+      args: [folder],
+    );
+  }
+
+  /// `Moved from "{from}" to "{to}"`
+  String fav_rule_moved_folder(Object from, Object to) {
+    return Intl.message(
+      'Moved from "$from" to "$to"',
+      name: 'fav_rule_moved_folder',
+      desc: '',
+      args: [from, to],
+    );
+  }
+
+  /// `Already in "{folder}"`
+  String fav_rule_already_in_folder(Object folder) {
+    return Intl.message(
+      'Already in "$folder"',
+      name: 'fav_rule_already_in_folder',
+      desc: '',
+      args: [folder],
+    );
+  }
+
+  /// `Kept in "{folder}"`
+  String fav_rule_kept_in_folder(Object folder) {
+    return Intl.message(
+      'Kept in "$folder"',
+      name: 'fav_rule_kept_in_folder',
+      desc: '',
+      args: [folder],
+    );
+  }
+
+  /// `Rule "{rule}"`
+  String fav_rule_reason_only(Object rule) {
+    return Intl.message(
+      'Rule "$rule"',
+      name: 'fav_rule_reason_only',
+      desc: '',
+      args: [rule],
+    );
+  }
+
+  /// `Rule "{rule}" · {tag}`
+  String fav_rule_reason_with_tag(Object rule, Object tag) {
+    return Intl.message(
+      'Rule "$rule" · $tag',
+      name: 'fav_rule_reason_with_tag',
+      desc: '',
+      args: [rule, tag],
+    );
+  }
+
+  /// `Also matched "{rules}" (lower priority)`
+  String fav_rule_other_hits_note(Object rules) {
+    return Intl.message(
+      'Also matched "$rules" (lower priority)',
+      name: 'fav_rule_other_hits_note',
+      desc: '',
+      args: [rules],
+    );
+  }
+
+  /// `Undo`
+  String get fav_rule_undo {
+    return Intl.message('Undo', name: 'fav_rule_undo', desc: '', args: []);
+  }
+
+  /// `Change`
+  String get fav_rule_change_folder {
+    return Intl.message(
+      'Change',
+      name: 'fav_rule_change_folder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No rule matched`
+  String get fav_rule_miss_title {
+    return Intl.message(
+      'No rule matched',
+      name: 'fav_rule_miss_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No rule matched · Saved to last folder`
+  String get fav_rule_miss_saved_last {
+    return Intl.message(
+      'No rule matched · Saved to last folder',
+      name: 'fav_rule_miss_saved_last',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No rule matched · Saved to fixed folder`
+  String get fav_rule_miss_saved_fixed {
+    return Intl.message(
+      'No rule matched · Saved to fixed folder',
+      name: 'fav_rule_miss_saved_fixed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Last`
+  String get fav_rule_last_used_badge {
+    return Intl.message(
+      'Last',
+      name: 'fav_rule_last_used_badge',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `My Tags`
+  String get fav_rule_my_tags_short {
+    return Intl.message(
+      'My Tags',
+      name: 'fav_rule_my_tags_short',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `New Rule`
+  String get fav_rule_create_from_tag_short {
+    return Intl.message(
+      'New Rule',
+      name: 'fav_rule_create_from_tag_short',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `New rule for "{category}"`
+  String fav_rule_create_by_category(Object category) {
+    return Intl.message(
+      'New rule for "$category"',
+      name: 'fav_rule_create_by_category',
+      desc: '',
+      args: [category],
+    );
+  }
+
+  /// `New rule from this gallery`
+  String get fav_rule_create_from_gallery {
+    return Intl.message(
+      'New rule from this gallery',
+      name: 'fav_rule_create_from_gallery',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remember`
+  String get fav_rule_remember_action {
+    return Intl.message(
+      'Remember',
+      name: 'fav_rule_remember_action',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rule created`
+  String get fav_rule_remember_created_title {
+    return Intl.message(
+      'Rule created',
+      name: 'fav_rule_remember_created_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Category`
+  String get fav_rule_category_badge {
+    return Intl.message(
+      'Category',
+      name: 'fav_rule_category_badge',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search Category`
+  String get fav_rule_search_this_category {
+    return Intl.message(
+      'Search Category',
+      name: 'fav_rule_search_this_category',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Used in {count} rules`
+  String fav_rule_category_used_count(Object count) {
+    return Intl.message(
+      'Used in $count rules',
+      name: 'fav_rule_category_used_count',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Tag`
+  String get fav_rule_mode_tag {
+    return Intl.message('Tag', name: 'fav_rule_mode_tag', desc: '', args: []);
+  }
+
+  /// `Category`
+  String get fav_rule_mode_category {
+    return Intl.message(
+      'Category',
+      name: 'fav_rule_mode_category',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select Categories`
+  String get fav_rule_select_category {
+    return Intl.message(
+      'Select Categories',
+      name: 'fav_rule_select_category',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clear`
+  String get fav_rule_clear_selection {
+    return Intl.message(
+      'Clear',
+      name: 'fav_rule_clear_selection',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete Condition`
+  String get fav_rule_delete_condition {
+    return Intl.message(
+      'Delete Condition',
+      name: 'fav_rule_delete_condition',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No galleries matched yet`
+  String get fav_rule_no_hits_yet {
+    return Intl.message(
+      'No galleries matched yet',
+      name: 'fav_rule_no_hits_yet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `New rule · Name optional`
+  String get fav_rule_new_subtitle {
+    return Intl.message(
+      'New rule · Name optional',
+      name: 'fav_rule_new_subtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select a folder`
+  String get fav_rule_pick_one_folder_hint {
+    return Intl.message(
+      'Select a folder',
+      name: 'fav_rule_pick_one_folder_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save to`
+  String get fav_rule_save_into_lead {
+    return Intl.message(
+      'Save to',
+      name: 'fav_rule_save_into_lead',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} galleries match in history`
+  String fav_rule_history_hits_matched(Object count) {
+    return Intl.message(
+      '$count galleries match in history',
+      name: 'fav_rule_history_hits_matched',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `No galleries in your history match yet; the rule will still take effect once saved.`
+  String get fav_rule_history_empty_save_ok {
+    return Intl.message(
+      'No galleries in your history match yet; the rule will still take effect once saved.',
+      name: 'fav_rule_history_empty_save_ok',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `From History`
+  String get fav_rule_test_from_history {
+    return Intl.message(
+      'From History',
+      name: 'fav_rule_test_from_history',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Custom Tags`
+  String get fav_rule_test_custom_tags {
+    return Intl.message(
+      'Custom Tags',
+      name: 'fav_rule_test_custom_tags',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter tags (comma or newline separated)`
+  String get fav_rule_test_input_label {
+    return Intl.message(
+      'Enter tags (comma or newline separated)',
+      name: 'fav_rule_test_input_label',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `e.g. artist:mitsuki, female:foot focus`
+  String get fav_rule_test_input_placeholder {
+    return Intl.message(
+      'e.g. artist:mitsuki, female:foot focus',
+      name: 'fav_rule_test_input_placeholder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pick a gallery to test rule order`
+  String get fav_rule_test_pick_gallery {
+    return Intl.message(
+      'Pick a gallery to test rule order',
+      name: 'fav_rule_test_pick_gallery',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No browsing history yet. Switch to Custom Tags to test.`
+  String get fav_rule_test_no_history {
+    return Intl.message(
+      'No browsing history yet. Switch to Custom Tags to test.',
+      name: 'fav_rule_test_no_history',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fallback action: {fallback}`
+  String fav_rule_test_fallback_desc(Object fallback) {
+    return Intl.message(
+      'Fallback action: $fallback',
+      name: 'fav_rule_test_fallback_desc',
+      desc: '',
+      args: [fallback],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

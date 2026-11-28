@@ -92,6 +92,82 @@ enum ErosHaptics {
         }
     }
 
+    /// Subtle micro-tension pulse during a steady card hold, signaling that the
+    /// surface is pressurized right before the context capsule pops open.
+    static func contextMenuPreviewTick() {
+        let played = play([
+            CHHapticEvent(
+                eventType: .hapticTransient,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.28),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.64),
+                ],
+                relativeTime: 0
+            ),
+        ])
+        if !played {
+            lightImpactGenerator.impactOccurred(intensity: 0.42)
+        }
+    }
+
+    /// Dynamic Island / UIContextMenu detachment & liquid bloom:
+    /// 1) Crisp vacuum detachment transient (`t = 0ms`),
+    /// 2) Warm pressurized continuous capsule expansion (`t = 8ms..70ms`),
+    /// 3) Subtle elastic lock-in resonance (`t = 54ms`).
+    static func contextMenuPop() {
+        let played = play([
+            CHHapticEvent(
+                eventType: .hapticTransient,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.86),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.80),
+                ],
+                relativeTime: 0
+            ),
+            CHHapticEvent(
+                eventType: .hapticContinuous,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.32),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.22),
+                    CHHapticEventParameter(parameterID: .attackTime, value: 0.012),
+                    CHHapticEventParameter(parameterID: .decayTime, value: 0.046),
+                    CHHapticEventParameter(parameterID: .sustained, value: 0),
+                ],
+                relativeTime: 0.008,
+                duration: 0.062
+            ),
+            CHHapticEvent(
+                eventType: .hapticTransient,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.34),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.42),
+                ],
+                relativeTime: 0.054
+            ),
+        ])
+        if !played {
+            rigidImpactGenerator.impactOccurred(intensity: 0.82)
+        }
+    }
+
+    /// Soft cushioned settle tick as the context capsule folds shut and the
+    /// lifted card lands back into its slot.
+    static func contextMenuDismiss() {
+        let played = play([
+            CHHapticEvent(
+                eventType: .hapticTransient,
+                parameters: [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.26),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.34),
+                ],
+                relativeTime: 0
+            ),
+        ])
+        if !played {
+            lightImpactGenerator.impactOccurred(intensity: 0.35)
+        }
+    }
+
     @discardableResult
     private static func play(_ events: [CHHapticEvent]) -> Bool {
         if hapticEngine == nil {
@@ -144,7 +220,8 @@ final class ErosHapticsPlugin: NSObject, FlutterPlugin {
 
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
-        case "selection", "impact", "light", "medium", "heavy", "success", "error", "tabSwitch":
+        case "selection", "impact", "light", "medium", "heavy", "success", "error", "tabSwitch",
+             "contextMenuPreviewTick", "contextMenuPop", "contextMenuDismiss":
             switch call.method {
             case "selection": ErosHaptics.selection()
             case "impact": ErosHaptics.impact()
@@ -154,6 +231,9 @@ final class ErosHapticsPlugin: NSObject, FlutterPlugin {
             case "success": ErosHaptics.success()
             case "error": ErosHaptics.error()
             case "tabSwitch": ErosHaptics.tabSwitch()
+            case "contextMenuPreviewTick": ErosHaptics.contextMenuPreviewTick()
+            case "contextMenuPop": ErosHaptics.contextMenuPop()
+            case "contextMenuDismiss": ErosHaptics.contextMenuDismiss()
             default: break
             }
             #if DEBUG

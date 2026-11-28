@@ -9,6 +9,7 @@ import 'package:eros_fe/pages/tab/controller/favorite/favorite_selection_control
 import 'package:eros_fe/widget/blur_image.dart';
 import 'package:eros_fe/widget/fav_note_line.dart';
 import 'package:eros_fe/widget/favorite_selection_chrome.dart';
+import 'package:eros_fe/widget/gallery_card_context_menu.dart';
 import 'package:eros_fe/widget/image/eh_network_image.dart';
 import 'package:eros_fe/widget/rating_bar.dart';
 import 'package:flutter/cupertino.dart';
@@ -169,37 +170,33 @@ class GalleryItemSimpleWidget extends StatelessWidget {
 
     return FavoriteSelectableCard(
       provider: galleryProviderController.galleryProvider,
-      child: GestureDetector(
-        child: Column(
-          children: <Widget>[
-            containerGallery,
-            Divider(
-              height: 0.5,
-              indent: kPaddingLeft,
-              color: EhPalette.separator.resolveFrom(context),
-            ),
-          ],
-        ),
-        // 不可见区域点击有效
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          final current = galleryProviderController.galleryProvider;
-          if (favScope?.selection?.selecting.value == true) {
-            favScope!.selection!.toggle(current);
-            return;
-          }
-          if (favScope?.onPreviewSelect != null) {
-            favScope!.onPreviewSelect!(current);
-            return;
-          }
-          galleryProviderController.onTap(tabTag);
-        },
-        onTapDown: galleryProviderController.onTapDown,
-        onTapUp: galleryProviderController.onTapUp,
-        onTapCancel: galleryProviderController.onTapCancel,
-        onLongPress: () => galleryProviderController.onLongPress(
-          selectionController: favScope?.selection,
-        ),
+      child: Column(
+        children: <Widget>[
+          GalleryCardPressFeedback(
+            onTap: () {
+              final current = galleryProviderController.galleryProvider;
+              if (favScope?.selection?.selecting.value == true) {
+                favScope!.selection!.toggle(current);
+                return;
+              }
+              if (favScope?.onPreviewSelect != null) {
+                favScope!.onPreviewSelect!(current);
+                return;
+              }
+              galleryProviderController.onTap(tabTag);
+            },
+            onTapDown: galleryProviderController.onTapDown,
+            onTapUp: galleryProviderController.onTapUp,
+            onTapCancel: galleryProviderController.onTapCancel,
+            onLongPress: galleryProviderController.onLongPress,
+            child: RepaintBoundary(child: containerGallery),
+          ),
+          Divider(
+            height: 0.5,
+            indent: kPaddingLeft,
+            color: EhPalette.separator.resolveFrom(context),
+          ),
+        ],
       ).autoCompressKeyboard(context),
     );
   }

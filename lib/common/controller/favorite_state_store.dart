@@ -21,11 +21,52 @@ class FavoriteState {
   final String? note;
 }
 
+/// Snapshot of favorite state captured immediately after an automatic rule or
+/// fallback save so a delayed "Undo" banner tap becomes a safe no-op if any
+/// subsequent favorite mutation or account switch occurred in the meantime.
+class FavoriteUndoSnapshot {
+  const FavoriteUndoSnapshot({
+    required this.gid,
+    required this.epoch,
+    required this.storeMutationCount,
+    required this.controllerMutationSeq,
+    required this.expectedFavcat,
+  });
+
+  final String gid;
+  final int epoch;
+  final int storeMutationCount;
+  final int controllerMutationSeq;
+  final String expectedFavcat;
+
+  bool canUndo({
+    required String currentFavcat,
+    required int currentControllerSeq,
+    FavoriteStateStore? store,
+  }) {
+    final s = store ?? favoriteStates;
+    if (gid.isNotEmpty && s.isBusy(gid)) {
+      return false;
+    }
+    if (s.epoch != epoch) {
+      return false;
+    }
+    if (gid.isNotEmpty && s.mutationCount(gid) != storeMutationCount) {
+      return false;
+    }
+    if (currentControllerSeq != controllerMutationSeq) {
+      return false;
+    }
+    return currentFavcat == expectedFavcat;
+  }
+}
+
 /// Account-scoped favorite state, independent of widget/controller lifetimes.
 /// Request stamps fence off responses started before a mutation or account switch.
 class FavoriteStateStore {
   final states = <String, FavoriteState>{}.obs;
   final _busy = <String>{};
+  final _mutationCounts = <String, int>{};
   int _version = 0;
   int _epoch = 0;
   String? _account;
@@ -33,6 +74,30 @@ class FavoriteStateStore {
   int get version => _version;
   int get epoch => _epoch;
   bool isBusy(String gid) => _busy.contains(gid);
+  int mutationCount(String? gid) => _mutationCounts[gid ?? ''] ?? 0;
+
+  void recordMutation(String? gid) {
+    if (gid == null || gid.isEmpty) {
+      return;
+    }
+    _mutationCounts[gid] = (_mutationCounts[gid] ?? 0) + 1;
+  }
+
+  FavoriteUndoSnapshot snapshotForUndo(
+    String? gid, {
+    required String expectedFavcat,
+    required int controllerMutationSeq,
+  }) {
+    final resolvedGid = gid ?? '';
+    return FavoriteUndoSnapshot(
+      gid: resolvedGid,
+      epoch: _epoch,
+      storeMutationCount:
+          resolvedGid.isEmpty ? 0 : mutationCount(resolvedGid),
+      controllerMutationSeq: controllerMutationSeq,
+      expectedFavcat: expectedFavcat,
+    );
+  }
 
   bool setAccount(String account) {
     if (_account == account) {
@@ -43,6 +108,7 @@ class FavoriteStateStore {
     _version++;
     states.clear();
     _busy.clear();
+    _mutationCounts.clear();
     return true;
   }
 
@@ -55,9 +121,9 @@ class FavoriteStateStore {
     if (category.isNotEmpty && !isNetworkFavoriteCategory(category)) {
       throw ArgumentError.value(category, 'category');
     }
-    final resolvedNote = category.isEmpty
-        ? ''
-        : (note ?? states[gid]?.note);
+    recordMutation(gid);
+    final resolvedNote =
+        category.isEmpty ? '' : (note ?? states[gid]?.note);
     states[gid] =
         FavoriteState(category, title, ++_version, note: resolvedNote);
   }

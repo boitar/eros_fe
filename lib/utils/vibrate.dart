@@ -122,6 +122,33 @@ class VibrateUtil {
         }
       });
 
+  /// Subtle pre-detachment hold tension tick before a context menu blooms.
+  Future<void> contextMenuPreviewTick() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('contextMenuPreviewTick');
+        } else {
+          await HapticFeedback.selectionClick();
+        }
+      });
+
+  /// Dynamic Island / iOS 26 context menu detachment pop + pressurized bloom.
+  Future<void> contextMenuPop() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('contextMenuPop');
+        } else {
+          await HapticFeedback.mediumImpact();
+        }
+      });
+
+  /// Soft vacuum settle tick when folding a context menu back into its card.
+  Future<void> contextMenuDismiss() => _run(() async {
+        if (_isIOS) {
+          await _hapticsChannel.invokeMethod<void>('contextMenuDismiss');
+        } else {
+          await HapticFeedback.selectionClick();
+        }
+      });
+
   Future<void> pullTick(double progress) => _run(() async {
         if (_isIOS) {
           final p = progress.clamp(0.0, 1.0).toDouble();

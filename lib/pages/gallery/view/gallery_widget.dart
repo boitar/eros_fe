@@ -2,11 +2,13 @@ import 'package:collection/collection.dart';
 import 'package:eros_fe/common/controller/block_controller.dart';
 import 'package:eros_fe/common/service/controller_tag_service.dart';
 import 'package:eros_fe/common/service/ehsetting_service.dart';
+import 'package:eros_fe/common/service/fav_rule_matcher.dart';
 import 'package:eros_fe/common/service/layout_service.dart';
 import 'package:eros_fe/common/service/theme_service.dart';
 import 'package:eros_fe/const/eh_palette.dart';
 import 'package:eros_fe/const/theme_colors.dart';
 import 'package:eros_fe/index.dart';
+import 'package:eros_fe/pages/gallery/controller/gallery_fav_controller.dart';
 import 'package:eros_fe/pages/gallery/controller/gallery_page_controller.dart';
 import 'package:eros_fe/pages/gallery/view/comment_item.dart';
 import 'package:eros_fe/pages/gallery/view/taginfo_dialog.dart';
@@ -663,26 +665,46 @@ class TagGroupItem extends StatelessWidget {
   }
 
   Widget _detailTag(BuildContext context, GalleryTag tag, bool translate) {
-    return DetailTagChip(
-      text: translate ? tag.tagTranslat : tag.title,
-      userColor: ColorsUtil.getTagColor(tag.backgrondColor),
-      userTextColor: ColorsUtil.getTagColor(tag.color),
-      vote: tag.vote ?? 0,
-      onPressed: () {
-        logger.t('search type[${tag.type}] tag[${tag.title}]');
-        NavigatorUtil.goSearchPageWithParam(
-            simpleSearch: '${tag.type}:${tag.title.trim()}');
-      },
-      onLongPress: () {
-        showTagInfoDialog(
-          context,
-          tag.title,
-          translate: tag.tagTranslat,
-          type: tag.type,
-          vote: tag.vote ?? 0,
-        );
-      },
+    final galleryTag = Get.isRegistered<ControllerTagService>()
+        ? pageCtrlTagOf(context)
+        : null;
+    final favCtrl = galleryTag != null &&
+            Get.isRegistered<GalleryFavController>(tag: galleryTag)
+        ? Get.find<GalleryFavController>(tag: galleryTag)
+        : null;
+    final tagNs = FavRuleMatcher.normalize(
+      tag.type.trim().isNotEmpty ? tag.type : (tagGroupData.tagType ?? ''),
     );
+    final tagKey = tagNs.isEmpty
+        ? FavRuleMatcher.normalize(tag.title)
+        : '$tagNs:${FavRuleMatcher.normalize(tag.title)}';
+
+    Widget buildChip(Color? highlightColor) => DetailTagChip(
+          text: translate ? tag.tagTranslat : tag.title,
+          userColor: ColorsUtil.getTagColor(tag.backgrondColor),
+          userTextColor: ColorsUtil.getTagColor(tag.color),
+          highlightBorderColor: highlightColor,
+          vote: tag.vote ?? 0,
+          onPressed: () {
+            logger.t('search type[${tag.type}] tag[${tag.title}]');
+            NavigatorUtil.goSearchPageWithParam(
+                simpleSearch: '${tag.type}:${tag.title.trim()}');
+          },
+          onLongPress: () {
+            showTagInfoDialog(
+              context,
+              tag.title,
+              translate: tag.tagTranslat,
+              type: tag.type,
+              vote: tag.vote ?? 0,
+            );
+          },
+        );
+
+    if (favCtrl == null) {
+      return buildChip(null);
+    }
+    return Obx(() => buildChip(favCtrl.highlightedTagColors[tagKey]));
   }
 }
 
@@ -694,6 +716,7 @@ class DetailTagChip extends StatelessWidget {
     required this.text,
     this.userColor,
     this.userTextColor,
+    this.highlightBorderColor,
     this.vote = 0,
     this.onPressed,
     this.onLongPress,
@@ -706,6 +729,9 @@ class DetailTagChip extends StatelessWidget {
 
   /// The text colour the site gives that tag.
   final Color? userTextColor;
+
+  /// Temporary colored outline when this tag triggered a rule-favorite hit.
+  final Color? highlightBorderColor;
   final int vote;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
@@ -725,37 +751,53 @@ class DetailTagChip extends StatelessWidget {
       _ => null,
     };
 
+    final decoration = ShapeDecoration(
+      color: highlightBorderColor != null && !watched
+          ? highlightBorderColor!.withValues(alpha: 0.14)
+          : background,
+      shape: StadiumBorder(
+        side: highlightBorderColor != null
+            ? BorderSide(color: highlightBorderColor!, width: 1.5)
+            : BorderSide.none,
+      ),
+    );
+    final label = Text.rich(
+      TextSpan(
+        text: text,
+        children: [
+          if (arrow != null)
+            TextSpan(
+              text: arrow.$1,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: CupertinoDynamicColor.resolve(arrow.$2, context),
+              ),
+            ),
+        ],
+      ),
+      style: TextStyle(
+        fontSize: 13,
+        height: 1.25,
+        fontWeight: watched ? FontWeight.w600 : FontWeight.w400,
+        color: foreground,
+      ),
+    );
+
     return GestureDetector(
       onTap: onPressed,
       onLongPress: onLongPress,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: ShapeDecoration(
-          color: background,
-          shape: const StadiumBorder(),
-        ),
-        child: Text.rich(
-          TextSpan(
-            text: text,
-            children: [
-              if (arrow != null)
-                TextSpan(
-                  text: arrow.$1,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: CupertinoDynamicColor.resolve(arrow.$2, context),
-                  ),
-                ),
-            ],
-          ),
-          style: TextStyle(
-            fontSize: 13,
-            height: 1.25,
-            fontWeight: watched ? FontWeight.w600 : FontWeight.w400,
-            color: foreground,
-          ),
-        ),
-      ),
+      child: highlightBorderColor != null
+          ? AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: decoration,
+              child: label,
+            )
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: decoration,
+              child: label,
+            ),
     );
   }
 }
